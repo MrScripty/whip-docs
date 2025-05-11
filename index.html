@@ -6,98 +6,229 @@
     <title>Vulkan 2D Rendering Engine Hierarchy</title>
     <style>
         body {
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #1e1e1e;
-            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #F5F4F2;
+            color: #333333; /* Default body text, can be overridden */
             margin: 0;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
         h1 {
             text-align: center;
-            color: #ffffff;
+            color: #637C8A; /* Slate Blue for heading */
             margin: 20px 0;
+            font-weight: 300;
+            padding: 0 15px;
         }
         .container {
             display: flex;
             flex: 1;
-            overflow: hidden; /* Important for flex children with overflow-y: auto */
+            overflow: hidden;
+            width: 100%;
             max-width: 1200px;
-            margin: 0 auto;
-            width: 100%; /* Ensure container tries to take up width */
+            margin: 0 auto 20px auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            flex-direction: row;
         }
         .tree-column, .info-column {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
             box-sizing: border-box;
+            background-color: #ffffff;
         }
         .tree-column {
-            border-right: 1px solid #444;
-            /* max-width: 50%; /* Optional: to prevent it from taking too much space if info-column is small */
+            border-right: 1px solid #e0e0e0;
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 0;
         }
         .info-column {
-            background-color: #2a2a2a;
             display: flex;
             flex-direction: column;
-            /* max-width: 50%; /* Optional */
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            border-top-left-radius: 0;
+            border-left: 0;
         }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                margin: 0 10px 20px 10px;
+                max-width: none;
+            }
+            .tree-column {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                border-radius: 8px 8px 0 0;
+                max-height: 45vh; /* Slightly more height for tree */
+            }
+            .info-column {
+                border-radius: 0 0 8px 8px;
+                max-height: 45vh; /* Adjusted for balance */
+            }
+        }
+
         #info-text {
             flex: 1;
             background: none;
-            border: none;
-            color: #ffffff; /* Default color, will be overridden by JS */
-            font-family: 'Courier New', Courier, monospace;
+            border: 1px solid #dddddd;
+            color: #637C8A; /* CONSISTENT COLOR FOR INFO TEXT */
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
             font-size: 14px;
-            padding: 10px;
+            padding: 15px;
             resize: none;
             outline: none;
-            white-space: pre-wrap; /* Ensures newlines in the value are rendered */
-        }
-        ul {
-            list-style: none;
-            padding-left: 20px;
-            margin: 0;
-        }
-        li {
-            position: relative;
-            padding-left: 20px; /* Space for the pseudo-element connector */
-            margin-bottom: 5px; /* Spacing between items */
-            cursor: pointer;
-            user-select: none;
-        }
-        li:hover {
-            background-color: #333;
-        }
-        /* Basic tree connectors */
-        li::before {
-            content: '├── '; /* Added space for better visual separation */
-            position: absolute;
-            left: 0px; /* Adjust as needed based on padding */
-            top: 0;
-            color: #888;
-        }
-        li:last-child::before {
-            content: '└── '; /* Added space */
-        }
-        /* Hide connector for top-level items if they are direct children of the first UL in .tree-column */
-        .tree-column > ul > li::before {
-            /* content: ''; /* If you want no connector for the very first level items */
-            /* Alternatively, if you always want the first level to have a simple bullet or nothing: */
-            /* For this complex tree, the default connectors are probably fine */
+            border-radius: 4px;
+            line-height: 1.6;
+            min-height: 100px;
         }
 
-        .essential { color: #5FFAD6; }
-        .secondary { color: #BA8675; }
-        .advanced { color: #FA855F; }
-        .other { color: #76A59A; }
+        /* Tree Styling */
+        .tree-column ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        .tree-column ul ul {
+            padding-left: 20px;
+        }
+
+        .tree-column li {
+            position: relative;
+            padding: 0;
+            cursor: default;
+            user-select: none;
+            margin-bottom: 1px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        .tree-item-row {
+            display: flex;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        /* Tree Connector Lines */
+        .tree-column li > .tree-item-row::before {
+            content: "";
+            position: absolute;
+            left: -12px; 
+            top: 0;
+            bottom: 0; 
+            width: 1px;
+            background-color: #cccccc;
+        }
+        .tree-column li:last-child > .tree-item-row::before {
+            height: 15px; 
+        }
+        .tree-column li > .tree-item-row::after {
+            content: "";
+            position: absolute;
+            left: -12px;
+            top: 14px; 
+            width: 12px;
+            height: 1px;
+            background-color: #cccccc;
+        }
+        .tree-column > ul > li > .tree-item-row::before,
+        .tree-column > ul > li > .tree-item-row::after {
+            display: none;
+        }
+
+        .tree-item-content {
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 0px;
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #333333; 
+        }
+        .tree-column li .tree-item-row:not(.parent-highlight-li):not(.selected-item-dark-li):hover > .tree-item-content {
+            background-color: #e9f5ff; 
+        }
+
+
+        .tree-toggle {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            font-family: monospace;
+            font-weight: bold;
+            color: #637C8A;
+            margin-right: 4px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .tree-toggle:hover {
+            background-color: #d0e0f0;
+        }
+
+        /* Category Colors for Tree Item Text */
+        .tree-item-content.essential-text { color: #16c59d; } /* UPDATED COLOR */
+        .tree-item-content.secondary-text { color: #BA8675; }
+        .tree-item-content.advanced-text { color: #FA855F; }
+        .tree-item-content.other-text { color: #76A59A; }
+
+
+        /* Green highlight for selected item and its descendants' ROW */
+        .tree-column li.parent-highlight-li > .tree-item-row {
+            background-color: #e6ffe6; 
+        }
+        .tree-column li.parent-highlight-li > .tree-item-row:hover {
+            background-color: #d9ffd9;
+        }
+        /* Ensure category text color is still visible on parent-highlight */
+        .tree-column li.parent-highlight-li > .tree-item-row > .tree-item-content.essential-text { color: #16c59d; } /* UPDATED COLOR */
+        .tree-column li.parent-highlight-li > .tree-item-row > .tree-item-content.secondary-text { color: #BA8675; }
+        .tree-column li.parent-highlight-li > .tree-item-row > .tree-item-content.advanced-text { color: #FA855F; }
+        .tree-column li.parent-highlight-li > .tree-item-row > .tree-item-content.other-text { color: #76A59A; }
+
+
+        /* Dark highlight for the specifically selected item's ROW */
+        .tree-column li.selected-item-dark-li > .tree-item-row {
+            background-color: #637C8A !important; 
+        }
+        /* Text color for the dark selected item */
+        .tree-column li.selected-item-dark-li > .tree-item-row > .tree-item-content {
+            color: #ffffff !important; 
+            font-weight: 500;
+        }
+        .tree-column li.selected-item-dark-li > .tree-item-row:hover {
+            background-color: #526570 !important;
+        }
+
+
+        /* Scrollbar Styling */
+        .tree-column::-webkit-scrollbar,
+        .info-column::-webkit-scrollbar { width: 8px; }
+        .tree-column::-webkit-scrollbar-track,
+        .info-column::-webkit-scrollbar-track { background: #ececec; border-radius: 10px; }
+        .tree-column::-webkit-scrollbar-thumb,
+        .info-column::-webkit-scrollbar-thumb { background-color: #b0b0b0; border-radius: 10px; border: 2px solid #ececec; }
+        .tree-column::-webkit-scrollbar-thumb:hover,
+        .info-column::-webkit-scrollbar-thumb:hover { background-color: #637C8A; }
+        .tree-column, .info-column { scrollbar-width: thin; scrollbar-color: #b0b0b0 #ececec; }
+
     </style>
 </head>
 <body>
     <h1>Vulkan 2D Rendering Engine Hierarchy</h1>
     <div class="container">
         <div class="tree-column">
+            <!-- HTML structure for tree items -->
+            <!-- Original classes on LI: essential, secondary, advanced, other -->
             <ul>
                 <li class="essential" data-component="Vulkan API">Vulkan API
                     <ul>
@@ -108,7 +239,7 @@
                                 <li class="essential" data-component="Instance Extensions">Instance Extensions
                                     <ul>
                                         <li class="essential" data-component="VK_KHR_surface">VK_KHR_surface</li>
-                                        <li class="secondary" data-component="VK_EXT_debug_utils">VK_EXT_debug_utils</li>
+                                        <li class="secondary" data-component="VK_EXT_debug_utils (Instance Extension)">VK_EXT_debug_utils (Instance Extension)</li>
                                     </ul>
                                 </li>
                                 <li class="essential" data-component="Physical Devices">Physical Devices
@@ -148,7 +279,7 @@
                         <li class="essential" data-component="Swapchain">Swapchain
                             <ul>
                                 <li class="essential" data-component="Swapchain Images">Swapchain Images</li>
-                                <li class="essential" data-component="Image Views">Image Views</li>
+                                <li class="essential" data-component="Image Views (Swapchain)">Image Views (Swapchain)</li>
                                 <li class="essential" data-component="Framebuffers">Framebuffers</li>
                             </ul>
                         </li>
@@ -208,8 +339,7 @@
                                 <li class="essential" data-component="Images">Images
                                     <ul>
                                         <li class="essential" data-component="Texture Images (Sprites, Atlas)">Texture Images (Sprites, Atlas)</li>
-                                        <!-- Note: "Image Views" is also under Swapchain. Ensure componentInfo keys are unique or descriptions are specific -->
-                                        <li class="essential" data-component="Image Views">Image Views (for Textures)</li>
+                                        <li class="essential" data-component="Image Views (General Textures)">Image Views (General Textures)</li>
                                         <li class="secondary" data-component="Depth/Stencil Image">Depth/Stencil Image</li>
                                     </ul>
                                 </li>
@@ -251,7 +381,7 @@
                                         <li class="advanced" data-component="Render Targets">Render Targets</li>
                                         <li class="advanced" data-component="Compute Shaders">Compute Shaders</li>
                                     </ul>
- Pferde</li>
+                                </li>
                                 <li class="advanced" data-component="Sparse Resources">Sparse Resources</li>
                                 <li class="advanced" data-component="Dynamic Rendering (VK_KHR_dynamic_rendering)">Dynamic Rendering (VK_KHR_dynamic_rendering)</li>
                                 <li class="advanced" data-component="Memory Pools (Advanced vk-mem management)">Memory Pools (Advanced vk-mem management)</li>
@@ -265,119 +395,184 @@
             <textarea id="info-text" readonly>Select a component from the tree to view its description.</textarea>
         </div>
     </div>
-
     <script>
-        // Ensure this object is syntactically correct and matches your data-component attributes
         const componentInfo = {
-            "Vulkan API": { description: "The root of the Vulkan graphics API, providing low-level access to GPU hardware for rendering.", color: "#5FFAD6" },
-            "Instance": { description: "The Vulkan instance is the connection between the application and the Vulkan library, managing global state.", color: "#5FFAD6" },
-            "Validation Layers": { description: "Optional layers for debugging and validating Vulkan API usage, useful during development.", color: "#BA8675" },
-            "Debug Utilities (VK_EXT_debug_utils)": { description: "Extension for advanced debugging, allowing custom error messages and callbacks. (Instance Level)", color: "#BA8675" },
-            "Instance Extensions": { description: "Extensions to the Vulkan instance, enabling additional functionality like surface creation.", color: "#5FFAD6" },
-            "VK_KHR_surface": { description: "Extension for creating a surface to render to a window or display.", color: "#5FFAD6" },
-            "VK_EXT_debug_utils": { description: "Instance extension providing debug utilities, used with validation layers for detailed error reporting.", color: "#BA8675" }, // This is a distinct key
-            "Physical Devices": { description: "Represents the physical GPUs available, queried for properties and features.", color: "#5FFAD6" },
-            "Device Features": { description: "Specific capabilities of a physical device, like texture compression or geometry shaders.", color: "#5FFAD6" },
-            "Device Extensions": { description: "Extensions for the logical device, enabling features like swapchains.", color: "#5FFAD6" },
-            "VK_KHR_swapchain": { description: "Extension for creating swapchains, allowing presentation of rendered images.", color: "#5FFAD6" },
-            "VK_KHR_multisampling": { description: "Extension for multisampling, improving image quality by reducing aliasing (optional).", color: "#BA8675" },
-            "Logical Device": { description: "An abstraction of a physical device, managing queues and resources for rendering.", color: "#5FFAD6" },
-            "Queues": { description: "Handles for submitting commands to the GPU, including graphics and presentation.", color: "#5FFAD6" },
-            "Graphics Queue": { description: "Queue for submitting graphics and compute commands, essential for rendering.", color: "#5FFAD6" },
-            "Present Queue": { description: "Queue for presenting rendered images to the surface, required for display.", color: "#5FFAD6" },
-            "Command Pools": { description: "Manages memory for command buffers, used to record rendering commands.", color: "#5FFAD6" },
-            "Memory Management": { description: "Handles allocation and management of GPU memory for resources.", color: "#76A59A" },
-            "Vulkan Memory Allocator (vk-mem)": { description: "A library simplifying memory allocation for Vulkan resources.", color: "#76A59A" },
-            "Surface": { description: "A platform-specific object representing a window or display for rendering.", color: "#5FFAD6" },
-            "VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)": { description: "The surface object created for a specific window system (e.g., Win32, XCB).", color: "#5FFAD6" },
-            "Swapchain": { description: "Manages a queue of images for rendering and presenting to the surface.", color: "#5FFAD6" },
-            "Swapchain Images": { description: "Images managed by the swapchain, used as render targets.", color: "#5FFAD6" },
-            "Image Views": { description: "Views of swapchain images, specifying how they are accessed. (Context: Swapchain)", color: "#5FFAD6" },
-            "Framebuffers": { description: "Collections of image views used as render targets for a render pass.", color: "#5FFAD6" },
-            "Render Pass": { description: "Defines a sequence of rendering operations, including attachments and subpasses.", color: "#5FFAD6" },
-            "Attachments": { description: "Images (e.g., color, depth) used as inputs or outputs in a render pass.", color: "#5FFAD6" },
-            "Color Attachment (Swapchain Image)": { description: "The primary render target for 2D rendering, typically a swapchain image.", color: "#5FFAD6" },
-            "Depth/Stencil Attachment": { description: "Optional attachment for depth testing or stencil operations in 2D.", color: "#BA8675" },
-            "Subpasses": { description: "Individual rendering stages within a render pass, defining attachment usage.", color: "#5FFAD6" },
-            "Dependencies": { description: "Rules for synchronizing subpasses, ensuring correct rendering order.", color: "#5FFAD6" },
-            "Descriptor Set Layouts": { description: "Defines the structure of descriptor sets for resource binding.", color: "#5FFAD6" },
-            "Descriptor Pools": { description: "Manages memory for allocating descriptor sets.", color: "#5FFAD6" },
-            "Pipeline": { description: "Configures the GPU’s rendering pipeline, including shaders and state.", color: "#5FFAD6" },
-            "Shader Modules": { description: "Compiled SPIR-V shaders for vertex and fragment processing.", color: "#5FFAD6" },
-            "Vertex Shader (2D transformations)": { description: "Processes 2D vertex data, applying transformations like scaling or rotation.", color: "#5FFAD6" },
-            "Fragment Shader (Texture sampling, color)": { description: "Samples textures and computes pixel colors for 2D rendering.", color: "#5FFAD6" },
-            "Pipeline Layout": { description: "Defines resources (descriptors, push constants) accessible to shaders.", color: "#5FFAD6" },
-            "Descriptor Sets": { description: "Binds resources like textures or buffers to shaders.", color: "#5FFAD6" },
-            "Push Constants (Transformations, colors)": { description: "Small, fast data (e.g., matrices, colors) passed to shaders.", color: "#5FFAD6" },
-            "Graphics State": { description: "Configures fixed-function stages like rasterization and blending.", color: "#5FFAD6" },
-            "Vertex Input (2D geometry)": { description: "Defines how 2D vertex data is fed into the pipeline.", color: "#5FFAD6" },
-            "Rasterization": { description: "Converts 2D geometry into fragments for pixel processing.", color: "#5FFAD6" },
-            "Color Blending (Alpha blending)": { description: "Combines fragment colors, enabling transparency via alpha blending.", color: "#5FFAD6" },
-            "Depth/Stencil Testing": { description: "Optional testing for depth or stencil, rarely used in 2D.", color: "#BA8675" },
-            "Multisampling": { description: "Reduces aliasing via multiple samples per pixel, optional for 2D.", color: "#BA8675" },
-            "Dynamic State (Viewport, Scissor)": { description: "Dynamically adjustable states like viewport size, optional for flexibility.", color: "#BA8675" },
-            "Pipeline Cache": { description: "Stores compiled pipelines for faster recreation, optional for performance.", color: "#BA8675" },
-            "Resources": { description: "Manages GPU resources like buffers and images for rendering.", color: "#5FFAD6" },
-            "Buffers": { description: "Memory for storing vertex, index, or uniform data.", color: "#5FFAD6" },
-            "Vertex Buffer (2D geometry)": { description: "Stores 2D vertex data like positions and texture coordinates.", color: "#5FFAD6" },
-            "Index Buffer (Triangles/Quads)": { description: "Defines triangle or quad connectivity for 2D geometry.", color: "#5FFAD6" },
-            "Uniform Buffer (Transformations, colors)": { description: "Stores per-draw data like transformation matrices or colors.", color: "#5FFAD6" },
-            "Images": { description: "GPU memory for storing textures or render targets.", color: "#5FFAD6" },
-            "Texture Images (Sprites, Atlas)": { description: "Images for 2D sprites or texture atlases, sampled in shaders.", color: "#5FFAD6" },
-            "Image Views (for Textures)": { description: "Views of texture images, specifying how they are accessed. (Context: General Images/Textures)", color: "#5FFAD6" },
-            "Depth/Stencil Image": { description: "Optional image for depth or stencil data, rarely used in 2D.", color: "#BA8675" },
-            "Samplers (Texture sampling)": { description: "Defines how textures are sampled (e.g., filtering, wrapping) in shaders.", color: "#5FFAD6" },
-            "Synchronization": { description: "Mechanisms to coordinate GPU and CPU operations.", color: "#5FFAD6" },
-            "Semaphores (Image acquisition, rendering)": { description: "Synchronizes rendering and presentation, e.g., for swapchain images.", color: "#5FFAD6" },
-            "Fences (CPU-GPU sync)": { description: "Synchronizes CPU and GPU, ensuring commands complete.", color: "#5FFAD6" },
-            "Events": { description: "Fine-grained synchronization within command buffers, optional for complex cases.", color: "#BA8675" },
-            "Command Buffers": { description: "Records sequences of rendering commands for submission to the GPU.", color: "#5FFAD6" },
-            "Primary Command Buffers": { description: "Main command buffers submitted to queues for rendering.", color: "#5FFAD6" },
-            "Secondary Command Buffers": { description: "Reusable command buffers for subroutines, optional for modularity.", color: "#BA8675" },
-            "Recording Operations": { description: "Commands recorded into buffers, like binding resources or drawing.", color: "#5FFAD6" },
-            "Bind Pipeline": { description: "Binds the rendering pipeline to a command buffer.", color: "#5FFAD6" },
-            "Bind Descriptor Sets": { description: "Binds descriptor sets to make resources available to shaders.", color: "#5FFAD6" },
-            "Bind Vertex/Index Buffers": { description: "Binds vertex and index buffers for geometry rendering.", color: "#5FFAD6" },
-            "Draw Commands": { description: "Issues draw calls to render 2D geometry.", color: "#5FFAD6" },
-            "Image Layout Transitions": { description: "Changes image layouts (e.g., for rendering or sampling).", color: "#5FFAD6" },
-            "Pipeline Barriers": { description: "Synchronizes access to resources between pipeline stages.", color: "#5FFAD6" },
-            "Pipeline Stages (Vertex, Fragment)": { description: "Stages of the pipeline (e.g., vertex, fragment) for synchronization.", color: "#5FFAD6" },
-            "Memory Barriers": { description: "Ensures correct ordering of memory operations.", color: "#5FFAD6" },
-            "Advanced Features": { description: "Optional features for advanced 2D rendering effects.", color: "#FA855F" },
-            "Post-Processing": { description: "Additional render passes for effects like blur or color grading.", color: "#FA855F" },
-            "Render Targets": { description: "Intermediate images for post-processing or multi-pass rendering.", color: "#FA855F" },
-            "Compute Shaders": { description: "Shaders for general-purpose GPU computing, used in advanced effects.", color: "#FA855F" },
-            "Sparse Resources": { description: "Optimizes memory usage for large textures, optional for efficiency.", color: "#FA855F" },
-            "Dynamic Rendering (VK_KHR_dynamic_rendering)": { description: "Modern rendering approach without render passes, for advanced use.", color: "#FA855F" },
-            "Memory Pools (Advanced vk-mem management)": { description: "Advanced memory allocation strategies for performance.", color: "#FA855F" }
+            "Vulkan API": { description: "The root of the Vulkan graphics API, providing low-level access to GPU hardware for rendering." },
+            "Instance": { description: "The Vulkan instance is the connection between the application and the Vulkan library, managing global state." },
+            "Validation Layers": { description: "Optional layers for debugging and validating Vulkan API usage, useful during development." },
+            "Debug Utilities (VK_EXT_debug_utils)": { description: "Extension for advanced debugging, allowing custom error messages and callbacks." },
+            "Instance Extensions": { description: "Extensions to the Vulkan instance, enabling additional functionality like surface creation." },
+            "VK_KHR_surface": { description: "Extension for creating a surface to render to a window or display." },
+            "VK_EXT_debug_utils (Instance Extension)": { description: "Extension for debug utilities, used with validation layers for detailed error reporting (specifically as an instance extension)." },
+            "Physical Devices": { description: "Represents the physical GPUs available, queried for properties and features." },
+            "Device Features": { description: "Specific capabilities of a physical device, like texture compression or geometry shaders." },
+            "Device Extensions": { description: "Extensions for the logical device, enabling features like swapchains." },
+            "VK_KHR_swapchain": { description: "Extension for creating swapchains, allowing presentation of rendered images." },
+            "VK_KHR_multisampling": { description: "Extension for multisampling, improving image quality by reducing aliasing (optional)." },
+            "Logical Device": { description: "An abstraction of a physical device, managing queues and resources for rendering." },
+            "Queues": { description: "Handles for submitting commands to the GPU, including graphics and presentation." },
+            "Graphics Queue": { description: "Queue for submitting graphics and compute commands, essential for rendering." },
+            "Present Queue": { description: "Queue for presenting rendered images to the surface, required for display." },
+            "Command Pools": { description: "Manages memory for command buffers, used to record rendering commands." },
+            "Memory Management": { description: "Handles allocation and management of GPU memory for resources." },
+            "Vulkan Memory Allocator (vk-mem)": { description: "A library simplifying memory allocation for Vulkan resources." },
+            "Surface": { description: "A platform-specific object representing a window or display for rendering." },
+            "VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)": { description: "The surface object created for a specific window system (e.g., Win32, XCB)." },
+            "Swapchain": { description: "Manages a queue of images for rendering and presenting to the surface." },
+            "Swapchain Images": { description: "Images managed by the swapchain, used as render targets." },
+            "Image Views (Swapchain)": { description: "Views of swapchain images, specifying how they are accessed for rendering or presentation." },
+            "Framebuffers": { description: "Collections of image views used as render targets for a render pass." },
+            "Render Pass": { description: "Defines a sequence of rendering operations, including attachments and subpasses." },
+            "Attachments": { description: "Images (e.g., color, depth) used as inputs or outputs in a render pass." },
+            "Color Attachment (Swapchain Image)": { description: "The primary render target for 2D rendering, typically a swapchain image." },
+            "Depth/Stencil Attachment": { description: "Optional attachment for depth testing or stencil operations in 2D." },
+            "Subpasses": { description: "Individual rendering stages within a render pass, defining attachment usage." },
+            "Dependencies": { description: "Rules for synchronizing subpasses, ensuring correct rendering order." },
+            "Descriptor Set Layouts": { description: "Defines the structure of descriptor sets for resource binding." },
+            "Descriptor Pools": { description: "Manages memory for allocating descriptor sets." },
+            "Pipeline": { description: "Configures the GPU’s rendering pipeline, including shaders and state." },
+            "Shader Modules": { description: "Compiled SPIR-V shaders for vertex and fragment processing." },
+            "Vertex Shader (2D transformations)": { description: "Processes 2D vertex data, applying transformations like scaling or rotation." },
+            "Fragment Shader (Texture sampling, color)": { description: "Samples textures and computes pixel colors for 2D rendering." },
+            "Pipeline Layout": { description: "Defines resources (descriptors, push constants) accessible to shaders." },
+            "Descriptor Sets": { description: "Binds resources like textures or buffers to shaders." },
+            "Push Constants (Transformations, colors)": { description: "Small, fast data (e.g., matrices, colors) passed to shaders." },
+            "Graphics State": { description: "Configures fixed-function stages like rasterization and blending." },
+            "Vertex Input (2D geometry)": { description: "Defines how 2D vertex data is fed into the pipeline." },
+            "Rasterization": { description: "Converts 2D geometry into fragments for pixel processing." },
+            "Color Blending (Alpha blending)": { description: "Combines fragment colors, enabling transparency via alpha blending." },
+            "Depth/Stencil Testing": { description: "Optional testing for depth or stencil, rarely used in 2D." },
+            "Multisampling": { description: "Reduces aliasing via multiple samples per pixel, optional for 2D." },
+            "Dynamic State (Viewport, Scissor)": { description: "Dynamically adjustable states like viewport size, optional for flexibility." },
+            "Pipeline Cache": { description: "Stores compiled pipelines for faster recreation, optional for performance." },
+            "Resources": { description: "Manages GPU resources like buffers and images for rendering." },
+            "Buffers": { description: "Memory for storing vertex, index, or uniform data." },
+            "Vertex Buffer (2D geometry)": { description: "Stores 2D vertex data like positions and texture coordinates." },
+            "Index Buffer (Triangles/Quads)": { description: "Defines triangle or quad connectivity for 2D geometry." },
+            "Uniform Buffer (Transformations, colors)": { description: "Stores per-draw data like transformation matrices or colors." },
+            "Images": { description: "GPU memory for storing textures or render targets." },
+            "Texture Images (Sprites, Atlas)": { description: "Images for 2D sprites or texture atlases, sampled in shaders." },
+            "Image Views (General Textures)": { description: "Views of texture images, specifying how they are accessed for sampling." },
+            "Depth/Stencil Image": { description: "Optional image for depth or stencil data, rarely used in 2D." },
+            "Samplers (Texture sampling)": { description: "Defines how textures are sampled (e.g., filtering, wrapping) in shaders." },
+            "Synchronization": { description: "Mechanisms to coordinate GPU and CPU operations." },
+            "Semaphores (Image acquisition, rendering)": { description: "Synchronizes rendering and presentation, e.g., for swapchain images." },
+            "Fences (CPU-GPU sync)": { description: "Synchronizes CPU and GPU, ensuring commands complete." },
+            "Events": { description: "Fine-grained synchronization within command buffers, optional for complex cases." },
+            "Command Buffers": { description: "Records sequences of rendering commands for submission to the GPU." },
+            "Primary Command Buffers": { description: "Main command buffers submitted to queues for rendering." },
+            "Secondary Command Buffers": { description: "Reusable command buffers for subroutines, optional for modularity." },
+            "Recording Operations": { description: "Commands recorded into buffers, like binding resources or drawing." },
+            "Bind Pipeline": { description: "Binds the rendering pipeline to a command buffer." },
+            "Bind Descriptor Sets": { description: "Binds descriptor sets to make resources available to shaders." },
+            "Bind Vertex/Index Buffers": { description: "Binds vertex and index buffers for geometry rendering." },
+            "Draw Commands": { description: "Issues draw calls to render 2D geometry." },
+            "Image Layout Transitions": { description: "Changes image layouts (e.g., for rendering or sampling)." },
+            "Pipeline Barriers": { description: "Synchronizes access to resources between pipeline stages." },
+            "Pipeline Stages (Vertex, Fragment)": { description: "Stages of the pipeline (e.g., vertex, fragment) for synchronization." },
+            "Memory Barriers": { description: "Ensures correct ordering of memory operations." },
+            "Advanced Features": { description: "Optional features for advanced 2D rendering effects." },
+            "Post-Processing": { description: "Additional render passes for effects like blur or color grading." },
+            "Render Targets": { description: "Intermediate images for post-processing or multi-pass rendering." },
+            "Compute Shaders": { description: "Shaders for general-purpose GPU computing, used in advanced effects." },
+            "Sparse Resources": { description: "Optimizes memory usage for large textures, optional for efficiency." },
+            "Dynamic Rendering (VK_KHR_dynamic_rendering)": { description: "Modern rendering approach without render passes, for advanced use." },
+            "Memory Pools (Advanced vk-mem management)": { description: "Advanced memory allocation strategies for performance." }
         };
 
-        console.log("Script starting. componentInfo object:", componentInfo); // Debug: Check if script runs and object is loaded
+        let currentSelectedItemLi = null;
 
-        document.querySelectorAll('.tree-column li').forEach(item => {
-            // Ensure the item actually has the data-component attribute
-            // This check is good practice, though in your HTML all <li> seem to have it.
-            if (item.hasAttribute('data-component')) {
-                item.addEventListener('click', (event) => {
-                    console.log("Item clicked:", item.getAttribute('data-component')); // Debug: Check which item was clicked
-                    event.stopPropagation(); // Prevent event from bubbling to parent LIs
+        function clearAllHighlights() {
+            document.querySelectorAll('.tree-column li').forEach(liEl => {
+                liEl.classList.remove('selected-item-dark-li');
+                liEl.classList.remove('parent-highlight-li');
+            });
+        }
 
-                    const component = item.getAttribute('data-component');
-                    const info = componentInfo[component] || { description: `Information for "${component}" not found.`, color: "#FF0000" }; // Fallback
-                    
-                    const textArea = document.getElementById('info-text');
-                    if (textArea) {
-                        textArea.value = `${component}\n\n${info.description}`;
-                        textArea.style.color = info.color;
-                    } else {
-                        console.error("Textarea with ID 'info-text' not found!"); // Debug: Error if textarea is missing
-                    }
+        function applyParentHighlight(liElement) {
+            liElement.classList.add('parent-highlight-li');
+            const childUls = liElement.querySelectorAll(':scope > ul');
+            childUls.forEach(ul => {
+                const childrenLis = ul.querySelectorAll(':scope > li');
+                childrenLis.forEach(childLi => {
+                    applyParentHighlight(childLi);
                 });
-            } else {
-                // console.warn("List item found without 'data-component':", item.textContent.trim()); // Debug: Items missing the attribute
-            }
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const allTreeLIs = document.querySelectorAll('.tree-column li');
+
+            allTreeLIs.forEach(li => {
+                const originalTextNodes = Array.from(li.childNodes).filter(node => node.nodeType === Node.TEXT_NODE && node.nodeValue.trim() !== '');
+                const originalText = originalTextNodes.length > 0 ? originalTextNodes[0].nodeValue.trim() : 'Error: No text';
+                
+                const dataComponent = li.getAttribute('data-component');
+                const originalLiClasses = li.className.split(' ');
+                let categoryClass = '';
+                if (originalLiClasses.includes('essential')) categoryClass = 'essential-text';
+                else if (originalLiClasses.includes('secondary')) categoryClass = 'secondary-text';
+                else if (originalLiClasses.includes('advanced')) categoryClass = 'advanced-text';
+                else if (originalLiClasses.includes('other')) categoryClass = 'other-text';
+
+                const itemRow = document.createElement('div');
+                itemRow.classList.add('tree-item-row');
+
+                const toggle = document.createElement('span');
+                toggle.classList.add('tree-toggle');
+                
+                const contentSpan = document.createElement('span');
+                contentSpan.classList.add('tree-item-content');
+                if (categoryClass) {
+                    contentSpan.classList.add(categoryClass);
+                }
+                contentSpan.textContent = originalText;
+                
+                itemRow.appendChild(toggle);
+                itemRow.appendChild(contentSpan);
+
+                const childUl = li.querySelector(':scope > ul');
+                
+                while (li.firstChild) {
+                    li.removeChild(li.firstChild);
+                }
+                li.appendChild(itemRow);
+                if (childUl) {
+                    li.appendChild(childUl);
+                    childUl.style.display = 'block'; 
+                }
+
+                if (dataComponent) {
+                    contentSpan.addEventListener('click', (event) => {
+                        event.stopPropagation(); 
+                        clearAllHighlights();
+                        applyParentHighlight(li); 
+                        li.classList.add('selected-item-dark-li'); 
+                        currentSelectedItemLi = li;
+
+                        const component = dataComponent;
+                        const info = componentInfo[component] || { description: `No information available for "${component}".`};
+                        const textArea = document.getElementById('info-text');
+                        textArea.value = `${component}\n\n${info.description}`;
+                    });
+                }
+
+                const nestedUl = li.querySelector(':scope > ul');
+                if (nestedUl) {
+                    toggle.textContent = '[-]';
+                    toggle.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        const isCollapsed = nestedUl.style.display === 'none';
+                        nestedUl.style.display = isCollapsed ? 'block' : 'none';
+                        toggle.textContent = isCollapsed ? '[-]' : '[+]';
+                    });
+                } else {
+                    toggle.innerHTML = ' ';
+                    toggle.style.cursor = 'default';
+                    toggle.style.visibility = 'hidden';
+                }
+            });
         });
-        console.log("Script finished attaching listeners."); // Debug: Confirm script completion
     </script>
 </body>
 </html>
