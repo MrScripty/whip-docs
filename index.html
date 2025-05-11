@@ -8,7 +8,7 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #F5F4F2;
-            color: #333333; /* Default body text, can be overridden */
+            color: #333333;
             margin: 0;
             min-height: 100vh;
             display: flex;
@@ -16,7 +16,7 @@
         }
         h1 {
             text-align: center;
-            color: #637C8A; /* Slate Blue for heading */
+            color: #637C8A;
             margin: 20px 0;
             font-weight: 300;
             padding: 0 15px;
@@ -32,26 +32,48 @@
             border-radius: 8px;
             flex-direction: row;
         }
-        .tree-column, .info-column {
+
+        .tree-column {
+            flex: 1;
+            overflow-y: auto; 
+            position: relative; 
+            background-color: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+            padding: 0; 
+        }
+
+        .branch-indicator-bar-area {
+            position: absolute;
+            left: 0;
+            top: 0; 
+            width: 8px; 
+            z-index: 1; 
+        }
+        .bar-segment {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            transition: top 0.15s ease-out, height 0.15s ease-out;
+        }
+
+        .tree-content-wrapper { 
+            margin-left: 18px; /* bar width (8px) + desired gap (10px) */
+            padding: 20px 20px 20px 0; /* Top Right Bottom Left (NO left padding here) */
+            position: relative; 
+        }
+        
+        .info-column {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
             box-sizing: border-box;
             background-color: #ffffff;
-        }
-        .tree-column {
-            border-right: 1px solid #e0e0e0;
-            border-top-left-radius: 8px;
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 0;
-        }
-        .info-column {
             display: flex;
             flex-direction: column;
             border-top-right-radius: 8px;
             border-bottom-right-radius: 8px;
-            border-top-left-radius: 0;
-            border-left: 0;
         }
 
         @media (max-width: 768px) {
@@ -64,11 +86,11 @@
                 border-right: none;
                 border-bottom: 1px solid #e0e0e0;
                 border-radius: 8px 8px 0 0;
-                max-height: 45vh; /* Slightly more height for tree */
+                max-height: 45vh;
             }
             .info-column {
                 border-radius: 0 0 8px 8px;
-                max-height: 45vh; /* Adjusted for balance */
+                max-height: 45vh;
             }
         }
 
@@ -76,7 +98,7 @@
             flex: 1;
             background: none;
             border: 1px solid #dddddd;
-            color: #637C8A; /* CONSISTENT COLOR FOR INFO TEXT */
+            color: #637C8A;
             font-family: 'Consolas', 'Courier New', Courier, monospace;
             font-size: 14px;
             padding: 15px;
@@ -87,17 +109,16 @@
             min-height: 100px;
         }
 
-        /* Tree Styling */
-        .tree-column ul {
+        .tree-content-wrapper ul {
             list-style: none;
             padding-left: 0;
             margin: 0;
         }
-        .tree-column ul ul {
+        .tree-content-wrapper ul ul {
             padding-left: 20px;
         }
 
-        .tree-column li {
+        .tree-content-wrapper li {
             position: relative;
             padding: 0;
             cursor: default;
@@ -111,32 +132,33 @@
             display: flex;
             align-items: center;
             padding: 4px 0;
+            position: relative;
+            z-index: 2; 
         }
 
-        /* Tree Connector Lines */
-        .tree-column li > .tree-item-row::before {
-            content: "";
-            position: absolute;
-            left: -12px; 
-            top: 0;
-            bottom: 0; 
-            width: 1px;
-            background-color: #cccccc;
-        }
-        .tree-column li:last-child > .tree-item-row::before {
-            height: 15px; 
-        }
-        .tree-column li > .tree-item-row::after {
+        .tree-content-wrapper ul ul > li > .tree-item-row::before {
             content: "";
             position: absolute;
             left: -12px;
-            top: 14px; 
-            width: 12px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: #cccccc;
+        }
+        .tree-content-wrapper ul ul > li:last-child > .tree-item-row::before {
+            height: 15px;
+        }
+        .tree-content-wrapper ul ul > li > .tree-item-row::after {
+            content: "";
+            position: absolute;
+            left: -12px;
+            top: 14px;
+            width: 10px;
             height: 1px;
             background-color: #cccccc;
         }
-        .tree-column > ul > li > .tree-item-row::before,
-        .tree-column > ul > li > .tree-item-row::after {
+        .tree-content-wrapper > ul > li > .tree-item-row::before,
+        .tree-content-wrapper > ul > li > .tree-item-row::after {
             display: none;
         }
 
@@ -145,17 +167,15 @@
             padding: 2px 5px;
             border-radius: 3px;
             cursor: pointer;
-            margin-left: 0px;
             flex-grow: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             color: #333333; 
         }
-        .tree-column li .tree-item-row:not(.parent-highlight-li):not(.selected-item-dark-li):hover > .tree-item-content {
+        .tree-content-wrapper li .tree-item-row:not(.parent-highlight-li-row):not(.selected-item-dark-li-row):hover > .tree-item-content {
             background-color: #e9f5ff; 
         }
-
 
         .tree-toggle {
             cursor: pointer;
@@ -175,42 +195,33 @@
             background-color: #d0e0f0;
         }
 
-        /* Category Colors for Tree Item Text */
-        .tree-item-content.essential-text { color: #16c59d; } /* UPDATED COLOR */
+        .tree-item-content.essential-text { color: #16c59d; }
         .tree-item-content.secondary-text { color: #BA8675; }
         .tree-item-content.advanced-text { color: #FA855F; }
         .tree-item-content.other-text { color: #76A59A; }
 
-
-        /* Green highlight for selected item and its descendants' ROW */
-        .tree-column li.parent-highlight-li > .tree-item-row {
-            background-color: #e6ffe6; 
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row {
+            background-color: #e6ffe6;
         }
-        .tree-column li.parent-highlight-li > .tree-item-row:hover {
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row:hover {
             background-color: #d9ffd9;
         }
-        /* Ensure category text color is still visible on parent-highlight */
-        .tree-column li.parent-highlight-li > .tree-item-row > .tree-item-content.essential-text { color: #16c59d; } /* UPDATED COLOR */
-        .tree-column li.parent-highlight-li > .tree-item-row > .tree-item-content.secondary-text { color: #BA8675; }
-        .tree-column li.parent-highlight-li > .tree-item-row > .tree-item-content.advanced-text { color: #FA855F; }
-        .tree-column li.parent-highlight-li > .tree-item-row > .tree-item-content.other-text { color: #76A59A; }
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.essential-text { color: #16c59d; }
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.secondary-text { color: #BA8675; }
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.advanced-text { color: #FA855F; }
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.other-text { color: #76A59A; }
 
-
-        /* Dark highlight for the specifically selected item's ROW */
-        .tree-column li.selected-item-dark-li > .tree-item-row {
-            background-color: #637C8A !important; 
+        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row {
+            background-color: #637C8A !important;
         }
-        /* Text color for the dark selected item */
-        .tree-column li.selected-item-dark-li > .tree-item-row > .tree-item-content {
-            color: #ffffff !important; 
+        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row > .tree-item-content {
+            color: #ffffff !important;
             font-weight: 500;
         }
-        .tree-column li.selected-item-dark-li > .tree-item-row:hover {
+        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row:hover {
             background-color: #526570 !important;
         }
 
-
-        /* Scrollbar Styling */
         .tree-column::-webkit-scrollbar,
         .info-column::-webkit-scrollbar { width: 8px; }
         .tree-column::-webkit-scrollbar-track,
@@ -219,184 +230,187 @@
         .info-column::-webkit-scrollbar-thumb { background-color: #b0b0b0; border-radius: 10px; border: 2px solid #ececec; }
         .tree-column::-webkit-scrollbar-thumb:hover,
         .info-column::-webkit-scrollbar-thumb:hover { background-color: #637C8A; }
-        .tree-column, .info-column { scrollbar-width: thin; scrollbar-color: #b0b0b0 #ececec; }
-
+        .tree-column,
+        .info-column { scrollbar-width: thin; scrollbar-color: #b0b0b0 #ececec; }
     </style>
 </head>
 <body>
     <h1>Vulkan 2D Rendering Engine Hierarchy</h1>
     <div class="container">
         <div class="tree-column">
-            <!-- HTML structure for tree items -->
-            <!-- Original classes on LI: essential, secondary, advanced, other -->
-            <ul>
-                <li class="essential" data-component="Vulkan API">Vulkan API
-                    <ul>
-                        <li class="essential" data-component="Instance">Instance
-                            <ul>
-                                <li class="secondary" data-component="Validation Layers">Validation Layers</li>
-                                <li class="secondary" data-component="Debug Utilities (VK_EXT_debug_utils)">Debug Utilities (VK_EXT_debug_utils)</li>
-                                <li class="essential" data-component="Instance Extensions">Instance Extensions
-                                    <ul>
-                                        <li class="essential" data-component="VK_KHR_surface">VK_KHR_surface</li>
-                                        <li class="secondary" data-component="VK_EXT_debug_utils (Instance Extension)">VK_EXT_debug_utils (Instance Extension)</li>
-                                    </ul>
-                                </li>
-                                <li class="essential" data-component="Physical Devices">Physical Devices
-                                    <ul>
-                                        <li class="essential" data-component="Device Features">Device Features</li>
-                                        <li class="essential" data-component="Device Extensions">Device Extensions
-                                            <ul>
-                                                <li class="essential" data-component="VK_KHR_swapchain">VK_KHR_swapchain</li>
-                                                <li class="secondary" data-component="VK_KHR_multisampling">VK_KHR_multisampling</li>
-                                            </ul>
-                                        </li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="essential" data-component="Logical Device">Logical Device
-                            <ul>
-                                <li class="essential" data-component="Queues">Queues
-                                    <ul>
-                                        <li class="essential" data-component="Graphics Queue">Graphics Queue</li>
-                                        <li class="essential" data-component="Present Queue">Present Queue</li>
-                                    </ul>
-                                </li>
-                                <li class="essential" data-component="Command Pools">Command Pools</li>
-                                <li class="other" data-component="Memory Management">Memory Management
-                                    <ul>
-                                        <li class="other" data-component="Vulkan Memory Allocator (vk-mem)">Vulkan Memory Allocator (vk-mem)</li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="essential" data-component="Surface">Surface
-                            <ul>
-                                <li class="essential" data-component="VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)">VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)</li>
-                            </ul>
-                        </li>
-                        <li class="essential" data-component="Swapchain">Swapchain
-                            <ul>
-                                <li class="essential" data-component="Swapchain Images">Swapchain Images</li>
-                                <li class="essential" data-component="Image Views (Swapchain)">Image Views (Swapchain)</li>
-                                <li class="essential" data-component="Framebuffers">Framebuffers</li>
-                            </ul>
-                        </li>
-                        <li class="essential" data-component="Render Pass">Render Pass
-                            <ul>
-                                <li class="essential" data-component="Attachments">Attachments
-                                    <ul>
-                                        <li class="essential" data-component="Color Attachment (Swapchain Image)">Color Attachment (Swapchain Image)</li>
-                                        <li class="secondary" data-component="Depth/Stencil Attachment">Depth/Stencil Attachment</li>
-                                    </ul>
-                                </li>
-                                <li class="essential" data-component="Subpasses">Subpasses</li>
-                                <li class="essential" data-component="Dependencies">Dependencies</li>
-                            </ul>
-                        </li>
-                        <li class="essential" data-component="Descriptor Set Layouts">Descriptor Set Layouts
-                            <ul>
-                                <li class="essential" data-component="Descriptor Pools">Descriptor Pools</li>
-                            </ul>
-                        </li>
-                        <li class="essential" data-component="Pipeline">Pipeline
-                            <ul>
-                                <li class="essential" data-component="Shader Modules">Shader Modules
-                                    <ul>
-                                        <li class="essential" data-component="Vertex Shader (2D transformations)">Vertex Shader (2D transformations)</li>
-                                        <li class="essential" data-component="Fragment Shader (Texture sampling, color)">Fragment Shader (Texture sampling, color)</li>
-                                    </ul>
-                                </li>
-                                <li class="essential" data-component="Pipeline Layout">Pipeline Layout
-                                    <ul>
-                                        <li class="essential" data-component="Descriptor Sets">Descriptor Sets</li>
-                                        <li class="essential" data-component="Push Constants (Transformations, colors)">Push Constants (Transformations, colors)</li>
-                                    </ul>
-                                </li>
-                                <li class="essential" data-component="Graphics State">Graphics State
-                                    <ul>
-                                        <li class="essential" data-component="Vertex Input (2D geometry)">Vertex Input (2D geometry)</li>
-                                        <li class="essential" data-component="Rasterization">Rasterization</li>
-                                        <li class="essential" data-component="Color Blending (Alpha blending)">Color Blending (Alpha blending)</li>
-                                        <li class="secondary" data-component="Depth/Stencil Testing">Depth/Stencil Testing</li>
-                                        <li class="secondary" data-component="Multisampling">Multisampling</li>
-                                        <li class="secondary" data-component="Dynamic State (Viewport, Scissor)">Dynamic State (Viewport, Scissor)</li>
-                                    </ul>
-                                </li>
-                                <li class="secondary" data-component="Pipeline Cache">Pipeline Cache</li>
-                            </ul>
-                        </li>
-                        <li class="essential" data-component="Resources">Resources
-                            <ul>
-                                <li class="essential" data-component="Buffers">Buffers
-                                    <ul>
-                                        <li class="essential" data-component="Vertex Buffer (2D geometry)">Vertex Buffer (2D geometry)</li>
-                                        <li class="essential" data-component="Index Buffer (Triangles/Quads)">Index Buffer (Triangles/Quads)</li>
-                                        <li class="essential" data-component="Uniform Buffer (Transformations, colors)">Uniform Buffer (Transformations, colors)</li>
-                                    </ul>
-                                </li>
-                                <li class="essential" data-component="Images">Images
-                                    <ul>
-                                        <li class="essential" data-component="Texture Images (Sprites, Atlas)">Texture Images (Sprites, Atlas)</li>
-                                        <li class="essential" data-component="Image Views (General Textures)">Image Views (General Textures)</li>
-                                        <li class="secondary" data-component="Depth/Stencil Image">Depth/Stencil Image</li>
-                                    </ul>
-                                </li>
-                                <li class="essential" data-component="Samplers (Texture sampling)">Samplers (Texture sampling)</li>
-                            </ul>
-                        </li>
-                        <li class="essential" data-component="Synchronization">Synchronization
-                            <ul>
-                                <li class="essential" data-component="Semaphores (Image acquisition, rendering)">Semaphores (Image acquisition, rendering)</li>
-                                <li class="essential" data-component="Fences (CPU-GPU sync)">Fences (CPU-GPU sync)</li>
-                                <li class="secondary" data-component="Events">Events</li>
-                            </ul>
-                        </li>
-                        <li class="essential" data-component="Command Buffers">Command Buffers
-                            <ul>
-                                <li class="essential" data-component="Primary Command Buffers">Primary Command Buffers</li>
-                                <li class="secondary" data-component="Secondary Command Buffers">Secondary Command Buffers</li>
-                                <li class="essential" data-component="Recording Operations">Recording Operations
-                                    <ul>
-                                        <li class="essential" data-component="Bind Pipeline">Bind Pipeline</li>
-                                        <li class="essential" data-component="Bind Descriptor Sets">Bind Descriptor Sets</li>
-                                        <li class="essential" data-component="Bind Vertex/Index Buffers">Bind Vertex/Index Buffers</li>
-                                        <li class="essential" data-component="Draw Commands">Draw Commands</li>
-                                        <li class="essential" data-component="Image Layout Transitions">Image Layout Transitions</li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="essential" data-component="Pipeline Barriers">Pipeline Barriers
-                            <ul>
-                                <li class="essential" data-component="Pipeline Stages (Vertex, Fragment)">Pipeline Stages (Vertex, Fragment)</li>
-                                <li class="essential" data-component="Memory Barriers">Memory Barriers</li>
-                            </ul>
-                        </li>
-                        <li class="advanced" data-component="Advanced Features">Advanced Features
-                            <ul>
-                                <li class="advanced" data-component="Post-Processing">Post-Processing
-                                    <ul>
-                                        <li class="advanced" data-component="Render Targets">Render Targets</li>
-                                        <li class="advanced" data-component="Compute Shaders">Compute Shaders</li>
-                                    </ul>
-                                </li>
-                                <li class="advanced" data-component="Sparse Resources">Sparse Resources</li>
-                                <li class="advanced" data-component="Dynamic Rendering (VK_KHR_dynamic_rendering)">Dynamic Rendering (VK_KHR_dynamic_rendering)</li>
-                                <li class="advanced" data-component="Memory Pools (Advanced vk-mem management)">Memory Pools (Advanced vk-mem management)</li>
-                            </ul>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
+            <div class="branch-indicator-bar-area">
+                <!-- Bar segments will be injected here by JavaScript -->
+            </div>
+            <div class="tree-content-wrapper">
+                <ul>
+                    <li class="essential" data-component="Vulkan API">Vulkan API
+                        <ul>
+                            <li class="essential" data-component="Instance">Instance
+                                <ul>
+                                    <li class="secondary" data-component="Validation Layers">Validation Layers</li>
+                                    <li class="secondary" data-component="Debug Utilities (VK_EXT_debug_utils)">Debug Utilities (VK_EXT_debug_utils)</li>
+                                    <li class="essential" data-component="Instance Extensions">Instance Extensions
+                                        <ul>
+                                            <li class="essential" data-component="VK_KHR_surface">VK_KHR_surface</li>
+                                            <li class="secondary" data-component="VK_EXT_debug_utils (Instance Extension)">VK_EXT_debug_utils (Instance Extension)</li>
+                                        </ul>
+                                    </li>
+                                    <li class="essential" data-component="Physical Devices">Physical Devices
+                                        <ul>
+                                            <li class="essential" data-component="Device Features">Device Features</li>
+                                            <li class="essential" data-component="Device Extensions">Device Extensions
+                                                <ul>
+                                                    <li class="essential" data-component="VK_KHR_swapchain">VK_KHR_swapchain</li>
+                                                    <li class="secondary" data-component="VK_KHR_multisampling">VK_KHR_multisampling</li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="essential" data-component="Logical Device">Logical Device
+                                <ul>
+                                    <li class="essential" data-component="Queues">Queues
+                                        <ul>
+                                            <li class="essential" data-component="Graphics Queue">Graphics Queue</li>
+                                            <li class="essential" data-component="Present Queue">Present Queue</li>
+                                        </ul>
+                                    </li>
+                                    <li class="essential" data-component="Command Pools">Command Pools</li>
+                                    <li class="other" data-component="Memory Management">Memory Management
+                                        <ul>
+                                            <li class="other" data-component="Vulkan Memory Allocator (vk-mem)">Vulkan Memory Allocator (vk-mem)</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="essential" data-component="Surface">Surface
+                                <ul>
+                                    <li class="essential" data-component="VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)">VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)</li>
+                                </ul>
+                            </li>
+                            <li class="essential" data-component="Swapchain">Swapchain
+                                <ul>
+                                    <li class="essential" data-component="Swapchain Images">Swapchain Images</li>
+                                    <li class="essential" data-component="Image Views (Swapchain)">Image Views (Swapchain)</li>
+                                    <li class="essential" data-component="Framebuffers">Framebuffers</li>
+                                </ul>
+                            </li>
+                            <li class="essential" data-component="Render Pass">Render Pass
+                                <ul>
+                                    <li class="essential" data-component="Attachments">Attachments
+                                        <ul>
+                                            <li class="essential" data-component="Color Attachment (Swapchain Image)">Color Attachment (Swapchain Image)</li>
+                                            <li class="secondary" data-component="Depth/Stencil Attachment">Depth/Stencil Attachment</li>
+                                        </ul>
+                                    </li>
+                                    <li class="essential" data-component="Subpasses">Subpasses</li>
+                                    <li class="essential" data-component="Dependencies">Dependencies</li>
+                                </ul>
+                            </li>
+                            <li class="essential" data-component="Descriptor Set Layouts">Descriptor Set Layouts
+                                <ul>
+                                    <li class="essential" data-component="Descriptor Pools">Descriptor Pools</li>
+                                </ul>
+                            </li>
+                            <li class="essential" data-component="Pipeline">Pipeline
+                                <ul>
+                                    <li class="essential" data-component="Shader Modules">Shader Modules
+                                        <ul>
+                                            <li class="essential" data-component="Vertex Shader (2D transformations)">Vertex Shader (2D transformations)</li>
+                                            <li class="essential" data-component="Fragment Shader (Texture sampling, color)">Fragment Shader (Texture sampling, color)</li>
+                                        </ul>
+                                    </li>
+                                    <li class="essential" data-component="Pipeline Layout">Pipeline Layout
+                                        <ul>
+                                            <li class="essential" data-component="Descriptor Sets">Descriptor Sets</li>
+                                            <li class="essential" data-component="Push Constants (Transformations, colors)">Push Constants (Transformations, colors)</li>
+                                        </ul>
+                                    </li>
+                                    <li class="essential" data-component="Graphics State">Graphics State
+                                        <ul>
+                                            <li class="essential" data-component="Vertex Input (2D geometry)">Vertex Input (2D geometry)</li>
+                                            <li class="essential" data-component="Rasterization">Rasterization</li>
+                                            <li class="essential" data-component="Color Blending (Alpha blending)">Color Blending (Alpha blending)</li>
+                                            <li class="secondary" data-component="Depth/Stencil Testing">Depth/Stencil Testing</li>
+                                            <li class="secondary" data-component="Multisampling">Multisampling</li>
+                                            <li class="secondary" data-component="Dynamic State (Viewport, Scissor)">Dynamic State (Viewport, Scissor)</li>
+                                        </ul>
+                                    </li>
+                                    <li class="secondary" data-component="Pipeline Cache">Pipeline Cache</li>
+                                </ul>
+                            </li>
+                            <li class="essential" data-component="Resources">Resources
+                                <ul>
+                                    <li class="essential" data-component="Buffers">Buffers
+                                        <ul>
+                                            <li class="essential" data-component="Vertex Buffer (2D geometry)">Vertex Buffer (2D geometry)</li>
+                                            <li class="essential" data-component="Index Buffer (Triangles/Quads)">Index Buffer (Triangles/Quads)</li>
+                                            <li class="essential" data-component="Uniform Buffer (Transformations, colors)">Uniform Buffer (Transformations, colors)</li>
+                                        </ul>
+                                    </li>
+                                    <li class="essential" data-component="Images">Images
+                                        <ul>
+                                            <li class="essential" data-component="Texture Images (Sprites, Atlas)">Texture Images (Sprites, Atlas)</li>
+                                            <li class="essential" data-component="Image Views (General Textures)">Image Views (General Textures)</li>
+                                            <li class="secondary" data-component="Depth/Stencil Image">Depth/Stencil Image</li>
+                                        </ul>
+                                    </li>
+                                    <li class="essential" data-component="Samplers (Texture sampling)">Samplers (Texture sampling)</li>
+                                </ul>
+                            </li>
+                            <li class="essential" data-component="Synchronization">Synchronization
+                                <ul>
+                                    <li class="essential" data-component="Semaphores (Image acquisition, rendering)">Semaphores (Image acquisition, rendering)</li>
+                                    <li class="essential" data-component="Fences (CPU-GPU sync)">Fences (CPU-GPU sync)</li>
+                                    <li class="secondary" data-component="Events">Events</li>
+                                </ul>
+                            </li>
+                            <li class="essential" data-component="Command Buffers">Command Buffers
+                                <ul>
+                                    <li class="essential" data-component="Primary Command Buffers">Primary Command Buffers</li>
+                                    <li class="secondary" data-component="Secondary Command Buffers">Secondary Command Buffers</li>
+                                    <li class="essential" data-component="Recording Operations">Recording Operations
+                                        <ul>
+                                            <li class="essential" data-component="Bind Pipeline">Bind Pipeline</li>
+                                            <li class="essential" data-component="Bind Descriptor Sets">Bind Descriptor Sets</li>
+                                            <li class="essential" data-component="Bind Vertex/Index Buffers">Bind Vertex/Index Buffers</li>
+                                            <li class="essential" data-component="Draw Commands">Draw Commands</li>
+                                            <li class="essential" data-component="Image Layout Transitions">Image Layout Transitions</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="essential" data-component="Pipeline Barriers">Pipeline Barriers
+                                <ul>
+                                    <li class="essential" data-component="Pipeline Stages (Vertex, Fragment)">Pipeline Stages (Vertex, Fragment)</li>
+                                    <li class="essential" data-component="Memory Barriers">Memory Barriers</li>
+                                </ul>
+                            </li>
+                            <li class="advanced" data-component="Advanced Features">Advanced Features
+                                <ul>
+                                    <li class="advanced" data-component="Post-Processing">Post-Processing
+                                        <ul>
+                                            <li class="advanced" data-component="Render Targets">Render Targets</li>
+                                            <li class="advanced" data-component="Compute Shaders">Compute Shaders</li>
+                                        </ul>
+                                    </li>
+                                    <li class="advanced" data-component="Sparse Resources">Sparse Resources</li>
+                                    <li class="advanced" data-component="Dynamic Rendering (VK_KHR_dynamic_rendering)">Dynamic Rendering (VK_KHR_dynamic_rendering)</li>
+                                    <li class="advanced" data-component="Memory Pools (Advanced vk-mem management)">Memory Pools (Advanced vk-mem management)</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
         </div>
         <div class="info-column">
             <textarea id="info-text" readonly>Select a component from the tree to view its description.</textarea>
         </div>
     </div>
     <script>
-        const componentInfo = {
+        const componentInfo = { /* Your componentInfo object */
             "Vulkan API": { description: "The root of the Vulkan graphics API, providing low-level access to GPU hardware for rendering." },
             "Instance": { description: "The Vulkan instance is the connection between the application and the Vulkan library, managing global state." },
             "Validation Layers": { description: "Optional layers for debugging and validating Vulkan API usage, useful during development." },
@@ -481,9 +495,10 @@
         };
 
         let currentSelectedItemLi = null;
+        const barColors = ['#637C8A', '#88CDF5']; 
 
         function clearAllHighlights() {
-            document.querySelectorAll('.tree-column li').forEach(liEl => {
+            document.querySelectorAll('.tree-content-wrapper li').forEach(liEl => {
                 liEl.classList.remove('selected-item-dark-li');
                 liEl.classList.remove('parent-highlight-li');
             });
@@ -499,9 +514,65 @@
                 });
             });
         }
+
+        function updateBranchIndicatorBar() {
+            const barArea = document.querySelector('.branch-indicator-bar-area');
+            const treeContentWrapper = document.querySelector('.tree-content-wrapper');
+            const treeRootUl = treeContentWrapper ? treeContentWrapper.querySelector('ul') : null;
+
+            if (!barArea || !treeRootUl || !treeContentWrapper) {
+                console.error("Tree structure for bar not found.");
+                return;
+            }
+
+            barArea.innerHTML = ''; 
+
+            const firstTopLevelLi = treeRootUl.querySelector(':scope > li');
+            if (!firstTopLevelLi) {
+                console.error("First top-level LI ('Vulkan API') not found.");
+                return;
+            }
+
+            const mainBranchesParentUl = firstTopLevelLi.querySelector(':scope > ul'); 
+            if (!mainBranchesParentUl) {
+                console.warn("No main branches UL found under 'Vulkan API'. Creating a single bar segment for 'Vulkan API'.");
+                const segment = document.createElement('div');
+                segment.classList.add('bar-segment');
+                const wrapperPaddingTop = parseFloat(getComputedStyle(treeContentWrapper).paddingTop) || 0;
+                
+                segment.style.top = (firstTopLevelLi.offsetTop + wrapperPaddingTop) + 'px';
+                segment.style.height = firstTopLevelLi.offsetHeight + 'px';
+                segment.style.backgroundColor = barColors[0];
+                barArea.appendChild(segment);
+                barArea.style.height = treeContentWrapper.scrollHeight + 'px';
+                return;
+            }
+            
+            const mainBranchLis = Array.from(mainBranchesParentUl.children).filter(node => node.tagName === 'LI');
+            const wrapperPaddingTop = parseFloat(getComputedStyle(treeContentWrapper).paddingTop) || 0;
+
+            mainBranchLis.forEach((li, index) => {
+                const segment = document.createElement('div');
+                segment.classList.add('bar-segment');
+                
+                segment.style.top = (li.offsetTop + wrapperPaddingTop) + 'px'; 
+                segment.style.height = li.offsetHeight + 'px';
+                segment.style.backgroundColor = barColors[index % barColors.length];
+                
+                barArea.appendChild(segment);
+            });
+            
+            barArea.style.height = treeContentWrapper.scrollHeight + 'px';
+        }
         
         document.addEventListener('DOMContentLoaded', () => {
-            const allTreeLIs = document.querySelectorAll('.tree-column li');
+            const treeContentWrapper = document.querySelector('.tree-content-wrapper');
+            if (!treeContentWrapper) {
+                console.error("Tree content wrapper not found.");
+                return;
+            }
+
+            const allTreeLIs = treeContentWrapper.querySelectorAll('li');
 
             allTreeLIs.forEach(li => {
                 const originalTextNodes = Array.from(li.childNodes).filter(node => node.nodeType === Node.TEXT_NODE && node.nodeValue.trim() !== '');
@@ -534,11 +605,16 @@
                 const childUl = li.querySelector(':scope > ul');
                 
                 while (li.firstChild) {
+                    if (li.firstChild.nodeName === 'UL') break; 
                     li.removeChild(li.firstChild);
                 }
-                li.appendChild(itemRow);
+                if (li.firstChild && li.firstChild.nodeName === 'UL') {
+                    li.insertBefore(itemRow, li.firstChild);
+                } else {
+                    li.appendChild(itemRow);
+                }
+                
                 if (childUl) {
-                    li.appendChild(childUl);
                     childUl.style.display = 'block'; 
                 }
 
@@ -565,6 +641,7 @@
                         const isCollapsed = nestedUl.style.display === 'none';
                         nestedUl.style.display = isCollapsed ? 'block' : 'none';
                         toggle.textContent = isCollapsed ? '[-]' : '[+]';
+                        requestAnimationFrame(updateBranchIndicatorBar); 
                     });
                 } else {
                     toggle.innerHTML = ' ';
@@ -572,6 +649,8 @@
                     toggle.style.visibility = 'hidden';
                 }
             });
+
+            updateBranchIndicatorBar(); 
         });
     </script>
 </body>
