@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulkan 2D Rendering Engine Hierarchy</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            text-align: center;
+            color: #ffffff;
+        }
+        .tree {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+        li {
+            position: relative;
+            padding-left: 20px;
+        }
+        li:before {
+            content: '├──';
+            position: absolute;
+            left: 0;
+            color: #888;
+        }
+        li:last-child:before {
+            content: '└──';
+        }
+        .essential {
+            color: #5FFAD6;
+        }
+        .secondary {
+            color: #BA8675;
+        }
+        .advanced {
+            color: #FA855F;
+        }
+        .other {
+            color: #76A59A;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vulkan 2D Rendering Engine Hierarchy</h1>
+    <div class="tree">
+        <ul>
+            <li class="essential">Vulkan API
+                <ul>
+                    <li class="essential">Instance
+                        <ul>
+                            <li class="secondary">Validation Layers</li>
+                            <li class="secondary">Debug Utilities (VK_EXT_debug_utils)</li>
+                            <li class="essential">Instance Extensions
+                                <ul>
+                                    <li class="essential">VK_KHR_surface</li>
+                                    <li class="secondary">VK_EXT_debug_utils</li>
+                                </ul>
+                            </li>
+                            <li class="essential">Physical Devices
+                                <ul>
+                                    <li class="essential">Device Features</li>
+                                    <li class="essential">Device Extensions
+                                        <ul>
+                                            <li class="essential">VK_KHR_swapchain</li>
+                                            <li class="secondary">VK_KHR_multisampling</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="essential">Logical Device
+                        <ul>
+                            <li class="essential">Queues
+                                <ul>
+                                    <li class="essential">Graphics Queue</li>
+                                    <li class="essential">Present Queue</li>
+                                </ul>
+                            </li>
+                            <li class="essential">Command Pools</li>
+                            <li class="other">Memory Management
+                                <ul>
+                                    <li class="other">Vulkan Memory Allocator (vk-mem)</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="essential">Surface
+                        <ul>
+                            <li class="essential">VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)</li>
+                        </ul>
+                    </li>
+                    <li class="essential">Swapchain
+                        <ul>
+                            <li class="essential">Swapchain Images</li>
+                            <li class="essential">Image Views</li>
+                            <li class="essential">Framebuffers</li>
+                        </ul>
+                    </li>
+                    <li class="essential">Render Pass
+                        <ul>
+                            <li class="essential">Attachments
+                                <ul>
+                                    <li class="essential">Color Attachment (Swapchain Image)</li>
+                                    <li class="secondary">Depth/Stencil Attachment</li>
+                                </ul>
+                            </li>
+                            <li class="essential">Subpasses</li>
+                            <li class="essential">Dependencies</li>
+                        </ul>
+                    </li>
+                    <li class="essential">Descriptor Set Layouts
+                        <ul>
+                            <li class="essential">Descriptor Pools</li>
+                        </ul>
+                    </li>
+                    <li class="essential">Pipeline
+                        <ul>
+                            <li class="essential">Shader Modules
+                                <ul>
+                                    <li class="essential">Vertex Shader (2D transformations)</li>
+                                    <li class="essential">Fragment Shader (Texture sampling, color)</li>
+                                </ul>
+                            </li>
+                            <li class="essential">Pipeline Layout
+                                <ul>
+                                    <li class="essential">Descriptor Sets</li>
+                                    <li class="essential">Push Constants (Transformations, colors)</li>
+                                </ul>
+                            </li>
+                            <li class="essential">Graphics State
+                                <ul>
+                                    <li class="essential">Vertex Input (2D geometry)</li>
+                                    <li class="essential">Rasterization</li>
+                                    <li class="essential">Color Blending (Alpha blending)</li>
+                                    <li class="secondary">Depth/Stencil Testing</li>
+                                    <li class="secondary">Multisampling</li>
+                                    <li class="secondary">Dynamic State (Viewport, Scissor)</li>
+                                </ul>
+                            </li>
+                            <li class="secondary">Pipeline Cache</li>
+                        </ul>
+                    </li>
+                    <li class="essential">Resources
+                        <ul>
+                            <li class="essential">Buffers
+                                <ul>
+                                    <li class="essential">Vertex Buffer (2D geometry)</li>
+                                    <li class="essential">Index Buffer (Triangles/Quads)</li>
+                                    <li class="essential">Uniform Buffer (Transformations, colors)</li>
+                                </ul>
+                            </li>
+                            |   <li class="essential">Images
+                                <ul>
+                                    <li class="essential">Texture Images (Sprites, Atlas)</li>
+                                    <li class="essential">Image Views</li>
+                                    <li class="secondary">Depth/Stencil Image</li>
+                                </ul>
+                            </li>
+                            <li class="essential">Samplers (Texture sampling)</li>
+                        </ul>
+                    </li>
+                    <li class="essential">Synchronization
+                        <ul>
+                            <li class="essential">Semaphores (Image acquisition, rendering)</li>
+                            <li class="essential">Fences (CPU-GPU sync)</li>
+                            <li class="secondary">Events</li>
+                        </ul>
+                    </li>
+                    <li class="essential">Command Buffers
+                        <ul>
+                            <li class="essential">Primary Command Buffers</li>
+                            <li class="secondary">Secondary Command Buffers</li>
+                            <li class="essential">Recording Operations
+                                <ul>
+                                    <li class="essential">Bind Pipeline</li>
+                                    <li class="essential">Bind Descriptor Sets</li>
+                                    <li class="essential">Bind Vertex/Index Buffers</li>
+                                    <li class="essential">Draw Commands</li>
+                                    <li class="essential">Image Layout Transitions</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="essential">Pipeline Barriers
+                        <ul>
+                            <li class="essential">Pipeline Stages (Vertex, Fragment)</li>
+                            <li class="essential">Memory Barriers</li>
+                        </ul>
+                    </li>
+                    <li class="advanced">Advanced Features
+                        <ul>
+                            <li class="advanced">Post-Processing
+                                <ul>
+                                    <li class="advanced">Render Targets</li>
+                                    <li class="advanced">Compute Shaders</li>
+                                </ul>
+                            </li>
+                            <li class="advanced">Sparse Resources</li>
+                            <li class="advanced">Dynamic Rendering (VK_KHR_dynamic_rendering)</li>
+                            <li class="advanced">Memory Pools (Advanced vk-mem management)</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</body>
+</html>
