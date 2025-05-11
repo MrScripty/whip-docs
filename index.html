@@ -9,24 +9,61 @@
             font-family: 'Courier New', Courier, monospace;
             background-color: #1e1e1e;
             color: #ffffff;
-            margin: 20px;
-            line-height: 1.5;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         h1 {
             text-align: center;
             color: #ffffff;
+            margin: 20px 0;
         }
-        .tree {
-            max-width: 800px;
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            max-width: 1200px;
             margin: 0 auto;
+        }
+        .tree-column, .info-column {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .tree-column {
+            border-right: 1px solid #444;
+        }
+        .info-column {
+            background-color: #2a2a2a;
+            display: flex;
+            flex-direction: column;
+        }
+        #info-text {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            padding: 10px;
+            resize: none;
+            outline: none;
         }
         ul {
             list-style: none;
             padding-left: 20px;
+            margin: 0;
         }
         li {
             position: relative;
             padding-left: 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+        li:hover {
+            background-color: #333;
         }
         li:before {
             content: '├──';
@@ -37,184 +74,275 @@
         li:last-child:before {
             content: '└──';
         }
-        .essential {
-            color: #5FFAD6;
-        }
-        .secondary {
-            color: #BA8675;
-        }
-        .advanced {
-            color: #FA855F;
-        }
-        .other {
-            color: #76A59A;
-        }
+        .essential { color: #5FFAD6; }
+        .secondary { color: #BA8675; }
+        .advanced { color: #FA855F; }
+        .other { color: #76A59A; }
     </style>
 </head>
 <body>
     <h1>Vulkan 2D Rendering Engine Hierarchy</h1>
-    <div class="tree">
-        <ul>
-            <li class="essential">Vulkan API
-                <ul>
-                    <li class="essential">Instance
-                        <ul>
-                            <li class="secondary">Validation Layers</li>
-                            <li class="secondary">Debug Utilities (VK_EXT_debug_utils)</li>
-                            <li class="essential">Instance Extensions
-                                <ul>
-                                    <li class="essential">VK_KHR_surface</li>
-                                    <li class="secondary">VK_EXT_debug_utils</li>
-                                </ul>
-                            </li>
-                            <li class="essential">Physical Devices
-                                <ul>
-                                    <li class="essential">Device Features</li>
-                                    <li class="essential">Device Extensions
-                                        <ul>
-                                            <li class="essential">VK_KHR_swapchain</li>
-                                            <li class="secondary">VK_KHR_multisampling</li>
-                                        </ul>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="essential">Logical Device
-                        <ul>
-                            <li class="essential">Queues
-                                <ul>
-                                    <li class="essential">Graphics Queue</li>
-                                    <li class="essential">Present Queue</li>
-                                </ul>
-                            </li>
-                            <li class="essential">Command Pools</li>
-                            <li class="other">Memory Management
-                                <ul>
-                                    <li class="other">Vulkan Memory Allocator (vk-mem)</li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="essential">Surface
-                        <ul>
-                            <li class="essential">VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)</li>
-                        </ul>
-                    </li>
-                    <li class="essential">Swapchain
-                        <ul>
-                            <li class="essential">Swapchain Images</li>
-                            <li class="essential">Image Views</li>
-                            <li class="essential">Framebuffers</li>
-                        </ul>
-                    </li>
-                    <li class="essential">Render Pass
-                        <ul>
-                            <li class="essential">Attachments
-                                <ul>
-                                    <li class="essential">Color Attachment (Swapchain Image)</li>
-                                    <li class="secondary">Depth/Stencil Attachment</li>
-                                </ul>
-                            </li>
-                            <li class="essential">Subpasses</li>
-                            <li class="essential">Dependencies</li>
-                        </ul>
-                    </li>
-                    <li class="essential">Descriptor Set Layouts
-                        <ul>
-                            <li class="essential">Descriptor Pools</li>
-                        </ul>
-                    </li>
-                    <li class="essential">Pipeline
-                        <ul>
-                            <li class="essential">Shader Modules
-                                <ul>
-                                    <li class="essential">Vertex Shader (2D transformations)</li>
-                                    <li class="essential">Fragment Shader (Texture sampling, color)</li>
-                                </ul>
-                            </li>
-                            <li class="essential">Pipeline Layout
-                                <ul>
-                                    <li class="essential">Descriptor Sets</li>
-                                    <li class="essential">Push Constants (Transformations, colors)</li>
-                                </ul>
-                            </li>
-                            <li class="essential">Graphics State
-                                <ul>
-                                    <li class="essential">Vertex Input (2D geometry)</li>
-                                    <li class="essential">Rasterization</li>
-                                    <li class="essential">Color Blending (Alpha blending)</li>
-                                    <li class="secondary">Depth/Stencil Testing</li>
-                                    <li class="secondary">Multisampling</li>
-                                    <li class="secondary">Dynamic State (Viewport, Scissor)</li>
-                                </ul>
-                            </li>
-                            <li class="secondary">Pipeline Cache</li>
-                        </ul>
-                    </li>
-                    <li class="essential">Resources
-                        <ul>
-                            <li class="essential">Buffers
-                                <ul>
-                                    <li class="essential">Vertex Buffer (2D geometry)</li>
-                                    <li class="essential">Index Buffer (Triangles/Quads)</li>
-                                    <li class="essential">Uniform Buffer (Transformations, colors)</li>
-                                </ul>
-                            </li>
-                            |   <li class="essential">Images
-                                <ul>
-                                    <li class="essential">Texture Images (Sprites, Atlas)</li>
-                                    <li class="essential">Image Views</li>
-                                    <li class="secondary">Depth/Stencil Image</li>
-                                </ul>
-                            </li>
-                            <li class="essential">Samplers (Texture sampling)</li>
-                        </ul>
-                    </li>
-                    <li class="essential">Synchronization
-                        <ul>
-                            <li class="essential">Semaphores (Image acquisition, rendering)</li>
-                            <li class="essential">Fences (CPU-GPU sync)</li>
-                            <li class="secondary">Events</li>
-                        </ul>
-                    </li>
-                    <li class="essential">Command Buffers
-                        <ul>
-                            <li class="essential">Primary Command Buffers</li>
-                            <li class="secondary">Secondary Command Buffers</li>
-                            <li class="essential">Recording Operations
-                                <ul>
-                                    <li class="essential">Bind Pipeline</li>
-                                    <li class="essential">Bind Descriptor Sets</li>
-                                    <li class="essential">Bind Vertex/Index Buffers</li>
-                                    <li class="essential">Draw Commands</li>
-                                    <li class="essential">Image Layout Transitions</li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="essential">Pipeline Barriers
-                        <ul>
-                            <li class="essential">Pipeline Stages (Vertex, Fragment)</li>
-                            <li class="essential">Memory Barriers</li>
-                        </ul>
-                    </li>
-                    <li class="advanced">Advanced Features
-                        <ul>
-                            <li class="advanced">Post-Processing
-                                <ul>
-                                    <li class="advanced">Render Targets</li>
-                                    <li class="advanced">Compute Shaders</li>
-                                </ul>
-                            </li>
-                            <li class="advanced">Sparse Resources</li>
-                            <li class="advanced">Dynamic Rendering (VK_KHR_dynamic_rendering)</li>
-                            <li class="advanced">Memory Pools (Advanced vk-mem management)</li>
-                        </ul>
-                    </li>
-                </ul>
-            </li>
-        </ul>
+    <div class="container">
+        <div class="tree-column">
+            <ul>
+                <li class="essential" data-component="Vulkan API">Vulkan API
+                    <ul>
+                        <li class="essential" data-component="Instance">Instance
+                            <ul>
+                                <li class="secondary" data-component="Validation Layers">Validation Layers</li>
+                                <li class="secondary" data-component="Debug Utilities (VK_EXT_debug_utils)">Debug Utilities (VK_EXT_debug_utils)</li>
+                                <li class="essential" data-component="Instance Extensions">Instance Extensions
+                                    <ul>
+                                        <li class="essential" data-component="VK_KHR_surface">VK_KHR_surface</li>
+                                        <li class="secondary" data-component="VK_EXT_debug_utils">VK_EXT_debug_utils</li>
+                                    </ul>
+                                </li>
+                                <li class="essential" data-component="Physical Devices">Physical Devices
+                                    <ul>
+                                        <li class="essential" data-component="Device Features">Device Features</li>
+                                        <li class="essential" data-component="Device Extensions">Device Extensions
+                                            <ul>
+                                                <li class="essential" data-component="VK_KHR_swapchain">VK_KHR_swapchain</li>
+                                                <li class="secondary" data-component="VK_KHR_multisampling">VK_KHR_multisampling</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="essential" data-component="Logical Device">Logical Device
+                            <ul>
+                                <li class="essential" data-component="Queues">Queues
+                                    <ul>
+                                        <li class="essential" data-component="Graphics Queue">Graphics Queue</li>
+                                        <li class="essential" data-component="Present Queue">Present Queue</li>
+                                    </ul>
+                                </li>
+                                <li class="essential" data-component="Command Pools">Command Pools</li>
+                                <li class="other" data-component="Memory Management">Memory Management
+                                    <ul>
+                                        <li class="other" data-component="Vulkan Memory Allocator (vk-mem)">Vulkan Memory Allocator (vk-mem)</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="essential" data-component="Surface">Surface
+                            <ul>
+                                <li class="essential" data-component="VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)">VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)</li>
+                            </ul>
+                        </li>
+                        <li class="essential" data-component="Swapchain">Swapchain
+                            <ul>
+                                <li class="essential" data-component="Swapchain Images">Swapchain Images</li>
+                                <li class="essential" data-component="Image Views">Image Views</li>
+                                <li class="essential" data-component="Framebuffers">Framebuffers</li>
+                            </ul>
+                        </li>
+                        <li class="essential" data-component="Render Pass">Render Pass
+                            <ul>
+                                <li class="essential" data-component="Attachments">Attachments
+                                    <ul>
+                                        <li class="essential" data-component="Color Attachment (Swapchain Image)">Color Attachment (Swapchain Image)</li>
+                                        <li class="secondary" data-component="Depth/Stencil Attachment">Depth/Stencil Attachment</li>
+                                    </ul>
+                                </li>
+                                <li class="essential" data-component="Subpasses">Subpasses</li>
+                                <li class="essential" data-component="Dependencies">Dependencies</li>
+                            </ul>
+                        </li>
+                        <li class="essential" data-component="Descriptor Set Layouts">Descriptor Set Layouts
+                            <ul>
+                                <li class="essential" data-component="Descriptor Pools">Descriptor Pools</li>
+                            </ul>
+                        </li>
+                        <li class="essential" data-component="Pipeline">Pipeline
+                            <ul>
+                                <li class="essential" data-component="Shader Modules">Shader Modules
+                                    <ul>
+                                        <li class="essential" data-component="Vertex Shader (2D transformations)">Vertex Shader (2D transformations)</li>
+                                        <li class="essential" data-component="Fragment Shader (Texture sampling, color)">Fragment Shader (Texture sampling, color)</li>
+                                    </ul>
+                                </li>
+                                <li class="essential" data-component="Pipeline Layout">Pipeline Layout
+                                    <ul>
+                                        <li class="essential" data-component="Descriptor Sets">Descriptor Sets</li>
+                                        <li class="essential" data-component="Push Constants (Transformations, colors)">Push Constants (Transformations, colors)</li>
+                                    </ul>
+                                </li>
+                                <li class="essential" data-component="Graphics State">Graphics State
+                                    <ul>
+                                        <li class="essential" data-component="Vertex Input (2D geometry)">Vertex Input (2D geometry)</li>
+                                        <li class="essential" data-component="Rasterization">Rasterization</li>
+                                        <li class="essential" data-component="Color Blending (Alpha blending)">Color Blending (Alpha blending)</li>
+                                        <li class="secondary" data-component="Depth/Stencil Testing">Depth/Stencil Testing</li>
+                                        <li class="secondary" data-component="Multisampling">Multisampling</li>
+                                        <li class="secondary" data-component="Dynamic State (Viewport, Scissor)">Dynamic State (Viewport, Scissor)</li>
+                                    </ul>
+                                </li>
+                                <li class="secondary" data-component="Pipeline Cache">Pipeline Cache</li>
+                            </ul>
+                        </li>
+                        <li class="essential" data-component="Resources">Resources
+                            <ul>
+                                <li class="essential" data-component="Buffers">Buffers
+                                    <ul>
+                                        <li class="essential" data-component="Vertex Buffer (2D geometry)">Vertex Buffer (2D geometry)</li>
+                                        <li class="essential" data-component="Index Buffer (Triangles/Quads)">Index Buffer (Triangles/Quads)</li>
+                                        <li class="essential" data-component="Uniform Buffer (Transformations, colors)">Uniform Buffer (Transformations, colors)</li>
+                                    </ul>
+                                </li>
+                                <li class="essential" data-component="Images">Images
+                                    <ul>
+                                        <li class="essential" data-component="Texture Images (Sprites, Atlas)">Texture Images (Sprites, Atlas)</li>
+                                        <li class="essential" data-component="Image Views">Image Views</li>
+                                        <li class="secondary" data-component="Depth/Stencil Image">Depth/Stencil Image</li>
+                                    </ul>
+                                </li>
+                                <li class="essential" data-component="Samplers (Texture sampling)">Samplers (Texture sampling)</li>
+                            </ul>
+                        </li>
+                        <li class="essential" data-component="Synchronization">Synchronization
+                            <ul>
+                                <li class="essential" data-component="Semaphores (Image acquisition, rendering)">Semaphores (Image acquisition, rendering)</li>
+                                <li class="essential" data-component="Fences (CPU-GPU sync)">Fences (CPU-GPU sync)</li>
+                                <li class="secondary" data-component="Events">Events</li>
+                            </ul>
+                        </li>
+                        <li class="essential" data-component="Command Buffers">Command Buffers
+                            <ul>
+                                <li class="essential" data-component="Primary Command Buffers">Primary Command Buffers</li>
+                                <li class="secondary" data-component="Secondary Command Buffers">Secondary Command Buffers</li>
+                                <li class="essential" data-component="Recording Operations">Recording Operations
+                                    <ul>
+                                        <li class="essential" data-component="Bind Pipeline">Bind Pipeline</li>
+                                        <li class="essential" data-component="Bind Descriptor Sets">Bind Descriptor Sets</li>
+                                        <li class="essential" data-component="Bind Vertex/Index Buffers">Bind Vertex/Index Buffers</li>
+                                        <li class="essential" data-component="Draw Commands">Draw Commands</li>
+                                        <li class="essential" data-component="Image Layout Transitions">Image Layout Transitions</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="essential" data-component="Pipeline Barriers">Pipeline Barriers
+                            <ul>
+                                <li class="essential" data-component="Pipeline Stages (Vertex, Fragment)">Pipeline Stages (Vertex, Fragment)</li>
+                                <li class="essential" data-component="Memory Barriers">Memory Barriers</li>
+                            </ul>
+                        </li>
+                        <li class="advanced" data-component="Advanced Features">Advanced Features
+                            <ul>
+                                <li class="advanced" data-component="Post-Processing">Post-Processing
+                                    <ul>
+                                        <li class="advanced" data-component="Render Targets">Render Targets</li>
+                                        <li class="advanced" data-component="Compute Shaders">Compute Shaders</li>
+                                    </ul>
+                                </li>
+                                <li class="advanced" data-component="Sparse Resources">Sparse Resources</li>
+                                <li class="advanced" data-component="Dynamic Rendering (VK_KHR_dynamic_rendering)">Dynamic Rendering (VK_KHR_dynamic_rendering)</li>
+                                <li class="advanced" data-component="Memory Pools (Advanced vk-mem management)">Memory Pools (Advanced vk-mem management)</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="info-column">
+            <textarea id="info-text" readonly>Select a component from the tree to view its description.</textarea>
+        </div>
     </div>
+    <script>
+        const componentInfo = {
+            "Vulkan API": { description: "The root of the Vulkan graphics API, providing low-level access to GPU hardware for rendering.", color: "#5FFAD6" },
+            "Instance": { description: "The Vulkan instance is the connection between the application and the Vulkan library, managing global state.", color: "#5FFAD6" },
+            "Validation Layers": { description: "Optional layers for debugging and validating Vulkan API usage, useful during development.", color: "#BA8675" },
+            "Debug Utilities (VK_EXT_debug_utils)": { description: "Extension for advanced debugging, allowing custom error messages and callbacks.", color: "#BA8675" },
+            "Instance Extensions": { description: "Extensions to the Vulkan instance, enabling additional functionality like surface creation.", color: "#5FFAD6" },
+            "VK_KHR_surface": { description: "Extension for creating a surface to render to a window or display.", color: "#5FFAD6" },
+            "VK_EXT_debug_utils": { description: "Extension for debug utilities, used with validation layers for detailed error reporting.", color: "#BA8675" },
+            "Physical Devices": { description: "Represents the physical GPUs available, queried for properties and features.", color: "#5FFAD6" },
+            "Device Features": { description: "Specific capabilities of a physical device, like texture compression or geometry shaders.", color: "#5FFAD6" },
+            "Device Extensions": { description: "Extensions for the logical device, enabling features like swapchains.", color: "#5FFAD6" },
+            "VK_KHR_swapchain": { description: "Extension for creating swapchains, allowing presentation of rendered images.", color: "#5FFAD6" },
+            "VK_KHR_multisampling": { description: "Extension for multisampling, improving image quality by reducing aliasing (optional).", color: "#BA8675" },
+            "Logical Device": { description: "An abstraction of a physical device, managing queues and resources for rendering.", color: "#5FFAD6" },
+            "Queues": { description: "Handles for submitting commands to the GPU, including graphics and presentation.", color: "#5FFAD6" },
+            "Graphics Queue": { description: "Queue for submitting graphics and compute commands, essential for rendering.", color: "#5FFAD6" },
+            "Present Queue": { description: "Queue for presenting rendered images to the surface, required for display.", color: "#5FFAD6" },
+            "Command Pools": { description: "Manages memory for command buffers, used to record rendering commands.", color: "#5FFAD6" },
+            "Memory Management": { description: "Handles allocation and management of GPU memory for resources.", color: "#76A59A" },
+            "Vulkan Memory Allocator (vk-mem)": { description: "A library simplifying memory allocation for Vulkan resources.", color: "#76A59A" },
+            "Surface": { description: "A platform-specific object representing a window or display for rendering.", color: "#5FFAD6" },
+            "VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)": { description: "The surface object created for a specific window system (e.g., Win32, XCB).", color: "#5FFAD6" },
+            "Swapchain": { description: "Manages a queue of images for rendering and presenting to the surface.", color: "#5FFAD6" },
+            "Swapchain Images": { description: "Images managed by the swapchain, used as render targets.", color: "#5FFAD6" },
+            "Image Views": { description: "Views of swapchain or texture images, specifying how they are accessed.", color: "#5FFAD6" },
+            "Framebuffers": { description: "Collections of image views used as render targets for a render pass.", color: "#5FFAD6" },
+            "Render Pass": { description: "Defines a sequence of rendering operations, including attachments and subpasses.", color: "#5FFAD6" },
+            "Attachments": { description: "Images (e.g., color, depth) used as inputs or outputs in a render pass.", color: "#5FFAD6" },
+            "Color Attachment (Swapchain Image)": { description: "The primary render target for 2D rendering, typically a swapchain image.", color: "#5FFAD6" },
+            "Depth/Stencil Attachment": { description: "Optional attachment for depth testing or stencil operations in 2D.", color: "#BA8675" },
+            "Subpasses": { description: "Individual rendering stages within a render pass, defining attachment usage.", color: "#5FFAD6" },
+            "Dependencies": { description: "Rules for synchronizing subpasses, ensuring correct rendering order.", color: "#5FFAD6" },
+            "Descriptor Set Layouts": { description: "Defines the structure of descriptor sets for resource binding.", color: "#5FFAD6" },
+            "Descriptor Pools": { description: "Manages memory for allocating descriptor sets.", color: "#5FFAD6" },
+            "Pipeline": { description: "Configures the GPU’s rendering pipeline, including shaders and state.", color: "#5FFAD6" },
+            "Shader Modules": { description: "Compiled SPIR-V shaders for vertex and fragment processing.", color: "#5FFAD6" },
+            "Vertex Shader (2D transformations)": { description: "Processes 2D vertex data, applying transformations like scaling or rotation.", color: "#5FFAD6" },
+            "Fragment Shader (Texture sampling, color)": { description: "Samples textures and computes pixel colors for 2D rendering.", color: "#5FFAD6" },
+            "Pipeline Layout": { description: "Defines resources (descriptors, push constants) accessible to shaders.", color: "#5FFAD6" },
+            "Descriptor Sets": { description: "Binds resources like textures or buffers to shaders.", color: "#5FFAD6" },
+            "Push Constants (Transformations, colors)": { description: "Small, fast data (e.g., matrices, colors) passed to shaders.", color: "#5FFAD6" },
+            "Graphics State": { description: "Configures fixed-function stages like rasterization and blending.", color: "#5FFAD6" },
+            "Vertex Input (2D geometry)": { description: "Defines how 2D vertex data is fed into the pipeline.", color: "#5FFAD6" },
+            "Rasterization": { description: "Converts 2D geometry into fragments for pixel processing.", color: "#5FFAD6" },
+            "Color Blending (Alpha blending)": { description: "Combines fragment colors, enabling transparency via alpha blending.", color: "#5FFAD6" },
+            "Depth/Stencil Testing": { description: "Optional testing for depth or stencil, rarely used in 2D.", color: "#BA8675" },
+            "Multisampling": { description: "Reduces aliasing via multiple samples per pixel, optional for 2D.", color: "#BA8675" },
+            "Dynamic State (Viewport, Scissor)": { description: "Dynamically adjustable states like viewport size, optional for flexibility.", color: "#BA8675" },
+            "Pipeline Cache": { description: "Stores compiled pipelines for faster recreation, optional for performance.", color: "#BA8675" },
+            "Resources": { description: "Manages GPU resources like buffers and images for rendering.", color: "#5FFAD6" },
+            "Buffers": { description: "Memory for storing vertex, index, or uniform data.", color: "#5FFAD6" },
+            "Vertex Buffer (2D geometry)": { description: "Stores 2D vertex data like positions and texture coordinates.", color: "#5FFAD6" },
+            "Index Buffer (Triangles/Quads)": { description: "Defines triangle or quad connectivity for 2D geometry.", color: "#5FFAD6" },
+            "Uniform Buffer (Transformations, colors)": { description: "Stores per-draw data like transformation matrices or colors.", color: "#5FFAD6" },
+            "Images": { description: "GPU memory for storing textures or render targets.", color: "#5FFAD6" },
+            "Texture Images (Sprites, Atlas)": { description: "Images for 2D sprites or texture atlases, sampled in shaders.", color: "#5FFAD6" },
+            "Depth/Stencil Image": { description: "Optional image for depth or stencil data, rarely used in 2D.", color: "#BA8675" },
+            "Samplers (Texture sampling)": { description: "Defines how textures are sampled (e.g., filtering, wrapping) in shaders.", color: "#5FFAD6" },
+            "Synchronization": { description: "Mechanisms to coordinate GPU and CPU operations.", color: "#5FFAD6" },
+            "Semaphores (Image acquisition, rendering)": { description: "Synchronizes rendering and presentation, e.g., for swapchain images.", color: "#5FFAD6" },
+            "Fences (CPU-GPU sync)": { description: "Synchronizes CPU and GPU, ensuring commands complete.", color: "#5FFAD6" },
+            "Events": { description: "Fine-grained synchronization within command buffers, optional for complex cases.", color: "#BA8675" },
+            "Command Buffers": { description: "Records sequences of rendering commands for submission to the GPU.", color: "#5FFAD6" },
+            "Primary Command Buffers": { description: "Main command buffers submitted to queues for rendering.", color: "#5FFAD6" },
+            "Secondary Command Buffers": { description: "Reusable command buffers for subroutines, optional for modularity.", color: "#BA8675" },
+            "Recording Operations": { description: "Commands recorded into buffers, like binding resources or drawing.", color: "#5FFAD6" },
+            "Bind Pipeline": { description: "Binds the rendering pipeline to a command buffer.", color: "#5FFAD6" },
+            "Bind Descriptor Sets": { description: "Binds descriptor sets to make resources available to shaders.", color: "#5FFAD6" },
+            "Bind Vertex/Index Buffers": { description: "Binds vertex and index buffers for geometry rendering.", color: "#5FFAD6" },
+            "Draw Commands": { description: "Issues draw calls to render 2D geometry.", color: "#5FFAD6" },
+            "Image Layout Transitions": { description: "Changes image layouts (e.g., for rendering or sampling).", color: "#5FFAD6" },
+            "Pipeline Barriers": { description: "Synchronizes access to resources between pipeline stages.", color: "#5FFAD6" },
+            "Pipeline Stages (Vertex, Fragment)": { description: "Stages of the pipeline (e.g., vertex, fragment) for synchronization.", color: "#5FFAD6" },
+            "Memory Barriers": { description: "Ensures correct ordering of memory operations.", color: "#5FFAD6" },
+            "Advanced Features": { description: "Optional features for advanced 2D rendering effects.", color: "#FA855F" },
+            "Post-Processing": { description: "Additional render passes for effects like blur or color grading.", color: "#FA855F" },
+            "Render Targets": { description: "Intermediate images for post-processing or multi-pass rendering.", color: "#FA855F" },
+            "Compute Shaders": { description: "Shaders for general-purpose GPU computing, used in advanced effects.", color: "#FA855F" },
+            "Sparse Resources": { description: "Optimizes memory usage for large textures, optional for efficiency.", color: "#FA855F" },
+            "Dynamic Rendering (VK_KHR_dynamic_rendering)": { description: "Modern rendering approach without render passes, for advanced use.", color: "#FA855F" },
+            "Memory Pools (Advanced vk-mem management)": { description: "Advanced memory allocation strategies for performance.", color: "#FA855F" }
+        };
+
+        document.querySelectorAll('.tree-column li').forEach(item => {
+            item.addEventListener('click', () => {
+                const component = item.getAttribute('data-component');
+                const info = componentInfo[component] || { description: "No information available.", color: "#ffffff" };
+                const textArea = document.getElementById('info-text');
+                textArea.value = `${component}\n\n${info.description}`;
+                textArea.style.color = info.color;
+            });
+        });
+    </script>
 </body>
 </html>
