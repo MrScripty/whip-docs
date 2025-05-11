@@ -22,9 +22,10 @@
         .container {
             display: flex;
             flex: 1;
-            overflow: hidden;
+            overflow: hidden; /* Important for flex children with overflow-y: auto */
             max-width: 1200px;
             margin: 0 auto;
+            width: 100%; /* Ensure container tries to take up width */
         }
         .tree-column, .info-column {
             flex: 1;
@@ -34,22 +35,25 @@
         }
         .tree-column {
             border-right: 1px solid #444;
+            /* max-width: 50%; /* Optional: to prevent it from taking too much space if info-column is small */
         }
         .info-column {
             background-color: #2a2a2a;
             display: flex;
             flex-direction: column;
+            /* max-width: 50%; /* Optional */
         }
         #info-text {
             flex: 1;
             background: none;
             border: none;
-            color: #ffffff;
+            color: #ffffff; /* Default color, will be overridden by JS */
             font-family: 'Courier New', Courier, monospace;
             font-size: 14px;
             padding: 10px;
             resize: none;
             outline: none;
+            white-space: pre-wrap; /* Ensures newlines in the value are rendered */
         }
         ul {
             list-style: none;
@@ -58,22 +62,32 @@
         }
         li {
             position: relative;
-            padding-left: 20px;
+            padding-left: 20px; /* Space for the pseudo-element connector */
+            margin-bottom: 5px; /* Spacing between items */
             cursor: pointer;
             user-select: none;
         }
         li:hover {
             background-color: #333;
         }
-        li:before {
-            content: '├──';
+        /* Basic tree connectors */
+        li::before {
+            content: '├── '; /* Added space for better visual separation */
             position: absolute;
-            left: 0;
+            left: 0px; /* Adjust as needed based on padding */
+            top: 0;
             color: #888;
         }
-        li:last-child:before {
-            content: '└──';
+        li:last-child::before {
+            content: '└── '; /* Added space */
         }
+        /* Hide connector for top-level items if they are direct children of the first UL in .tree-column */
+        .tree-column > ul > li::before {
+            /* content: ''; /* If you want no connector for the very first level items */
+            /* Alternatively, if you always want the first level to have a simple bullet or nothing: */
+            /* For this complex tree, the default connectors are probably fine */
+        }
+
         .essential { color: #5FFAD6; }
         .secondary { color: #BA8675; }
         .advanced { color: #FA855F; }
@@ -194,7 +208,8 @@
                                 <li class="essential" data-component="Images">Images
                                     <ul>
                                         <li class="essential" data-component="Texture Images (Sprites, Atlas)">Texture Images (Sprites, Atlas)</li>
-                                        <li class="essential" data-component="Image Views">Image Views</li>
+                                        <!-- Note: "Image Views" is also under Swapchain. Ensure componentInfo keys are unique or descriptions are specific -->
+                                        <li class="essential" data-component="Image Views">Image Views (for Textures)</li>
                                         <li class="secondary" data-component="Depth/Stencil Image">Depth/Stencil Image</li>
                                     </ul>
                                 </li>
@@ -236,7 +251,7 @@
                                         <li class="advanced" data-component="Render Targets">Render Targets</li>
                                         <li class="advanced" data-component="Compute Shaders">Compute Shaders</li>
                                     </ul>
-                                </li>
+ Pferde</li>
                                 <li class="advanced" data-component="Sparse Resources">Sparse Resources</li>
                                 <li class="advanced" data-component="Dynamic Rendering (VK_KHR_dynamic_rendering)">Dynamic Rendering (VK_KHR_dynamic_rendering)</li>
                                 <li class="advanced" data-component="Memory Pools (Advanced vk-mem management)">Memory Pools (Advanced vk-mem management)</li>
@@ -250,15 +265,17 @@
             <textarea id="info-text" readonly>Select a component from the tree to view its description.</textarea>
         </div>
     </div>
+
     <script>
+        // Ensure this object is syntactically correct and matches your data-component attributes
         const componentInfo = {
             "Vulkan API": { description: "The root of the Vulkan graphics API, providing low-level access to GPU hardware for rendering.", color: "#5FFAD6" },
             "Instance": { description: "The Vulkan instance is the connection between the application and the Vulkan library, managing global state.", color: "#5FFAD6" },
             "Validation Layers": { description: "Optional layers for debugging and validating Vulkan API usage, useful during development.", color: "#BA8675" },
-            "Debug Utilities (VK_EXT_debug_utils)": { description: "Extension for advanced debugging, allowing custom error messages and callbacks.", color: "#BA8675" },
+            "Debug Utilities (VK_EXT_debug_utils)": { description: "Extension for advanced debugging, allowing custom error messages and callbacks. (Instance Level)", color: "#BA8675" },
             "Instance Extensions": { description: "Extensions to the Vulkan instance, enabling additional functionality like surface creation.", color: "#5FFAD6" },
             "VK_KHR_surface": { description: "Extension for creating a surface to render to a window or display.", color: "#5FFAD6" },
-            "VK_EXT_debug_utils": { description: "Extension for debug utilities, used with validation layers for detailed error reporting.", color: "#BA8675" },
+            "VK_EXT_debug_utils": { description: "Instance extension providing debug utilities, used with validation layers for detailed error reporting.", color: "#BA8675" }, // This is a distinct key
             "Physical Devices": { description: "Represents the physical GPUs available, queried for properties and features.", color: "#5FFAD6" },
             "Device Features": { description: "Specific capabilities of a physical device, like texture compression or geometry shaders.", color: "#5FFAD6" },
             "Device Extensions": { description: "Extensions for the logical device, enabling features like swapchains.", color: "#5FFAD6" },
@@ -275,7 +292,7 @@
             "VkSurfaceKHR (Platform-specific, e.g., Win32, XCB)": { description: "The surface object created for a specific window system (e.g., Win32, XCB).", color: "#5FFAD6" },
             "Swapchain": { description: "Manages a queue of images for rendering and presenting to the surface.", color: "#5FFAD6" },
             "Swapchain Images": { description: "Images managed by the swapchain, used as render targets.", color: "#5FFAD6" },
-            "Image Views": { description: "Views of swapchain or texture images, specifying how they are accessed.", color: "#5FFAD6" },
+            "Image Views": { description: "Views of swapchain images, specifying how they are accessed. (Context: Swapchain)", color: "#5FFAD6" },
             "Framebuffers": { description: "Collections of image views used as render targets for a render pass.", color: "#5FFAD6" },
             "Render Pass": { description: "Defines a sequence of rendering operations, including attachments and subpasses.", color: "#5FFAD6" },
             "Attachments": { description: "Images (e.g., color, depth) used as inputs or outputs in a render pass.", color: "#5FFAD6" },
@@ -307,6 +324,7 @@
             "Uniform Buffer (Transformations, colors)": { description: "Stores per-draw data like transformation matrices or colors.", color: "#5FFAD6" },
             "Images": { description: "GPU memory for storing textures or render targets.", color: "#5FFAD6" },
             "Texture Images (Sprites, Atlas)": { description: "Images for 2D sprites or texture atlases, sampled in shaders.", color: "#5FFAD6" },
+            "Image Views (for Textures)": { description: "Views of texture images, specifying how they are accessed. (Context: General Images/Textures)", color: "#5FFAD6" },
             "Depth/Stencil Image": { description: "Optional image for depth or stencil data, rarely used in 2D.", color: "#BA8675" },
             "Samplers (Texture sampling)": { description: "Defines how textures are sampled (e.g., filtering, wrapping) in shaders.", color: "#5FFAD6" },
             "Synchronization": { description: "Mechanisms to coordinate GPU and CPU operations.", color: "#5FFAD6" },
@@ -334,15 +352,32 @@
             "Memory Pools (Advanced vk-mem management)": { description: "Advanced memory allocation strategies for performance.", color: "#FA855F" }
         };
 
+        console.log("Script starting. componentInfo object:", componentInfo); // Debug: Check if script runs and object is loaded
+
         document.querySelectorAll('.tree-column li').forEach(item => {
-            item.addEventListener('click', () => {
-                const component = item.getAttribute('data-component');
-                const info = componentInfo[component] || { description: "No information available.", color: "#ffffff" };
-                const textArea = document.getElementById('info-text');
-                textArea.value = `${component}\n\n${info.description}`;
-                textArea.style.color = info.color;
-            });
+            // Ensure the item actually has the data-component attribute
+            // This check is good practice, though in your HTML all <li> seem to have it.
+            if (item.hasAttribute('data-component')) {
+                item.addEventListener('click', (event) => {
+                    console.log("Item clicked:", item.getAttribute('data-component')); // Debug: Check which item was clicked
+                    event.stopPropagation(); // Prevent event from bubbling to parent LIs
+
+                    const component = item.getAttribute('data-component');
+                    const info = componentInfo[component] || { description: `Information for "${component}" not found.`, color: "#FF0000" }; // Fallback
+                    
+                    const textArea = document.getElementById('info-text');
+                    if (textArea) {
+                        textArea.value = `${component}\n\n${info.description}`;
+                        textArea.style.color = info.color;
+                    } else {
+                        console.error("Textarea with ID 'info-text' not found!"); // Debug: Error if textarea is missing
+                    }
+                });
+            } else {
+                // console.warn("List item found without 'data-component':", item.textContent.trim()); // Debug: Items missing the attribute
+            }
         });
+        console.log("Script finished attaching listeners."); // Debug: Confirm script completion
     </script>
 </body>
 </html>
