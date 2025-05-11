@@ -299,50 +299,19 @@
             "Depth/Stencil Testing": { description: "Optional testing for depth or stencil, rarely used in 2D.", color: "#BA8675" },
             "Multisampling": { description: "Reduces aliasing via multiple samples per pixel, optional for 2D.", color: "#BA8675" },
             "Dynamic State (Viewport, Scissor)": { description: "Dynamically adjustable states like viewport size, optional for flexibility.", color: "#BA8675" },
-            "Pipeline Cache": { description: "Stores compiled pipelines for faster recreation, optional for performance.", color: "#BA8675" },
-            "Resources": { description: "Manages GPU resources like buffers and images for rendering.", color: "#5FFAD6" },
-            "Buffers": { description: "Memory for storing vertex, index, or uniform data.", color: "#5FFAD6" },
-            "Vertex Buffer (2D geometry)": { description: "Stores 2D vertex data like positions and texture coordinates.", color: "#5FFAD6" },
-            "Index Buffer (Triangles/Quads)": { description: "Defines triangle or quad connectivity for 2D geometry.", color: "#5FFAD6" },
-            "Uniform Buffer (Transformations, colors)": { description: "Stores per-draw data like transformation matrices or colors.", color: "#5FFAD6" },
-            "Images": { description: "GPU memory for storing textures or render targets.", color: "#5FFAD6" },
-            "Texture Images (Sprites, Atlas)": { description: "Images for 2D sprites or texture atlases, sampled in shaders.", color: "#5FFAD6" },
-            "Depth/Stencil Image": { description: "Optional image for depth or stencil data, rarely used in 2D.", color: "#BA8675" },
-            "Samplers (Texture sampling)": { description: "Defines how textures are sampled (e.g., filtering, wrapping) in shaders.", color: "#5FFAD6" },
-            "Synchronization": { description: "Mechanisms to coordinate GPU and CPU operations.", color: "#5FFAD6" },
-            "Semaphores (Image acquisition, rendering)": { description: "Synchronizes rendering and presentation, e.g., for swapchain images.", color: "#5FFAD6" },
-            "Fences (CPU-GPU sync)": { description: "Synchronizes CPU and GPU, ensuring commands complete.", color: "#5FFAD6" },
-            "Events": { description: "Fine-grained synchronization within command buffers, optional for complex cases.", color: "#BA8675" },
-            "Command Buffers": { description: "Records sequences of rendering commands for submission to the GPU.", color: "#5FFAD6" },
-            "Primary Command Buffers": { description: "Main command buffers submitted to queues for rendering.", color: "#5FFAD6" },
-            "Secondary Command Buffers": { description: "Reusable command buffers for subroutines, optional for modularity.", color: "#BA8675" },
-            "Recording Operations": { description: "Commands recorded into buffers, like binding resources or drawing.", color: "#5FFAD6" },
-            "Bind Pipeline": { description: "Binds the rendering pipeline to a command buffer.", color: "#5FFAD6" },
-            "Bind Descriptor Sets": { description: "Binds descriptor sets to make resources available to shaders.", color: "#5FFAD6" },
-            "Bind Vertex/Index Buffers": { description: "Binds vertex and index buffers for geometry rendering.", color: "#5FFAD6" },
-            "Draw Commands": { description: "Issues draw calls to render 2D geometry.", color: "#5FFAD6" },
-            "Image Layout Transitions": { description: "Changes image layouts (e.g., for rendering or sampling).", color: "#5FFAD6" },
-            "Pipeline Barriers": { description: "Synchronizes access to resources between pipeline stages.", color: "#5FFAD6" },
-            "Pipeline Stages (Vertex, Fragment)": { description: "Stages of the pipeline (e.g., vertex, fragment) for synchronization.", color: "#5FFAD6" },
-            "Memory Barriers": { description: "Ensures correct ordering of memory operations.", color: "#5FFAD6" },
-            "Advanced Features": { description: "Optional features for advanced 2D rendering effects.", color: "#FA855F" },
-            "Post-Processing": { description: "Additional render passes for effects like blur or color grading.", color: "#FA855F" },
-            "Render Targets": { description: "Intermediate images for post-processing or multi-pass rendering.", color: "#FA855F" },
-            "Compute Shaders": { description: "Shaders for general-purpose GPU computing, used in advanced effects.", color: "#FA855F" },
-            "Sparse Resources": { description: "Optimizes memory usage for large textures, optional for efficiency.", color: "#FA855F" },
-            "Dynamic Rendering (VK_KHR_dynamic_rendering)": { description: "Modern rendering approach without render passes, for advanced use.", color: "#FA855F" },
-            "Memory Pools (Advanced vk-mem management)": { description: "Advanced memory allocation strategies for performance.", color: "#FA855F" }
-        };
-
-        document.querySelectorAll('.tree-column li').forEach(item => {
-            item.addEventListener('click', () => {
-                const component = item.getAttribute('data-component');
-                const info = componentInfo[component] || { description: "No information available.", color: "#ffffff" };
-                const textArea = document.getElementById('info-text');
-                textArea.value = `${component}\n\n${info.description}`;
-                textArea.style.color = info.color;
+            "Pipeline Cache": { description: "Stores compiled pipelines for faster recreationbfc: true;
+                }
             });
-        });
-    </script>
-</body>
+            document.querySelectorAll('.tree-column li').forEach(item => {
+                item.addEventListener('click', (event) => {
+                    const component = event.currentTarget.getAttribute('data-component');
+                    console.log('Clicked component:', component); // For debugging
+                    const info = componentInfo[component] || { description: "No information available.", color: "#ffffff" };
+                    const textArea = document.getElementById('info-text');
+                    textArea.value = `${component}\n\n${info.description}`;
+                    textArea.style.color = info.color;
+                });
+            });
+        </script>
+    </body>
 </html>
