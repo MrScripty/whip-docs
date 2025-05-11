@@ -59,8 +59,8 @@
         }
 
         .tree-content-wrapper { 
-            margin-left: 18px; /* bar width (8px) + desired gap (10px) */
-            padding: 20px 20px 20px 0; /* Top Right Bottom Left (NO left padding here) */
+            margin-left: 18px; 
+            padding: 20px 20px 20px 0; 
             position: relative; 
         }
         
@@ -76,6 +76,32 @@
             border-bottom-right-radius: 8px;
         }
 
+        /* --- Info Tags Bar (Adjusted for compactness) --- */
+        .info-tags-bar {
+            display: flex; 
+            margin-bottom: 8px;    /* Reduced space below */
+            padding: 2px;          /* Significantly reduced padding */
+            background-color: #4F5B66; 
+            border-radius: 4px;  /* Slightly smaller radius */
+            min-height: 24px;    /* Adjusted min-height */
+            box-sizing: border-box;
+            align-items: center; 
+        }
+        .tag-badge {
+            padding: 3px 8px;    /* Padding for the tag itself */
+            border-radius: 3px;  
+            font-size: 0.8em;    
+            font-weight: 500;
+            color: #ffffff; 
+            display: none;       /* Hide all tags by default */
+        }
+        .tag-badge.tag-required { background-color: #16c59d; }
+        .tag-badge.tag-optional { background-color: #BA8675; }
+        .tag-badge.tag-advanced { background-color: #FA855F; }
+        .tag-badge.tag-other { background-color: #76A59A; }
+        /* --- End Info Tags Bar --- */
+
+
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -90,12 +116,21 @@
             }
             .info-column {
                 border-radius: 0 0 8px 8px;
-                max-height: 45vh;
+                max-height: 45vh; 
+            }
+            .info-tags-bar {
+                padding: 2px; /* Keep it minimal on mobile too */
+                min-height: 22px; /* Adjust if needed for smaller font on mobile */
+                margin-bottom: 6px;
+            }
+            .tag-badge {
+                padding: 2px 6px; /* Slightly smaller padding for the tag on mobile */
+                font-size: 0.75em;
             }
         }
 
         #info-text {
-            flex: 1;
+            flex: 1; 
             background: none;
             border: 1px solid #dddddd;
             color: #637C8A;
@@ -106,121 +141,35 @@
             outline: none;
             border-radius: 4px;
             line-height: 1.6;
-            min-height: 100px;
+            min-height: 100px; 
         }
 
-        .tree-content-wrapper ul {
-            list-style: none;
-            padding-left: 0;
-            margin: 0;
-        }
-        .tree-content-wrapper ul ul {
-            padding-left: 20px;
-        }
-
-        .tree-content-wrapper li {
-            position: relative;
-            padding: 0;
-            cursor: default;
-            user-select: none;
-            margin-bottom: 1px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-        }
-        .tree-item-row {
-            display: flex;
-            align-items: center;
-            padding: 4px 0;
-            position: relative;
-            z-index: 2; 
-        }
-
-        .tree-content-wrapper ul ul > li > .tree-item-row::before {
-            content: "";
-            position: absolute;
-            left: -12px;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-            background-color: #cccccc;
-        }
-        .tree-content-wrapper ul ul > li:last-child > .tree-item-row::before {
-            height: 15px;
-        }
-        .tree-content-wrapper ul ul > li > .tree-item-row::after {
-            content: "";
-            position: absolute;
-            left: -12px;
-            top: 14px;
-            width: 10px;
-            height: 1px;
-            background-color: #cccccc;
-        }
+        .tree-content-wrapper ul { list-style: none; padding-left: 0; margin: 0; }
+        .tree-content-wrapper ul ul { padding-left: 20px; }
+        .tree-content-wrapper li { position: relative; padding: 0; cursor: default; user-select: none; margin-bottom: 1px; box-sizing: border-box; display: flex; flex-direction: column; }
+        .tree-item-row { display: flex; align-items: center; padding: 4px 0; position: relative; z-index: 2; }
+        .tree-content-wrapper ul ul > li > .tree-item-row::before { content: ""; position: absolute; left: -12px; top: 0; bottom: 0; width: 1px; background-color: #cccccc; }
+        .tree-content-wrapper ul ul > li:last-child > .tree-item-row::before { height: 15px; }
+        .tree-content-wrapper ul ul > li > .tree-item-row::after { content: ""; position: absolute; left: -12px; top: 14px; width: 10px; height: 1px; background-color: #cccccc; }
         .tree-content-wrapper > ul > li > .tree-item-row::before,
-        .tree-content-wrapper > ul > li > .tree-item-row::after {
-            display: none;
-        }
-
-        .tree-item-content {
-            display: inline-block;
-            padding: 2px 5px;
-            border-radius: 3px;
-            cursor: pointer;
-            flex-grow: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: #333333; 
-        }
-        .tree-content-wrapper li .tree-item-row:not(.parent-highlight-li-row):not(.selected-item-dark-li-row):hover > .tree-item-content {
-            background-color: #e9f5ff; 
-        }
-
-        .tree-toggle {
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            font-family: monospace;
-            font-weight: bold;
-            color: #637C8A;
-            margin-right: 4px;
-            border-radius: 3px;
-            flex-shrink: 0;
-        }
-        .tree-toggle:hover {
-            background-color: #d0e0f0;
-        }
-
+        .tree-content-wrapper > ul > li > .tree-item-row::after { display: none; }
+        .tree-item-content { display: inline-block; padding: 2px 5px; border-radius: 3px; cursor: pointer; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #333333; }
+        .tree-content-wrapper li .tree-item-row:not(.parent-highlight-li-row):not(.selected-item-dark-li-row):hover > .tree-item-content { background-color: #e9f5ff; }
+        .tree-toggle { cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; font-family: monospace; font-weight: bold; color: #637C8A; margin-right: 4px; border-radius: 3px; flex-shrink: 0; }
+        .tree-toggle:hover { background-color: #d0e0f0; }
         .tree-item-content.essential-text { color: #16c59d; }
         .tree-item-content.secondary-text { color: #BA8675; }
         .tree-item-content.advanced-text { color: #FA855F; }
         .tree-item-content.other-text { color: #76A59A; }
-
-        .tree-content-wrapper li.parent-highlight-li > .tree-item-row {
-            background-color: #e6ffe6;
-        }
-        .tree-content-wrapper li.parent-highlight-li > .tree-item-row:hover {
-            background-color: #d9ffd9;
-        }
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row { background-color: #e6ffe6; }
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row:hover { background-color: #d9ffd9; }
         .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.essential-text { color: #16c59d; }
         .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.secondary-text { color: #BA8675; }
         .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.advanced-text { color: #FA855F; }
         .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.other-text { color: #76A59A; }
-
-        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row {
-            background-color: #637C8A !important;
-        }
-        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row > .tree-item-content {
-            color: #ffffff !important;
-            font-weight: 500;
-        }
-        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row:hover {
-            background-color: #526570 !important;
-        }
+        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row { background-color: #637C8A !important; }
+        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row > .tree-item-content { color: #ffffff !important; font-weight: 500; }
+        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row:hover { background-color: #526570 !important; }
 
         .tree-column::-webkit-scrollbar,
         .info-column::-webkit-scrollbar { width: 8px; }
@@ -238,10 +187,9 @@
     <h1>Vulkan 2D Rendering Engine Hierarchy</h1>
     <div class="container">
         <div class="tree-column">
-            <div class="branch-indicator-bar-area">
-                <!-- Bar segments will be injected here by JavaScript -->
-            </div>
+            <div class="branch-indicator-bar-area"></div>
             <div class="tree-content-wrapper">
+                <!-- Your full UL LI tree structure here -->
                 <ul>
                     <li class="essential" data-component="Vulkan API">Vulkan API
                         <ul>
@@ -406,6 +354,12 @@
             </div>
         </div>
         <div class="info-column">
+            <div class="info-tags-bar">
+                <span class="tag-badge tag-required">Required</span>
+                <span class="tag-badge tag-optional">Optional</span>
+                <span class="tag-badge tag-advanced">Advanced</span>
+                <span class="tag-badge tag-other">Other</span>
+            </div>
             <textarea id="info-text" readonly>Select a component from the tree to view its description.</textarea>
         </div>
     </div>
@@ -571,6 +525,7 @@
                 console.error("Tree content wrapper not found.");
                 return;
             }
+            const allTagBadges = document.querySelectorAll('.info-tags-bar .tag-badge'); 
 
             const allTreeLIs = treeContentWrapper.querySelectorAll('li');
 
@@ -580,11 +535,22 @@
                 
                 const dataComponent = li.getAttribute('data-component');
                 const originalLiClasses = li.className.split(' ');
-                let categoryClass = '';
-                if (originalLiClasses.includes('essential')) categoryClass = 'essential-text';
-                else if (originalLiClasses.includes('secondary')) categoryClass = 'secondary-text';
-                else if (originalLiClasses.includes('advanced')) categoryClass = 'advanced-text';
-                else if (originalLiClasses.includes('other')) categoryClass = 'other-text';
+                let categoryClassForText = ''; 
+                let categoryClassForTag = '';  
+
+                if (originalLiClasses.includes('essential')) {
+                    categoryClassForText = 'essential-text';
+                    categoryClassForTag = 'tag-required';
+                } else if (originalLiClasses.includes('secondary')) {
+                    categoryClassForText = 'secondary-text';
+                    categoryClassForTag = 'tag-optional';
+                } else if (originalLiClasses.includes('advanced')) {
+                    categoryClassForText = 'advanced-text';
+                    categoryClassForTag = 'tag-advanced';
+                } else if (originalLiClasses.includes('other')) {
+                    categoryClassForText = 'other-text';
+                    categoryClassForTag = 'tag-other';
+                }
 
                 const itemRow = document.createElement('div');
                 itemRow.classList.add('tree-item-row');
@@ -594,10 +560,13 @@
                 
                 const contentSpan = document.createElement('span');
                 contentSpan.classList.add('tree-item-content');
-                if (categoryClass) {
-                    contentSpan.classList.add(categoryClass);
+                if (categoryClassForText) { 
+                    contentSpan.classList.add(categoryClassForText);
                 }
                 contentSpan.textContent = originalText;
+                if (categoryClassForTag) {
+                    contentSpan.dataset.tagClass = categoryClassForTag;
+                }
                 
                 itemRow.appendChild(toggle);
                 itemRow.appendChild(contentSpan);
@@ -630,6 +599,15 @@
                         const info = componentInfo[component] || { description: `No information available for "${component}".`};
                         const textArea = document.getElementById('info-text');
                         textArea.value = `${component}\n\n${info.description}`;
+
+                        allTagBadges.forEach(badge => badge.style.display = 'none'); 
+                        const tagClassToShow = contentSpan.dataset.tagClass;
+                        if (tagClassToShow) {
+                            const activeTag = document.querySelector(`.info-tags-bar .${tagClassToShow}`);
+                            if (activeTag) {
+                                activeTag.style.display = 'inline-flex'; 
+                            }
+                        }
                     });
                 }
 
@@ -649,7 +627,6 @@
                     toggle.style.visibility = 'hidden';
                 }
             });
-
             updateBranchIndicatorBar(); 
         });
     </script>
