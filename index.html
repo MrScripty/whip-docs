@@ -77,6 +77,18 @@
             width: 100%;
             /* Height and padding-left set by JS */
         }
+        .path-segment {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .path-segment:hover {
+            background-color: #e9f5ff;
+        }
+        .path-separator {
+            margin: 0 4px;
+            color: #637C8A;
+        }
         .tree-content-wrapper {
             padding-top: 20px;
             padding-right: 20px;
@@ -748,7 +760,7 @@
         const barColors = ['#637C8A', '#88CDF5'];
 
         let treeColumnRef, combinedStickyHeaderRef, stickyHeadersContainerRef, treeContentWrapperRef, branchBarRef;
-        let finalStickyPathLIs = [];
+        let pathLIsCoveredByStickyHeader = [];
 
         function clearAllHighlights() {
             document.querySelectorAll('.tree-content-wrapper li').forEach(liEl => {
@@ -769,28 +781,30 @@
         }
 
         function updateBranchIndicatorBar() {
-            const barArea = branchBarRef;
-            const treeContentWrapper = treeContentWrapperRef;
+            if (!branchBarRef || !treeContentWrapperRef) {
+                return;
+            }
+            const treeRootUl = treeContentWrapperRef.querySelector('ul');
+            if (!treeRootUl) {
+                return;
+            }
 
-            if (!barArea || !treeContentWrapper) return;
-            const treeRootUl = treeContentWrapper.querySelector('ul');
-            if (!treeRootUl) return;
-
-            barArea.innerHTML = '';
+            branchBarRef.innerHTML = '';
 
             const firstTopLevelLi = treeRootUl.querySelector(':scope > li');
-            if (!firstTopLevelLi) return;
+            if (!firstTopLevelLi) {
+                return;
+            }
 
             const mainBranchesParentUl = firstTopLevelLi.querySelector(':scope > ul');
-            const wrapperPaddingTop = parseFloat(getComputedStyle(treeContentWrapper).paddingTop) || 0;
-
-            if (!mainBranchesParentUl) {
+            
+            if (!mainBranchesParentUl || mainBranchesParentUl.style.display === 'none') {
                 const segment = document.createElement('div');
                 segment.classList.add('bar-segment');
                 segment.style.top = firstTopLevelLi.offsetTop + 'px';
                 segment.style.height = firstTopLevelLi.offsetHeight + 'px';
                 segment.style.backgroundColor = barColors[0];
-                barArea.appendChild(segment);
+                branchBarRef.appendChild(segment);
             } else {
                 const mainBranchLis = Array.from(mainBranchesParentUl.children).filter(node => node.tagName === 'LI');
                 mainBranchLis.forEach((li, index) => {
@@ -799,13 +813,13 @@
                     segment.style.top = li.offsetTop + 'px';
                     segment.style.height = li.offsetHeight + 'px';
                     segment.style.backgroundColor = barColors[index % barColors.length];
-                    barArea.appendChild(segment);
+                    branchBarRef.appendChild(segment);
                 });
             }
-            barArea.style.height = treeContentWrapper.scrollHeight + 'px';
+            branchBarRef.style.height = treeContentWrapperRef.scrollHeight + 'px';
         }
 
-        function findStickyPathRecursive(currentUl, currentPathCandidate, combinedHeaderRectTop) {
+        function findPathCoveredByStickyHeaderRecursive(currentUl, currentPathCandidate, combinedHeaderRectTop) {
             const lis = Array.from(currentUl.children).filter(node => node.tagName === 'LI');
 
             for (const li of lis) {
@@ -817,17 +831,16 @@
 
                 const itemRowRect = itemRow.getBoundingClientRect();
                 const liRect = li.getBoundingClientRect();
-
-                // Buffer to prevent flickering
-                const isHeaderScrolledOff = itemRowRect.top < combinedHeaderRectTop - 5;
-                const isContentStillVisible = liRect.bottom > combinedHeaderRectTop + 5;
+                
+                const isHeaderScrolledOff = itemRowRect.top < combinedHeaderRectTop - 1; 
+                const isContentStillVisible = liRect.bottom > combinedHeaderRectTop + 1;
 
                 if (isHeaderScrolledOff && isContentStillVisible) {
                     currentPathCandidate.push(li);
-                    finalStickyPathLIs = [...currentPathCandidate];
+                    pathLIsCoveredByStickyHeader = [...currentPathCandidate]; 
 
                     if (isLiActuallyExpanded) {
-                        findStickyPathRecursive(childUl, currentPathCandidate, combinedHeaderRectTop);
+                        findPathCoveredByStickyHeaderRecursive(childUl, currentPathCandidate, combinedHeaderRectTop);
                     }
                     currentPathCandidate.pop();
                 }
@@ -840,17 +853,59 @@
             }
 
             const combinedHeaderRect = combinedStickyHeaderRef.getBoundingClientRect();
-            stickyHeadersContainerRef.innerHTML = '';
+            stickyHeadersContainerRef.innerHTML = ''; 
 
-            finalStickyPathLIs = [];
+            pathLIsCoveredByStickyHeader = []; 
             const rootUl = treeContentWrapperRef.querySelector(':scope > ul');
             if (rootUl) {
-                findStickyPathRecursive(rootUl, [], combinedHeaderRect.top);
+                findPathCoveredByStickyHeaderRecursive(rootUl, [], combinedHeaderRect.top);
+            } else {
+                return;
+            }
+            
+            let displayedPathLIs = [...pathLIsCoveredByStickyHeader];
+
+            let searchStartUlForNextItem;
+            if (pathLIsCoveredByStickyHeader.length > 0) {
+                const deepestCoveredLi = pathLIsCoveredByStickyHeader[pathLIsCoveredByStickyHeader.length - 1];
+                searchStartUlForNextItem = deepestCoveredLi.querySelector(':scope > ul');
+            } else {
+                searchStartUlForNextItem = rootUl;
             }
 
-            if (finalStickyPathLIs.length > 0) {
+            if (searchStartUlForNextItem && searchStartUlForNextItem.style.display !== 'none') {
+                const childrenLis = Array.from(searchStartUlForNextItem.children).filter(node => node.tagName === 'LI');
+                for (const childLi of childrenLis) {
+                    const itemRow = childLi.querySelector(':scope > .tree-item-row');
+                    if (itemRow) {
+                        const itemRowRect = itemRow.getBoundingClientRect();
+                        // The item is considered the "top visible" if its top edge is
+                        // at most 4px above the combined header's top edge, or anywhere below it.
+                        if (itemRowRect.top >= combinedHeaderRect.top - 4.0) { 
+                            displayedPathLIs.push(childLi);
+                            break; 
+                        }
+                    }
+                }
+            }
+            
+            if (displayedPathLIs.length === 0 && rootUl && rootUl.children.length > 0) {
+                const firstRootLi = rootUl.children[0];
+                 if (firstRootLi && firstRootLi.tagName === 'LI') {
+                     const itemRow = firstRootLi.querySelector(':scope > .tree-item-row');
+                     if (itemRow) {
+                        const itemRowRect = itemRow.getBoundingClientRect();
+                        if (itemRowRect.bottom > combinedHeaderRect.top && itemRowRect.top < combinedHeaderRect.bottom + itemRow.offsetHeight) {
+                            displayedPathLIs.push(firstRootLi);
+                        }
+                     }
+                 }
+            }
+
+
+            if (displayedPathLIs.length > 0) {
                 combinedStickyHeaderRef.style.visibility = 'visible';
-                const firstPathOriginalItemRow = finalStickyPathLIs[0].querySelector(':scope > .tree-item-row');
+                const firstPathOriginalItemRow = displayedPathLIs[0].querySelector(':scope > .tree-item-row');
                 if (firstPathOriginalItemRow) {
                     combinedStickyHeaderRef.style.height = firstPathOriginalItemRow.offsetHeight + 'px';
                 } else {
@@ -862,31 +917,82 @@
                 return;
             }
 
-            const pathTexts = finalStickyPathLIs.map(li => {
-                const contentSpan = li.querySelector(':scope > .tree-item-row > .tree-item-content');
-                return contentSpan ? contentSpan.textContent.trim() : '';
-            });
-            const fullPathText = pathTexts.join(' > ');
-
-            const firstPathElement = finalStickyPathLIs[0];
-            const originalItemRow = firstPathElement.querySelector(':scope > .tree-item-row');
-            const originalItemContent = firstPathElement.querySelector(':scope > .tree-item-row > .tree-item-content');
-
-            if (originalItemRow && originalItemContent) {
+            const firstPathElementForStyle = displayedPathLIs[0];
+            const originalItemRowForStyle = firstPathElementForStyle.querySelector(':scope > .tree-item-row');
+            
+            if (originalItemRowForStyle) {
                 const stickyHeaderDiv = document.createElement('div');
                 stickyHeaderDiv.classList.add('sticky-header-item');
-                stickyHeaderDiv.style.height = originalItemRow.offsetHeight + 'px';
+                stickyHeaderDiv.style.height = originalItemRowForStyle.offsetHeight + 'px';
 
                 const stickyTogglePlaceholder = document.createElement('span');
                 stickyTogglePlaceholder.className = 'tree-toggle';
                 stickyTogglePlaceholder.innerHTML = ' ';
                 stickyTogglePlaceholder.style.visibility = 'hidden';
 
-                const stickyContentSpan = document.createElement('span');
-                stickyContentSpan.className = originalItemContent.className;
-                stickyContentSpan.classList.add('tree-item-content');
-                stickyContentSpan.textContent = fullPathText;
-                stickyContentSpan.title = fullPathText;
+                const pathContainer = document.createElement('span');
+                pathContainer.classList.add('tree-item-content'); 
+                const lastPathItemContentForStyle = displayedPathLIs[displayedPathLIs.length-1].querySelector(':scope > .tree-item-row > .tree-item-content');
+                if (lastPathItemContentForStyle) {
+                     pathContainer.className = lastPathItemContentForStyle.className;
+                } else {
+                    const firstItemContentForStyle = firstPathElementForStyle.querySelector(':scope > .tree-item-row > .tree-item-content');
+                    if (firstItemContentForStyle) pathContainer.className = firstItemContentForStyle.className;
+                }
+
+
+                displayedPathLIs.forEach((liForSegment) => {
+                    const contentSpan = liForSegment.querySelector(':scope > .tree-item-row > .tree-item-content');
+                    const text = contentSpan ? contentSpan.textContent.trim() : 'Unknown';
+                    
+                    const pathSegment = document.createElement('span');
+                    pathSegment.classList.add('path-segment');
+                    pathSegment.textContent = text;
+                    pathSegment.title = text;
+                    
+                    pathSegment.addEventListener('click', () => {
+                        const targetLi = liForSegment; 
+                        if (!targetLi) {
+                            console.error(`Target LI not found for path segment: ${text}`);
+                            return;
+                        }
+                        const itemRowToScroll = targetLi.querySelector(':scope > .tree-item-row');
+                        if (itemRowToScroll) {
+                            treeContentWrapperRef.getBoundingClientRect(); 
+                            const columnRect = treeColumnRef.getBoundingClientRect();
+                            const itemRect = itemRowToScroll.getBoundingClientRect();
+                            const scrollOffset = itemRect.top - columnRect.top + treeColumnRef.scrollTop;
+                            
+                            treeColumnRef.scrollTo({
+                                top: scrollOffset,
+                                behavior: 'smooth'
+                            });
+                            
+                            // The rAF scroll listener will handle updates during scroll.
+                            // This timeout is a final safeguard after smooth scroll likely completes.
+                            setTimeout(() => {
+                                // Check if scroll was effective, fallback if needed
+                                // This check might be less critical if rAF listener is robust
+                                if (Math.abs(treeColumnRef.scrollTop - scrollOffset) > 15) { 
+                                    itemRowToScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                                // Ensure sticky header updates after smooth scroll might complete
+                                updateStickyHeaders(); // Call directly for final state
+                            }, 350); // Adjusted delay
+                        } else {
+                            console.error(`Item row not found for target LI: ${text}`);
+                        }
+                    });
+
+                    pathContainer.appendChild(pathSegment);
+
+                    if (liForSegment !== displayedPathLIs[displayedPathLIs.length - 1]) {
+                        const separator = document.createElement('span');
+                        separator.classList.add('path-separator');
+                        separator.textContent = ' > ';
+                        pathContainer.appendChild(separator);
+                    }
+                });
 
                 let indentForStickyText = 0;
                 const rootUlInWrapper = treeContentWrapperRef.querySelector(':scope > ul');
@@ -894,7 +1000,7 @@
                     indentForStickyText += parseFloat(window.getComputedStyle(rootUlInWrapper).paddingLeft) || 0;
                 }
 
-                let el = firstPathElement.parentElement;
+                let el = firstPathElementForStyle.parentElement;
                 while (el && el !== rootUlInWrapper && el !== treeContentWrapperRef) {
                     if (el.tagName === 'UL' && el.parentElement && el.parentElement.tagName === 'LI') {
                         indentForStickyText += parseFloat(window.getComputedStyle(el).paddingLeft) || 0;
@@ -902,178 +1008,212 @@
                     el = el.parentElement;
                 }
 
-                const toggleElement = firstPathElement.querySelector(':scope > .tree-item-row > .tree-toggle');
+                const toggleElement = firstPathElementForStyle.querySelector(':scope > .tree-item-row > .tree-toggle');
                 if (toggleElement) {
                     indentForStickyText += toggleElement.offsetWidth + (parseFloat(window.getComputedStyle(toggleElement).marginRight) || 0);
                 }
 
                 let paddingLeftForStickyDiv = indentForStickyText;
-                if (toggleElement) {
+                if (toggleElement) { 
                     paddingLeftForStickyDiv -= (toggleElement.offsetWidth + (parseFloat(window.getComputedStyle(toggleElement).marginRight) || 0));
                 }
+                
+                stickyHeaderDiv.style.paddingLeft = Math.max(0, paddingLeftForStickyDiv) + 'px';
 
-                stickyHeaderDiv.style.paddingLeft = paddingLeftForStickyDiv + 'px';
 
                 stickyHeaderDiv.appendChild(stickyTogglePlaceholder);
-                stickyHeaderDiv.appendChild(stickyContentSpan);
+                stickyHeaderDiv.appendChild(pathContainer);
                 stickyHeadersContainerRef.appendChild(stickyHeaderDiv);
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            treeColumnRef = document.querySelector('.tree-column');
-            combinedStickyHeaderRef = document.querySelector('.combined-sticky-header');
-            stickyHeadersContainerRef = combinedStickyHeaderRef.querySelector('.sticky-headers-container');
-            treeContentWrapperRef = document.querySelector('.tree-content-wrapper');
-            branchBarRef = document.querySelector('.branch-indicator-bar-area');
+            try {
+                treeColumnRef = document.querySelector('.tree-column');
+                combinedStickyHeaderRef = document.querySelector('.combined-sticky-header');
+                stickyHeadersContainerRef = document.querySelector('.sticky-headers-container');
+                treeContentWrapperRef = document.querySelector('.tree-content-wrapper');
+                branchBarRef = document.querySelector('.branch-indicator-bar-area');
 
-            if (!treeColumnRef || !treeContentWrapperRef || !stickyHeadersContainerRef || !branchBarRef || !combinedStickyHeaderRef) {
-                console.error("DOM elements for tree/sticky functionality not found.");
-                return;
-            }
-
-            const allTagBadges = document.querySelectorAll('.info-tags-bar .tag-badge');
-            const ashLinkElement = document.getElementById('ash-link');
-            const vulkanSpecLinkElement = document.getElementById('vulkan-spec-link');
-
-            const allTreeLIs = treeContentWrapperRef.querySelectorAll('li');
-
-            allTreeLIs.forEach(li => {
-                const originalTextNodes = Array.from(li.childNodes).filter(node => node.nodeType === Node.TEXT_NODE && node.nodeValue.trim() !== '');
-                const originalText = originalTextNodes.length > 0 ? originalTextNodes[0].nodeValue.trim() : 'Error: No text';
-
-                const dataComponent = li.getAttribute('data-component');
-                const originalLiClasses = li.className.split(' ');
-                let categoryClassForText = '';
-                let categoryClassForTag = '';
-
-                if (originalLiClasses.includes('essential')) {
-                    categoryClassForText = 'essential-text';
-                    categoryClassForTag = 'tag-required';
-                } else if (originalLiClasses.includes('secondary')) {
-                    categoryClassForText = 'secondary-text';
-                    categoryClassForTag = 'tag-optional';
-                } else if (originalLiClasses.includes('advanced')) {
-                    categoryClassForText = 'advanced-text';
-                    categoryClassForTag = 'tag-advanced';
-                } else if (originalLiClasses.includes('other')) {
-                    categoryClassForText = 'other-text';
-                    categoryClassForTag = 'tag-other';
+                if (!treeColumnRef || !combinedStickyHeaderRef || !stickyHeadersContainerRef || !treeContentWrapperRef || !branchBarRef) {
+                    console.error('One or more required DOM elements not found on DOMContentLoaded:', {
+                        treeColumn: !!treeColumnRef,
+                        combinedStickyHeader: !!combinedStickyHeaderRef,
+                        stickyHeadersContainer: !!stickyHeadersContainerRef,
+                        treeContentWrapper: !!treeContentWrapperRef,
+                        branchBar: !!branchBarRef
+                    });
+                    return;
                 }
 
-                const itemRow = document.createElement('div');
-                itemRow.classList.add('tree-item-row');
-                const toggle = document.createElement('span');
-                toggle.classList.add('tree-toggle');
-                const contentSpan = document.createElement('span');
-                contentSpan.classList.add('tree-item-content');
-                if (categoryClassForText) {
-                    contentSpan.classList.add(categoryClassForText);
-                }
-                contentSpan.textContent = originalText;
-                if (categoryClassForTag) {
-                    contentSpan.dataset.tagClass = categoryClassForTag;
-                }
-                itemRow.appendChild(toggle);
-                itemRow.appendChild(contentSpan);
-                const childUl = li.querySelector(':scope > ul');
-                while (li.firstChild) {
-                    if (li.firstChild.nodeName === 'UL') break;
-                    li.removeChild(li.firstChild);
-                }
-                if (li.firstChild && li.firstChild.nodeName === 'UL') {
-                    li.insertBefore(itemRow, li.firstChild);
-                } else {
-                    li.appendChild(itemRow);
-                }
-                if (childUl) {
-                    childUl.style.display = 'block';
+                const allTagBadges = document.querySelectorAll('.info-tags-bar .tag-badge');
+                const ashLinkElement = document.getElementById('ash-link');
+                const vulkanSpecLinkElement = document.getElementById('vulkan-spec-link');
+                const allTreeLIs = Array.from(treeContentWrapperRef.querySelectorAll('ul li'));
+
+
+                if (!allTreeLIs.length) {
+                    console.error('No tree LI elements found during setup.');
+                    return;
                 }
 
-                if (dataComponent) {
-                    contentSpan.addEventListener('click', (event) => {
-                        event.stopPropagation();
-                        clearAllHighlights();
-                        applyParentHighlight(li);
-                        li.classList.add('selected-item-dark-li');
-                        currentSelectedItemLi = li;
+                allTreeLIs.forEach((li, index) => {
+                    try {
+                        const originalTextNodes = Array.from(li.childNodes).filter(node => node.nodeType === Node.TEXT_NODE && node.nodeValue.trim() !== '');
+                        const originalText = originalTextNodes.length > 0 ? originalTextNodes[0].nodeValue.trim() : `Item ${index}`;
 
-                        const component = dataComponent;
-                        const componentData = componentInfo[component] || {};
-                        const info = componentData.description ? componentData : { description: `No information available for "${component}".` };
+                        const dataComponent = li.getAttribute('data-component');
+                        const originalLiClasses = li.className.split(' ');
+                        let categoryClassForText = '';
+                        let categoryClassForTag = '';
 
-                        const textArea = document.getElementById('info-text');
-                        textArea.value = `${component}\n\n${info.description}`;
+                        if (originalLiClasses.includes('essential')) {
+                            categoryClassForText = 'essential-text';
+                            categoryClassForTag = 'tag-required';
+                        } else if (originalLiClasses.includes('secondary')) {
+                            categoryClassForText = 'secondary-text';
+                            categoryClassForTag = 'tag-optional';
+                        } else if (originalLiClasses.includes('advanced')) {
+                            categoryClassForText = 'advanced-text';
+                            categoryClassForTag = 'tag-advanced';
+                        } else if (originalLiClasses.includes('other')) {
+                            categoryClassForText = 'other-text';
+                            categoryClassForTag = 'tag-other';
+                        }
 
-                        allTagBadges.forEach(badge => badge.style.display = 'none');
-                        const tagClassToShow = contentSpan.dataset.tagClass;
-                        if (tagClassToShow) {
-                            const activeTag = document.querySelector(`.info-tags-bar .${tagClassToShow}`);
-                            if (activeTag) {
-                                activeTag.style.display = 'inline-flex';
+                        const itemRow = document.createElement('div');
+                        itemRow.classList.add('tree-item-row');
+                        const toggle = document.createElement('span');
+                        toggle.classList.add('tree-toggle');
+                        const contentSpan = document.createElement('span');
+                        contentSpan.classList.add('tree-item-content');
+                        if (categoryClassForText) {
+                            contentSpan.classList.add(categoryClassForText);
+                        }
+                        contentSpan.textContent = originalText;
+                        if (categoryClassForTag) {
+                            contentSpan.dataset.tagClass = categoryClassForTag;
+                        }
+                        itemRow.appendChild(toggle);
+                        itemRow.appendChild(contentSpan);
+
+                        const childUl = li.querySelector(':scope > ul');
+                        let currentChild = li.firstChild;
+                        while(currentChild && currentChild.nodeName !== 'UL') {
+                            let nextChild = currentChild.nextSibling;
+                            if (currentChild.nodeType === Node.TEXT_NODE && currentChild.nodeValue.trim() === originalText) {
+                                li.removeChild(currentChild);
+                            } else if (currentChild.nodeType === Node.TEXT_NODE && currentChild.nodeValue.trim() === "") {
+                                li.removeChild(currentChild);
                             }
+                            currentChild = nextChild;
+                        }
+                        li.insertBefore(itemRow, childUl); 
+
+                        if (childUl) {
+                            childUl.style.display = 'block'; 
                         }
 
-                        if (componentData.ashPath && ashLinkElement) {
-                            ashLinkElement.href = ASH_BASE_URL + componentData.ashPath;
-                            ashLinkElement.style.display = 'inline-flex';
-                        } else if (ashLinkElement) {
-                            ashLinkElement.style.display = 'none';
+                        if (dataComponent) {
+                            contentSpan.addEventListener('click', (event) => {
+                                event.stopPropagation();
+                                clearAllHighlights();
+                                applyParentHighlight(li);
+                                li.classList.add('selected-item-dark-li');
+                                currentSelectedItemLi = li;
+
+                                const component = dataComponent;
+                                const componentData = componentInfo[component] || {};
+                                const info = componentData.description ? componentData : { description: `No information available for "${component}".` };
+
+                                const textArea = document.getElementById('info-text');
+                                if (textArea) {
+                                    textArea.value = `${component}\n\n${info.description}`;
+                                }
+
+                                allTagBadges.forEach(badge => badge.style.display = 'none');
+                                const tagClassToShow = contentSpan.dataset.tagClass;
+                                if (tagClassToShow) {
+                                    const activeTag = document.querySelector(`.info-tags-bar .${tagClassToShow}`);
+                                    if (activeTag) {
+                                        activeTag.style.display = 'inline-flex';
+                                    }
+                                }
+
+                                if (componentData.ashPath && ashLinkElement) {
+                                    ashLinkElement.href = ASH_BASE_URL + componentData.ashPath;
+                                    ashLinkElement.style.display = 'inline-flex';
+                                } else if (ashLinkElement) {
+                                    ashLinkElement.style.display = 'none';
+                                }
+
+                                if (vulkanSpecLinkElement) {
+                                    if (componentData.vulkanAnchor) {
+                                        vulkanSpecLinkElement.href = VULKAN_SPEC_BASE_URL + componentData.vulkanAnchor;
+                                        vulkanSpecLinkElement.style.display = 'inline-flex';
+                                    } else if (componentData.vulkanPath) { 
+                                        vulkanSpecLinkElement.href = componentData.vulkanPath;
+                                        vulkanSpecLinkElement.style.display = 'inline-flex';
+                                    } else {
+                                        vulkanSpecLinkElement.style.display = 'none';
+                                    }
+                                }
+                            });
                         }
 
-                        if (vulkanSpecLinkElement) {
-                            if (componentData.vulkanAnchor) {
-                                vulkanSpecLinkElement.href = VULKAN_SPEC_BASE_URL + componentData.vulkanAnchor;
-                                vulkanSpecLinkElement.style.display = 'inline-flex';
-                            } else if (componentData.vulkanPath) {
-                                vulkanSpecLinkElement.href = componentData.vulkanPath;
-                                vulkanSpecLinkElement.style.display = 'inline-flex';
-                            } else {
-                                vulkanSpecLinkElement.style.display = 'none';
-                            }
+                        const nestedUl = li.querySelector(':scope > ul');
+                        if (nestedUl && nestedUl.children.length > 0) {
+                            toggle.textContent = '[-]'; 
+                            toggle.addEventListener('click', (event) => {
+                                event.stopPropagation();
+                                const isCollapsed = nestedUl.style.display === 'none';
+                                nestedUl.style.display = isCollapsed ? 'block' : 'none';
+                                toggle.textContent = isCollapsed ? '[-]' : '[+]';
+                                requestAnimationFrame(() => { 
+                                    updateBranchIndicatorBar();
+                                    updateStickyHeaders();
+                                });
+                            });
+                        } else {
+                            toggle.innerHTML = ' '; 
+                            toggle.style.cursor = 'default';
+                            toggle.style.visibility = 'hidden'; 
                         }
-                    });
-                }
-
-                const nestedUl = li.querySelector(':scope > ul');
-                if (nestedUl) {
-                    toggle.textContent = '[-]';
-                    toggle.addEventListener('click', (event) => {
-                        event.stopPropagation();
-                        const isCollapsed = nestedUl.style.display === 'none';
-                        nestedUl.style.display = isCollapsed ? 'block' : 'none';
-                        toggle.textContent = isCollapsed ? '[-]' : '[+]';
-                        requestAnimationFrame(() => {
-                            updateBranchIndicatorBar();
-                            updateStickyHeaders();
-                        });
-                    });
-                } else {
-                    toggle.innerHTML = ' ';
-                    toggle.style.cursor = 'default';
-                    toggle.style.visibility = 'hidden';
-                }
-            });
-
-            updateBranchIndicatorBar();
-            updateStickyHeaders();
-
-            let lastScrollTop = treeColumnRef.scrollTop;
-            treeColumnRef.addEventListener('scroll', () => {
-                const currentScrollTop = treeColumnRef.scrollTop;
-                if (Math.abs(currentScrollTop - lastScrollTop) > 5) { // Debounce small scrolls
-                    requestAnimationFrame(() => {
-                        updateStickyHeaders();
-                        lastScrollTop = currentScrollTop;
-                    });
-                }
-            });
-            window.addEventListener('resize', () => {
-                requestAnimationFrame(() => {
-                    updateBranchIndicatorBar();
-                    updateStickyHeaders();
+                    } catch (error) {
+                        console.error(`Error processing LI with data-component "${li.getAttribute('data-component') || 'N/A'}":`, error, li);
+                    }
                 });
-            });
+
+                updateBranchIndicatorBar();
+                updateStickyHeaders(); 
+
+                let scrollAFRequest = null;
+                treeColumnRef.addEventListener('scroll', () => {
+                    if (scrollAFRequest === null) { // Only request a new frame if one isn't already pending
+                        scrollAFRequest = requestAnimationFrame(() => {
+                            updateStickyHeaders();
+                            scrollAFRequest = null; // Reset after execution
+                        });
+                    }
+                });
+
+                window.addEventListener('resize', () => {
+                     requestAnimationFrame(() => {
+                        updateBranchIndicatorBar();
+                        updateStickyHeaders();
+                    });
+                });
+
+                if (!currentSelectedItemLi && allTreeLIs.length > 0) {
+                    const firstContentSpan = allTreeLIs[0].querySelector('.tree-item-content');
+                    if (firstContentSpan) {
+                        firstContentSpan.click();
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error in DOMContentLoaded handler:', error);
+            }
         });
     </script>
 </body>
