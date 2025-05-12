@@ -1,0 +1,463 @@
+{
+    "tree": [
+      {
+        "name": "Vulkan API",
+        "tag": "essential",
+        "children": [
+          {
+            "name": "Instance",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "Validation Layers",
+                "tag": "secondary"
+              },
+              {
+                "name": "Debug Utilities",
+                "tag": "secondary"
+              },
+              {
+                "name": "Instance Extensions",
+                "tag": "essential",
+                "children": [
+                  {
+                    "name": "VK_KHR_surface",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Debug Utilities Instance Functions",
+                    "tag": "secondary"
+                  }
+                ]
+              },
+              {
+                "name": "Physical Devices",
+                "tag": "essential",
+                "children": [
+                  {
+                    "name": "Device Features",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Device Extensions",
+                    "tag": "essential",
+                    "children": [
+                      {
+                        "name": "VK_KHR_swapchain",
+                        "tag": "essential"
+                      },
+                      {
+                        "name": "VK_KHR_multisampling",
+                        "tag": "secondary"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Logical Device",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "Queues",
+                "tag": "essential",
+                "children": [
+                  {
+                    "name": "Graphics Queue",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Present Queue",
+                    "tag": "essential"
+                  }
+                ]
+              },
+              {
+                "name": "Command Pools",
+                "tag": "essential"
+              },
+              {
+                "name": "Memory Management",
+                "tag": "other",
+                "children": [
+                  {
+                    "name": "Vulkan Memory Allocator",
+                    "tag": "other"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Surface",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "VkSurfaceKHR",
+                "tag": "essential"
+              }
+            ]
+          },
+          {
+            "name": "Swapchain",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "Swapchain Images",
+                "tag": "essential"
+              },
+              {
+                "name": "Swapchain Image Views",
+                "tag": "essential"
+              },
+              {
+                "name": "Framebuffers",
+                "tag": "essential"
+              }
+            ]
+          },
+          {
+            "name": "Render Pass",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "Attachments",
+                "tag": "essential",
+                "children": [
+                  {
+                    "name": "Color Attachment",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Depth/Stencil Attachment",
+                    "tag": "secondary"
+                  }
+                ]
+              },
+              {
+                "name": "Subpasses",
+                "tag": "essential"
+              },
+              {
+                "name": "Dependencies",
+                "tag": "essential"
+              }
+            ]
+          },
+          {
+            "name": "Descriptor Set Layouts",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "Descriptor Pools",
+                "tag": "essential"
+              }
+            ]
+          },
+          {
+            "name": "Pipeline",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "Shader Modules",
+                "tag": "essential",
+                "children": [
+                  {
+                    "name": "Vertex Shader",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Fragment Shader",
+                    "tag": "essential"
+                  }
+                ]
+              },
+              {
+                "name": "Pipeline Layout",
+                "tag": "essential",
+                "children": [
+                  {
+                    "name": "Descriptor Sets",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Push Constants",
+                    "tag": "essential"
+                  }
+                ]
+              },
+              {
+                "name": "Graphics State",
+                "tag": "essential",
+                "children": [
+                  {
+                    "name": "Vertex Input",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Rasterization",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Color Blending",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Depth/Stencil Testing",
+                    "tag": "secondary"
+                  },
+                  {
+                    "name": "Multisampling",
+                    "tag": "secondary"
+                  },
+                  {
+                    "name": "Dynamic State",
+                    "tag": "secondary"
+                  }
+                ]
+              },
+              {
+                "name": "Pipeline Cache",
+                "tag": "secondary"
+              }
+            ]
+          },
+          {
+            "name": "Resources",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "Buffers",
+                "tag": "essential",
+                "children": [
+                  {
+                    "name": "Vertex Buffer",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Index Buffer",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Uniform Buffer",
+                    "tag": "essential"
+                  }
+                ]
+              },
+              {
+                "name": "Images",
+                "tag": "essential",
+                "children": [
+                  {
+                    "name": "Texture Images",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Texture Image Views",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Depth/Stencil Image",
+                    "tag": "secondary"
+                  }
+                ]
+              },
+              {
+                "name": "Samplers",
+                "tag": "essential"
+              }
+            ]
+          },
+          {
+            "name": "Synchronization",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "Semaphores",
+                "tag": "essential"
+              },
+              {
+                "name": "Fences",
+                "tag": "essential"
+              },
+              {
+                "name": "Events",
+                "tag": "secondary"
+              }
+            ]
+          },
+          {
+            "name": "Command Buffers",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "Primary Command Buffers",
+                "tag": "essential"
+              },
+              {
+                "name": "Secondary Command Buffers",
+                "tag": "secondary"
+              },
+              {
+                "name": "Recording Operations",
+                "tag": "essential",
+                "children": [
+                  {
+                    "name": "Bind Pipeline",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Bind Descriptor Sets",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Bind Vertex/Index Buffers",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Draw Commands",
+                    "tag": "essential"
+                  },
+                  {
+                    "name": "Image Layout Transitions",
+                    "tag": "essential"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Pipeline Barriers",
+            "tag": "essential",
+            "children": [
+              {
+                "name": "Pipeline Stages",
+                "tag": "essential"
+              },
+              {
+                "name": "Memory Barriers",
+                "tag": "essential"
+              }
+            ]
+          },
+          {
+            "name": "Advanced Features",
+            "tag": "advanced",
+            "children": [
+              {
+                "name": "Post-Processing",
+                "tag": "advanced",
+                "children": [
+                  {
+                    "name": "Render Targets",
+                    "tag": "advanced"
+                  },
+                  {
+                    "name": "Compute Shaders",
+                    "tag": "advanced"
+                  }
+                ]
+              },
+              {
+                "name": "Sparse Resources",
+                "tag": "advanced"
+              },
+              {
+                "name": "Dynamic Rendering",
+                "tag": "advanced"
+              },
+              {
+                "name": "Memory Pools",
+                "tag": "advanced"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "componentInfo": {
+      "Vulkan API": { "ashPath": "index.html", "vulkanAnchor": "#vulkan" },
+      "Instance": { "ashPath": "vk/struct.Instance.html", "vulkanAnchor": "#initialization-instances" },
+      "Validation Layers": { "vulkanAnchor": "#debugging-validation-layers" },
+      "Debug Utilities": { "ashPath": "extensions/ext/struct.DebugUtils.html", "vulkanAnchor": "#VK_EXT_debug_utils" },
+      "Instance Extensions": {},
+      "VK_KHR_surface": { "ashPath": "extensions/khr/struct.Surface.html", "vulkanAnchor": "#VK_KHR_surface" },
+      "Debug Utilities Instance Functions": { "ashPath": "extensions/ext/struct.DebugUtils.html", "vulkanAnchor": "#VK_EXT_debug_utils" },
+      "Physical Devices": { "ashPath": "vk/struct.PhysicalDevice.html", "vulkanAnchor": "#devsandqueues-physical-device-enumeration" },
+      "Device Features": { "ashPath": "vk/struct.PhysicalDeviceFeatures.html", "vulkanAnchor": "#features" },
+      "Device Extensions": {},
+      "VK_KHR_swapchain": { "ashPath": "extensions/khr/struct.Swapchain.html", "vulkanAnchor": "#VK_KHR_swapchain" },
+      "VK_KHR_multisampling": { "vulkanAnchor": "#primsrast-multisampling" },
+      "Logical Device": { "ashPath": "vk/struct.Device.html", "vulkanAnchor": "#devsandqueues-logical" },
+      "Queues": { "ashPath": "vk/struct.Queue.html", "vulkanAnchor": "#devsandqueues-queues" },
+      "Graphics Queue": {},
+      "Present Queue": {},
+      "Command Pools": { "ashPath": "vk/struct.CommandPool.html", "vulkanAnchor": "#commandbuffers-pools" },
+      "Memory Management": {},
+      "Vulkan Memory Allocator": {},
+      "Surface": { "ashPath": "extensions/khr/struct.Surface.html", "vulkanAnchor": "#WSI_surface" },
+      "VkSurfaceKHR": { "ashPath": "extensions/khr/struct.Surface.html", "vulkanAnchor": "#WSI_surface" },
+      "Swapchain": { "ashPath": "extensions/khr/struct.Swapchain.html", "vulkanAnchor": "#WSI_swapchain" },
+      "Swapchain Images": {},
+      "Swapchain Image Views": { "ashPath": "vk/struct.ImageView.html", "vulkanAnchor": "#resources-image-views" },
+      "Framebuffers": { "ashPath": "vk/struct.Framebuffer.html", "vulkanAnchor": "#renderpass-framebuffers" },
+      "Render Pass": { "ashPath": "vk/struct.RenderPass.html", "vulkanAnchor": "#renderpass" },
+      "Attachments": {},
+      "Color Attachment": {},
+      "Depth/Stencil Attachment": {},
+      "Subpasses": {},
+      "Dependencies": {},
+      "Descriptor Set Layouts": { "ashPath": "vk/struct.DescriptorSetLayout.html", "vulkanAnchor": "#descriptorsets-layout" },
+      "Descriptor Pools": { "ashPath": "vk/struct.DescriptorPool.html", "vulkanAnchor": "#descriptorsets-pools" },
+      "Pipeline": { "ashPath": "vk/struct.Pipeline.html", "vulkanAnchor": "#pipelines" },
+      "Shader Modules": { "ashPath": "vk/struct.ShaderModule.html", "vulkanAnchor": "#shaders-shader-modules" },
+      "Vertex Shader": {},
+      "Fragment Shader": {},
+      "Pipeline Layout": { "ashPath": "vk/struct.PipelineLayout.html", "vulkanAnchor": "#pipelines-layout" },
+      "Descriptor Sets": { "ashPath": "vk/struct.DescriptorSet.html", "vulkanAnchor": "#descriptorsets-sets" },
+      "Push Constants": { "vulkanAnchor": "#pipelines-pushconstants" },
+      "Graphics State": {},
+      "Vertex Input": {},
+      "Rasterization": {},
+      "Color Blending": {},
+      "Depth/Stencil Testing": {},
+      "Multisampling": {},
+      "Dynamic State": {},
+      "Pipeline Cache": { "ashPath": "vk/struct.PipelineCache.html", "vulkanAnchor": "#pipelines-cache" },
+      "Resources": {},
+      "Buffers": { "ashPath": "vk/struct.Buffer.html", "vulkanAnchor": "#resources-buffers" },
+      "Vertex Buffer": {},
+      "Index Buffer": {},
+      "Uniform Buffer": {},
+      "Images": { "ashPath": "vk/struct.Image.html", "vulkanAnchor": "#resources-images" },
+      "Texture Images": {},
+      "Texture Image Views": { "ashPath": "vk/struct.ImageView.html", "vulkanAnchor": "#resources-image-views" },
+      "Depth/Stencil Image": {},
+      "Samplers": { "ashPath": "vk/struct.Sampler.html", "vulkanAnchor": "#samplers" },
+      "Synchronization": {},
+      "Semaphores": { "ashPath": "vk/struct.Semaphore.html", "vulkanAnchor": "#synchronization-semaphores" },
+      "Fences": { "ashPath": "vk/struct.Fence.html", "vulkanAnchor": "#synchronization-fences" },
+      "Events": { "ashPath": "vk/struct.Event.html", "vulkanAnchor": "#synchronization-events" },
+      "Command Buffers": { "ashPath": "vk/struct.CommandBuffer.html", "vulkanAnchor": "#commandbuffers" },
+      "Primary Command Buffers": {},
+      "Secondary Command Buffers": {},
+      "Recording Operations": {},
+      "Bind Pipeline": {},
+      "Bind Descriptor Sets": {},
+      "Bind Vertex/Index Buffers": {},
+      "Draw Commands": {},
+      "Image Layout Transitions": {},
+      "Pipeline Barriers": { "vulkanAnchor": "#synchronization-pipeline-barriers" },
+      "Pipeline Stages": {},
+      "Memory Barriers": {},
+      "Advanced Features": {},
+      "Post-Processing": {},
+      "Render Targets": {},
+      "Compute Shaders": {},
+      "Sparse Resources": {},
+      "Dynamic Rendering": { "vulkanAnchor": "#VK_KHR_dynamic_rendering" },
+      "Memory Pools": {}
+    }
+  }

@@ -1,11 +1,16 @@
 const ASH_BASE_URL = "https://docs.rs/ash/latest/ash/";
 const VULKAN_SPEC_BASE_URL = "https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html";
+const DOCS_BASE_PATH = "whip-docs"; // Base path for docs folder
+const TREE_FILE_NAME = "vulkan_2d_rendering.json"; // The tree file to load
 
 let currentSelectedItemLi = null;
 const barColors = ['#637C8A', '#88CDF5'];
 
-let treeColumnRef, combinedStickyHeaderRef, stickyHeadersContainerRef, treeContentWrapperRef, branchBarRef;
+let treeColumnRef, combinedStickyHeaderRef, stickyHeadersContainerRef, treeContentWrapperRef, branchBarRef, infoContentDivRef;
 let pathLIsCoveredByStickyHeader = [];
+let componentInfoData = {}; // Store componentInfo globally
+
+// --- Highlighting and UI Functions (mostly unchanged) ---
 
 function clearAllHighlights() {
     document.querySelectorAll('.tree-content-wrapper li').forEach(liEl => {
@@ -42,7 +47,7 @@ function updateBranchIndicatorBar() {
     }
 
     const mainBranchesParentUl = firstTopLevelLi.querySelector(':scope > ul');
-    
+
     if (!mainBranchesParentUl || mainBranchesParentUl.style.display === 'none') {
         const segment = document.createElement('div');
         segment.classList.add('bar-segment');
@@ -61,8 +66,10 @@ function updateBranchIndicatorBar() {
             branchBarRef.appendChild(segment);
         });
     }
+    // Ensure bar height matches potentially changed content height
     branchBarRef.style.height = treeContentWrapperRef.scrollHeight + 'px';
 }
+
 
 function findPathCoveredByStickyHeaderRecursive(currentUl, currentPathCandidate, combinedHeaderRectTop) {
     const lis = Array.from(currentUl.children).filter(node => node.tagName === 'LI');
@@ -76,13 +83,13 @@ function findPathCoveredByStickyHeaderRecursive(currentUl, currentPathCandidate,
 
         const itemRowRect = itemRow.getBoundingClientRect();
         const liRect = li.getBoundingClientRect();
-        
-        const isHeaderScrolledOff = itemRowRect.top < combinedHeaderRectTop - 1; 
+
+        const isHeaderScrolledOff = itemRowRect.top < combinedHeaderRectTop - 1;
         const isContentStillVisible = liRect.bottom > combinedHeaderRectTop + 1;
 
         if (isHeaderScrolledOff && isContentStillVisible) {
             currentPathCandidate.push(li);
-            pathLIsCoveredByStickyHeader = [...currentPathCandidate]; 
+            pathLIsCoveredByStickyHeader = [...currentPathCandidate];
 
             if (isLiActuallyExpanded) {
                 findPathCoveredByStickyHeaderRecursive(childUl, currentPathCandidate, combinedHeaderRectTop);
@@ -98,16 +105,16 @@ function updateStickyHeaders() {
     }
 
     const combinedHeaderRect = combinedStickyHeaderRef.getBoundingClientRect();
-    stickyHeadersContainerRef.innerHTML = ''; 
+    stickyHeadersContainerRef.innerHTML = '';
 
-    pathLIsCoveredByStickyHeader = []; 
+    pathLIsCoveredByStickyHeader = [];
     const rootUl = treeContentWrapperRef.querySelector(':scope > ul');
     if (rootUl) {
         findPathCoveredByStickyHeaderRecursive(rootUl, [], combinedHeaderRect.top);
     } else {
         return;
     }
-    
+
     let displayedPathLIs = [...pathLIsCoveredByStickyHeader];
 
     let searchStartUlForNextItem;
@@ -124,20 +131,21 @@ function updateStickyHeaders() {
             const itemRow = childLi.querySelector(':scope > .tree-item-row');
             if (itemRow) {
                 const itemRowRect = itemRow.getBoundingClientRect();
-                if (itemRowRect.top >= combinedHeaderRect.top - 4.0) { 
+                if (itemRowRect.top >= combinedHeaderRect.top - 4.0) {
                     displayedPathLIs.push(childLi);
-                    break; 
+                    break;
                 }
             }
         }
     }
-    
+
     if (displayedPathLIs.length === 0 && rootUl && rootUl.children.length > 0) {
-        const firstRootLi = rootUl.children[0];
+         const firstRootLi = rootUl.children[0];
          if (firstRootLi && firstRootLi.tagName === 'LI') {
              const itemRow = firstRootLi.querySelector(':scope > .tree-item-row');
              if (itemRow) {
                 const itemRowRect = itemRow.getBoundingClientRect();
+                // Check if the first item is partially or fully visible under the sticky header area
                 if (itemRowRect.bottom > combinedHeaderRect.top && itemRowRect.top < combinedHeaderRect.bottom + itemRow.offsetHeight) {
                     displayedPathLIs.push(firstRootLi);
                 }
@@ -145,54 +153,60 @@ function updateStickyHeaders() {
          }
     }
 
+
     if (displayedPathLIs.length > 0) {
         combinedStickyHeaderRef.style.visibility = 'visible';
         const firstPathOriginalItemRow = displayedPathLIs[0].querySelector(':scope > .tree-item-row');
         if (firstPathOriginalItemRow) {
             combinedStickyHeaderRef.style.height = firstPathOriginalItemRow.offsetHeight + 'px';
         } else {
-            combinedStickyHeaderRef.style.height = 'auto';
+            combinedStickyHeaderRef.style.height = 'auto'; // Fallback
         }
     } else {
         combinedStickyHeaderRef.style.visibility = 'hidden';
-        combinedStickyHeaderRef.style.height = '0px';
-        return;
+        combinedStickyHeaderRef.style.height = '0px'; // Collapse when no path
+        return; // Don't build header if nothing to display
     }
 
+    // Proceed only if we have a path to display
     const firstPathElementForStyle = displayedPathLIs[0];
     const originalItemRowForStyle = firstPathElementForStyle.querySelector(':scope > .tree-item-row');
-    
+
     if (originalItemRowForStyle) {
         const stickyHeaderDiv = document.createElement('div');
         stickyHeaderDiv.classList.add('sticky-header-item');
         stickyHeaderDiv.style.height = originalItemRowForStyle.offsetHeight + 'px';
 
+        // Create a placeholder for the toggle to maintain alignment
         const stickyTogglePlaceholder = document.createElement('span');
         stickyTogglePlaceholder.className = 'tree-toggle';
-        stickyTogglePlaceholder.innerHTML = ' ';
-        stickyTogglePlaceholder.style.visibility = 'hidden';
+        stickyTogglePlaceholder.innerHTML = ' '; // Non-breaking space
+        stickyTogglePlaceholder.style.visibility = 'hidden'; // Keep space, but hide
 
         const pathContainer = document.createElement('span');
-        pathContainer.classList.add('tree-item-content'); 
+        pathContainer.classList.add('tree-item-content'); // Use base class for styling
+        // Try to get class from the *last* item in the path for correct color
         const lastPathItemContentForStyle = displayedPathLIs[displayedPathLIs.length-1].querySelector(':scope > .tree-item-row > .tree-item-content');
         if (lastPathItemContentForStyle) {
-             pathContainer.className = lastPathItemContentForStyle.className;
+             pathContainer.className = lastPathItemContentForStyle.className; // Copy all classes
         } else {
+            // Fallback to first item if last has no content span (shouldn't happen)
             const firstItemContentForStyle = firstPathElementForStyle.querySelector(':scope > .tree-item-row > .tree-item-content');
             if (firstItemContentForStyle) pathContainer.className = firstItemContentForStyle.className;
         }
 
+
         displayedPathLIs.forEach((liForSegment) => {
             const contentSpan = liForSegment.querySelector(':scope > .tree-item-row > .tree-item-content');
             const text = contentSpan ? contentSpan.textContent.trim() : 'Unknown';
-            
+
             const pathSegment = document.createElement('span');
             pathSegment.classList.add('path-segment');
             pathSegment.textContent = text;
-            pathSegment.title = text;
-            
+            pathSegment.title = text; // Tooltip for long names
+
             pathSegment.addEventListener('click', () => {
-                const targetLi = liForSegment; 
+                const targetLi = liForSegment; // Closure captures the correct li
                 if (!targetLi) {
                     console.error(`Target LI not found for path segment: ${text}`);
                     return;
@@ -201,26 +215,32 @@ function updateStickyHeaders() {
                 const itemContentToClick = targetLi.querySelector(':scope > .tree-item-row > .tree-item-content');
 
                 if (itemRowToScroll) {
-                    treeContentWrapperRef.getBoundingClientRect(); 
+                    // Calculate scroll position relative to the tree column's viewport
                     const columnRect = treeColumnRef.getBoundingClientRect();
                     const itemRect = itemRowToScroll.getBoundingClientRect();
+                    // Target scroll position: item's top relative to column's top + current scroll offset
                     const scrollOffset = itemRect.top - columnRect.top + treeColumnRef.scrollTop;
-                    
+
+                    // Scroll the tree column
                     treeColumnRef.scrollTo({
                         top: scrollOffset,
                         behavior: 'smooth'
                     });
-                    
+
+                    // Fallback/Verification: If smooth scroll didn't quite reach, use scrollIntoView after a delay
+                    // Also trigger the click after scroll attempt
                     setTimeout(() => {
-                        if (Math.abs(treeColumnRef.scrollTop - scrollOffset) > 15) { 
+                        // Check if scroll is close enough, otherwise force it
+                        if (Math.abs(treeColumnRef.scrollTop - scrollOffset) > 15) { // Tolerance
                             itemRowToScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
-                        updateStickyHeaders(); 
-                        
+                        updateStickyHeaders(); // Update headers after scroll potentially finishes
+
+                        // Trigger the click on the actual item
                         if (itemContentToClick) {
-                            itemContentToClick.click(); 
+                            itemContentToClick.click();
                         }
-                    }, 350); 
+                    }, 350); // Adjust delay as needed for smooth scroll duration
                 } else {
                     console.error(`Item row not found for target LI: ${text}`);
                 }
@@ -228,6 +248,7 @@ function updateStickyHeaders() {
 
             pathContainer.appendChild(pathSegment);
 
+            // Add separator if not the last item
             if (liForSegment !== displayedPathLIs[displayedPathLIs.length - 1]) {
                 const separator = document.createElement('span');
                 separator.classList.add('path-separator');
@@ -236,42 +257,97 @@ function updateStickyHeaders() {
             }
         });
 
+        // --- Calculate Indentation for Sticky Header Text ---
         let indentForStickyText = 0;
         const rootUlInWrapper = treeContentWrapperRef.querySelector(':scope > ul');
         if (rootUlInWrapper) {
+             // Start with root UL padding
             indentForStickyText += parseFloat(window.getComputedStyle(rootUlInWrapper).paddingLeft) || 0;
         }
 
+        // Walk up the DOM from the first path element's parent UL to the root UL inside the wrapper
         let el = firstPathElementForStyle.parentElement;
         while (el && el !== rootUlInWrapper && el !== treeContentWrapperRef) {
             if (el.tagName === 'UL' && el.parentElement && el.parentElement.tagName === 'LI') {
+                // Add padding of intermediate ULs
                 indentForStickyText += parseFloat(window.getComputedStyle(el).paddingLeft) || 0;
             }
             el = el.parentElement;
         }
 
+        // Add width and margin of the original toggle element of the *first* path item
         const toggleElement = firstPathElementForStyle.querySelector(':scope > .tree-item-row > .tree-toggle');
         if (toggleElement) {
             indentForStickyText += toggleElement.offsetWidth + (parseFloat(window.getComputedStyle(toggleElement).marginRight) || 0);
         }
 
+        // The paddingLeft for the sticky header div should be the calculated indent,
+        // *minus* the space taken by the hidden placeholder toggle we added.
         let paddingLeftForStickyDiv = indentForStickyText;
-        if (toggleElement) { 
+        if (toggleElement) { // If the original item had a toggle
             paddingLeftForStickyDiv -= (toggleElement.offsetWidth + (parseFloat(window.getComputedStyle(toggleElement).marginRight) || 0));
         }
-        
-        stickyHeaderDiv.style.paddingLeft = Math.max(0, paddingLeftForStickyDiv) + 'px';
 
-        stickyHeaderDiv.appendChild(stickyTogglePlaceholder);
-        stickyHeaderDiv.appendChild(pathContainer);
-        stickyHeadersContainerRef.appendChild(stickyHeaderDiv);
+        // Apply the calculated padding to the sticky header div itself
+        stickyHeaderDiv.style.paddingLeft = Math.max(0, paddingLeftForStickyDiv) + 'px'; // Ensure non-negative
+
+        // Assemble the sticky header item
+        stickyHeaderDiv.appendChild(stickyTogglePlaceholder); // Add hidden toggle first
+        stickyHeaderDiv.appendChild(pathContainer);          // Then the path text
+        stickyHeadersContainerRef.appendChild(stickyHeaderDiv); // Add to the DOM
     }
 }
 
-function buildTreeNode(nodeData, componentInfo) {
+
+// --- Core Logic ---
+
+// Function to load and display Markdown description
+async function loadDescription(componentName) {
+    if (!infoContentDivRef) return;
+
+    const mdPath = `${DOCS_BASE_PATH}/descriptions/${componentName}.md`;
+    infoContentDivRef.innerHTML = `<p>Loading description for "${componentName}"...</p>`; // Loading indicator
+
+    try {
+        const response = await fetch(mdPath);
+        if (!response.ok) {
+            throw new Error(`File not found or error loading: ${response.statusText} (${response.status})`);
+        }
+        const markdown = await response.text();
+
+        // Configure marked to allow HTML and use highlight.js
+        marked.setOptions({
+            highlight: function(code, lang) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            },
+            langPrefix: 'hljs language-', // CSS class prefix for hljs
+            gfm: true, // Enable GitHub Flavored Markdown
+            breaks: true // Convert single line breaks to <br>
+        });
+
+        // Parse Markdown to HTML
+        const htmlContent = marked.parse(markdown);
+        infoContentDivRef.innerHTML = htmlContent;
+
+        // Re-run highlight.js on the new content (important!)
+        // Use highlightBlock for targeted highlighting if highlightAll is too broad
+        infoContentDivRef.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
+
+
+    } catch (error) {
+        console.error(`Error loading description for ${componentName}:`, error);
+        infoContentDivRef.innerHTML = `<p style="color: red;">Could not load description for "${componentName}".<br>(${error.message})</p><p>Expected path: ${mdPath}</p>`;
+    }
+}
+
+// Function to build a single tree node LI element
+function buildTreeNode(nodeData) { // Removed componentInfo param, use global
     const li = document.createElement('li');
     li.setAttribute('data-component', nodeData.name);
-    li.classList.add(nodeData.tag);
+    li.classList.add(nodeData.tag); // Add tag class (essential, secondary, etc.)
 
     const itemRow = document.createElement('div');
     itemRow.classList.add('tree-item-row');
@@ -282,6 +358,7 @@ function buildTreeNode(nodeData, componentInfo) {
     const contentSpan = document.createElement('span');
     contentSpan.classList.add('tree-item-content');
 
+    // Map tag to CSS class for text color and data attribute for badge lookup
     const tagMap = {
         essential: { text: 'essential-text', tag: 'tag-required' },
         secondary: { text: 'secondary-text', tag: 'tag-optional' },
@@ -294,6 +371,7 @@ function buildTreeNode(nodeData, componentInfo) {
         contentSpan.classList.add(tagInfo.text);
     }
     if (tagInfo.tag) {
+        // Store the badge class name in a data attribute for easy retrieval later
         contentSpan.dataset.tagClass = tagInfo.tag;
     }
 
@@ -302,32 +380,35 @@ function buildTreeNode(nodeData, componentInfo) {
     itemRow.appendChild(contentSpan);
     li.appendChild(itemRow);
 
-    contentSpan.addEventListener('click', (event) => {
-        event.stopPropagation();
+    // Click handler for the content span (selecting the item)
+    contentSpan.addEventListener('click', async (event) => {
+        event.stopPropagation(); // Prevent toggle click if clicking text
+
+        // --- UI Highlighting ---
         clearAllHighlights();
-        applyParentHighlight(li);
-        li.classList.add('selected-item-dark-li');
+        applyParentHighlight(li); // Highlight parents
+        li.classList.add('selected-item-dark-li'); // Highlight selected item
         currentSelectedItemLi = li;
 
-        const component = nodeData.name;
-        const componentData = componentInfo[component] || {};
-        const info = componentData.description ? componentData : { description: `No information available for "${component}".` };
+        // --- Load Description ---
+        const componentName = nodeData.name;
+        await loadDescription(componentName); // Load and render Markdown
 
-        const textArea = document.getElementById('info-text');
-        if (textArea) {
-            textArea.value = `${component}\n\n${info.description}`;
-        }
+        // --- Update Info Panel (Tags and Links) ---
+        const componentData = componentInfoData[componentName] || {}; // Get metadata
 
+        // Update Tags Bar
         const allTagBadges = document.querySelectorAll('.info-tags-bar .tag-badge');
-        allTagBadges.forEach(badge => badge.style.display = 'none');
-        const tagClassToShow = contentSpan.dataset.tagClass;
+        allTagBadges.forEach(badge => badge.style.display = 'none'); // Hide all first
+        const tagClassToShow = contentSpan.dataset.tagClass; // Get tag class from data attribute
         if (tagClassToShow) {
             const activeTag = document.querySelector(`.info-tags-bar .${tagClassToShow}`);
             if (activeTag) {
-                activeTag.style.display = 'inline-flex';
+                activeTag.style.display = 'inline-flex'; // Show the correct badge
             }
         }
 
+        // Update Links Bar
         const ashLinkElement = document.getElementById('ash-link');
         if (componentData.ashPath && ashLinkElement) {
             ashLinkElement.href = ASH_BASE_URL + componentData.ashPath;
@@ -341,7 +422,7 @@ function buildTreeNode(nodeData, componentInfo) {
             if (componentData.vulkanAnchor) {
                 vulkanSpecLinkElement.href = VULKAN_SPEC_BASE_URL + componentData.vulkanAnchor;
                 vulkanSpecLinkElement.style.display = 'inline-flex';
-            } else if (componentData.vulkanPath) {
+            } else if (componentData.vulkanPath) { // Handle full paths if present
                 vulkanSpecLinkElement.href = componentData.vulkanPath;
                 vulkanSpecLinkElement.style.display = 'inline-flex';
             } else {
@@ -350,98 +431,129 @@ function buildTreeNode(nodeData, componentInfo) {
         }
     });
 
+    // Handle children recursively
     if (nodeData.children && nodeData.children.length > 0) {
         const ul = document.createElement('ul');
-        ul.style.display = 'block';
+        ul.style.display = 'block'; // Default to expanded
         nodeData.children.forEach(child => {
-            const childLi = buildTreeNode(child, componentInfo);
+            const childLi = buildTreeNode(child); // Recursive call
             ul.appendChild(childLi);
         });
         li.appendChild(ul);
 
-        toggle.textContent = '[-]';
+        // Configure toggle button
+        toggle.textContent = '[-]'; // Initial state: expanded
         toggle.addEventListener('click', (event) => {
-            event.stopPropagation();
+            event.stopPropagation(); // Prevent selection click
             const isCollapsed = ul.style.display === 'none';
             ul.style.display = isCollapsed ? 'block' : 'none';
             toggle.textContent = isCollapsed ? '[-]' : '[+]';
+            // Update layout-dependent elements after animation frame
             requestAnimationFrame(() => {
                 updateBranchIndicatorBar();
                 updateStickyHeaders();
             });
         });
     } else {
-        toggle.innerHTML = ' ';
+        // No children, make toggle invisible and non-interactive
+        toggle.innerHTML = ' '; // Use space to maintain layout
         toggle.style.cursor = 'default';
-        toggle.style.visibility = 'hidden';
+        toggle.style.visibility = 'hidden'; // Hide but keep space
     }
 
     return li;
 }
 
-async function loadAndRenderTree() {
+// Main function to load the tree structure and render it
+async function loadAndRenderTree(treeFileName) {
     try {
-        const response = await fetch('vulkan_tree.json');
+        const treeFilePath = `${DOCS_BASE_PATH}/trees/${treeFileName}`;
+        const response = await fetch(treeFilePath);
         if (!response.ok) {
-            throw new Error(`Failed to fetch vulkan_tree.json: ${response.statusText}`);
+            throw new Error(`Failed to fetch tree file "${treeFileName}": ${response.statusText}`);
         }
         const data = await response.json();
+        componentInfoData = data.componentInfo || {}; // Store component info globally
 
+        // --- Get DOM References ---
         treeColumnRef = document.querySelector('.tree-column');
         combinedStickyHeaderRef = document.querySelector('.combined-sticky-header');
         stickyHeadersContainerRef = document.querySelector('.sticky-headers-container');
         treeContentWrapperRef = document.querySelector('.tree-content-wrapper');
         branchBarRef = document.querySelector('.branch-indicator-bar-area');
+        infoContentDivRef = document.getElementById('info-content'); // Get ref to info div
 
-        if (!treeColumnRef || !combinedStickyHeaderRef || !stickyHeadersContainerRef || !treeContentWrapperRef || !branchBarRef) {
+        if (!treeColumnRef || !combinedStickyHeaderRef || !stickyHeadersContainerRef || !treeContentWrapperRef || !branchBarRef || !infoContentDivRef) {
             console.error('One or more required DOM elements not found:', {
                 treeColumn: !!treeColumnRef,
                 combinedStickyHeader: !!combinedStickyHeaderRef,
                 stickyHeadersContainer: !!stickyHeadersContainerRef,
                 treeContentWrapper: !!treeContentWrapperRef,
-                branchBar: !!branchBarRef
+                branchBar: !!branchBarRef,
+                infoContentDiv: !!infoContentDivRef
             });
+            // Display error to user?
+            if (infoContentDivRef) infoContentDivRef.innerHTML = "<p style='color: red;'>Error: UI elements missing. Cannot render page.</p>";
             return;
         }
 
         const treeRootUl = treeContentWrapperRef.querySelector('ul');
         if (!treeRootUl) {
-            console.error('Tree root UL not found.');
+            console.error('Tree root UL element not found inside .tree-content-wrapper.');
+            infoContentDivRef.innerHTML = "<p style='color: red;'>Error: Tree container missing.</p>";
             return;
         }
+        treeRootUl.innerHTML = ''; // Clear existing tree if any
 
+        // --- Build Tree ---
         data.tree.forEach(node => {
-            const li = buildTreeNode(node, data.componentInfo);
+            const li = buildTreeNode(node);
             treeRootUl.appendChild(li);
         });
 
+        // --- Initial UI Updates ---
         updateBranchIndicatorBar();
-        updateStickyHeaders();
+        updateStickyHeaders(); // Initial sticky header setup
 
+        // --- Event Listeners ---
         let scrollAFRequest = null;
         treeColumnRef.addEventListener('scroll', () => {
+            // Debounce scroll updates using requestAnimationFrame
             if (scrollAFRequest === null) {
                 scrollAFRequest = requestAnimationFrame(() => {
                     updateStickyHeaders();
-                    scrollAFRequest = null;
+                    scrollAFRequest = null; // Reset for next frame
                 });
             }
         });
 
+        // Update on resize as well
         window.addEventListener('resize', () => {
-            requestAnimationFrame(() => {
+            requestAnimationFrame(() => { // Use rAF for resize updates too
                 updateBranchIndicatorBar();
                 updateStickyHeaders();
             });
         });
 
+        // --- Select First Item ---
         const firstContentSpan = treeRootUl.querySelector('.tree-item-content');
         if (firstContentSpan) {
-            firstContentSpan.click();
+            firstContentSpan.click(); // Simulate click to load initial description
+        } else {
+            infoContentDivRef.innerHTML = "<p>Tree loaded, but no items found.</p>";
         }
+
     } catch (error) {
         console.error('Error loading or rendering tree:', error);
+        // Display error in the info panel if possible
+        const infoDiv = document.getElementById('info-content');
+        if (infoDiv) {
+            infoDiv.innerHTML = `<p style="color: red;">Failed to load tree data:<br>${error.message}</p>`;
+        }
     }
 }
 
-document.addEventListener('DOMContentLoaded', loadAndRenderTree);
+// --- Initialize ---
+document.addEventListener('DOMContentLoaded', () => {
+    loadAndRenderTree(TREE_FILE_NAME);
+});
