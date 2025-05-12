@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulkan Overview - Engine Docs</title>
+    <!-- Shared Styles -->
+    <link rel="stylesheet" href="shared-styles.css">
+    <!-- highlight.js Theme -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <!-- Page-specific Styles (Tree View) -->
+    <style>
+        /* Styles specific to the tree view layout */
+        .overview-container { /* Renamed from .container */
+            display: flex;
+            flex: 1; /* Fill main-content area */
+            overflow: hidden; /* Contain children */
+            width: 100%;
+            /* Removed max-width, margin, shadow, border-radius - handled by main-content or not needed */
+            flex-direction: row;
+            background-color: #ffffff; /* Background for the split panel */
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .tree-column {
+            flex: 1;
+            overflow-y: auto; /* Scroll tree column */
+            border-right: 1px solid #e0e0e0;
+            padding: 0;
+            position: relative; /* For sticky header and branch bar positioning */
+            /* Removed background, border-radius - handled by overview-container */
+            /* Removed height: 100% - flexbox handles height */
+        }
+
+        .combined-sticky-header {
+            position: sticky;
+            top: 0; /* Stick to the top of the .tree-column scroll container */
+            z-index: 10;
+            background-color: #ffffff;
+            width: 100%;
+        }
+
+        .branch-indicator-bar-area {
+            position: absolute;
+            top: 20px; /* Initial offset from top of tree content */
+            left: 0;
+            width: 8px;
+            flex-shrink: 0;
+            background-color: #ffffff; /* Match tree background */
+            z-index: 9;
+        }
+
+        .bar-segment {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            transition: top 0.15s ease-out, height 0.15s ease-out;
+        }
+
+        .sticky-headers-container {
+            flex-grow: 1;
+        }
+
+        .sticky-header-item {
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .path-segment {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .path-segment:hover { background-color: #e9f5ff; }
+
+        .path-separator { margin: 0 4px; color: #637C8A; }
+
+        .tree-content-wrapper {
+            padding: 20px 20px 20px 8px; /* Top, Right, Bottom, Left (space for bar) */
+            position: relative;
+        }
+
+        .tree-content-wrapper > ul { list-style: none; padding-left: 10px; margin: 0; }
+        .tree-content-wrapper ul ul { padding-left: 20px; }
+
+        .info-column {
+            flex: 1;
+            overflow-y: hidden; /* Hide direct scrollbar, manage scrolling within #info-content */
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            /* Removed background, border-radius - handled by overview-container */
+            /* Removed height: 100% - flexbox handles height */
+        }
+
+        .info-tags-bar {
+            display: flex;
+            margin-bottom: 8px;
+            padding: 2px;
+            background-color: #4F5B66;
+            border-radius: 4px;
+            min-height: 24px;
+            box-sizing: border-box;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .tag-badge { padding: 3px 8px; border-radius: 3px; font-size: 0.8em; font-weight: 500; color: #ffffff; display: none; }
+        .tag-badge.tag-required { background-color: #16c59d; }
+        .tag-badge.tag-optional { background-color: #BA8675; }
+        .tag-badge.tag-advanced { background-color: #FA855F; }
+        .tag-badge.tag-other { background-color: #76A59A; }
+
+        .info-links-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 6px 8px;
+            background-color: #e9edf0;
+            border-radius: 4px;
+            min-height: 28px;
+            box-sizing: border-box;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .info-link { display: none; align-items: center; padding: 3px 6px; border-radius: 3px; font-size: 0.85em; text-decoration: none; color: #337ab7; background-color: #f5f5f5; border: 1px solid #ddd; }
+        .info-link:hover { background-color: #e7e7e7; text-decoration: underline; }
+        .info-link .external-link-icon { margin-left: 5px; font-size: 0.9em; }
+
+        #info-content {
+            flex: 1; /* Grow to fill info-column */
+            background-color: #fdfdfd;
+            border: 1px solid #dddddd;
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            padding: 15px;
+            border-radius: 4px;
+            line-height: 1.6;
+            min-height: 100px;
+            overflow-y: auto; /* Enable scrolling *within* the info content div */
+        }
+        /* Markdown/Code styling */
+        #info-content pre { background-color: #282c34; color: #abb2bf; padding: 1em; border-radius: 5px; overflow-x: auto; }
+        #info-content code { font-family: 'Consolas', 'Courier New', Courier, monospace; font-size: 0.9em; }
+        #info-content pre code { background: none; padding: 0; font-size: 1em; }
+        #info-content p code, #info-content li code { background-color: #f0f0f0; padding: 0.2em 0.4em; border-radius: 3px; font-size: 0.85em; }
+        #info-content strong { font-weight: bold; }
+        #info-content em { font-style: italic; }
+        #info-content h1, #info-content h2, #info-content h3, #info-content h4 { margin-top: 1.2em; margin-bottom: 0.6em; color: #637C8A; }
+        #info-content h1 { font-size: 1.8em; } #info-content h2 { font-size: 1.5em; } #info-content h3 { font-size: 1.25em; } #info-content h4 { font-size: 1.1em; }
+        #info-content ul, #info-content ol { margin-left: 20px; margin-bottom: 1em; }
+        #info-content li { margin-bottom: 0.4em; }
+        #info-content a { color: #337ab7; text-decoration: none; }
+        #info-content a:hover { text-decoration: underline; }
+
+        /* Tree Item Styling */
+        .tree-content-wrapper li { position: relative; padding: 0; cursor: default; user-select: none; margin-bottom: 1px; box-sizing: border-box; display: flex; flex-direction: column; }
+        .tree-item-row { display: flex; align-items: center; padding: 4px 0; position: relative; z-index: 2; }
+        .tree-content-wrapper ul ul > li > .tree-item-row::before { content: ""; position: absolute; left: -12px; top: 0; bottom: 0; width: 1px; background-color: #cccccc; }
+        .tree-content-wrapper ul ul > li:last-child > .tree-item-row::before { height: 15px; }
+        .tree-content-wrapper ul ul > li > .tree-item-row::after { content: ""; position: absolute; left: -12px; top: 14px; width: 10px; height: 1px; background-color: #cccccc; }
+        .tree-content-wrapper > ul > li > .tree-item-row::before, .tree-content-wrapper > ul > li > .tree-item-row::after { display: none; }
+        .tree-item-content { display: inline-block; padding: 2px 5px; border-radius: 3px; cursor: pointer; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #333333; }
+        .tree-content-wrapper li .tree-item-row:not(.parent-highlight-li-row):not(.selected-item-dark-li-row):hover > .tree-item-content { background-color: #e9f5ff; }
+        .tree-toggle { cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; font-family: monospace; font-weight: bold; color: #637C8A; margin-right: 4px; border-radius: 3px; flex-shrink: 0; }
+        .tree-toggle:hover { background-color: #d0e0f0; }
+        .tree-item-content.essential-text { color: #16c59d; } .tree-item-content.secondary-text { color: #BA8675; } .tree-item-content.advanced-text { color: #FA855F; } .tree-item-content.other-text { color: #76A59A; }
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row { background-color: #e6ffe6; }
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row:hover { background-color: #d9ffd9; }
+        .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.essential-text { color: #16c59d; } .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.secondary-text { color: #BA8675; } .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.advanced-text { color: #FA855F; } .tree-content-wrapper li.parent-highlight-li > .tree-item-row > .tree-item-content.other-text { color: #76A59A; }
+        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row { background-color: #637C8A !important; }
+        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row > .tree-item-content { color: #ffffff !important; font-weight: 500; }
+        .tree-content-wrapper li.selected-item-dark-li > .tree-item-row:hover { background-color: #526570 !important; }
+
+        /* Responsive adjustments if needed */
+        @media (max-width: 768px) {
+            .overview-container {
+                flex-direction: column;
+                height: auto; /* Allow container to grow vertically */
+                max-height: calc(100vh - 70px); /* Example: Limit height below header */
+            }
+            .tree-column {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                max-height: 45vh; /* Limit height on small screens */
+                height: auto; /* Let content determine height up to max */
+                flex: none; /* Override flex: 1 */
+            }
+            .info-column {
+                max-height: 45vh; /* Limit height */
+                height: auto;
+                flex: none;
+            }
+            .main-content {
+                 padding: 10px; /* Reduce padding on smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Header -->
+    <header class="main-header">
+        <a href="../index.html" class="site-title">Engine Docs</a>
+        <nav>
+            <ul>
+                <li><a href="vulkan-overview.html" class="active">Vulkan Overview</a></li>
+                <li><a href="vulkan-engine.html">Vulkan Engine</a></li>
+                <!-- Add more pages here -->
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Content Area for this page -->
+    <main class="main-content">
+        <div class="overview-container">
+            <div class="tree-column">
+                <div class="combined-sticky-header">
+                    <div class="sticky-headers-container">
+                        <!-- Single sticky header item (path text) will be injected here -->
+                    </div>
+                </div>
+                <div class="tree-content-wrapper">
+                    <div class="branch-indicator-bar-area">
+                        <!-- Bar segments will be injected here by JavaScript -->
+                    </div>
+                    <ul>
+                        <!-- Tree will be dynamically inserted here -->
+                    </ul>
+                </div>
+            </div>
+            <div class="info-column">
+                <div class="info-tags-bar">
+                    <span class="tag-badge tag-required">Required</span>
+                    <span class="tag-badge tag-optional">Optional</span>
+                    <span class="tag-badge tag-advanced">Advanced</span>
+                    <span class="tag-badge tag-other">Other</span>
+                </div>
+                <div class="info-links-bar">
+                    <a href="#" id="ash-link" class="info-link" target="_blank" rel="noopener noreferrer">
+                        Ash API <span class="external-link-icon">↗</span>
+                    </a>
+                    <a href="#" id="vulkan-spec-link" class="info-link" target="_blank" rel="noopener noreferrer">
+                        Vulkan Spec <span class="external-link-icon">↗</span>
+                    </a>
+                </div>
+                <div id="info-content">
+                    <p>Select a component from the tree to view its description.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <!-- Page Specific Script (Tree View Logic) - Note the path change -->
+    <script src="../script.js"></script>
+</body>
+</html>

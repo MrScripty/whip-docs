@@ -1,6 +1,6 @@
 const ASH_BASE_URL = "https://docs.rs/ash/latest/ash/";
 const VULKAN_SPEC_BASE_URL = "https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html";
-const DOCS_BASE_PATH = "whip-docs"; // Base path for docs folder
+const DOCS_BASE_PATH = "../whip-docs";// Base path for docs folder
 const TREE_FILE_NAME = "vulkan_2d_rendering.json"; // The tree file to load
 
 let currentSelectedItemLi = null;
@@ -465,15 +465,21 @@ function buildTreeNode(nodeData) { // Removed componentInfo param, use global
 }
 
 // Main function to load the tree structure and render it
+// Main function to load the tree structure and render it
 async function loadAndRenderTree(treeFileName) {
+    console.log("loadAndRenderTree called with:", treeFileName); // Debug log
     try {
         const treeFilePath = `${DOCS_BASE_PATH}/trees/${treeFileName}`;
+        console.log("Attempting to fetch tree from:", treeFilePath); // Debug log
+
         const response = await fetch(treeFilePath);
+        console.log("Fetch response status:", response.status); // Debug log
+
         if (!response.ok) {
-            throw new Error(`Failed to fetch tree file "${treeFileName}": ${response.statusText}`);
+            throw new Error(`Failed to fetch tree file "${treeFileName}": ${response.statusText} (${response.status})`);
         }
         const data = await response.json();
-        componentInfoData = data.componentInfo || {}; // Store component info globally
+        componentInfoData = data.componentInfo || {};
 
         // --- Get DOM References ---
         treeColumnRef = document.querySelector('.tree-column');
@@ -481,55 +487,71 @@ async function loadAndRenderTree(treeFileName) {
         stickyHeadersContainerRef = document.querySelector('.sticky-headers-container');
         treeContentWrapperRef = document.querySelector('.tree-content-wrapper');
         branchBarRef = document.querySelector('.branch-indicator-bar-area');
-        infoContentDivRef = document.getElementById('info-content'); // Get ref to info div
+        infoContentDivRef = document.getElementById('info-content');
 
-        if (!treeColumnRef || !combinedStickyHeaderRef || !stickyHeadersContainerRef || !treeContentWrapperRef || !branchBarRef || !infoContentDivRef) {
-            console.error('One or more required DOM elements not found:', {
-                treeColumn: !!treeColumnRef,
-                combinedStickyHeader: !!combinedStickyHeaderRef,
-                stickyHeadersContainer: !!stickyHeadersContainerRef,
-                treeContentWrapper: !!treeContentWrapperRef,
-                branchBar: !!branchBarRef,
-                infoContentDiv: !!infoContentDivRef
-            });
-            // Display error to user?
-            if (infoContentDivRef) infoContentDivRef.innerHTML = "<p style='color: red;'>Error: UI elements missing. Cannot render page.</p>";
-            return;
+        // --- *** ADDED: Explicit DOM Element Checks *** ---
+        if (!treeColumnRef) {
+            console.error("Critical Error: Could not find '.tree-column' element.");
+            return; // Stop if essential layout element is missing
         }
+        if (!combinedStickyHeaderRef) console.warn("Warning: Could not find '.combined-sticky-header'. Sticky header may not work.");
+        if (!stickyHeadersContainerRef) console.warn("Warning: Could not find '.sticky-headers-container'. Sticky header may not work.");
+        if (!treeContentWrapperRef) {
+            console.error("Critical Error: Could not find '.tree-content-wrapper' element.");
+            return; // Stop if tree container is missing
+        }
+        if (!branchBarRef) console.warn("Warning: Could not find '.branch-indicator-bar-area'. Branch bar will not work.");
+        if (!infoContentDivRef) {
+             console.error("Critical Error: Could not find '#info-content' element.");
+             // Don't necessarily stop, but log the error
+        }
+        // --- *** End Checks *** ---
 
-        const treeRootUl = treeContentWrapperRef.querySelector('ul');
+
+        // --- Find the UL *specifically* ---
+        const treeRootUl = treeContentWrapperRef.querySelector('ul'); // Find UL *inside* the wrapper
+
+        // --- *** ADDED: Check for the UL *** ---
         if (!treeRootUl) {
-            console.error('Tree root UL element not found inside .tree-content-wrapper.');
-            infoContentDivRef.innerHTML = "<p style='color: red;'>Error: Tree container missing.</p>";
-            return;
+            console.error('Critical Error: Tree root UL element not found inside .tree-content-wrapper.');
+            if (infoContentDivRef) infoContentDivRef.innerHTML = "<p style='color: red;'>Error: Tree container (UL) missing.</p>";
+            return; // Stop execution if the target UL isn't there
         }
+        // --- *** End Check *** ---
+
+        console.log("Target UL found. Clearing and building tree..."); // Debug log
         treeRootUl.innerHTML = ''; // Clear existing tree if any
 
         // --- Build Tree ---
+        if (!data.tree || !Array.isArray(data.tree)) {
+             throw new Error("Invalid tree data format: 'tree' array not found in JSON.");
+        }
         data.tree.forEach(node => {
+            console.log("Building node:", node.name); // Debug log
             const li = buildTreeNode(node);
             treeRootUl.appendChild(li);
         });
+        console.log("Tree building complete."); // Debug log
 
         // --- Initial UI Updates ---
         updateBranchIndicatorBar();
-        updateStickyHeaders(); // Initial sticky header setup
+        updateStickyHeaders();
 
         // --- Event Listeners ---
+        // Ensure listeners are added only once if this function could be called multiple times
+        // (Currently called once on DOMContentLoaded, so it's okay)
         let scrollAFRequest = null;
         treeColumnRef.addEventListener('scroll', () => {
-            // Debounce scroll updates using requestAnimationFrame
             if (scrollAFRequest === null) {
                 scrollAFRequest = requestAnimationFrame(() => {
                     updateStickyHeaders();
-                    scrollAFRequest = null; // Reset for next frame
+                    scrollAFRequest = null;
                 });
             }
         });
 
-        // Update on resize as well
         window.addEventListener('resize', () => {
-            requestAnimationFrame(() => { // Use rAF for resize updates too
+            requestAnimationFrame(() => {
                 updateBranchIndicatorBar();
                 updateStickyHeaders();
             });
@@ -538,22 +560,24 @@ async function loadAndRenderTree(treeFileName) {
         // --- Select First Item ---
         const firstContentSpan = treeRootUl.querySelector('.tree-item-content');
         if (firstContentSpan) {
-            firstContentSpan.click(); // Simulate click to load initial description
+            console.log("Clicking first item:", firstContentSpan.textContent); // Debug log
+            firstContentSpan.click();
         } else {
-            infoContentDivRef.innerHTML = "<p>Tree loaded, but no items found.</p>";
+             console.warn("Tree loaded, but no items found to select.");
+            if (infoContentDivRef) infoContentDivRef.innerHTML = "<p>Tree loaded, but no items found.</p>";
         }
 
     } catch (error) {
-        console.error('Error loading or rendering tree:', error);
-        // Display error in the info panel if possible
+        console.error('Error during loadAndRenderTree:', error);
         const infoDiv = document.getElementById('info-content');
         if (infoDiv) {
-            infoDiv.innerHTML = `<p style="color: red;">Failed to load tree data:<br>${error.message}</p>`;
+            infoDiv.innerHTML = `<p style="color: red;">Failed to load or render tree:<br>${error.message}</p><p>Check console for details.</p>`;
         }
     }
 }
 
 // --- Initialize ---
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOMContentLoaded event fired.");
     loadAndRenderTree(TREE_FILE_NAME);
 });
