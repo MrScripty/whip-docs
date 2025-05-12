@@ -879,8 +879,6 @@
                     const itemRow = childLi.querySelector(':scope > .tree-item-row');
                     if (itemRow) {
                         const itemRowRect = itemRow.getBoundingClientRect();
-                        // The item is considered the "top visible" if its top edge is
-                        // at most 4px above the combined header's top edge, or anywhere below it.
                         if (itemRowRect.top >= combinedHeaderRect.top - 4.0) { 
                             displayedPathLIs.push(childLi);
                             break; 
@@ -957,6 +955,8 @@
                             return;
                         }
                         const itemRowToScroll = targetLi.querySelector(':scope > .tree-item-row');
+                        const itemContentToClick = targetLi.querySelector(':scope > .tree-item-row > .tree-item-content');
+
                         if (itemRowToScroll) {
                             treeContentWrapperRef.getBoundingClientRect(); 
                             const columnRect = treeColumnRef.getBoundingClientRect();
@@ -968,17 +968,17 @@
                                 behavior: 'smooth'
                             });
                             
-                            // The rAF scroll listener will handle updates during scroll.
-                            // This timeout is a final safeguard after smooth scroll likely completes.
                             setTimeout(() => {
-                                // Check if scroll was effective, fallback if needed
-                                // This check might be less critical if rAF listener is robust
                                 if (Math.abs(treeColumnRef.scrollTop - scrollOffset) > 15) { 
                                     itemRowToScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                 }
-                                // Ensure sticky header updates after smooth scroll might complete
-                                updateStickyHeaders(); // Call directly for final state
-                            }, 350); // Adjusted delay
+                                updateStickyHeaders(); 
+                                
+                                if (itemContentToClick) {
+                                    itemContentToClick.click(); // Simulate click to update info panel
+                                }
+
+                            }, 350); 
                         } else {
                             console.error(`Item row not found for target LI: ${text}`);
                         }
@@ -1189,10 +1189,10 @@
 
                 let scrollAFRequest = null;
                 treeColumnRef.addEventListener('scroll', () => {
-                    if (scrollAFRequest === null) { // Only request a new frame if one isn't already pending
+                    if (scrollAFRequest === null) { 
                         scrollAFRequest = requestAnimationFrame(() => {
                             updateStickyHeaders();
-                            scrollAFRequest = null; // Reset after execution
+                            scrollAFRequest = null; 
                         });
                     }
                 });
