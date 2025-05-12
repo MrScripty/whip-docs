@@ -5,14 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vulkan 2D Rendering Engine Hierarchy</title>
     <style>
+        html, body { /* Ensure html also takes full height */
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevent body scrollbars if content tries to exceed viewport */
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #F5F4F2;
             color: #333333;
-            margin: 0;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            min-height: 100vh; /* Fallback, but height: 100% on html/body is better */
         }
         h1 {
             text-align: center;
@@ -20,11 +24,12 @@
             margin: 20px 0;
             font-weight: 300;
             padding: 0 15px;
+            flex-shrink: 0; /* Prevent h1 from shrinking */
         }
         .container {
             display: flex;
-            flex: 1;
-            overflow: hidden;
+            flex: 1; /* This makes the container take up remaining vertical space */
+            overflow: hidden; /* Important: Prevents columns from making body scroll */
             width: 100%;
             max-width: 1200px;
             margin: 0 auto 20px auto;
@@ -41,6 +46,7 @@
             border-bottom-left-radius: 8px;
             padding: 0;
             position: relative;
+            height: 100%; /* Make column take full height of container */
         }
         .combined-sticky-header {
             position: sticky;
@@ -114,6 +120,7 @@
             flex-direction: column;
             border-top-right-radius: 8px;
             border-bottom-right-radius: 8px;
+            height: 100%; /* Make column take full height of container */
         }
         .info-tags-bar {
             display: flex;
@@ -124,6 +131,7 @@
             min-height: 24px;
             box-sizing: border-box;
             align-items: center;
+            flex-shrink: 0; /* Prevent shrinking */
         }
         .tag-badge {
             padding: 3px 8px;
@@ -148,6 +156,7 @@
             min-height: 28px;
             box-sizing: border-box;
             align-items: center;
+            flex-shrink: 0; /* Prevent shrinking */
         }
         .info-link {
             display: none;
@@ -171,39 +180,26 @@
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
-                margin: 0 10px 20px 10px;
+                margin: 0 10px 20px 10px; /* Keep bottom margin for small screens */
                 max-width: none;
+                /* height will be determined by flex:1 still */
             }
             .tree-column {
                 border-right: none;
                 border-bottom: 1px solid #e0e0e0;
                 border-radius: 8px 8px 0 0;
-                max-height: 45vh;
+                max-height: 45vh; /* Keep max-height for column layout */
+                height: auto; /* Override height:100% for column layout */
             }
             .info-column {
                 border-radius: 0 0 8px 8px;
-                max-height: 45vh;
+                max-height: 45vh; /* Keep max-height for column layout */
+                height: auto; /* Override height:100% for column layout */
             }
-            .info-tags-bar {
-                padding: 2px;
-                min-height: 22px;
-                margin-bottom: 6px;
-            }
-            .tag-badge {
-                padding: 2px 6px;
-                font-size: 0.75em;
-            }
-            .info-links-bar {
-                padding: 4px 6px;
-                gap: 8px;
-                margin-bottom: 10px;
-            }
-            .info-link {
-                font-size: 0.8em;
-            }
+            /* No need to change body/html height for mobile, default flow is fine */
         }
         #info-text {
-            flex: 1;
+            flex: 1; /* Allow textarea to grow and fill remaining space in info-column */
             background: none;
             border: 1px solid #dddddd;
             color: #637C8A;
@@ -975,7 +971,7 @@
                                 updateStickyHeaders(); 
                                 
                                 if (itemContentToClick) {
-                                    itemContentToClick.click(); // Simulate click to update info panel
+                                    itemContentToClick.click(); 
                                 }
 
                             }, 350); 
