@@ -17,3 +17,4 @@ env_logger = "0.11"                              # Logging implementation
 std_prelude = "0.2"                              # Common std imports
 walkdir = "2.5"
 syn = { version = "2.0", features = ["full", "parsing", "visit"] } 
+proc-macro2 = "1.0"

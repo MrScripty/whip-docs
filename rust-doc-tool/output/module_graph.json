@@ -143,788 +143,2378 @@
   ],
   "edges": [
     {
-      "source": "gui_framework/rendering/pipeline_manager.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
+      "source": "gui_framework/interaction/text_drag.rs",
+      "target": "gui_framework/components/shape_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "ShapeData"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "shape_data"
+        }
+      ]
     },
     {
-      "source": "gui_framework/rendering/command_buffers.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/context/vulkan_setup.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "gui_framework/rendering/shader_utils.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/context/vulkan_setup.rs"
-    },
-    {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
-    },
-    {
-      "source": "gui_framework/components/text_layout.rs",
-      "target": "gui_framework/components/text_data.rs"
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "GlyphAtlas"
+        },
+        {
+          "kind": "import",
+          "name": "GlyphAtlasResource"
+        },
+        {
+          "kind": "import",
+          "name": "GlyphInfo"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "glyph_atlas"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
     },
     {
       "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
+      "target": "gui_framework/plugins/core.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "TextLayoutInfo"
+        }
+      ]
     },
     {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "BufferManager"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/context/vulkan_setup.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "set_debug_object_name"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/shader_utils.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/context/vulkan_context.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "VulkanContext"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_editing.rs",
+      "target": "gui_framework/components/text_layout.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "PositionedGlyph"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextLayoutOutput"
+        },
+        {
+          "kind": "import",
+          "name": "TextRenderData"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_layout"
+        }
+      ]
     },
     {
       "source": "lib.rs",
-      "target": "gui_framework/interaction/utils.rs"
+      "target": "gui_framework/rendering/resize_handler.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "rendering"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "resize_handler"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/components/interaction.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "CursorVisual"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "FontId"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "PositionedGlyph"
+        },
+        {
+          "kind": "import",
+          "name": "ShapeData"
+        },
+        {
+          "kind": "import",
+          "name": "Text"
+        },
+        {
+          "kind": "import",
+          "name": "TextAlignment"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextLayoutOutput"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "buffer_manager"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "rendering"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/render_engine.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "Renderer"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "render_engine"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "rendering"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/interaction/utils.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "utils"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/components/text_layout.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "GlyphInfo"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/plugins/bindings.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "bindings"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "plugins"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "pipeline_manager"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "rendering"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/rendering/font_server.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "FontServer"
+        },
+        {
+          "kind": "import",
+          "name": "FontServerResource"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "font_server"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "GlyphAtlas"
+        },
+        {
+          "kind": "import",
+          "name": "GlyphAtlasResource"
+        },
+        {
+          "kind": "import",
+          "name": "GlyphInfo"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "glyph_atlas"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "rendering"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/text_renderer.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "TextRenderer"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "rendering"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_renderer"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/rendering/text_renderer.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "TextRenderer"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_renderer"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/context/vulkan_context.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "VulkanContext"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/swapchain.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "create_framebuffers"
+        },
+        {
+          "kind": "import",
+          "name": "create_swapchain"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/context/vulkan_context.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "VulkanContext"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/rendering/render_engine.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "Renderer"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "render_engine"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/components/text_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "CursorVisual"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "FontId"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "Text"
+        },
+        {
+          "kind": "import",
+          "name": "TextAlignment"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_data"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/events/interaction_events.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "EntityClicked"
+        },
+        {
+          "kind": "import",
+          "name": "EntityDragged"
+        },
+        {
+          "kind": "import",
+          "name": "HotkeyActionTriggered"
+        },
+        {
+          "kind": "import",
+          "name": "TextFocusChanged"
+        },
+        {
+          "kind": "import",
+          "name": "YrsTextChanged"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "events"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction_events"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/events/interaction_events.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "EntityClicked"
+        },
+        {
+          "kind": "import",
+          "name": "EntityDragged"
+        },
+        {
+          "kind": "import",
+          "name": "HotkeyActionTriggered"
+        },
+        {
+          "kind": "import",
+          "name": "TextFocusChanged"
+        },
+        {
+          "kind": "import",
+          "name": "YrsTextChanged"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction_events"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/components/shape_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "CursorVisual"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "FontId"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "PositionedGlyph"
+        },
+        {
+          "kind": "import",
+          "name": "ShapeData"
+        },
+        {
+          "kind": "import",
+          "name": "Text"
+        },
+        {
+          "kind": "import",
+          "name": "TextAlignment"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextLayoutOutput"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "shape_data"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/render_engine.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "Renderer"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "render_engine"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/font_server.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "FontServer"
+        },
+        {
+          "kind": "import",
+          "name": "FontServerResource"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "font_server"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/plugins/interaction.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "plugins"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/components/shape_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "ShapeData"
+        },
+        {
+          "kind": "import",
+          "name": "TextRenderData"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "shape_data"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/components/interaction.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/resize_handler.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "ResizeHandler"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/components/shape_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "ShapeData"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "components"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "shape_data"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/shader_utils.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "rendering"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_drag.rs",
+      "target": "gui_framework/interaction/utils.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "get_cursor_at_position"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/context/vulkan_setup.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "set_debug_object_name"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/font_server.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "FontServer"
+        },
+        {
+          "kind": "import",
+          "name": "FontServerResource"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "font_server"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "rendering"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/context/vulkan_setup.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "set_debug_object_name"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/command_buffers.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "record_command_buffers"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/components/text_layout.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "PositionedGlyph"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextLayoutOutput"
+        },
+        {
+          "kind": "import",
+          "name": "TextRenderData"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_layout"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/plugins/core.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "TextLayoutInfo"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_drag.rs",
+      "target": "gui_framework/components/interaction.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_editing.rs",
+      "target": "gui_framework/components/visibility.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "visibility"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/components/interaction.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "components"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_editing.rs",
+      "target": "gui_framework/components/shape_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "ShapeData"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "shape_data"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/components/text_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "CursorVisual"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "FontId"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "PositionedGlyph"
+        },
+        {
+          "kind": "import",
+          "name": "ShapeData"
+        },
+        {
+          "kind": "import",
+          "name": "Text"
+        },
+        {
+          "kind": "import",
+          "name": "TextAlignment"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextLayoutOutput"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_data"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/interaction/hotkeys.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "HotkeyConfig"
+        },
+        {
+          "kind": "import",
+          "name": "HotkeyError"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/components/text_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "CursorVisual"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "FontId"
+        },
+        {
+          "kind": "import",
+          "name": "Text"
+        },
+        {
+          "kind": "import",
+          "name": "TextAlignment"
+        },
+        {
+          "kind": "import",
+          "name": "TextRenderData"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_data"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/interaction/utils.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "get_cursor_at_position"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/interaction/hotkeys.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "HotkeyConfig"
+        },
+        {
+          "kind": "import",
+          "name": "HotkeyError"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/plugins/core.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CoreSet"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "buffer_manager"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/components/visibility.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "visibility"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/plugins/core.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "core"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "plugins"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/plugins/interaction.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "InteractionSet"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/context/vulkan_context.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "VulkanContext"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/context/vulkan_setup.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "set_debug_object_name"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/text_renderer.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "TextRenderer"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_editing.rs",
+      "target": "gui_framework/events/interaction_events.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "EntityClicked"
+        },
+        {
+          "kind": "import",
+          "name": "EntityDragged"
+        },
+        {
+          "kind": "import",
+          "name": "HotkeyActionTriggered"
+        },
+        {
+          "kind": "import",
+          "name": "TextFocusChanged"
+        },
+        {
+          "kind": "import",
+          "name": "YrsTextChanged"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction_events"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/pipeline_manager.rs",
+      "target": "gui_framework/context/vulkan_context.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "VulkanContext"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/context/vulkan_setup.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "cleanup_vulkan"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "import",
+          "name": "setup_vulkan"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/components/visibility.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "components"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "visibility"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/plugins/movement.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "movement"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "plugins"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/movement.rs",
+      "target": "gui_framework/plugins/interaction.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "InteractionSet"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/context/vulkan_context.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "VulkanContext"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_editing.rs",
+      "target": "gui_framework/components/text_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "CursorVisual"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "FontId"
+        },
+        {
+          "kind": "import",
+          "name": "Text"
+        },
+        {
+          "kind": "import",
+          "name": "TextAlignment"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_data"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/rendering/resize_handler.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "resize_handler"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/events/interaction_events.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "EntityClicked"
+        },
+        {
+          "kind": "import",
+          "name": "EntityDragged"
+        },
+        {
+          "kind": "import",
+          "name": "HotkeyActionTriggered"
+        },
+        {
+          "kind": "import",
+          "name": "TextFocusChanged"
+        },
+        {
+          "kind": "import",
+          "name": "YrsTextChanged"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction_events"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/components/visibility.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "TextRenderData"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "visibility"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/command_buffers.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "command_buffers"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "rendering"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/context/vulkan_context.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "VulkanContext"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/swapchain.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "swapchain"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/bindings.rs",
+      "target": "gui_framework/events/interaction_events.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "EntityClicked"
+        },
+        {
+          "kind": "import",
+          "name": "EntityDragged"
+        },
+        {
+          "kind": "import",
+          "name": "HotkeyActionTriggered"
+        },
+        {
+          "kind": "import",
+          "name": "TextFocusChanged"
+        },
+        {
+          "kind": "import",
+          "name": "YrsTextChanged"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction_events"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_drag.rs",
+      "target": "gui_framework/components/visibility.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "visibility"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_editing.rs",
+      "target": "gui_framework/components/interaction.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "pipeline_manager"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/components/text_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "CursorVisual"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "FontId"
+        },
+        {
+          "kind": "import",
+          "name": "Text"
+        },
+        {
+          "kind": "import",
+          "name": "TextAlignment"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "components"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_data"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/context/vulkan_setup.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "cleanup_vulkan"
+        },
+        {
+          "kind": "import",
+          "name": "set_debug_object_name"
+        },
+        {
+          "kind": "import",
+          "name": "setup_vulkan"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/components/visibility.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "CursorVisual"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "FontId"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "PositionedGlyph"
+        },
+        {
+          "kind": "import",
+          "name": "ShapeData"
+        },
+        {
+          "kind": "import",
+          "name": "Text"
+        },
+        {
+          "kind": "import",
+          "name": "TextAlignment"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextLayoutOutput"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "visibility"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/components/shape_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "ShapeData"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "shape_data"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/rendering/shader_utils.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/rendering/swapchain.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "cleanup_swapchain_resources"
+        },
+        {
+          "kind": "import",
+          "name": "create_framebuffers"
+        },
+        {
+          "kind": "import",
+          "name": "create_swapchain"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/swapchain.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "rendering"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "swapchain"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/rendering/swapchain.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "swapchain"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_drag.rs",
+      "target": "gui_framework/components/text_layout.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "PositionedGlyph"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextLayoutOutput"
+        },
+        {
+          "kind": "import",
+          "name": "TextRenderData"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_layout"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/interaction/text_drag.rs",
+      "target": "gui_framework/components/text_data.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "CursorVisual"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "FontId"
+        },
+        {
+          "kind": "import",
+          "name": "Text"
+        },
+        {
+          "kind": "import",
+          "name": "TextAlignment"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_data"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/bindings.rs",
+      "target": "gui_framework/plugins/interaction.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "InteractionSet"
+        }
+      ]
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/components/text_layout.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "PositionedGlyph"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextLayoutOutput"
+        },
+        {
+          "kind": "import",
+          "name": "TextRenderData"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "components"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_layout"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/components/text_layout.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "EditableText"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "PositionedGlyph"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextLayoutOutput"
+        },
+        {
+          "kind": "import",
+          "name": "TextRenderData"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_layout"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/movement.rs",
+      "target": "gui_framework/events/interaction_events.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "EntityClicked"
+        },
+        {
+          "kind": "import",
+          "name": "EntityDragged"
+        },
+        {
+          "kind": "import",
+          "name": "HotkeyActionTriggered"
+        },
+        {
+          "kind": "import",
+          "name": "TextFocusChanged"
+        },
+        {
+          "kind": "import",
+          "name": "YrsTextChanged"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction_events"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/rendering/command_buffers.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "command_buffers"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/components/text_layout.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "CursorState"
+        },
+        {
+          "kind": "import",
+          "name": "CursorVisual"
+        },
+        {
+          "kind": "import",
+          "name": "Focus"
+        },
+        {
+          "kind": "import",
+          "name": "FontId"
+        },
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "PositionedGlyph"
+        },
+        {
+          "kind": "import",
+          "name": "ShapeData"
+        },
+        {
+          "kind": "import",
+          "name": "Text"
+        },
+        {
+          "kind": "import",
+          "name": "TextAlignment"
+        },
+        {
+          "kind": "import",
+          "name": "TextBufferCache"
+        },
+        {
+          "kind": "import",
+          "name": "TextLayoutOutput"
+        },
+        {
+          "kind": "import",
+          "name": "TextRenderData"
+        },
+        {
+          "kind": "import",
+          "name": "TextSelection"
+        },
+        {
+          "kind": "import",
+          "name": "Visibility"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_layout"
+        }
+      ]
     },
     {
       "source": "gui_framework/context/vulkan_setup.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
-    },
-    {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "gui_framework/components/visibility.rs",
-      "target": "gui_framework/components/text_data.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/text_renderer.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
-    },
-    {
-      "source": "gui_framework/rendering/font_server.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
-    },
-    {
-      "source": "gui_framework/rendering/command_buffers.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/plugins/bindings.rs"
+      "target": "gui_framework/context/vulkan_context.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "VulkanContext"
+        }
+      ]
     },
     {
       "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
-    },
-    {
-      "source": "gui_framework/rendering/command_buffers.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "gui_framework/rendering/text_renderer.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "gui_framework/plugins/movement.rs",
-      "target": "gui_framework/plugins/interaction.rs"
-    },
-    {
-      "source": "gui_framework/rendering/pipeline_manager.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/events/interaction_events.rs"
-    },
-    {
-      "source": "gui_framework/rendering/shader_utils.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/plugins/core.rs",
-      "target": "gui_framework/events/interaction_events.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
+      "target": "gui_framework/rendering/resize_handler.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "resize_handler"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
     },
     {
       "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
+      "target": "gui_framework/rendering/glyph_atlas.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "GlyphAtlas"
+        },
+        {
+          "kind": "import",
+          "name": "GlyphAtlasResource"
+        },
+        {
+          "kind": "import",
+          "name": "GlyphInfo"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "glyph_atlas"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
     },
     {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
+      "source": "lib.rs",
+      "target": "gui_framework/context/vulkan_context.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "VulkanContext"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        }
+      ]
     },
     {
-      "source": "gui_framework/components/shape_data.rs",
-      "target": "gui_framework/components/text_layout.rs"
-    },
-    {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "gui_framework/plugins/bindings.rs",
-      "target": "gui_framework/plugins/interaction.rs"
-    },
-    {
-      "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/command_buffers.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "gui_framework/rendering/pipeline_manager.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
+      "source": "lib.rs",
+      "target": "gui_framework/interaction/text_drag.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "gui_framework"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_drag"
+        }
+      ]
     },
     {
       "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
+      "target": "gui_framework/interaction/text_drag.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "text_drag_selection_system"
+        }
+      ]
     },
     {
-      "source": "gui_framework/rendering/shader_utils.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/text_renderer.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "TextRenderer"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "text_renderer"
+        }
+      ]
     },
     {
-      "source": "gui_framework/rendering/font_server.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/command_buffers.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "command_buffers"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
     },
     {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
-    },
-    {
-      "source": "gui_framework/rendering/pipeline_manager.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
-    },
-    {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/interaction/utils.rs",
-      "target": "gui_framework/interaction/text_drag.rs"
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs",
+      "interactions": [
+        {
+          "kind": "moduleDecl",
+          "name": "pipeline_manager"
+        },
+        {
+          "kind": "import",
+          "name": "shader_utils"
+        }
+      ]
     },
     {
       "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/components/text_layout.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/plugins/movement.rs"
+      "target": "gui_framework/rendering/pipeline_manager.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "PipelineManager"
+        }
+      ]
     },
     {
       "source": "gui_framework/rendering/text_renderer.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "gui_framework/plugins/bindings.rs",
-      "target": "gui_framework/plugins/movement.rs"
-    },
-    {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/font_server.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "gui_framework/rendering/font_server.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "gui_framework/rendering/shader_utils.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "gui_framework/components/interaction.rs",
-      "target": "gui_framework/components/shape_data.rs"
-    },
-    {
-      "source": "gui_framework/plugins/movement.rs",
-      "target": "gui_framework/plugins/bindings.rs"
-    },
-    {
-      "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "gui_framework/context/vulkan_context.rs",
-      "target": "gui_framework/context/vulkan_setup.rs"
-    },
-    {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/components/text_data.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/text_renderer.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/interaction/text_drag.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/components/visibility.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/font_server.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/command_buffers.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/plugins/core.rs"
-    },
-    {
-      "source": "gui_framework/components/text_data.rs",
-      "target": "gui_framework/components/text_layout.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/interaction/text_drag.rs"
-    },
-    {
-      "source": "gui_framework/components/interaction.rs",
-      "target": "gui_framework/components/text_layout.rs"
-    },
-    {
-      "source": "gui_framework/components/text_layout.rs",
-      "target": "gui_framework/components/interaction.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/components/interaction.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
-    },
-    {
-      "source": "gui_framework/rendering/command_buffers.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
-    },
-    {
-      "source": "gui_framework/rendering/text_renderer.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
-    },
-    {
-      "source": "gui_framework/rendering/pipeline_manager.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "gui_framework/components/shape_data.rs",
-      "target": "gui_framework/components/text_data.rs"
-    },
-    {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "gui_framework/rendering/text_renderer.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "gui_framework/rendering/text_renderer.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/text_renderer.rs",
-      "target": "gui_framework/context/vulkan_setup.rs"
-    },
-    {
-      "source": "gui_framework/plugins/core.rs",
-      "target": "gui_framework/context/vulkan_setup.rs"
-    },
-    {
-      "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/plugins/core.rs"
-    },
-    {
-      "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
-    },
-    {
-      "source": "gui_framework/plugins/bindings.rs",
-      "target": "gui_framework/plugins/core.rs"
-    },
-    {
-      "source": "gui_framework/rendering/pipeline_manager.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "gui_framework/plugins/movement.rs",
-      "target": "gui_framework/plugins/core.rs"
-    },
-    {
-      "source": "gui_framework/components/text_data.rs",
-      "target": "gui_framework/components/shape_data.rs"
-    },
-    {
-      "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/plugins/bindings.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/components/shape_data.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
-    },
-    {
-      "source": "gui_framework/rendering/shader_utils.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "gui_framework/rendering/text_renderer.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/components/interaction.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/context/vulkan_setup.rs"
-    },
-    {
-      "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/shader_utils.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/plugins/movement.rs"
-    },
-    {
-      "source": "gui_framework/components/visibility.rs",
-      "target": "gui_framework/components/text_layout.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/components/shape_data.rs"
-    },
-    {
-      "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
-    },
-    {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
-    },
-    {
-      "source": "gui_framework/interaction/text_editing.rs",
-      "target": "gui_framework/interaction/text_drag.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/shader_utils.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/text_renderer.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
-    },
-    {
-      "source": "gui_framework/plugins/core.rs",
-      "target": "gui_framework/plugins/movement.rs"
-    },
-    {
-      "source": "gui_framework/rendering/command_buffers.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
-    },
-    {
-      "source": "gui_framework/components/shape_data.rs",
-      "target": "gui_framework/components/visibility.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/font_server.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/pipeline_manager.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "gui_framework/rendering/pipeline_manager.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "gui_framework/components/text_layout.rs",
-      "target": "gui_framework/components/visibility.rs"
-    },
-    {
-      "source": "gui_framework/plugins/movement.rs",
-      "target": "gui_framework/events/interaction_events.rs"
-    },
-    {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/rendering/font_server.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/interaction/hotkeys.rs"
-    },
-    {
-      "source": "gui_framework/plugins/core.rs",
-      "target": "gui_framework/plugins/bindings.rs"
-    },
-    {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/context/vulkan_setup.rs"
-    },
-    {
-      "source": "gui_framework/rendering/font_server.rs",
-      "target": "gui_framework/rendering/text_renderer.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/interaction/hotkeys.rs",
-      "target": "gui_framework/interaction/text_drag.rs"
-    },
-    {
-      "source": "gui_framework/rendering/shader_utils.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
-    },
-    {
-      "source": "gui_framework/components/visibility.rs",
-      "target": "gui_framework/components/shape_data.rs"
-    },
-    {
-      "source": "gui_framework/interaction/text_editing.rs",
-      "target": "gui_framework/interaction/utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/shader_utils.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "gui_framework/rendering/font_server.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "gui_framework/rendering/command_buffers.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/interaction/utils.rs",
-      "target": "gui_framework/interaction/hotkeys.rs"
-    },
-    {
-      "source": "gui_framework/interaction/text_editing.rs",
-      "target": "gui_framework/interaction/hotkeys.rs"
-    },
-    {
-      "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/components/interaction.rs",
-      "target": "gui_framework/components/text_data.rs"
-    },
-    {
-      "source": "gui_framework/interaction/text_drag.rs",
-      "target": "gui_framework/interaction/hotkeys.rs"
-    },
-    {
-      "source": "gui_framework/components/text_layout.rs",
-      "target": "gui_framework/components/shape_data.rs"
-    },
-    {
-      "source": "gui_framework/components/visibility.rs",
-      "target": "gui_framework/components/interaction.rs"
-    },
-    {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/components/visibility.rs"
-    },
-    {
-      "source": "gui_framework/rendering/pipeline_manager.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/plugins/core.rs"
-    },
-    {
-      "source": "gui_framework/interaction/hotkeys.rs",
-      "target": "gui_framework/interaction/utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/buffer_manager.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/context/vulkan_setup.rs"
-    },
-    {
-      "source": "gui_framework/rendering/command_buffers.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
-    },
-    {
-      "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
-    },
-    {
-      "source": "gui_framework/components/text_data.rs",
-      "target": "gui_framework/components/visibility.rs"
-    },
-    {
-      "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/render_engine.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "gui_framework/rendering/pipeline_manager.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/components/text_layout.rs"
-    },
-    {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "gui_framework/interaction/text_drag.rs",
-      "target": "gui_framework/interaction/utils.rs"
-    },
-    {
-      "source": "gui_framework/plugins/bindings.rs",
-      "target": "gui_framework/events/interaction_events.rs"
-    },
-    {
-      "source": "gui_framework/components/text_data.rs",
-      "target": "gui_framework/components/interaction.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/interaction/utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/font_server.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
-    },
-    {
-      "source": "gui_framework/plugins/core.rs",
-      "target": "gui_framework/plugins/interaction.rs"
-    },
-    {
-      "source": "gui_framework/rendering/swapchain.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "gui_framework/rendering/command_buffers.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
-    },
-    {
-      "source": "gui_framework/components/text_layout.rs",
-      "target": "gui_framework/rendering/glyph_atlas.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/interaction/hotkeys.rs"
-    },
-    {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/events/interaction_events.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/plugins/interaction.rs"
-    },
-    {
-      "source": "lib.rs",
-      "target": "gui_framework/components/text_data.rs"
-    },
-    {
-      "source": "gui_framework/rendering/glyph_atlas.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
-    },
-    {
-      "source": "gui_framework/components/shape_data.rs",
-      "target": "gui_framework/components/interaction.rs"
-    },
-    {
-      "source": "gui_framework/components/interaction.rs",
-      "target": "gui_framework/components/visibility.rs"
+      "target": "gui_framework/components/interaction.rs",
+      "interactions": [
+        {
+          "kind": "import",
+          "name": "Interaction"
+        },
+        {
+          "kind": "import",
+          "name": "TextRenderData"
+        },
+        {
+          "kind": "moduleDecl",
+          "name": "interaction"
+        }
+      ]
     }
   ]
 }
