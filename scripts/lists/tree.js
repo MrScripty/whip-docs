@@ -1,6 +1,7 @@
+// All the code from your provided script.js goes here
 const ASH_BASE_URL = "https://docs.rs/ash/latest/ash/";
 const VULKAN_SPEC_BASE_URL = "https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html";
-const DOCS_BASE_PATH = "../whip-docs";// Base path for docs folder
+const DOCS_BASE_PATH = "../whip-docs"; // Base path for docs folder
 const TREE_FILE_NAME = "vulkan_2d_rendering.json"; // The tree file to load
 
 let currentSelectedItemLi = null;
@@ -10,7 +11,7 @@ let treeColumnRef, combinedStickyHeaderRef, stickyHeadersContainerRef, treeConte
 let pathLIsCoveredByStickyHeader = [];
 let componentInfoData = {}; // Store componentInfo globally
 
-// --- Highlighting and UI Functions (mostly unchanged) ---
+// --- Highlighting and UI Functions ---
 
 function clearAllHighlights() {
     document.querySelectorAll('.tree-content-wrapper li').forEach(liEl => {
@@ -66,7 +67,6 @@ function updateBranchIndicatorBar() {
             branchBarRef.appendChild(segment);
         });
     }
-    // Ensure bar height matches potentially changed content height
     branchBarRef.style.height = treeContentWrapperRef.scrollHeight + 'px';
 }
 
@@ -145,7 +145,6 @@ function updateStickyHeaders() {
              const itemRow = firstRootLi.querySelector(':scope > .tree-item-row');
              if (itemRow) {
                 const itemRowRect = itemRow.getBoundingClientRect();
-                // Check if the first item is partially or fully visible under the sticky header area
                 if (itemRowRect.bottom > combinedHeaderRect.top && itemRowRect.top < combinedHeaderRect.bottom + itemRow.offsetHeight) {
                     displayedPathLIs.push(firstRootLi);
                 }
@@ -153,22 +152,20 @@ function updateStickyHeaders() {
          }
     }
 
-
     if (displayedPathLIs.length > 0) {
         combinedStickyHeaderRef.style.visibility = 'visible';
         const firstPathOriginalItemRow = displayedPathLIs[0].querySelector(':scope > .tree-item-row');
         if (firstPathOriginalItemRow) {
             combinedStickyHeaderRef.style.height = firstPathOriginalItemRow.offsetHeight + 'px';
         } else {
-            combinedStickyHeaderRef.style.height = 'auto'; // Fallback
+            combinedStickyHeaderRef.style.height = 'auto';
         }
     } else {
         combinedStickyHeaderRef.style.visibility = 'hidden';
-        combinedStickyHeaderRef.style.height = '0px'; // Collapse when no path
-        return; // Don't build header if nothing to display
+        combinedStickyHeaderRef.style.height = '0px';
+        return;
     }
 
-    // Proceed only if we have a path to display
     const firstPathElementForStyle = displayedPathLIs[0];
     const originalItemRowForStyle = firstPathElementForStyle.querySelector(':scope > .tree-item-row');
 
@@ -177,24 +174,20 @@ function updateStickyHeaders() {
         stickyHeaderDiv.classList.add('sticky-header-item');
         stickyHeaderDiv.style.height = originalItemRowForStyle.offsetHeight + 'px';
 
-        // Create a placeholder for the toggle to maintain alignment
         const stickyTogglePlaceholder = document.createElement('span');
         stickyTogglePlaceholder.className = 'tree-toggle';
-        stickyTogglePlaceholder.innerHTML = ' '; // Non-breaking space
-        stickyTogglePlaceholder.style.visibility = 'hidden'; // Keep space, but hide
+        stickyTogglePlaceholder.innerHTML = ' ';
+        stickyTogglePlaceholder.style.visibility = 'hidden';
 
         const pathContainer = document.createElement('span');
-        pathContainer.classList.add('tree-item-content'); // Use base class for styling
-        // Try to get class from the *last* item in the path for correct color
+        pathContainer.classList.add('tree-item-content');
         const lastPathItemContentForStyle = displayedPathLIs[displayedPathLIs.length-1].querySelector(':scope > .tree-item-row > .tree-item-content');
         if (lastPathItemContentForStyle) {
-             pathContainer.className = lastPathItemContentForStyle.className; // Copy all classes
+             pathContainer.className = lastPathItemContentForStyle.className;
         } else {
-            // Fallback to first item if last has no content span (shouldn't happen)
             const firstItemContentForStyle = firstPathElementForStyle.querySelector(':scope > .tree-item-row > .tree-item-content');
             if (firstItemContentForStyle) pathContainer.className = firstItemContentForStyle.className;
         }
-
 
         displayedPathLIs.forEach((liForSegment) => {
             const contentSpan = liForSegment.querySelector(':scope > .tree-item-row > .tree-item-content');
@@ -203,10 +196,10 @@ function updateStickyHeaders() {
             const pathSegment = document.createElement('span');
             pathSegment.classList.add('path-segment');
             pathSegment.textContent = text;
-            pathSegment.title = text; // Tooltip for long names
+            pathSegment.title = text;
 
             pathSegment.addEventListener('click', () => {
-                const targetLi = liForSegment; // Closure captures the correct li
+                const targetLi = liForSegment;
                 if (!targetLi) {
                     console.error(`Target LI not found for path segment: ${text}`);
                     return;
@@ -215,32 +208,25 @@ function updateStickyHeaders() {
                 const itemContentToClick = targetLi.querySelector(':scope > .tree-item-row > .tree-item-content');
 
                 if (itemRowToScroll) {
-                    // Calculate scroll position relative to the tree column's viewport
                     const columnRect = treeColumnRef.getBoundingClientRect();
                     const itemRect = itemRowToScroll.getBoundingClientRect();
-                    // Target scroll position: item's top relative to column's top + current scroll offset
                     const scrollOffset = itemRect.top - columnRect.top + treeColumnRef.scrollTop;
 
-                    // Scroll the tree column
                     treeColumnRef.scrollTo({
                         top: scrollOffset,
                         behavior: 'smooth'
                     });
 
-                    // Fallback/Verification: If smooth scroll didn't quite reach, use scrollIntoView after a delay
-                    // Also trigger the click after scroll attempt
                     setTimeout(() => {
-                        // Check if scroll is close enough, otherwise force it
-                        if (Math.abs(treeColumnRef.scrollTop - scrollOffset) > 15) { // Tolerance
+                        if (Math.abs(treeColumnRef.scrollTop - scrollOffset) > 15) {
                             itemRowToScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
-                        updateStickyHeaders(); // Update headers after scroll potentially finishes
+                        updateStickyHeaders();
 
-                        // Trigger the click on the actual item
                         if (itemContentToClick) {
                             itemContentToClick.click();
                         }
-                    }, 350); // Adjust delay as needed for smooth scroll duration
+                    }, 350);
                 } else {
                     console.error(`Item row not found for target LI: ${text}`);
                 }
@@ -248,7 +234,6 @@ function updateStickyHeaders() {
 
             pathContainer.appendChild(pathSegment);
 
-            // Add separator if not the last item
             if (liForSegment !== displayedPathLIs[displayedPathLIs.length - 1]) {
                 const separator = document.createElement('span');
                 separator.classList.add('path-separator');
@@ -257,56 +242,42 @@ function updateStickyHeaders() {
             }
         });
 
-        // --- Calculate Indentation for Sticky Header Text ---
         let indentForStickyText = 0;
         const rootUlInWrapper = treeContentWrapperRef.querySelector(':scope > ul');
         if (rootUlInWrapper) {
-             // Start with root UL padding
             indentForStickyText += parseFloat(window.getComputedStyle(rootUlInWrapper).paddingLeft) || 0;
         }
 
-        // Walk up the DOM from the first path element's parent UL to the root UL inside the wrapper
         let el = firstPathElementForStyle.parentElement;
         while (el && el !== rootUlInWrapper && el !== treeContentWrapperRef) {
             if (el.tagName === 'UL' && el.parentElement && el.parentElement.tagName === 'LI') {
-                // Add padding of intermediate ULs
                 indentForStickyText += parseFloat(window.getComputedStyle(el).paddingLeft) || 0;
             }
             el = el.parentElement;
         }
 
-        // Add width and margin of the original toggle element of the *first* path item
         const toggleElement = firstPathElementForStyle.querySelector(':scope > .tree-item-row > .tree-toggle');
         if (toggleElement) {
             indentForStickyText += toggleElement.offsetWidth + (parseFloat(window.getComputedStyle(toggleElement).marginRight) || 0);
         }
 
-        // The paddingLeft for the sticky header div should be the calculated indent,
-        // *minus* the space taken by the hidden placeholder toggle we added.
         let paddingLeftForStickyDiv = indentForStickyText;
-        if (toggleElement) { // If the original item had a toggle
+        if (toggleElement) {
             paddingLeftForStickyDiv -= (toggleElement.offsetWidth + (parseFloat(window.getComputedStyle(toggleElement).marginRight) || 0));
         }
 
-        // Apply the calculated padding to the sticky header div itself
-        stickyHeaderDiv.style.paddingLeft = Math.max(0, paddingLeftForStickyDiv) + 'px'; // Ensure non-negative
-
-        // Assemble the sticky header item
-        stickyHeaderDiv.appendChild(stickyTogglePlaceholder); // Add hidden toggle first
-        stickyHeaderDiv.appendChild(pathContainer);          // Then the path text
-        stickyHeadersContainerRef.appendChild(stickyHeaderDiv); // Add to the DOM
+        stickyHeaderDiv.style.paddingLeft = Math.max(0, paddingLeftForStickyDiv) + 'px';
+        stickyHeaderDiv.appendChild(stickyTogglePlaceholder);
+        stickyHeaderDiv.appendChild(pathContainer);
+        stickyHeadersContainerRef.appendChild(stickyHeaderDiv);
     }
 }
 
-
-// --- Core Logic ---
-
-// Function to load and display Markdown description
 async function loadDescription(componentName) {
     if (!infoContentDivRef) return;
 
     const mdPath = `${DOCS_BASE_PATH}/descriptions/${componentName}.md`;
-    infoContentDivRef.innerHTML = `<p>Loading description for "${componentName}"...</p>`; // Loading indicator
+    infoContentDivRef.innerHTML = `<p>Loading description for "${componentName}"...</p>`;
 
     try {
         const response = await fetch(mdPath);
@@ -315,27 +286,22 @@ async function loadDescription(componentName) {
         }
         const markdown = await response.text();
 
-        // Configure marked to allow HTML and use highlight.js
         marked.setOptions({
             highlight: function(code, lang) {
                 const language = hljs.getLanguage(lang) ? lang : 'plaintext';
                 return hljs.highlight(code, { language }).value;
             },
-            langPrefix: 'hljs language-', // CSS class prefix for hljs
-            gfm: true, // Enable GitHub Flavored Markdown
-            breaks: true // Convert single line breaks to <br>
+            langPrefix: 'hljs language-',
+            gfm: true,
+            breaks: true
         });
 
-        // Parse Markdown to HTML
         const htmlContent = marked.parse(markdown);
         infoContentDivRef.innerHTML = htmlContent;
 
-        // Re-run highlight.js on the new content (important!)
-        // Use highlightBlock for targeted highlighting if highlightAll is too broad
         infoContentDivRef.querySelectorAll('pre code').forEach((block) => {
             hljs.highlightElement(block);
         });
-
 
     } catch (error) {
         console.error(`Error loading description for ${componentName}:`, error);
@@ -343,11 +309,10 @@ async function loadDescription(componentName) {
     }
 }
 
-// Function to build a single tree node LI element
-function buildTreeNode(nodeData) { // Removed componentInfo param, use global
+function buildTreeNode(nodeData) {
     const li = document.createElement('li');
     li.setAttribute('data-component', nodeData.name);
-    li.classList.add(nodeData.tag); // Add tag class (essential, secondary, etc.)
+    li.classList.add(nodeData.tag);
 
     const itemRow = document.createElement('div');
     itemRow.classList.add('tree-item-row');
@@ -358,7 +323,6 @@ function buildTreeNode(nodeData) { // Removed componentInfo param, use global
     const contentSpan = document.createElement('span');
     contentSpan.classList.add('tree-item-content');
 
-    // Map tag to CSS class for text color and data attribute for badge lookup
     const tagMap = {
         essential: { text: 'essential-text', tag: 'tag-required' },
         secondary: { text: 'secondary-text', tag: 'tag-optional' },
@@ -371,7 +335,6 @@ function buildTreeNode(nodeData) { // Removed componentInfo param, use global
         contentSpan.classList.add(tagInfo.text);
     }
     if (tagInfo.tag) {
-        // Store the badge class name in a data attribute for easy retrieval later
         contentSpan.dataset.tagClass = tagInfo.tag;
     }
 
@@ -380,35 +343,29 @@ function buildTreeNode(nodeData) { // Removed componentInfo param, use global
     itemRow.appendChild(contentSpan);
     li.appendChild(itemRow);
 
-    // Click handler for the content span (selecting the item)
     contentSpan.addEventListener('click', async (event) => {
-        event.stopPropagation(); // Prevent toggle click if clicking text
+        event.stopPropagation();
 
-        // --- UI Highlighting ---
         clearAllHighlights();
-        applyParentHighlight(li); // Highlight parents
-        li.classList.add('selected-item-dark-li'); // Highlight selected item
+        applyParentHighlight(li);
+        li.classList.add('selected-item-dark-li');
         currentSelectedItemLi = li;
 
-        // --- Load Description ---
         const componentName = nodeData.name;
-        await loadDescription(componentName); // Load and render Markdown
+        await loadDescription(componentName);
 
-        // --- Update Info Panel (Tags and Links) ---
-        const componentData = componentInfoData[componentName] || {}; // Get metadata
+        const componentData = componentInfoData[componentName] || {};
 
-        // Update Tags Bar
         const allTagBadges = document.querySelectorAll('.info-tags-bar .tag-badge');
-        allTagBadges.forEach(badge => badge.style.display = 'none'); // Hide all first
-        const tagClassToShow = contentSpan.dataset.tagClass; // Get tag class from data attribute
+        allTagBadges.forEach(badge => badge.style.display = 'none');
+        const tagClassToShow = contentSpan.dataset.tagClass;
         if (tagClassToShow) {
             const activeTag = document.querySelector(`.info-tags-bar .${tagClassToShow}`);
             if (activeTag) {
-                activeTag.style.display = 'inline-flex'; // Show the correct badge
+                activeTag.style.display = 'inline-flex';
             }
         }
 
-        // Update Links Bar
         const ashLinkElement = document.getElementById('ash-link');
         if (componentData.ashPath && ashLinkElement) {
             ashLinkElement.href = ASH_BASE_URL + componentData.ashPath;
@@ -422,7 +379,7 @@ function buildTreeNode(nodeData) { // Removed componentInfo param, use global
             if (componentData.vulkanAnchor) {
                 vulkanSpecLinkElement.href = VULKAN_SPEC_BASE_URL + componentData.vulkanAnchor;
                 vulkanSpecLinkElement.style.display = 'inline-flex';
-            } else if (componentData.vulkanPath) { // Handle full paths if present
+            } else if (componentData.vulkanPath) {
                 vulkanSpecLinkElement.href = componentData.vulkanPath;
                 vulkanSpecLinkElement.style.display = 'inline-flex';
             } else {
@@ -431,49 +388,43 @@ function buildTreeNode(nodeData) { // Removed componentInfo param, use global
         }
     });
 
-    // Handle children recursively
     if (nodeData.children && nodeData.children.length > 0) {
         const ul = document.createElement('ul');
-        ul.style.display = 'block'; // Default to expanded
+        ul.style.display = 'block';
         nodeData.children.forEach(child => {
-            const childLi = buildTreeNode(child); // Recursive call
+            const childLi = buildTreeNode(child);
             ul.appendChild(childLi);
         });
         li.appendChild(ul);
 
-        // Configure toggle button
-        toggle.textContent = '[-]'; // Initial state: expanded
+        toggle.textContent = '[-]';
         toggle.addEventListener('click', (event) => {
-            event.stopPropagation(); // Prevent selection click
+            event.stopPropagation();
             const isCollapsed = ul.style.display === 'none';
             ul.style.display = isCollapsed ? 'block' : 'none';
             toggle.textContent = isCollapsed ? '[-]' : '[+]';
-            // Update layout-dependent elements after animation frame
             requestAnimationFrame(() => {
                 updateBranchIndicatorBar();
                 updateStickyHeaders();
             });
         });
     } else {
-        // No children, make toggle invisible and non-interactive
-        toggle.innerHTML = ' '; // Use space to maintain layout
+        toggle.innerHTML = ' ';
         toggle.style.cursor = 'default';
-        toggle.style.visibility = 'hidden'; // Hide but keep space
+        toggle.style.visibility = 'hidden';
     }
 
     return li;
 }
 
-// Main function to load the tree structure and render it
-// Main function to load the tree structure and render it
 async function loadAndRenderTree(treeFileName) {
-    console.log("loadAndRenderTree called with:", treeFileName); // Debug log
+    console.log("loadAndRenderTree called with:", treeFileName);
     try {
         const treeFilePath = `${DOCS_BASE_PATH}/trees/${treeFileName}`;
-        console.log("Attempting to fetch tree from:", treeFilePath); // Debug log
+        console.log("Attempting to fetch tree from:", treeFilePath);
 
         const response = await fetch(treeFilePath);
-        console.log("Fetch response status:", response.status); // Debug log
+        console.log("Fetch response status:", response.status);
 
         if (!response.ok) {
             throw new Error(`Failed to fetch tree file "${treeFileName}": ${response.statusText} (${response.status})`);
@@ -481,7 +432,6 @@ async function loadAndRenderTree(treeFileName) {
         const data = await response.json();
         componentInfoData = data.componentInfo || {};
 
-        // --- Get DOM References ---
         treeColumnRef = document.querySelector('.tree-column');
         combinedStickyHeaderRef = document.querySelector('.combined-sticky-header');
         stickyHeadersContainerRef = document.querySelector('.sticky-headers-container');
@@ -489,57 +439,45 @@ async function loadAndRenderTree(treeFileName) {
         branchBarRef = document.querySelector('.branch-indicator-bar-area');
         infoContentDivRef = document.getElementById('info-content');
 
-        // --- *** ADDED: Explicit DOM Element Checks *** ---
         if (!treeColumnRef) {
             console.error("Critical Error: Could not find '.tree-column' element.");
-            return; // Stop if essential layout element is missing
+            return;
         }
         if (!combinedStickyHeaderRef) console.warn("Warning: Could not find '.combined-sticky-header'. Sticky header may not work.");
         if (!stickyHeadersContainerRef) console.warn("Warning: Could not find '.sticky-headers-container'. Sticky header may not work.");
         if (!treeContentWrapperRef) {
             console.error("Critical Error: Could not find '.tree-content-wrapper' element.");
-            return; // Stop if tree container is missing
+            return;
         }
         if (!branchBarRef) console.warn("Warning: Could not find '.branch-indicator-bar-area'. Branch bar will not work.");
         if (!infoContentDivRef) {
              console.error("Critical Error: Could not find '#info-content' element.");
-             // Don't necessarily stop, but log the error
         }
-        // --- *** End Checks *** ---
 
+        const treeRootUl = treeContentWrapperRef.querySelector('ul');
 
-        // --- Find the UL *specifically* ---
-        const treeRootUl = treeContentWrapperRef.querySelector('ul'); // Find UL *inside* the wrapper
-
-        // --- *** ADDED: Check for the UL *** ---
         if (!treeRootUl) {
             console.error('Critical Error: Tree root UL element not found inside .tree-content-wrapper.');
             if (infoContentDivRef) infoContentDivRef.innerHTML = "<p style='color: red;'>Error: Tree container (UL) missing.</p>";
-            return; // Stop execution if the target UL isn't there
+            return;
         }
-        // --- *** End Check *** ---
 
-        console.log("Target UL found. Clearing and building tree..."); // Debug log
-        treeRootUl.innerHTML = ''; // Clear existing tree if any
+        console.log("Target UL found. Clearing and building tree...");
+        treeRootUl.innerHTML = '';
 
-        // --- Build Tree ---
         if (!data.tree || !Array.isArray(data.tree)) {
              throw new Error("Invalid tree data format: 'tree' array not found in JSON.");
         }
         data.tree.forEach(node => {
-            console.log("Building node:", node.name); // Debug log
+            console.log("Building node:", node.name);
             const li = buildTreeNode(node);
             treeRootUl.appendChild(li);
         });
-        console.log("Tree building complete."); // Debug log
+        console.log("Tree building complete.");
 
-        // --- Initial UI Updates ---
         updateBranchIndicatorBar();
         updateStickyHeaders();
 
-        // --- Event Listeners ---
-        // Ensure listeners are added only once if this function could be called multiple times
-        // (Currently called once on DOMContentLoaded, so it's okay)
         let scrollAFRequest = null;
         treeColumnRef.addEventListener('scroll', () => {
             if (scrollAFRequest === null) {
@@ -557,10 +495,9 @@ async function loadAndRenderTree(treeFileName) {
             });
         });
 
-        // --- Select First Item ---
         const firstContentSpan = treeRootUl.querySelector('.tree-item-content');
         if (firstContentSpan) {
-            console.log("Clicking first item:", firstContentSpan.textContent); // Debug log
+            console.log("Clicking first item:", firstContentSpan.textContent);
             firstContentSpan.click();
         } else {
              console.warn("Tree loaded, but no items found to select.");
@@ -576,7 +513,6 @@ async function loadAndRenderTree(treeFileName) {
     }
 }
 
-// --- Initialize ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOMContentLoaded event fired.");
     loadAndRenderTree(TREE_FILE_NAME);

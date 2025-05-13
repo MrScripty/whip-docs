@@ -30,298 +30,356 @@ document.addEventListener('DOMContentLoaded', function () {
     const nodeSelectedStrokeWidth = 3;
     const textColor = "#000";
     const fontSize = "10px";
+    const outgoingLinkColor = "green";
+    const incomingLinkColor = "red";
+    const bidirectionalSelectedLinkColor = "purple";
 
-    const width = graphContainerElement.clientWidth;
-    const height = graphContainerElement.clientHeight;
+    // --- Variables to hold D3 elements and simulation ---
+    let svg, g, simulation, linkPaths, nodeGroups;
+    let currentWidth = graphContainerElement.clientWidth;
+    let currentHeight = graphContainerElement.clientHeight;
 
-    const svg = d3.select(graphContainerElement)
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("viewBox", [0, 0, width, height])
-        .style("display", "block");
+    // --- Function to initialize/update the graph ---
+    function initializeOrUpdateGraph() {
+        currentWidth = graphContainerElement.clientWidth;
+        currentHeight = graphContainerElement.clientHeight;
 
-    const g = svg.append("g");
+        // Clear previous SVG if any (for resize)
+        d3.select(graphContainerElement).select("svg").remove();
 
-    d3.json(graphDataPath).then(function (graphData) {
-        if (!graphData || !graphData.nodes || !graphData.edges) {
-            console.error("Invalid graph data format:", graphData);
-            graphContainerElement.innerHTML = "<p>Error: Invalid graph data loaded.</p>";
-            return;
-        }
+        svg = d3.select(graphContainerElement)
+            .append("svg")
+            .attr("width", currentWidth)
+            .attr("height", currentHeight)
+            .attr("viewBox", [0, 0, currentWidth, currentHeight])
+            .style("display", "block");
 
-        let originalNodes = graphData.nodes;
-        let originalEdges = graphData.edges;
+        g = svg.append("g");
 
-        let filteredNodes = originalNodes.filter(node => {
-            const fileName = node.label || node.id.split('/').pop();
-            return !filesToIgnore.includes(fileName);
-        });
-        const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-
-        let filteredEdges = originalEdges.filter(edge =>
-            filteredNodeIds.has(edge.source) && filteredNodeIds.has(edge.target)
-        );
-
-        const nodes = filteredNodes.map(d => ({ ...d }));
-        const links = filteredEdges.map(d => ({ ...d }));
-
-        console.log(`Original nodes: ${originalNodes.length}, Filtered nodes: ${nodes.length}`);
-        console.log(`Original edges: ${originalEdges.length}, Filtered edges: ${links.length}`);
-
-        if (nodes.length === 0) {
-            console.warn("No nodes remaining after filtering. Graph will be empty.");
-            graphContainerElement.innerHTML = "<p>No data to display after filtering.</p>";
-            return;
-        }
-
-        console.log("Nodes for simulation:", JSON.stringify(nodes.map(n => n.id)));
-        console.log("Links for simulation:", JSON.stringify(links.map(l => ({source: l.source, target: l.target}))));
-
-        links.forEach(link => {
-            const sourceNode = nodes.find(n => n.id === link.source);
-            const targetNode = nodes.find(n => n.id === link.target);
-            if (!sourceNode) {
-                console.error(`Link source ID '${link.source}' not found in filtered nodes for link:`, JSON.stringify(link));
-            }
-            if (!targetNode) {
-                console.error(`Link target ID '${link.target}' not found in filtered nodes for link:`, JSON.stringify(link));
-            }
-        });
-
-        const simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links).id(d => d.id).distance(120).strength(0.4))
-            .force("charge", d3.forceManyBody().strength(-350))
-            .force("center", d3.forceCenter(width / 2, height / 2))
-            .force("collision", d3.forceCollide().radius(nodeWidth / 2 + 20)); // Increased collision radius slightly
-
-        // Arrowhead Marker Definitions
-        svg.append("defs").append("marker")
-            .attr("id", "arrowhead")
-            .attr("viewBox", "0 -5 10 10")
-            .attr("refX", 10) // Tip of arrow at the end of the line
-            .attr("refY", 0)
-            .attr("orient", "auto-start-reverse")
-            .attr("markerWidth", 6)
-            .attr("markerHeight", 6)
-            .append("svg:path")
-            .attr("d", "M0,-5L10,0L0,5")
-            .attr("fill", linkStrokeColor)
-            .style("stroke", "none");
-
-        svg.append("defs").append("marker")
-            .attr("id", "arrowhead-selected")
-            .attr("viewBox", "0 -5 10 10")
-            .attr("refX", 10) // Tip of arrow at the end of the line
-            .attr("refY", 0)
-            .attr("orient", "auto-start-reverse")
-            .attr("markerWidth", 6)
-            .attr("markerHeight", 6)
-            .append("svg:path")
-            .attr("d", "M0,-5L10,0L0,5")
-            .attr("fill", nodeSelectedStrokeColor)
-            .style("stroke", "none");
-
-        const linkPaths = g.append("g")
-            .attr("class", "links")
-            .selectAll("path")
-            .data(links)
-            .join("path")
-            .attr("class", "link")
-            .style("stroke", linkStrokeColor)
-            .style("stroke-opacity", linkStrokeOpacity)
-            .attr("stroke-width", linkStrokeWidth)
-            .attr("fill", "none")
-            .attr("marker-end", "url(#arrowhead)");
-
-        const nodeGroups = g.append("g")
-            .attr("class", "nodes")
-            .selectAll("g.node-group")
-            .data(nodes)
-            .join("g")
-            .attr("class", "node-group");
-
-        nodeGroups.append("rect")
-            .attr("width", nodeWidth)
-            .attr("height", nodeHeight)
-            .attr("rx", 3)
-            .attr("ry", 3)
-            .attr("fill", nodeFillColor)
-            .attr("stroke", nodeStrokeColor)
-            .attr("stroke-width", 1.5);
-
-        nodeGroups.append("text")
-            .attr("x", nodeWidth / 2)
-            .attr("y", nodeHeight / 2)
-            .attr("dy", "0.35em")
-            .attr("text-anchor", "middle")
-            .style("font-size", fontSize)
-            .style("fill", textColor)
-            .text(d => d.label || d.id);
-
-        let selectedNodeElement = null;
-        let selectedNodeData = null;
-
-        nodeGroups.on("click", function (event, d_node) {
-            if (selectedNodeElement) {
-                d3.select(selectedNodeElement).select("rect")
-                    .attr("stroke", nodeStrokeColor)
-                    .attr("stroke-width", 1.5);
-                d3.select(selectedNodeElement).classed("selected", false);
+        d3.json(graphDataPath).then(function (graphData) {
+            if (!graphData || !graphData.nodes || !graphData.edges) {
+                console.error("Invalid graph data format:", graphData);
+                graphContainerElement.innerHTML = "<p>Error: Invalid graph data loaded.</p>";
+                return;
             }
 
-            linkPaths
+            let originalNodes = graphData.nodes;
+            let originalEdges = graphData.edges;
+
+            let filteredNodes = originalNodes.filter(node => {
+                const fileName = node.label || node.id.split('/').pop();
+                return !filesToIgnore.includes(fileName);
+            });
+            const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
+
+            let rawFilteredEdges = originalEdges.filter(edge =>
+                filteredNodeIds.has(edge.source) && filteredNodeIds.has(edge.target)
+            );
+
+            const processedLinks = [];
+            const processedEdgePairs = new Set();
+
+            for (const edge1 of rawFilteredEdges) {
+                const pairKey1 = `${edge1.source}|${edge1.target}`;
+                const pairKey2 = `${edge1.target}|${edge1.source}`;
+
+                if (processedEdgePairs.has(pairKey1) || processedEdgePairs.has(pairKey2)) {
+                    continue;
+                }
+
+                const reverseEdge = rawFilteredEdges.find(
+                    edge2 => edge2.source === edge1.target && edge2.target === edge1.source
+                );
+
+                if (reverseEdge) {
+                    processedLinks.push({
+                        source: edge1.source,
+                        target: edge1.target,
+                        bidirectional: true
+                    });
+                    processedEdgePairs.add(pairKey1);
+                    processedEdgePairs.add(pairKey2);
+                } else {
+                    processedLinks.push({
+                        source: edge1.source,
+                        target: edge1.target,
+                        bidirectional: false
+                    });
+                    processedEdgePairs.add(pairKey1);
+                }
+            }
+
+            const nodes = filteredNodes.map(d => ({ ...d }));
+            const links = processedLinks;
+
+            if (nodes.length === 0) {
+                console.warn("No nodes remaining after filtering. Graph will be empty.");
+                graphContainerElement.innerHTML = "<p>No data to display after filtering.</p>";
+                return;
+            }
+
+            simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).id(d => d.id).distance(130).strength(0.5))
+                .force("charge", d3.forceManyBody().strength(-400))
+                .force("center", d3.forceCenter(currentWidth / 2, currentHeight / 2)) // Use current dimensions
+                .force("collision", d3.forceCollide().radius(nodeWidth / 2 + 20));
+
+            // Arrowhead Marker Definitions
+            svg.append("defs").append("marker")
+                .attr("id", "arrowhead")
+                .attr("viewBox", "0 -5 10 10").attr("refX", 10).attr("refY", 0)
+                .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
+                .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", linkStrokeColor);
+
+            svg.append("defs").append("marker")
+                .attr("id", "arrowhead-outgoing")
+                .attr("viewBox", "0 -5 10 10").attr("refX", 10).attr("refY", 0)
+                .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
+                .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", outgoingLinkColor);
+
+            svg.append("defs").append("marker")
+                .attr("id", "arrowhead-incoming")
+                .attr("viewBox", "0 -5 10 10").attr("refX", 10).attr("refY", 0)
+                .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
+                .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", incomingLinkColor);
+
+            svg.append("defs").append("marker")
+                .attr("id", "arrowhead-bidirectional")
+                .attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
+                .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
+                .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", linkStrokeColor);
+
+            svg.append("defs").append("marker")
+                .attr("id", "arrowhead-bidirectional-selected")
+                .attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
+                .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
+                .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", bidirectionalSelectedLinkColor);
+
+            linkPaths = g.append("g")
+                .attr("class", "links")
+                .selectAll("path")
+                .data(links)
+                .join("path")
+                .attr("class", "link")
                 .style("stroke", linkStrokeColor)
                 .style("stroke-opacity", linkStrokeOpacity)
                 .attr("stroke-width", linkStrokeWidth)
-                .attr("marker-end", "url(#arrowhead)");
+                .attr("fill", "none")
+                .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
 
-            if (selectedNodeElement === this) {
-                selectedNodeElement = null;
-                selectedNodeData = null;
-            } else {
-                selectedNodeElement = this;
-                selectedNodeData = d_node;
+            nodeGroups = g.append("g")
+                .attr("class", "nodes")
+                .selectAll("g.node-group")
+                .data(nodes)
+                .join("g")
+                .attr("class", "node-group");
 
-                d3.select(this).select("rect")
-                    .attr("stroke", nodeSelectedStrokeColor)
-                    .attr("stroke-width", nodeSelectedStrokeWidth);
-                d3.select(this).classed("selected", true);
+            nodeGroups.append("rect")
+                .attr("width", nodeWidth).attr("height", nodeHeight)
+                .attr("rx", 3).attr("ry", 3)
+                .attr("fill", nodeFillColor).attr("stroke", nodeStrokeColor).attr("stroke-width", 1.5);
 
-                linkPaths
-                    .filter(d_link => d_link.source.id === selectedNodeData.id || d_link.target.id === selectedNodeData.id)
-                    .style("stroke", nodeSelectedStrokeColor)
-                    .style("stroke-opacity", 1)
-                    .attr("stroke-width", linkStrokeWidth + 0.5)
-                    .attr("marker-end", "url(#arrowhead-selected)")
-                    .raise();
-            }
-            event.stopPropagation();
-        });
+            nodeGroups.append("text")
+                .attr("x", nodeWidth / 2).attr("y", nodeHeight / 2).attr("dy", "0.35em")
+                .attr("text-anchor", "middle").style("font-size", fontSize).style("fill", textColor)
+                .text(d => d.label || d.id);
 
-        svg.on("click", () => {
-            if (selectedNodeElement) {
-                 d3.select(selectedNodeElement).select("rect")
-                    .attr("stroke", nodeStrokeColor)
-                    .attr("stroke-width", 1.5);
-                d3.select(selectedNodeElement).classed("selected", false);
-                selectedNodeElement = null;
-                selectedNodeData = null;
+            let selectedNodeElement = null;
+            let selectedNodeData = null;
+
+            nodeGroups.on("click", function (event, d_node) {
+                if (selectedNodeElement) {
+                    d3.select(selectedNodeElement).select("rect")
+                        .attr("stroke", nodeStrokeColor)
+                        .attr("stroke-width", 1.5);
+                    d3.select(selectedNodeElement).classed("selected", false);
+                }
 
                 linkPaths
                     .style("stroke", linkStrokeColor)
                     .style("stroke-opacity", linkStrokeOpacity)
                     .attr("stroke-width", linkStrokeWidth)
-                    .attr("marker-end", "url(#arrowhead)");
+                    .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
+
+                if (selectedNodeElement === this) {
+                    selectedNodeElement = null;
+                    selectedNodeData = null;
+                } else {
+                    selectedNodeElement = this;
+                    selectedNodeData = d_node;
+
+                    d3.select(this).select("rect")
+                        .attr("stroke", nodeSelectedStrokeColor)
+                        .attr("stroke-width", nodeSelectedStrokeWidth);
+                    d3.select(this).classed("selected", true);
+
+                    linkPaths.each(function(d_link) {
+                        const isBidirectional = d_link.bidirectional;
+                        const isOutgoing = d_link.source.id === selectedNodeData.id;
+                        const isIncoming = d_link.target.id === selectedNodeData.id;
+
+                        if (isBidirectional && (isOutgoing || isIncoming)) {
+                            d3.select(this)
+                                .style("stroke", bidirectionalSelectedLinkColor)
+                                .style("stroke-opacity", 1)
+                                .attr("stroke-width", linkStrokeWidth + 0.5)
+                                .attr("marker-end", "url(#arrowhead-bidirectional-selected)")
+                                .raise();
+                        } else if (isOutgoing) {
+                            d3.select(this)
+                                .style("stroke", outgoingLinkColor)
+                                .style("stroke-opacity", 1)
+                                .attr("stroke-width", linkStrokeWidth + 0.5)
+                                .attr("marker-end", "url(#arrowhead-outgoing)")
+                                .raise();
+                        } else if (isIncoming) {
+                            d3.select(this)
+                                .style("stroke", incomingLinkColor)
+                                .style("stroke-opacity", 1)
+                                .attr("stroke-width", linkStrokeWidth + 0.5)
+                                .attr("marker-end", "url(#arrowhead-incoming)")
+                                .raise();
+                        }
+                    });
+                }
+                event.stopPropagation();
+            });
+
+            svg.on("click", () => {
+                if (selectedNodeElement) {
+                     d3.select(selectedNodeElement).select("rect")
+                        .attr("stroke", nodeStrokeColor)
+                        .attr("stroke-width", 1.5);
+                    d3.select(selectedNodeElement).classed("selected", false);
+                    selectedNodeElement = null;
+                    selectedNodeData = null;
+
+                    linkPaths
+                        .style("stroke", linkStrokeColor)
+                        .style("stroke-opacity", linkStrokeOpacity)
+                        .attr("stroke-width", linkStrokeWidth)
+                        .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
+                }
+            });
+
+            simulation.on("tick", () => {
+                linkPaths.attr("d", d => {
+                    if (typeof d.source === "string" || typeof d.target === "string" ||
+                        typeof d.source.x !== 'number' || typeof d.source.y !== 'number' ||
+                        typeof d.target.x !== 'number' || typeof d.target.y !== 'number') {
+                        return "";
+                    }
+
+                    const sx = d.source.x;
+                    const sy = d.source.y;
+                    let tx = d.target.x;
+                    let ty = d.target.y;
+
+                    const targetNodeHalfWidth = nodeWidth / 2;
+                    const targetNodeHalfHeight = nodeHeight / 2;
+                    const dx_orig = tx - sx;
+                    const dy_orig = ty - sy;
+
+                    if (Math.abs(dx_orig) < 0.1 && Math.abs(dy_orig) < 0.1) return "";
+
+                    const angle = Math.atan2(dy_orig, dx_orig);
+                    let endX, endY;
+
+                    if (Math.abs(dx_orig) < 0.01) {
+                        endX = tx;
+                        endY = ty + (dy_orig > 0 ? -targetNodeHalfHeight : targetNodeHalfHeight);
+                    } else if (Math.abs(dy_orig) < 0.01) {
+                        endY = ty;
+                        endX = tx + (dx_orig > 0 ? -targetNodeHalfWidth : targetNodeHalfWidth);
+                    } else {
+                        const tanAngle = Math.abs(dy_orig / dx_orig);
+                        const tanNodeAspect = targetNodeHalfHeight / targetNodeHalfWidth;
+                        if (tanAngle < tanNodeAspect) {
+                            endX = tx + (dx_orig > 0 ? -targetNodeHalfWidth : targetNodeHalfWidth);
+                            endY = sy + (endX - sx) * Math.tan(angle);
+                        } else {
+                            endY = ty + (dy_orig > 0 ? -targetNodeHalfHeight : targetNodeHalfHeight);
+                            endX = sx + (endY - sy) / Math.tan(angle);
+                        }
+                    }
+                    tx = endX;
+                    ty = endY;
+
+                    const R_final = Math.sqrt(Math.pow(tx - sx, 2) + Math.pow(ty - sy, 2));
+                    const dr_final = R_final * 1.5;
+
+                    if (R_final < 1) return "";
+                    return `M${sx},${sy}A${dr_final},${dr_final} 0 0,1 ${tx},${ty}`;
+                });
+
+                nodeGroups.attr("transform", d => {
+                    const xPos = typeof d.x === 'number' ? d.x : currentWidth / 2;
+                    const yPos = typeof d.y === 'number' ? d.y : currentHeight / 2;
+                    return `translate(${xPos - nodeWidth / 2}, ${yPos - nodeHeight / 2})`;
+                });
+            });
+
+            const zoomBehavior = d3.zoom()
+                .scaleExtent([0.1, 8])
+                .filter(event => {
+                    if (event.type === "wheel") return true;
+                    if (event.type === "mousedown" && event.button === 0) {
+                        return event.target === svg.node() || event.target === g.node();
+                    }
+                    return false;
+                })
+                .on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+                });
+
+            svg.call(zoomBehavior)
+               .on("dblclick.zoom", null);
+
+            function nodeDrag(simulationInstance) {
+                function dragstarted(event, d) {
+                    event.sourceEvent.stopPropagation();
+                    if (!event.active) simulationInstance.alphaTarget(0.3).restart();
+                    d.fx = d.x;
+                    d.fy = d.y;
+                }
+                function dragged(event, d) {
+                    d.fx = event.x;
+                    d.fy = event.y;
+                }
+                function dragended(event, d) {
+                    if (!event.active) simulationInstance.alphaTarget(0);
+                    d.fx = null;
+                    d.fy = null;
+                }
+                return d3.drag()
+                    .filter(event => event.button === 0)
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended);
             }
+
+            nodeGroups.call(nodeDrag(simulation));
+
+            console.log("D3 graph initialized/updated.");
+
+        }).catch(function (error) {
+            console.error('Error loading or processing graph data:', error);
+            graphContainerElement.innerHTML = `<p>Error loading module graph data: ${error.message}</p>`;
         });
+    }
 
-        simulation.on("tick", () => {
-            linkPaths.attr("d", d => {
-                if (typeof d.source === "string" || typeof d.target === "string" || 
-                    typeof d.source.x !== 'number' || typeof d.source.y !== 'number' ||
-                    typeof d.target.x !== 'number' || typeof d.target.y !== 'number') {
-                    // console.warn("Link source/target are not fully initialized yet:", d);
-                    return ""; 
-                }
+    // --- Initial graph rendering ---
+    initializeOrUpdateGraph();
 
-                const sx = d.source.x;
-                const sy = d.source.y;
-                let tx = d.target.x;
-                let ty = d.target.y;
-
-                const targetNodeHalfWidth = nodeWidth / 2;
-                const targetNodeHalfHeight = nodeHeight / 2;
-
-                const dx_orig = tx - sx;
-                const dy_orig = ty - sy;
-
-                if (Math.abs(dx_orig) < 0.1 && Math.abs(dy_orig) < 0.1) return ""; // Avoid issues with same-point nodes
-
-                const angle = Math.atan2(dy_orig, dx_orig);
-
-                const tanAngle = Math.abs(dy_orig / dx_orig);
-                const tanNodeAspect = targetNodeHalfHeight / targetNodeHalfWidth;
-
-                let endX, endY;
-
-                if (Math.abs(dx_orig) < 0.01) { // Almost vertical line
-                    endX = tx;
-                    endY = ty + (dy_orig > 0 ? -targetNodeHalfHeight : targetNodeHalfHeight);
-                } else if (Math.abs(dy_orig) < 0.01) { // Almost horizontal line
-                    endY = ty;
-                    endX = tx + (dx_orig > 0 ? -targetNodeHalfWidth : targetNodeHalfWidth);
-                } else if (tanAngle < tanNodeAspect) { // Intersects left or right edge
-                    endX = tx + (dx_orig > 0 ? -targetNodeHalfWidth : targetNodeHalfWidth);
-                    endY = sy + (endX - sx) * Math.tan(angle); // Recalculate based on new endX
-                } else { // Intersects top or bottom edge
-                    endY = ty + (dy_orig > 0 ? -targetNodeHalfHeight : targetNodeHalfHeight);
-                    endX = sx + (endY - sy) / Math.tan(angle); // Recalculate based on new endY
-                }
-                
-                tx = endX;
-                ty = endY;
-
-                const R_final = Math.sqrt(Math.pow(tx - sx, 2) + Math.pow(ty - sy, 2));
-                const dr_final = R_final * 1.5; 
-                
-                if (R_final < 1) return ""; 
-
-                return `M${sx},${sy}A${dr_final},${dr_final} 0 0,1 ${tx},${ty}`;
-            });
-
-            nodeGroups.attr("transform", d => {
-                const xPos = typeof d.x === 'number' ? d.x : width / 2;
-                const yPos = typeof d.y === 'number' ? d.y : height / 2;
-                return `translate(${xPos - nodeWidth / 2}, ${yPos - nodeHeight / 2})`;
-            });
-        });
-
-        const zoomBehavior = d3.zoom()
-            .scaleExtent([0.1, 8])
-            .filter(event => {
-                if (event.type === "wheel") return true;
-                if (event.type === "mousedown" && event.button === 0) {
-                    return event.target === svg.node() || event.target === g.node();
-                }
-                return false;
-            })
-            .on("zoom", (event) => {
-                g.attr("transform", event.transform);
-            });
-
-        svg.call(zoomBehavior)
-           .on("dblclick.zoom", null);
-
-        function nodeDrag(simulationInstance) {
-            function dragstarted(event, d) {
-                event.sourceEvent.stopPropagation();
-                if (!event.active) simulationInstance.alphaTarget(0.3).restart();
-                d.fx = d.x;
-                d.fy = d.y;
-            }
-            function dragged(event, d) {
-                d.fx = event.x;
-                d.fy = event.y;
-            }
-            function dragended(event, d) {
-                if (!event.active) simulationInstance.alphaTarget(0);
-                d.fx = null;
-                d.fy = null;
-            }
-            return d3.drag()
-                .filter(event => event.button === 0)
-                .on("start", dragstarted)
-                .on("drag", dragged)
-                .on("end", dragended);
-        }
-
-        nodeGroups.call(nodeDrag(simulation));
-
-        console.log("D3 graph initialized.");
-
-    }).catch(function (error) {
-        console.error('Error loading or processing graph data:', error);
-        graphContainerElement.innerHTML = `<p>Error loading module graph data: ${error.message}</p>`;
+    // --- Handle window resize ---
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        // Clear the previous timer to avoid multiple rapid calls
+        clearTimeout(resizeTimer);
+        // Set a new timer to execute after a short delay (e.g., 250ms)
+        resizeTimer = setTimeout(() => {
+            console.log("Window resized, re-initializing graph.");
+            initializeOrUpdateGraph();
+        }, 250); // Debounce resize event
     });
 });
