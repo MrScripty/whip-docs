@@ -87,7 +87,7 @@ echo "Website Context Aggregator"
 echo "Base Directory: $BASE_DIR"
 echo "--------------------------------"
 echo "Choose an option:"
-echo "1) Core Context (HTML structure, CSS, JS, Tree JSON)"
+echo "1) Core Context (HTML structure, CSS, JS, Tree JSON, Bot Docs)" # Modified description
 echo "2) All Web Files (HTML, CSS, JS)"
 echo "3) AI Documentation Context (documentation_prompt.md, architecture.md, modules.md)"
 echo "4) All Project Files (Web + Docs + Bot Docs + Prompts)"
@@ -105,6 +105,22 @@ case "$option" in
         find "$WEB_PAGES_DIR" -maxdepth 1 \( -name "*.html" -o -name "*.css" -o -name "*.js" \) -type f >> "$core_list_temp_file"
         # Add tree definition file(s)
         find "$TREES_DIR" -maxdepth 1 -name "*.json" -type f >> "$core_list_temp_file"
+
+        # --- START EDIT: Add bot-docs files for Option 1 ---
+        # Add architecture.md
+        if [ -f "$BOT_DOCS_DIR/architecture.md" ]; then
+            echo "$BOT_DOCS_DIR/architecture.md" >> "$core_list_temp_file"
+        else
+            echo "Warning: $BOT_DOCS_DIR/architecture.md not found (Option 1)."
+        fi
+        # Add modules.md
+        if [ -f "$BOT_DOCS_DIR/modules.md" ]; then
+            echo "$BOT_DOCS_DIR/modules.md" >> "$core_list_temp_file"
+        else
+            echo "Warning: $BOT_DOCS_DIR/modules.md not found (Option 1)."
+        fi
+        # --- END EDIT ---
+
         # Sort for consistency
         sort "$core_list_temp_file" -o "$core_list_temp_file"
         process_file_list "$core_list_temp_file"

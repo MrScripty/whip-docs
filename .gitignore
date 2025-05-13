@@ -1,0 +1,4 @@
+# Ignore user configuration
+/rust-doc-tool/user/*
+/rust-doc-tool/target
+/rust-doc-tool/Cargo.lock
