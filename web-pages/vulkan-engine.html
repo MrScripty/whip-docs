@@ -5,57 +5,349 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vulkan Engine - Engine Docs</title>
     <link rel="stylesheet" href="shared-styles.css">
+    <!-- highlight.js CSS for code blocks in the info panel -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
     <style>
         html, body {
-            height: 100%; /* Ensure html and body take full height */
+            height: 100%;
             margin: 0;
-            overflow: hidden; /* Prevent body scrollbars if main-content handles it */
+            overflow: hidden; /* Prevent body scrollbars */
+            font-family: sans-serif; /* Basic font */
         }
         body {
             display: flex;
-            flex-direction: column; /* Stack header and main content */
+            flex-direction: column;
         }
         .main-header {
-            /* Assuming your header has a fixed or known height */
-            /* If not, you might need JS to calculate remaining height */
-            flex-shrink: 0; /* Prevent header from shrinking */
+            flex-shrink: 0;
+            /* Assuming shared-styles.css handles header styling */
+            padding: 10px 20px;
+            background-color: #333;
+            color: white;
         }
-        .main-content {
-            flex-grow: 1; /* Allow main content to take remaining vertical space */
-            overflow-y: auto; /* Allow scrolling for content *within* main-content if it overflows */
-            display: flex; /* To allow .engine-content to also use flex properties */
-            flex-direction: column;
+        .main-header .site-title {
+            color: white;
+            text-decoration: none;
+            font-size: 1.5em;
         }
-        .engine-content {
-            padding: 20px;
-            background-color: #ffffff;
-            border: 1px solid #e0e0e0; /* Optional: consider removing if it constrains too much */
-            border-radius: 8px; /* Optional */
-            flex-grow: 1; /* Allow this content to fill the space within main-content */
+        .main-header nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
             display: flex;
-            flex-direction: column;
-            min-height: 0; /* Important for flex children that need to shrink */
+        }
+        .main-header nav li {
+            margin-left: 15px;
+        }
+        .main-header nav a {
+            color: #ddd;
+            text-decoration: none;
+        }
+        .main-header nav a.active {
+            color: white;
+            font-weight: bold;
         }
 
-        .graph-container-wrapper { /* New wrapper for better control */
-            flex-grow: 1; /* This will make the graph area take available vertical space */
-            display: flex; /* To center the graph-container if it has max-width/height */
-            align-items: stretch; /* Stretch graph-container to fill wrapper height */
-            justify-content: center; /* Center graph-container if it has max-width */
-            min-height: 300px; /* Minimum sensible height for the graph */
-            margin-top: 20px;
+
+        .main-content {
+            flex-grow: 1;
+            display: flex; /* Will contain the two-column-layout */
+            min-height: 0; /* Important for flex children that need to shrink/grow properly */
+        }
+
+        /* Two-Column Layout */
+        .two-column-layout {
+            display: flex;
+            flex-grow: 1;
+            width: 100%;
+            overflow: hidden; /* Prevent this container from scrolling */
+            min-height: 0;
+        }
+
+        .left-column {
+            width: 35%; /* Adjusted width */
+            max-width: 600px;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #d1d5db; /* Tailwind gray-300 */
+            overflow: hidden;
+            background-color: #f9fafb; /* Tailwind gray-50 */
+        }
+
+        .right-column {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #ffffff; /* White background for graph area */
+        }
+
+        /* Styles for the Tree (Left Column) */
+        .tree-panel {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .combined-sticky-header {
+            position: relative;
+            z-index: 10;
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+            border-bottom: 1px solid #e5e7eb; /* Tailwind gray-200 */
+            flex-shrink: 0;
+            padding: 0 10px; /* Padding for the container of sticky items */
+        }
+        .sticky-headers-container {
+            /* Populated by JS */
+            overflow: hidden;
+            white-space: nowrap;
+            /* Height will be determined by its content (.sticky-header-item) */
+        }
+        .sticky-header-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.875em; /* text-sm */
+            line-height: 1.25rem; /* leading-5 */
+            cursor: default;
+            color: #374151; /* Tailwind gray-700 */
+            /* height is implicitly set by content, ensure it matches tree items */
+        }
+        .sticky-header-item .tree-toggle { /* For alignment */
+             visibility: hidden; /* Placeholder, actual toggle not interactive here */
+             width: 20px;
+             margin-right: 5px;
+             flex-shrink: 0;
+        }
+        .sticky-header-item .path-segment {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 0.25rem; /* rounded-md */
+            margin: 0 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sticky-header-item .path-segment:hover {
+            background-color: #e5e7eb; /* Tailwind gray-200 */
+        }
+        .sticky-header-item .path-separator {
+            margin: 0 3px;
+            color: #9ca3af; /* Tailwind gray-400 */
+        }
+
+        .tree-column { /* This is the scrollable area for the tree itself */
+            flex-grow: 1;
+            overflow-y: auto;
+            position: relative; /* For branch indicator bar */
+            display: flex;
+        }
+
+        .branch-indicator-bar-area {
+            width: 6px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            /* height: 100%; JS will set this to scrollHeight of tree */
+            background-color: #e5e7eb; /* Tailwind gray-200 */
+        }
+        .bar-segment {
+            width: 100%;
+            position: absolute;
+            left: 0;
+            /* top, height, background-color set by JS */
+        }
+
+        .tree-content-wrapper {
+            padding: 8px 10px 8px 0; /* Reduced left padding as UL will have its own */
+            flex-grow: 1;
+        }
+        .tree-content-wrapper ul {
+            list-style-type: none;
+            padding-left: 18px; /* Indentation for sub-levels */
+            margin: 0;
+        }
+        .tree-content-wrapper li {
+            margin: 1px 0;
+            position: relative;
+        }
+        .tree-item-row {
+            display: flex;
+            align-items: center;
+            padding: 5px 8px; /* Slightly more padding */
+            cursor: pointer;
+            border-radius: 0.25rem; /* rounded-md */
+            min-height: 28px; /* Ensure consistent height */
+        }
+        .tree-item-row:hover {
+            background-color: #e5e7eb; /* Tailwind gray-200 */
+        }
+        .tree-toggle {
+            width: 20px;
+            text-align: center;
+            margin-right: 5px;
+            color: #6b7280; /* Tailwind gray-500 */
+            font-family: monospace;
+            font-size: 0.875em;
+            flex-shrink: 0;
+        }
+        .tree-item-content {
+            flex-grow: 1;
+            font-size: 0.875em; /* text-sm */
+            color: #374151; /* Tailwind gray-700 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .essential-text { color: #1f2937; font-weight: 500; } /* Tailwind gray-800 */
+        .secondary-text { color: #374151; } /* Tailwind gray-700 */
+        .advanced-text { color: #6b7280; } /* Tailwind gray-500 */
+        .other-text { color: #9ca3af; } /* Tailwind gray-400 */
+
+        .selected-item-dark-li > .tree-item-row {
+            background-color: #3b82f6 !important; /* Tailwind blue-500 */
+        }
+        .selected-item-dark-li > .tree-item-row .tree-item-content,
+        .selected-item-dark-li > .tree-item-row .tree-toggle {
+            color: white !important;
+        }
+        .parent-highlight-li > .tree-item-row {
+            /* background-color: #dbeafe; */ /* Tailwind blue-100 for parent, can be too much */
+        }
+         .parent-highlight-li > .tree-item-row > .tree-item-content {
+            /* color: #1d4ed8; */ /* Tailwind blue-700 if parent highlight needs text color change */
+        }
+
+
+        /* Info Panel (Left Column, Bottom) */
+        .info-panel {
+            flex-shrink: 0;
+            border-top: 1px solid #d1d5db; /* Tailwind gray-300 */
+            padding: 16px;
+            background-color: #ffffff;
+            overflow-y: auto;
+            max-height: 45%; /* Can be adjusted */
+            min-height: 200px; /* Ensure it's always somewhat visible */
+        }
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .info-tags-bar, .info-links-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .tag-badge, .info-link {
+            padding: 3px 10px;
+            border-radius: 0.375rem; /* rounded-lg */
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1.5;
+        }
+        .tag-badge { color: white; }
+        .tag-required { background-color: #dc2626; /* Tailwind red-600 */ }
+        .tag-optional { background-color: #2563eb; /* Tailwind blue-600 */ }
+        .tag-advanced { background-color: #f59e0b; /* Tailwind amber-500 */ }
+        .tag-other { background-color: #6b7280; /* Tailwind gray-500 */ }
+
+        .info-link {
+            background-color: #4f46e5; /* Tailwind indigo-600 */
+            color: white;
+        }
+        .info-link:hover {
+            background-color: #4338ca; /* Tailwind indigo-700 */
+        }
+
+        #info-content { font-size: 0.875em; color: #374151; /* Tailwind gray-700 */ }
+        #info-content h1, #info-content h2, #info-content h3, #info-content h4 {
+            margin-top: 1.2em;
+            margin-bottom: 0.6em;
+            color: #111827; /* Tailwind gray-900 */
+            font-weight: 600;
+        }
+        #info-content h1 { font-size: 1.5em; }
+        #info-content h2 { font-size: 1.25em; }
+        #info-content h3 { font-size: 1.1em; }
+        #info-content p { line-height: 1.6; margin-bottom: 1em; }
+        #info-content pre {
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+            border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+            border-radius: 0.375rem; /* rounded-md */
+            padding: 12px;
+            overflow-x: auto;
+            font-size: 0.85em; /* Slightly smaller for code */
+        }
+        #info-content code:not(pre > code) { /* Inline code */
+            background-color: #e5e7eb; /* Tailwind gray-200 */
+            padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 85%;
+            border-radius: 3px;
+        }
+        #info-content pre code { /* Code within pre blocks */
+            font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+            background-color: transparent;
+            padding: 0;
+        }
+        #info-content ul, #info-content ol { margin-left: 20px; margin-bottom: 1em; padding-left: 1.5em;}
+        #info-content li > p { margin-bottom: 0.25em; } /* Less margin for p inside li */
+        #info-content table { border-collapse: collapse; width: 100%; margin-bottom: 1em; font-size: 0.95em; }
+        #info-content th, #info-content td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; }
+        #info-content th { background-color: #f3f4f6; font-weight: 600; }
+
+
+        /* Right Column: Graph Area */
+        .right-column .engine-content { /* This is the container for graph's title and the graph itself */
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden; /* Important: let graph-container-wrapper handle its own sizing */
+        }
+        .right-column .engine-content h1 {
+            font-size: 1.5em;
+            color: #111827; /* Tailwind gray-900 */
+            margin: 0 0 8px 0; /* Adjusted margin */
+            flex-shrink: 0;
+        }
+        .right-column .engine-content p {
+            font-size: 0.9em;
+            color: #4b5563; /* Tailwind gray-600 */
+            margin: 0 0 16px 0; /* Adjusted margin */
+            line-height: 1.5;
+            flex-shrink: 0;
+        }
+
+        .graph-container-wrapper {
+            flex-grow: 1;
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            min-height: 300px;
+            overflow: hidden; /* Wrapper should not scroll; D3 handles pan/zoom */
         }
 
         .graph-container {
-            width: 100%; /* Take full width of its parent (.graph-container-wrapper) */
-            /* height: 100%; Let the wrapper control the height */
-            border: 1px solid #ccc;
-            background-color: #f9f9f9;
-            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            border: 1px solid #d1d5db; /* Tailwind gray-300 */
+            background-color: #f9fafb; /* Tailwind gray-50 */
+            overflow: hidden; /* D3 will handle internal overflow/zoom */
             position: relative;
         }
 
-        /* D3 specific styles ... */
+        /* D3 specific styles from original file */
         .node rect {
             stroke: #333;
             stroke-width: 1.5px;
@@ -74,7 +366,7 @@
             stroke-width: 1.5px;
             fill: none;
         }
-        .node.selected rect {
+        .node.selected rect { /* This class is added by the JS */
             stroke: dodgerblue;
             stroke-width: 3px;
         }
@@ -92,18 +384,59 @@
     </header>
 
     <main class="main-content">
-        <div class="engine-content">
-            <h1>Vulkan Engine Module Map</h1>
-            <p>This diagram visualizes the relationships between modules in the Rust-based Vulkan engine project.
-               Nodes represent files, and links represent dependencies or communication paths.
-            </p>
-            <!-- Removed controls instructions -->
+        <div class="two-column-layout">
+            <!-- Left Column for Tree and Info -->
+            <div class="left-column">
+                <div class="tree-panel">
+                    <div class="combined-sticky-header">
+                        <div class="sticky-headers-container">
+                            <!-- Sticky headers will be populated by JS -->
+                        </div>
+                    </div>
+                    <div class="tree-column"> <!-- Scrollable tree area -->
+                        <div class="branch-indicator-bar-area">
+                            <!-- Branch indicator segments will be populated by JS -->
+                        </div>
+                        <div class="tree-content-wrapper">
+                            <ul>
+                                <!-- Tree nodes will be populated by JS (tree.js) -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-panel"> <!-- Info panel below the tree -->
+                    <div class="info-header">
+                        <div class="info-tags-bar">
+                            <span class="tag-badge tag-required" style="display: none;">Essential</span>
+                            <span class="tag-badge tag-optional" style="display: none;">Secondary</span>
+                            <span class="tag-badge tag-advanced" style="display: none;">Advanced</span>
+                            <span class="tag-badge tag-other" style="display: none;">Other</span>
+                        </div>
+                        <div class="info-links-bar">
+                            <a id="ash-link" href="#" target="_blank" class="info-link" style="display: none;">Ash Docs</a>
+                            <a id="vulkan-spec-link" href="#" target="_blank" class="info-link" style="display: none;">Vulkan Spec</a>
+                        </div>
+                    </div>
+                    <div id="info-content">
+                        <p>Select an item from the tree to see its details.</p>
+                    </div>
+                </div>
+            </div>
 
-            <div class="graph-container-wrapper">
-                <div id="module-graph-area"
-                     class="graph-container"
-                     data-graph-src="../rust-doc-tool/output/module_graph.json"
-                     data-ignore-files="mod.rs,lib.rs">
+            <!-- Right Column for Graph -->
+            <div class="right-column">
+                <div class="engine-content">
+                    <h1>Vulkan Engine Module Map</h1>
+                    <p>This diagram visualizes the relationships between modules in the Rust-based Vulkan engine project.
+                       Nodes represent files, and links represent dependencies or communication paths.
+                    </p>
+                    <div class="graph-container-wrapper">
+                        <div id="module-graph-area"
+                             class="graph-container"
+                             data-graph-src="../rust-doc-tool/output/module_graph.json"
+                             data-ignore-files="mod.rs,lib.rs">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -111,6 +444,11 @@
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="../scripts/graphs/module_dependency_graph.js"></script>
+
+    <!-- New scripts for the tree view -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.12/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="../scripts/lists/tree.js"></script>
 
 </body>
 </html>

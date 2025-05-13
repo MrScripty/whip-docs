@@ -495,14 +495,34 @@ async function loadAndRenderTree(treeFileName) {
             });
         });
 
-        const firstContentSpan = treeRootUl.querySelector('.tree-item-content');
-        if (firstContentSpan) {
-            console.log("Clicking first item:", firstContentSpan.textContent);
-            firstContentSpan.click();
-        } else {
-             console.warn("Tree loaded, but no items found to select.");
-            if (infoContentDivRef) infoContentDivRef.innerHTML = "<p>Tree loaded, but no items found.</p>";
+        // --- MODIFICATION START ---
+        // Do not automatically select the first item.
+        // Instead, set a default state for the info panel.
+        if (infoContentDivRef) {
+            // Check if there are any items in the tree
+            const firstContentSpanCheck = treeRootUl.querySelector('.tree-item-content');
+            if (firstContentSpanCheck) {
+                // Tree has items, but we are not selecting one by default
+                infoContentDivRef.innerHTML = "<p>Select an item from the tree to see its details.</p>";
+                console.log("Tree loaded. No item selected by default. Select an item to see details.");
+            } else {
+                // Tree is empty or has no selectable items
+                infoContentDivRef.innerHTML = "<p>Tree loaded, but no items found.</p>";
+                console.warn("Tree loaded, but no items found to select.");
+            }
+
+            // Ensure tags and links are in their default (hidden) state
+            // This assumes their default HTML/CSS state might be visible or undefined.
+            const allTagBadges = document.querySelectorAll('.info-tags-bar .tag-badge');
+            allTagBadges.forEach(badge => badge.style.display = 'none');
+
+            const ashLinkElement = document.getElementById('ash-link');
+            if (ashLinkElement) ashLinkElement.style.display = 'none';
+
+            const vulkanSpecLinkElement = document.getElementById('vulkan-spec-link');
+            if (vulkanSpecLinkElement) vulkanSpecLinkElement.style.display = 'none';
         }
+        // --- MODIFICATION END ---
 
     } catch (error) {
         console.error('Error during loadAndRenderTree:', error);
