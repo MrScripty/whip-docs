@@ -6,31 +6,38 @@ document.addEventListener('DOMContentLoaded', function () {
     const stickyHeadersContainerRef = document.querySelector('.sticky-headers-container');
     const treeContentWrapperRef = document.querySelector('.tree-content-wrapper');
     const branchBarRef = document.querySelector('.branch-indicator-bar-area');
-    const barColors = ['#637C8A', '#88CDF5', '#F7B801', '#F18701']; // Added more colors
+    
+    // Consistent colors with graph script
+    const outgoingColor = "green";
+    const incomingColor = "red";
+    const bidirectionalColor = "purple";
+    const defaultTextColor = "#374151"; // Default for text not specifically colored by direction
+
+    const barColors = [outgoingColor, incomingColor, bidirectionalColor, '#637C8A'];
+
 
     if (!treeContainerUl) {
         console.error("Tree container UL not found in .left-column .tree-content-wrapper");
         return;
     }
-    if (!treeColumnRef || !combinedStickyHeaderRef || !stickyHeadersContainerRef || !treeContentWrapperRef || !branchBarRef) {
-        console.warn("One or more UI elements for tree (sticky header, branch bar) not found. Some UI features might be disabled.");
-    }
+    // ... (rest of the checks for UI elements)
 
-    let currentTopLevelTreeLIs = []; // To keep track of LIs for sticky/branch bar updates
+    let currentTopLevelTreeLIs = [];
 
     window.handleGraphNodeSelection = function(selectedGraphNode, fullGraphData) {
-        treeContainerUl.innerHTML = ''; // Clear previous tree
+        treeContainerUl.innerHTML = '';
         currentTopLevelTreeLIs = [];
 
         if (!selectedGraphNode || !fullGraphData || !fullGraphData.nodes || !fullGraphData.edges) {
             const placeholderLi = document.createElement('li');
+            // ... (placeholder message logic remains the same)
             const itemRow = document.createElement('div');
             itemRow.classList.add('tree-item-row');
             itemRow.style.cursor = 'default';
             const contentSpan = document.createElement('span');
             contentSpan.classList.add('tree-item-content');
             contentSpan.textContent = "Select a node in the graph to see its interactions.";
-            contentSpan.style.paddingLeft = "5px"; // Align with items that have toggles
+            contentSpan.style.paddingLeft = "25px"; // Align with items that have toggles
             itemRow.appendChild(contentSpan);
             placeholderLi.appendChild(itemRow);
             treeContainerUl.appendChild(placeholderLi);
@@ -40,19 +47,22 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const selectedNodeId = selectedGraphNode.id;
-        const relatedEdges = fullGraphData.edges.filter(edge =>
+        
+        // Find all edges involving the selected node
+        const relatedEdgesFromGraph = fullGraphData.edges.filter(edge =>
             edge.source === selectedNodeId || edge.target === selectedNodeId
         );
 
-        if (relatedEdges.length === 0) {
+        if (relatedEdgesFromGraph.length === 0) {
+            // ... (no interactions message logic remains the same)
             const noInteractionsLi = document.createElement('li');
             const itemRow = document.createElement('div');
             itemRow.classList.add('tree-item-row');
             itemRow.style.cursor = 'default';
             const contentSpan = document.createElement('span');
             contentSpan.classList.add('tree-item-content');
-            contentSpan.textContent = `Node "${selectedGraphNode.label}" has no recorded direct interactions in the graph.`;
-            contentSpan.style.paddingLeft = "5px";
+            contentSpan.textContent = `Node "${selectedGraphNode.label}" has no recorded direct interactions.`;
+            contentSpan.style.paddingLeft = "25px";
             itemRow.appendChild(contentSpan);
             noInteractionsLi.appendChild(itemRow);
             treeContainerUl.appendChild(noInteractionsLi);
@@ -61,45 +71,51 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const interactionsByConnectedNode = {};
+        const connections = {}; // Key: connectedNodeId
 
-        relatedEdges.forEach(edge => {
+        relatedEdgesFromGraph.forEach(edge => {
             let connectedNodeId;
-            let direction; // 'outgoing' (selected -> other) or 'incoming' (other -> selected)
+            let interactionsForThisEdge = edge.interactions || [];
+            let isOutgoingFromSelected = false;
+            let isIncomingToSelected = false;
 
             if (edge.source === selectedNodeId) {
                 connectedNodeId = edge.target;
-                direction = 'outgoing';
-            } else {
+                isOutgoingFromSelected = true;
+            } else { // edge.target === selectedNodeId
                 connectedNodeId = edge.source;
-                direction = 'incoming';
+                isIncomingToSelected = true;
             }
+            
+            const connectedNodeDetails = fullGraphData.nodes.find(n => n.id === connectedNodeId);
 
-            const connectedNode = fullGraphData.nodes.find(n => n.id === connectedNodeId);
-            const connectedNodeLabel = connectedNode ? connectedNode.label : connectedNodeId;
-
-            if (!interactionsByConnectedNode[connectedNodeId]) {
-                interactionsByConnectedNode[connectedNodeId] = {
-                    label: connectedNodeLabel,
+            if (!connections[connectedNodeId]) {
+                connections[connectedNodeId] = {
                     id: connectedNodeId,
-                    interactions: []
+                    label: connectedNodeDetails ? connectedNodeDetails.label : connectedNodeId,
+                    interactions: [],
+                    isOutgoing: false, // Overall relationship direction
+                    isIncoming: false  // Overall relationship direction
                 };
             }
 
-            (edge.interactions || []).forEach(interaction => {
-                interactionsByConnectedNode[connectedNodeId].interactions.push({
+            if (isOutgoingFromSelected) connections[connectedNodeId].isOutgoing = true;
+            if (isIncomingToSelected) connections[connectedNodeId].isIncoming = true;
+
+            interactionsForThisEdge.forEach(interaction => {
+                connections[connectedNodeId].interactions.push({
                     ...interaction,
-                    direction: direction
+                    // Determine direction of this specific interaction relative to selected node
+                    direction: isOutgoingFromSelected ? 'outgoing' : 'incoming'
                 });
             });
         });
+        
+        const sortedConnectedNodes = Object.values(connections).sort((a, b) => a.label.localeCompare(b.label));
 
-        // Sort connected nodes by label for consistent order
-        const sortedConnectedNodes = Object.values(interactionsByConnectedNode).sort((a, b) => a.label.localeCompare(b.label));
-
-        sortedConnectedNodes.forEach(data => {
+        sortedConnectedNodes.forEach(connData => {
             const connectedNodeLi = document.createElement('li');
-            currentTopLevelTreeLIs.push(connectedNodeLi); // For sticky/branch bar
+            currentTopLevelTreeLIs.push(connectedNodeLi);
 
             const itemRow = document.createElement('div');
             itemRow.classList.add('tree-item-row');
@@ -109,31 +125,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const contentSpan = document.createElement('span');
             contentSpan.classList.add('tree-item-content');
-            contentSpan.classList.add('essential-text'); // Style for module names
+            contentSpan.textContent = connData.label; // Just the label
+            contentSpan.title = connData.label;
 
-            // Determine primary direction for display (simplification)
-            let primaryDirection = data.interactions.length > 0 ? data.interactions[0].direction : null;
-            let displayLabel = "";
-            if (primaryDirection === 'outgoing') {
-                displayLabel = `${selectedGraphNode.label}  →  ${data.label}`;
-            } else if (primaryDirection === 'incoming') {
-                displayLabel = `${data.label}  →  ${selectedGraphNode.label}`;
-            } else { // No interactions, or mixed (less likely with current JSON structure per edge)
-                displayLabel = `${data.label} (interacts with ${selectedGraphNode.label})`;
+            // Determine overall color for the connected node
+            if (connData.isOutgoing && connData.isIncoming) {
+                contentSpan.style.color = bidirectionalColor;
+            } else if (connData.isOutgoing) {
+                contentSpan.style.color = outgoingColor;
+            } else if (connData.isIncoming) {
+                contentSpan.style.color = incomingColor;
+            } else {
+                contentSpan.style.color = defaultTextColor; // Should not happen if there are interactions
             }
-            contentSpan.textContent = displayLabel;
-            contentSpan.title = displayLabel; // Tooltip for full name if truncated
 
             itemRow.appendChild(toggle);
             itemRow.appendChild(contentSpan);
             connectedNodeLi.appendChild(itemRow);
 
-            if (data.interactions.length > 0) {
+            if (connData.interactions.length > 0) {
                 const interactionsUl = document.createElement('ul');
-                interactionsUl.style.display = 'none'; // Collapse by default
+                interactionsUl.style.display = 'none';
 
                 // Sort interactions: kind then name
-                data.interactions.sort((a, b) => {
+                connData.interactions.sort((a, b) => {
                     const kindComp = a.kind.localeCompare(b.kind);
                     if (kindComp !== 0) return kindComp;
                     return a.name.localeCompare(b.name);
@@ -141,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const interactionLi = document.createElement('li');
                     const interactionItemRow = document.createElement('div');
                     interactionItemRow.classList.add('tree-item-row');
-                    interactionItemRow.style.cursor = 'default'; // Interactions are not clickable
+                    interactionItemRow.style.cursor = 'default';
 
                     const interactionToggle = document.createElement('span');
                     interactionToggle.classList.add('tree-toggle');
@@ -150,23 +165,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     const interactionContentSpan = document.createElement('span');
                     interactionContentSpan.classList.add('tree-item-content');
-                    interactionContentSpan.classList.add('secondary-text');
+                    // interactionContentSpan.classList.add('secondary-text'); // Remove generic class
 
                     let interactionText = "";
-                    let interactionPrefix = "";
-                    if (interaction.direction === 'outgoing') { // Selected node USES/DECLARES something FROM/IN target
-                        interactionPrefix = interaction.kind === "import" ? "Uses: " : "Declares in target: ";
-                    } else { // Selected node PROVIDES something TO target
-                        interactionPrefix = interaction.kind === "import" ? "Provides: " : "Is declared by target: ";
-                    }
-                    interactionText = `${interactionPrefix}${interaction.name}`;
-                    if (interaction.name === "___GLOB___") {
-                         interactionText = interaction.direction === 'outgoing' ? `Uses all from ${data.label}` : `${data.label} uses all from selected`;
-                    }
+                    let interactionColor = defaultTextColor;
 
+                    if (interaction.direction === 'outgoing') { // Selected node USES/DECLARES something FROM/IN target
+                        interactionText = interaction.kind === "import" ? `Uses: ${interaction.name}` : `Declares in ${connData.label}: ${interaction.name}`;
+                        interactionColor = outgoingColor;
+                    } else { // Selected node PROVIDES something TO target (interaction.direction === 'incoming')
+                        interactionText = interaction.kind === "import" ? `Provides: ${interaction.name}` : `${connData.label} declares: ${interaction.name}`;
+                        interactionColor = incomingColor;
+                    }
+                    
+                    if (interaction.name === "___GLOB___") {
+                         interactionText = interaction.direction === 'outgoing' ? `Uses all from ${connData.label}` : `${connData.label} uses all from selected`;
+                    }
 
                     interactionContentSpan.textContent = interactionText;
                     interactionContentSpan.title = interactionText;
+                    interactionContentSpan.style.color = interactionColor; // Apply color to interaction text
 
                     interactionItemRow.appendChild(interactionToggle);
                     interactionItemRow.appendChild(interactionContentSpan);
@@ -174,8 +192,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     interactionsUl.appendChild(interactionLi);
                 });
                 connectedNodeLi.appendChild(interactionsUl);
-                toggle.textContent = '[+]'; // Collapsed by default
-                itemRow.addEventListener('click', (event) => { // Make the whole row clickable for toggle
+                toggle.textContent = '[+]';
+                itemRow.addEventListener('click', (event) => {
                     event.stopPropagation();
                     const isCollapsed = interactionsUl.style.display === 'none';
                     interactionsUl.style.display = isCollapsed ? 'block' : 'none';
@@ -189,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 toggle.innerHTML = ' ';
                 toggle.style.cursor = 'default';
                 toggle.style.visibility = 'hidden';
-                itemRow.style.cursor = 'default'; // Not expandable
+                itemRow.style.cursor = 'default';
             }
             treeContainerUl.appendChild(connectedNodeLi);
         });
@@ -198,7 +216,9 @@ document.addEventListener('DOMContentLoaded', function () {
         updateStickyHeaders();
     };
 
-    // --- Sticky Header and Branch Bar Logic (Adapted and Simplified) ---
+    // --- Sticky Header and Branch Bar Logic (remains largely the same) ---
+    // ... (copy the existing updateBranchIndicatorBar, findPathCovered, updateStickyHeaders functions here) ...
+    // ... (and the event listeners for scroll and resize) ...
     let pathLIsCoveredByStickyHeader = [];
 
     function updateBranchIndicatorBar() {
@@ -212,14 +232,20 @@ document.addEventListener('DOMContentLoaded', function () {
             segment.classList.add('bar-segment');
             segment.style.top = li.offsetTop + 'px';
             segment.style.height = li.offsetHeight + 'px';
-            segment.style.backgroundColor = barColors[index % barColors.length];
+            // Color branch bar based on the connected node's text color
+            const contentSpan = li.querySelector(':scope > .tree-item-row > .tree-item-content');
+            segment.style.backgroundColor = contentSpan ? contentSpan.style.color || barColors[index % barColors.length] : barColors[index % barColors.length];
             branchBarRef.appendChild(segment);
         });
-        branchBarRef.style.height = treeContentWrapperRef.scrollHeight + 'px';
+        if (treeContentWrapperRef) { // Check if ref is valid
+            branchBarRef.style.height = treeContentWrapperRef.scrollHeight + 'px';
+        }
     }
 
     function findPathCovered(combinedHeaderRectTop) {
         pathLIsCoveredByStickyHeader = [];
+        if (!currentTopLevelTreeLIs) return;
+
         for (const li of currentTopLevelTreeLIs) {
             const itemRow = li.querySelector(':scope > .tree-item-row');
             if (!itemRow) continue;
@@ -232,19 +258,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const isContentStillVisible = liRect.bottom > combinedHeaderRectTop + 1;
 
             if (isHeaderScrolledOff && isContentStillVisible) {
-                pathLIsCoveredByStickyHeader = [li]; // Only one level deep for sticky path
-
-                // If expanded, check if the first child interaction is also under the header
-                if (isLiActuallyExpanded) {
-                    const firstInteractionLi = childUl.querySelector(':scope > li');
-                    if (firstInteractionLi) {
-                        const firstInteractionRow = firstInteractionLi.querySelector(':scope > .tree-item-row');
-                        if (firstInteractionRow && firstInteractionRow.getBoundingClientRect().top < combinedHeaderRectTop -1) {
-                            // pathLIsCoveredByStickyHeader.push(firstInteractionLi); // Uncomment for 2-level sticky
-                        }
-                    }
-                }
-                return; // Found the primary covered item
+                pathLIsCoveredByStickyHeader = [li]; 
+                // Simplified: only one level for sticky path for now
+                return; 
             }
         }
     }
@@ -259,24 +275,20 @@ document.addEventListener('DOMContentLoaded', function () {
         stickyHeadersContainerRef.innerHTML = '';
         findPathCovered(combinedHeaderRect.top);
 
-        let displayedPathLIs = [...pathLIsCoveredByStickyHeader]; // Max 1 or 2 items
+        let displayedPathLIs = [...pathLIsCoveredByStickyHeader];
 
-        // Find next visible item if nothing is fully "covered" but something is at the edge
-        if (displayedPathLIs.length === 0) {
+        if (displayedPathLIs.length === 0 && currentTopLevelTreeLIs && currentTopLevelTreeLIs.length > 0) {
             for (const li of currentTopLevelTreeLIs) {
                 const itemRow = li.querySelector(':scope > .tree-item-row');
                 if (itemRow) {
                     const itemRowRect = itemRow.getBoundingClientRect();
-                    // Item is at the top edge and at least partially visible under where header would be
                     if (itemRowRect.top >= combinedHeaderRect.top - itemRow.offsetHeight && itemRowRect.top < combinedHeaderRect.bottom) {
                          displayedPathLIs.push(li);
-                         // Potentially add first child if expanded and also at edge - for simplicity, skip for now
                         break;
                     }
                 }
             }
         }
-
 
         if (displayedPathLIs.length > 0) {
             combinedStickyHeaderRef.style.visibility = 'visible';
@@ -284,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (firstPathOriginalItemRow) {
                 combinedStickyHeaderRef.style.height = firstPathOriginalItemRow.offsetHeight + 'px';
             } else {
-                combinedStickyHeaderRef.style.height = 'auto'; // Fallback
+                combinedStickyHeaderRef.style.height = 'auto';
             }
 
             const stickyHeaderDiv = document.createElement('div');
@@ -295,19 +307,20 @@ document.addEventListener('DOMContentLoaded', function () {
             stickyTogglePlaceholder.className = 'tree-toggle';
             const originalToggle = displayedPathLIs[0].querySelector(':scope > .tree-item-row > .tree-toggle');
             stickyTogglePlaceholder.innerHTML = originalToggle ? originalToggle.innerHTML : ' ';
-            // stickyTogglePlaceholder.style.visibility = 'hidden'; // Keep it visible for alignment if original is
-
+            
             const pathContainer = document.createElement('span');
             pathContainer.classList.add('tree-item-content');
 
             displayedPathLIs.forEach((liForSegment, index) => {
                 const contentSpan = liForSegment.querySelector(':scope > .tree-item-row > .tree-item-content');
                 const text = contentSpan ? contentSpan.textContent.trim() : 'Unknown';
+                const color = contentSpan ? contentSpan.style.color : defaultTextColor;
 
                 const pathSegment = document.createElement('span');
                 pathSegment.classList.add('path-segment');
                 pathSegment.textContent = text;
                 pathSegment.title = text;
+                pathSegment.style.color = color; // Apply color to sticky header segment
 
                 pathSegment.addEventListener('click', () => {
                     const itemRowToScroll = liForSegment.querySelector(':scope > .tree-item-row');
@@ -317,20 +330,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
                 pathContainer.appendChild(pathSegment);
 
-                if (index < displayedPathLIs.length - 1) {
-                    const separator = document.createElement('span');
-                    separator.classList.add('path-separator');
-                    separator.textContent = ' > ';
-                    pathContainer.appendChild(separator);
-                }
+                // No separators for single-level sticky header
             });
-
+            
             let indentForStickyText = 0;
             const rootUlInWrapper = treeContentWrapperRef.querySelector(':scope > ul');
             if (rootUlInWrapper) {
                  indentForStickyText += parseFloat(window.getComputedStyle(rootUlInWrapper).paddingLeft) || 0;
             }
-            // This simplified sticky header doesn't need complex indentation based on depth
             stickyHeaderDiv.style.paddingLeft = Math.max(0, indentForStickyText) + 'px';
 
             stickyHeaderDiv.appendChild(stickyTogglePlaceholder);
@@ -343,7 +350,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Initial call to set placeholder message
+
+    // Initial call
     window.handleGraphNodeSelection(null, null);
 
     let scrollAFRequest = null;

@@ -1,5 +1,6 @@
 // /scripts/graphs/module_dependency_graph.js
 document.addEventListener('DOMContentLoaded', function () {
+    // ... (keep existing code from the start of the file) ...
     const graphContainerId = 'module-graph-area';
     const graphContainerElement = document.getElementById(graphContainerId);
 
@@ -22,23 +23,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const nodeWidth = 150;
     const nodeHeight = 30;
-    const linkStrokeColor = "#999";
-    const linkStrokeOpacity = 0.6;
-    const linkStrokeWidth = 1.5;
+    const linkStrokeColor = "#999"; // Default link color
+    const linkStrokeOpacity = 0.6; // Default link opacity
+    const linkStrokeWidth = 1.5;   // Default link width
     const nodeFillColor = "#f0f0f0";
     const nodeStrokeColor = "#333";
     const nodeSelectedStrokeColor = "dodgerblue";
     const nodeSelectedStrokeWidth = 3;
     const textColor = "#000";
     const fontSize = "10px";
+
+    // Colors for selected links (consistent with tree.js if possible)
     const outgoingLinkColor = "green";
     const incomingLinkColor = "red";
     const bidirectionalSelectedLinkColor = "purple";
 
+    // For non-selected edges when a node is selected
+    const nonConnectedLinkOpacity = 0.15; // Lower opacity for non-connected
+    const nonConnectedLinkWidth = 1.0;   // Thinner for non-connected
+
     let svg, g, simulation, linkPaths, nodeGroups;
     let currentWidth = graphContainerElement.clientWidth;
     let currentHeight = graphContainerElement.clientHeight;
-    let fullLoadedGraphData = null; // Store the fully loaded graph data
+    let fullLoadedGraphData = null;
 
     function initializeOrUpdateGraph() {
         currentWidth = graphContainerElement.clientWidth;
@@ -55,13 +62,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         g = svg.append("g");
 
-        d3.json(graphDataPath).then(function (loadedData) { // Renamed to loadedData
+        d3.json(graphDataPath).then(function (loadedData) {
             if (!loadedData || !loadedData.nodes || !loadedData.edges) {
                 console.error("Invalid graph data format:", loadedData);
                 graphContainerElement.innerHTML = "<p>Error: Invalid graph data loaded.</p>";
                 return;
             }
-            fullLoadedGraphData = loadedData; // Store the original loaded data
+            fullLoadedGraphData = loadedData;
 
             let originalNodes = fullLoadedGraphData.nodes;
             let originalEdges = fullLoadedGraphData.edges;
@@ -96,7 +103,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         source: edge1.source,
                         target: edge1.target,
                         bidirectional: true,
-                        // Keep original interactions if needed, or decide how to merge
                         interactions: edge1.interactions || [],
                         reverseInteractions: reverseEdge.interactions || []
                     });
@@ -119,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (nodes.length === 0) {
                 console.warn("No nodes remaining after filtering. Graph will be empty.");
                 graphContainerElement.innerHTML = "<p>No data to display after filtering.</p>";
-                 if (window.handleGraphNodeSelection) { // Notify tree script
+                 if (window.handleGraphNodeSelection) {
                     window.handleGraphNodeSelection(null, null);
                 }
                 return;
@@ -131,6 +137,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .force("center", d3.forceCenter(currentWidth / 2, currentHeight / 2))
                 .force("collision", d3.forceCollide().radius(nodeWidth / 2 + 20));
 
+            // Arrowhead Definitions (no changes here)
             svg.append("defs").append("marker")
                 .attr("id", "arrowhead").attr("viewBox", "0 -5 10 10").attr("refX", 10).attr("refY", 0)
                 .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
@@ -152,10 +159,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
                 .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", bidirectionalSelectedLinkColor);
 
+
             linkPaths = g.append("g").attr("class", "links")
                 .selectAll("path").data(links).join("path")
-                .attr("class", "link").style("stroke", linkStrokeColor)
-                .style("stroke-opacity", linkStrokeOpacity).attr("stroke-width", linkStrokeWidth)
+                .attr("class", "link")
+                .style("stroke", linkStrokeColor)
+                .style("stroke-opacity", linkStrokeOpacity)
+                .attr("stroke-width", linkStrokeWidth)
                 .attr("fill", "none")
                 .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
 
@@ -175,72 +185,99 @@ document.addEventListener('DOMContentLoaded', function () {
             let selectedNodeData = null;
 
             nodeGroups.on("click", function (event, d_node) {
+                // Reset previous selection visuals
                 if (selectedNodeElement) {
                     d3.select(selectedNodeElement).select("rect")
                         .attr("stroke", nodeStrokeColor).attr("stroke-width", 1.5);
                     d3.select(selectedNodeElement).classed("selected", false);
                 }
+                // Reset all links to default appearance
                 linkPaths
-                    .style("stroke", linkStrokeColor).style("stroke-opacity", linkStrokeOpacity)
+                    .style("stroke", linkStrokeColor)
+                    .style("stroke-opacity", linkStrokeOpacity)
                     .attr("stroke-width", linkStrokeWidth)
-                    .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
+                    .attr("marker-end", d_link => d_link.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
 
-                if (selectedNodeElement === this) {
+
+                if (selectedNodeElement === this) { // Deselecting
                     selectedNodeElement = null;
                     selectedNodeData = null;
-                    if (window.handleGraphNodeSelection) { // Notify tree script
+                    if (window.handleGraphNodeSelection) {
                         window.handleGraphNodeSelection(null, null);
                     }
-                } else {
+                } else { // Selecting a new node
                     selectedNodeElement = this;
                     selectedNodeData = d_node;
                     d3.select(this).select("rect")
                         .attr("stroke", nodeSelectedStrokeColor).attr("stroke-width", nodeSelectedStrokeWidth);
                     d3.select(this).classed("selected", true);
 
-                    if (window.handleGraphNodeSelection && fullLoadedGraphData) { // Notify tree script
+                    if (window.handleGraphNodeSelection && fullLoadedGraphData) {
                         window.handleGraphNodeSelection(selectedNodeData, fullLoadedGraphData);
                     }
 
+                    // Update link appearances based on selection
                     linkPaths.each(function(d_link) {
                         const isBidirectional = d_link.bidirectional;
                         const isOutgoing = d_link.source.id === selectedNodeData.id;
                         const isIncoming = d_link.target.id === selectedNodeData.id;
-                        if (isBidirectional && (isOutgoing || isIncoming)) {
-                            d3.select(this).style("stroke", bidirectionalSelectedLinkColor)
-                                .style("stroke-opacity", 1).attr("stroke-width", linkStrokeWidth + 0.5)
-                                .attr("marker-end", "url(#arrowhead-bidirectional-selected)").raise();
-                        } else if (isOutgoing) {
-                            d3.select(this).style("stroke", outgoingLinkColor)
-                                .style("stroke-opacity", 1).attr("stroke-width", linkStrokeWidth + 0.5)
-                                .attr("marker-end", "url(#arrowhead-outgoing)").raise();
-                        } else if (isIncoming) {
-                            d3.select(this).style("stroke", incomingLinkColor)
-                                .style("stroke-opacity", 1).attr("stroke-width", linkStrokeWidth + 0.5)
-                                .attr("marker-end", "url(#arrowhead-incoming)").raise();
+                        const isConnected = isOutgoing || isIncoming;
+
+                        if (isConnected) {
+                            d3.select(this).raise(); // Bring connected links to front
+                            if (isBidirectional) { // This covers cases where selectedNode is source OR target of a bidirectional link
+                                d3.select(this)
+                                    .style("stroke", bidirectionalSelectedLinkColor)
+                                    .style("stroke-opacity", 1)
+                                    .attr("stroke-width", linkStrokeWidth + 1) // Extra pixel width
+                                    .attr("marker-end", "url(#arrowhead-bidirectional-selected)");
+                            } else if (isOutgoing) {
+                                d3.select(this)
+                                    .style("stroke", outgoingLinkColor)
+                                    .style("stroke-opacity", 1)
+                                    .attr("stroke-width", linkStrokeWidth + 1) // Extra pixel width
+                                    .attr("marker-end", "url(#arrowhead-outgoing)");
+                            } else if (isIncoming) {
+                                d3.select(this)
+                                    .style("stroke", incomingLinkColor)
+                                    .style("stroke-opacity", 1)
+                                    .attr("stroke-width", linkStrokeWidth + 1) // Extra pixel width
+                                    .attr("marker-end", "url(#arrowhead-incoming)");
+                            }
+                        } else { // Not connected to the selected node
+                            d3.select(this)
+                                .style("stroke-opacity", nonConnectedLinkOpacity)
+                                .attr("stroke-width", nonConnectedLinkWidth)
+                                // Keep original marker, but it will be less visible due to opacity
+                                .attr("marker-end", d_link.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
                         }
                     });
                 }
                 event.stopPropagation();
             });
 
-            svg.on("click", () => {
+            svg.on("click", () => { // Click on SVG background to deselect
                 if (selectedNodeElement) {
                      d3.select(selectedNodeElement).select("rect")
                         .attr("stroke", nodeStrokeColor).attr("stroke-width", 1.5);
                     d3.select(selectedNodeElement).classed("selected", false);
                     selectedNodeElement = null;
                     selectedNodeData = null;
+
+                    // Reset all links to default appearance
                     linkPaths
-                        .style("stroke", linkStrokeColor).style("stroke-opacity", linkStrokeOpacity)
+                        .style("stroke", linkStrokeColor)
+                        .style("stroke-opacity", linkStrokeOpacity)
                         .attr("stroke-width", linkStrokeWidth)
-                        .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
-                    if (window.handleGraphNodeSelection) { // Notify tree script
+                        .attr("marker-end", d_link => d_link.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
+
+                    if (window.handleGraphNodeSelection) {
                         window.handleGraphNodeSelection(null, null);
                     }
                 }
             });
 
+            // ... (simulation.on("tick"), zoomBehavior, nodeDrag remain the same) ...
             simulation.on("tick", () => {
                 linkPaths.attr("d", d => {
                     if (typeof d.source === "string" || typeof d.target === "string" ||
@@ -272,8 +309,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     tx = endX; ty = endY;
                     const R_final = Math.sqrt(Math.pow(tx - sx, 2) + Math.pow(ty - sy, 2));
-                    const dr_final = R_final * 1.5;
-                    if (R_final < 1) return "";
+                    const dr_final = R_final * 1.5; // Curvature factor
+                    if (R_final < 1) return ""; // Avoid issues with tiny links
                     return `M${sx},${sy}A${dr_final},${dr_final} 0 0,1 ${tx},${ty}`;
                 });
                 nodeGroups.attr("transform", d => {
@@ -285,36 +322,54 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const zoomBehavior = d3.zoom().scaleExtent([0.1, 8])
                 .filter(event => {
-                    if (event.type === "wheel") return true;
+                    if (event.type === "wheel") return true; // Allow wheel zoom anywhere
+                    // Allow pan (mousedown + drag) only if mousedown is on svg or g, not on a node
                     if (event.type === "mousedown" && event.button === 0) {
                         return event.target === svg.node() || event.target === g.node();
                     }
                     return false;
                 })
-                .on("zoom", (event) => g.attr("transform", event.transform));
-            svg.call(zoomBehavior).on("dblclick.zoom", null);
+                .on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+                });
 
+            svg.call(zoomBehavior)
+               .on("dblclick.zoom", null); // Disable double click zoom
+
+            // Drag behavior for nodes
             function nodeDrag(simulationInstance) {
                 function dragstarted(event, d) {
-                    event.sourceEvent.stopPropagation();
+                    event.sourceEvent.stopPropagation(); // Prevent triggering SVG click/pan
                     if (!event.active) simulationInstance.alphaTarget(0.3).restart();
-                    d.fx = d.x; d.fy = d.y;
+                    d.fx = d.x;
+                    d.fy = d.y;
                 }
-                function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
+                function dragged(event, d) {
+                    d.fx = event.x;
+                    d.fy = event.y;
+                }
                 function dragended(event, d) {
                     if (!event.active) simulationInstance.alphaTarget(0);
-                    d.fx = null; d.fy = null;
+                    // Keep fx, fy null if you want them to be free after drag
+                    // d.fx = null;
+                    // d.fy = null;
+                    // If you want them to stay fixed after drag, comment out the above two lines
                 }
-                return d3.drag().filter(event => event.button === 0)
-                    .on("start", dragstarted).on("drag", dragged).on("end", dragended);
+                return d3.drag()
+                    .filter(event => event.button === 0) // Only left mouse button
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended);
             }
+
             nodeGroups.call(nodeDrag(simulation));
+
             console.log("D3 graph initialized/updated.");
 
         }).catch(function (error) {
             console.error('Error loading or processing graph data:', error);
             graphContainerElement.innerHTML = `<p>Error loading module graph data: ${error.message}</p>`;
-            if (window.handleGraphNodeSelection) { // Notify tree script of error state
+            if (window.handleGraphNodeSelection) {
                 window.handleGraphNodeSelection(null, null);
             }
         });
