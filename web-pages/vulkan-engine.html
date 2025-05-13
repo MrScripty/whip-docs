@@ -6,7 +6,8 @@
     <title>Vulkan Engine - Engine Docs</title>
     <!-- Shared Styles -->
     <link rel="stylesheet" href="shared-styles.css">
-    <!-- Add page-specific styles here if needed -->
+
+    <!-- Styles for the D3 Graph -->
     <style>
         .engine-content {
             padding: 20px;
@@ -14,7 +15,45 @@
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             flex: 1; /* Allow this content to fill the space */
-            overflow-y: auto; /* Allow scrolling if content exceeds height */
+            /* overflow-y: auto; We might remove this if the graph itself handles scrolling/panning */
+            display: flex; /* Use flexbox to manage layout if needed */
+            flex-direction: column; /* Stack text content and graph vertically */
+        }
+
+        /* Container for the D3 graph */
+        .graph-container {
+            width: 100%; /* Take full width of its parent (.engine-content) */
+            height: 600px; /* Or a specific height, e.g., 70vh */
+            min-height: 400px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9; /* Slightly different background for the graph area */
+            margin-top: 20px; /* Space above the graph */
+            overflow: hidden; /* Crucial for D3 zoom/pan to work correctly within this div */
+            position: relative; /* Good practice for positioning elements within */
+        }
+
+        /* D3 specific styles (can also be in shared-styles.css or a dedicated graph.css) */
+        .node rect { /* Default node rectangle style */
+            stroke: #333;
+            stroke-width: 1.5px;
+            cursor: pointer;
+        }
+        .node text { /* Default node text style */
+            font-size: 10px;
+            pointer-events: none;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            fill: #222;
+        }
+        .link { /* Default link style */
+            stroke: #999;
+            stroke-opacity: 0.6;
+            stroke-width: 1.5px;
+            fill: none; /* Important for paths */
+        }
+        .node.selected rect { /* Style for selected node */
+            stroke: dodgerblue;
+            stroke-width: 3px;
         }
     </style>
 </head>
@@ -34,13 +73,42 @@
     <!-- Main Content Area for this page -->
     <main class="main-content">
         <div class="engine-content">
-            <h1>Vulkan Engine</h1>
-            <p>This page will describe the high-level structure and components of the Vulkan rendering engine.</p>
+            <h1>Vulkan Engine Module Map</h1>
+            <p>This diagram visualizes the relationships between modules in the Rust-based Vulkan engine project.
+               Nodes represent files, and links represent dependencies or communication paths.
+            </p>
+            <p>
+                <strong>Controls:</strong>
+                <ul>
+                    <li>Click a node to select/deselect it.</li>
+                    <li>Use the middle mouse button scroll wheel to zoom in/out.</li>
+                    <li>Press and drag the middle mouse button to pan the graph.</li>
+                    <li>Drag individual nodes with the left mouse button.</li>
+                </ul>
+            </p>
+
+            <!-- This is where the D3 graph will be rendered -->
+            <div id="module-graph-area"
+                 class="graph-container"
+                 data-graph-src="../rust-doc-tool/output/module_graph.json"
+                 data-ignore-files="mod.rs,lib.rs"> <!-- Example: comma-separated list -->
+                <!-- D3.js will render the SVG here -->
+            </div>
+
+            <hr style="margin-top: 30px;">
+            <h2>Engine Overview</h2>
+            <p>This page will also describe the high-level structure and components of the Vulkan rendering engine.</p>
             <p>Content coming soon...</p>
             <!-- Add engine-specific documentation here -->
         </div>
     </main>
 
-    <!-- No external JS needed for this simple page yet -->
+    <!-- D3.js Library (place before your custom script) -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <!-- Your custom D3 script -->
+    <!-- Adjust path if your scripts folder is not at the root relative to web-pages/ -->
+    <script src="../scripts/graphs/module_dependency_graph.js"></script>
+
 </body>
 </html>

@@ -143,156 +143,788 @@
   ],
   "edges": [
     {
-      "source": "gui_framework/plugins/core.rs",
-      "target": "gui_framework/mod.rs"
+      "source": "gui_framework/rendering/pipeline_manager.rs",
+      "target": "gui_framework/rendering/shader_utils.rs"
     },
     {
-      "source": "gui_framework/rendering/resize_handler.rs",
-      "target": "gui_framework/rendering/swapchain.rs"
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/rendering/shader_utils.rs"
     },
     {
-      "source": "gui_framework/events/mod.rs",
-      "target": "gui_framework/events/interaction_events.rs"
-    },
-    {
-      "source": "gui_framework/interaction/mod.rs",
-      "target": "gui_framework/interaction/utils.rs"
-    },
-    {
-      "source": "gui_framework/interaction/mod.rs",
-      "target": "gui_framework/interaction/hotkeys.rs"
-    },
-    {
-      "source": "gui_framework/interaction/mod.rs",
-      "target": "gui_framework/interaction/text_drag.rs"
-    },
-    {
-      "source": "gui_framework/context/mod.rs",
-      "target": "gui_framework/context/vulkan_context.rs"
-    },
-    {
-      "source": "gui_framework/context/mod.rs",
+      "source": "gui_framework/plugins/interaction.rs",
       "target": "gui_framework/context/vulkan_setup.rs"
     },
     {
-      "source": "gui_framework/plugins/mod.rs",
-      "target": "gui_framework/plugins/movement.rs"
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
     },
     {
-      "source": "gui_framework/plugins/mod.rs",
-      "target": "gui_framework/plugins/core.rs"
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
     },
     {
-      "source": "gui_framework/plugins/mod.rs",
-      "target": "gui_framework/plugins/interaction.rs"
+      "source": "gui_framework/rendering/shader_utils.rs",
+      "target": "gui_framework/rendering/render_engine.rs"
     },
     {
-      "source": "gui_framework/plugins/mod.rs",
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/context/vulkan_setup.rs"
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/context/vulkan_context.rs"
+    },
+    {
+      "source": "gui_framework/components/text_layout.rs",
+      "target": "gui_framework/components/text_data.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/context/vulkan_context.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/interaction/utils.rs"
+    },
+    {
+      "source": "gui_framework/context/vulkan_setup.rs",
+      "target": "gui_framework/context/vulkan_context.rs"
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/rendering/render_engine.rs"
+    },
+    {
+      "source": "gui_framework/components/visibility.rs",
+      "target": "gui_framework/components/text_data.rs"
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/swapchain.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/rendering/shader_utils.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/context/vulkan_context.rs"
+    },
+    {
+      "source": "gui_framework/rendering/font_server.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
+    },
+    {
+      "source": "lib.rs",
       "target": "gui_framework/plugins/bindings.rs"
     },
     {
-      "source": "gui_framework/mod.rs",
-      "target": "gui_framework/interaction/mod.rs"
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/context/vulkan_context.rs"
     },
     {
-      "source": "gui_framework/mod.rs",
-      "target": "gui_framework/rendering/mod.rs"
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/rendering/render_engine.rs"
     },
     {
-      "source": "gui_framework/mod.rs",
-      "target": "gui_framework/plugins/mod.rs"
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
     },
     {
-      "source": "gui_framework/mod.rs",
-      "target": "gui_framework/components/mod.rs"
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/rendering/render_engine.rs"
     },
     {
-      "source": "gui_framework/mod.rs",
-      "target": "gui_framework/context/mod.rs"
+      "source": "gui_framework/plugins/movement.rs",
+      "target": "gui_framework/plugins/interaction.rs"
     },
     {
-      "source": "gui_framework/mod.rs",
-      "target": "gui_framework/events/mod.rs"
+      "source": "gui_framework/rendering/pipeline_manager.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/events/interaction_events.rs"
+    },
+    {
+      "source": "gui_framework/rendering/shader_utils.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/events/interaction_events.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/swapchain.rs"
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/rendering/render_engine.rs"
+    },
+    {
+      "source": "gui_framework/components/shape_data.rs",
+      "target": "gui_framework/components/text_layout.rs"
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/rendering/text_renderer.rs"
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
+    },
+    {
+      "source": "gui_framework/plugins/bindings.rs",
+      "target": "gui_framework/plugins/interaction.rs"
     },
     {
       "source": "gui_framework/rendering/buffer_manager.rs",
       "target": "gui_framework/rendering/shader_utils.rs"
     },
     {
-      "source": "gui_framework/interaction/text_drag.rs",
-      "target": "gui_framework/mod.rs"
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
     },
     {
-      "source": "gui_framework/rendering/mod.rs",
-      "target": "gui_framework/rendering/command_buffers.rs"
-    },
-    {
-      "source": "gui_framework/rendering/mod.rs",
-      "target": "gui_framework/rendering/buffer_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/mod.rs",
-      "target": "gui_framework/rendering/pipeline_manager.rs"
-    },
-    {
-      "source": "gui_framework/rendering/mod.rs",
-      "target": "gui_framework/rendering/render_engine.rs"
-    },
-    {
-      "source": "gui_framework/rendering/mod.rs",
-      "target": "gui_framework/rendering/resize_handler.rs"
-    },
-    {
-      "source": "gui_framework/rendering/mod.rs",
-      "target": "gui_framework/rendering/shader_utils.rs"
-    },
-    {
-      "source": "gui_framework/rendering/mod.rs",
+      "source": "gui_framework/rendering/pipeline_manager.rs",
       "target": "gui_framework/rendering/swapchain.rs"
     },
     {
-      "source": "gui_framework/rendering/mod.rs",
-      "target": "gui_framework/rendering/font_server.rs"
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
     },
     {
-      "source": "gui_framework/rendering/mod.rs",
+      "source": "gui_framework/rendering/shader_utils.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "gui_framework/rendering/font_server.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "gui_framework/rendering/pipeline_manager.rs",
+      "target": "gui_framework/context/vulkan_context.rs"
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/rendering/shader_utils.rs"
+    },
+    {
+      "source": "gui_framework/interaction/utils.rs",
+      "target": "gui_framework/interaction/text_drag.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
       "target": "gui_framework/rendering/text_renderer.rs"
     },
     {
-      "source": "gui_framework/rendering/mod.rs",
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/components/text_layout.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/plugins/movement.rs"
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
+    },
+    {
+      "source": "gui_framework/plugins/bindings.rs",
+      "target": "gui_framework/plugins/movement.rs"
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/rendering/shader_utils.rs"
+    },
+    {
+      "source": "gui_framework/rendering/font_server.rs",
+      "target": "gui_framework/rendering/render_engine.rs"
+    },
+    {
+      "source": "gui_framework/rendering/font_server.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/render_engine.rs"
+    },
+    {
+      "source": "gui_framework/rendering/shader_utils.rs",
+      "target": "gui_framework/rendering/text_renderer.rs"
+    },
+    {
+      "source": "gui_framework/components/interaction.rs",
+      "target": "gui_framework/components/shape_data.rs"
+    },
+    {
+      "source": "gui_framework/plugins/movement.rs",
+      "target": "gui_framework/plugins/bindings.rs"
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/rendering/text_renderer.rs"
+    },
+    {
+      "source": "gui_framework/context/vulkan_context.rs",
+      "target": "gui_framework/context/vulkan_setup.rs"
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/rendering/render_engine.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/components/text_data.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/rendering/text_renderer.rs"
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/context/vulkan_context.rs"
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/rendering/shader_utils.rs"
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/interaction/text_drag.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/components/visibility.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/text_renderer.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/rendering/shader_utils.rs"
+    },
+    {
+      "source": "gui_framework/rendering/font_server.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/rendering/text_renderer.rs"
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/text_renderer.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/plugins/core.rs"
+    },
+    {
+      "source": "gui_framework/components/text_data.rs",
+      "target": "gui_framework/components/text_layout.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/interaction/text_drag.rs"
+    },
+    {
+      "source": "gui_framework/components/interaction.rs",
+      "target": "gui_framework/components/text_layout.rs"
+    },
+    {
+      "source": "gui_framework/components/text_layout.rs",
+      "target": "gui_framework/components/interaction.rs"
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/components/interaction.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/context/vulkan_context.rs"
+    },
+    {
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/rendering/swapchain.rs"
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "gui_framework/rendering/pipeline_manager.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
+    },
+    {
+      "source": "gui_framework/components/shape_data.rs",
+      "target": "gui_framework/components/text_data.rs"
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/rendering/text_renderer.rs"
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/rendering/render_engine.rs"
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/context/vulkan_setup.rs"
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/context/vulkan_setup.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/plugins/core.rs"
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "gui_framework/plugins/bindings.rs",
+      "target": "gui_framework/plugins/core.rs"
+    },
+    {
+      "source": "gui_framework/rendering/pipeline_manager.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
+    },
+    {
+      "source": "gui_framework/plugins/movement.rs",
+      "target": "gui_framework/plugins/core.rs"
+    },
+    {
+      "source": "gui_framework/components/text_data.rs",
+      "target": "gui_framework/components/shape_data.rs"
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/plugins/bindings.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/components/shape_data.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/rendering/swapchain.rs"
+    },
+    {
+      "source": "gui_framework/rendering/shader_utils.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/rendering/swapchain.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/components/interaction.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/context/vulkan_setup.rs"
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/shader_utils.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/context/vulkan_context.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/plugins/movement.rs"
+    },
+    {
+      "source": "gui_framework/components/visibility.rs",
+      "target": "gui_framework/components/text_layout.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/components/shape_data.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/swapchain.rs"
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/rendering/swapchain.rs"
+    },
+    {
+      "source": "gui_framework/interaction/text_editing.rs",
+      "target": "gui_framework/interaction/text_drag.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/shader_utils.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/text_renderer.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/plugins/movement.rs"
+    },
+    {
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/context/vulkan_context.rs"
+    },
+    {
+      "source": "gui_framework/components/shape_data.rs",
+      "target": "gui_framework/components/visibility.rs"
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
+    },
+    {
+      "source": "gui_framework/rendering/font_server.rs",
+      "target": "gui_framework/rendering/shader_utils.rs"
+    },
+    {
+      "source": "gui_framework/rendering/pipeline_manager.rs",
+      "target": "gui_framework/rendering/text_renderer.rs"
+    },
+    {
+      "source": "gui_framework/rendering/pipeline_manager.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "gui_framework/components/text_layout.rs",
+      "target": "gui_framework/components/visibility.rs"
+    },
+    {
+      "source": "gui_framework/plugins/movement.rs",
+      "target": "gui_framework/events/interaction_events.rs"
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/rendering/font_server.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/interaction/hotkeys.rs"
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/plugins/bindings.rs"
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/context/vulkan_setup.rs"
+    },
+    {
+      "source": "gui_framework/rendering/font_server.rs",
+      "target": "gui_framework/rendering/text_renderer.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/rendering/shader_utils.rs"
+    },
+    {
+      "source": "gui_framework/interaction/hotkeys.rs",
+      "target": "gui_framework/interaction/text_drag.rs"
+    },
+    {
+      "source": "gui_framework/rendering/shader_utils.rs",
+      "target": "gui_framework/rendering/swapchain.rs"
+    },
+    {
+      "source": "gui_framework/components/visibility.rs",
+      "target": "gui_framework/components/shape_data.rs"
+    },
+    {
+      "source": "gui_framework/interaction/text_editing.rs",
+      "target": "gui_framework/interaction/utils.rs"
+    },
+    {
+      "source": "gui_framework/rendering/shader_utils.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
+    },
+    {
+      "source": "gui_framework/rendering/font_server.rs",
       "target": "gui_framework/rendering/glyph_atlas.rs"
     },
     {
       "source": "lib.rs",
-      "target": "gui_framework/mod.rs"
+      "target": "gui_framework/rendering/render_engine.rs"
     },
     {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/mod.rs"
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
     },
     {
-      "source": "gui_framework/plugins/interaction.rs",
-      "target": "gui_framework/components/mod.rs"
+      "source": "gui_framework/interaction/utils.rs",
+      "target": "gui_framework/interaction/hotkeys.rs"
     },
     {
-      "source": "gui_framework/components/mod.rs",
+      "source": "gui_framework/interaction/text_editing.rs",
+      "target": "gui_framework/interaction/hotkeys.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
+    },
+    {
+      "source": "gui_framework/components/interaction.rs",
       "target": "gui_framework/components/text_data.rs"
     },
     {
-      "source": "gui_framework/components/mod.rs",
-      "target": "gui_framework/components/text_layout.rs"
+      "source": "gui_framework/interaction/text_drag.rs",
+      "target": "gui_framework/interaction/hotkeys.rs"
     },
     {
-      "source": "gui_framework/components/mod.rs",
+      "source": "gui_framework/components/text_layout.rs",
       "target": "gui_framework/components/shape_data.rs"
     },
     {
-      "source": "gui_framework/components/mod.rs",
+      "source": "gui_framework/components/visibility.rs",
+      "target": "gui_framework/components/interaction.rs"
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/rendering/buffer_manager.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
       "target": "gui_framework/components/visibility.rs"
     },
     {
-      "source": "gui_framework/components/mod.rs",
+      "source": "gui_framework/rendering/pipeline_manager.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/plugins/core.rs"
+    },
+    {
+      "source": "gui_framework/interaction/hotkeys.rs",
+      "target": "gui_framework/interaction/utils.rs"
+    },
+    {
+      "source": "gui_framework/rendering/buffer_manager.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/context/vulkan_setup.rs"
+    },
+    {
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/resize_handler.rs"
+    },
+    {
+      "source": "gui_framework/components/text_data.rs",
+      "target": "gui_framework/components/visibility.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/shader_utils.rs"
+    },
+    {
+      "source": "gui_framework/rendering/render_engine.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
+    },
+    {
+      "source": "gui_framework/rendering/pipeline_manager.rs",
+      "target": "gui_framework/rendering/render_engine.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/components/text_layout.rs"
+    },
+    {
+      "source": "gui_framework/rendering/resize_handler.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
+    },
+    {
+      "source": "gui_framework/interaction/text_drag.rs",
+      "target": "gui_framework/interaction/utils.rs"
+    },
+    {
+      "source": "gui_framework/plugins/bindings.rs",
+      "target": "gui_framework/events/interaction_events.rs"
+    },
+    {
+      "source": "gui_framework/components/text_data.rs",
       "target": "gui_framework/components/interaction.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/interaction/utils.rs"
+    },
+    {
+      "source": "gui_framework/rendering/font_server.rs",
+      "target": "gui_framework/rendering/swapchain.rs"
+    },
+    {
+      "source": "gui_framework/plugins/core.rs",
+      "target": "gui_framework/plugins/interaction.rs"
+    },
+    {
+      "source": "gui_framework/rendering/swapchain.rs",
+      "target": "gui_framework/rendering/command_buffers.rs"
+    },
+    {
+      "source": "gui_framework/rendering/command_buffers.rs",
+      "target": "gui_framework/rendering/pipeline_manager.rs"
+    },
+    {
+      "source": "gui_framework/components/text_layout.rs",
+      "target": "gui_framework/rendering/glyph_atlas.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/interaction/hotkeys.rs"
+    },
+    {
+      "source": "gui_framework/plugins/interaction.rs",
+      "target": "gui_framework/events/interaction_events.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/plugins/interaction.rs"
+    },
+    {
+      "source": "lib.rs",
+      "target": "gui_framework/components/text_data.rs"
+    },
+    {
+      "source": "gui_framework/rendering/glyph_atlas.rs",
+      "target": "gui_framework/rendering/swapchain.rs"
+    },
+    {
+      "source": "gui_framework/components/shape_data.rs",
+      "target": "gui_framework/components/interaction.rs"
+    },
+    {
+      "source": "gui_framework/components/interaction.rs",
+      "target": "gui_framework/components/visibility.rs"
     }
   ]
 }
