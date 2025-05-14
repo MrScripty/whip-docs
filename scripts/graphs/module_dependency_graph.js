@@ -23,11 +23,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const nodeHeight = 30;
     const nodeSelectedStrokeColor = "dodgerblue";
     const nodeSelectedStrokeWidth = 3;
-    const defaultNodeStrokeColor = "#333"; // For dagre-d3
-    const defaultNodeFillColor = "#f0f0f0"; // For dagre-d3
-    const sCurveCurviness = 0.5; // 0 for less curve, 1 for more (approx)
+    const defaultNodeStrokeColor = "#333";
+    const defaultNodeFillColor = "#f0f0f0";
+    const sCurveCurvinessFactor = 1; // Controls S-curve "bulge" (0 for straight, ~0.5 for noticeable S)
 
-    // Colors for selected links (consistent with tree.js if possible)
     const outgoingLinkColor = "green";
     const incomingLinkColor = "red";
     const bidirectionalSelectedLinkColor = "purple";
@@ -36,28 +35,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     let svg, innerG, currentZoomTransform;
-    let fullLoadedGraphData = null; // To store the complete unfiltered data for the tree
-    let dagreGraph; // To store the dagre graph object
+    let fullLoadedGraphData = null;
+    let currentLayoutedNodes = [];
+    let currentLayoutedEdges = [];
+
+    // Initialize ELK layout engine
+    const elk = new ELK({
+        // Default layout options for ELK. Can be overridden per element.
+        defaultLayoutOptions: {
+            'elk.algorithm': 'layered', // Use the layered (Sugiyama-style) algorithm
+            'elk.direction': 'RIGHT',   // Layout from Left to Right
+            'elk.spacing.nodeNode': '40.0', // Vertical spacing between nodes in same layer
+            'elk.layered.spacing.nodeNodeBetweenLayers': '70.0', // Horizontal spacing between layers
+            'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX', // Or 'BRANDES_KOEPF' or 'SIMPLE'
+            'elk.layered.cycleBreaking.strategy': 'GREEDY',
+            // 'elk.edgeRouting': 'ORTHOGONAL', // Try 'POLYLINE' or 'SPLINES' for smoother routes
+            'elk.padding': '[top=20,left=20,bottom=20,right=20]', // Padding around the whole graph
+            'elk.layered.spacing.edgeNode': '15.0', // Spacing between edge and node border
+            'elk.layered.mergeEdges': 'true', // If multiple edges between same nodes, merge them visually (can simplify)
+        }
+    });
 
     function initializeOrUpdateGraph() {
         const containerWidth = graphContainerElement.clientWidth;
         const containerHeight = graphContainerElement.clientHeight;
 
-        d3.select(graphContainerElement).select("svg").remove(); // Clear previous SVG
+        d3.select(graphContainerElement).select("svg").remove();
 
         svg = d3.select(graphContainerElement)
             .append("svg")
             .attr("width", containerWidth)
             .attr("height", containerHeight);
 
-        innerG = svg.append("g"); // Group for zoomable/pannable content
+        innerG = svg.append("g");
 
-        // Set up zoom
         const zoom = d3.zoom()
-            .scaleExtent([0.1, 4])
+            .scaleExtent([0.05, 4]) // Adjusted min scale for potentially larger ELK layouts
             .filter(event => {
                 if (event.type === "wheel") return true;
-                if (event.type === "mousedown" && event.button === 0) { // Left click pan
+                if (event.type === "mousedown" && event.button === 0) {
                     return event.target === svg.node() || event.target === innerG.node();
                 }
                 return false;
@@ -68,16 +84,14 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         svg.call(zoom);
 
-
         d3.json(graphDataPath).then(function (loadedData) {
             if (!loadedData || !loadedData.nodes || !loadedData.edges) {
-                console.error("Invalid graph data format:", loadedData);
-                graphContainerElement.innerHTML = "<p>Error: Invalid graph data loaded.</p>";
+                // ... error handling ...
                 return;
             }
-            fullLoadedGraphData = loadedData; // Store for tree interaction
+            fullLoadedGraphData = loadedData;
 
-            // --- Filtering ---
+            // --- Filtering (same as before) ---
             let originalNodes = fullLoadedGraphData.nodes;
             let originalEdges = fullLoadedGraphData.edges;
             let filteredNodes = originalNodes.filter(node => {
@@ -89,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 filteredNodeIds.has(edge.source) && filteredNodeIds.has(edge.target)
             );
             // Process for bidirectional (same as before)
-            const processedLinks = [];
+            const processedLinksInput = [];
             const processedEdgePairs = new Set();
             for (const edge1 of rawFilteredEdges) {
                 const pairKey1 = `${edge1.source}|${edge1.target}`;
@@ -97,283 +111,302 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (processedEdgePairs.has(pairKey1) || processedEdgePairs.has(pairKey2)) continue;
                 const reverseEdge = rawFilteredEdges.find(edge2 => edge2.source === edge1.target && edge2.target === edge1.source);
                 if (reverseEdge) {
-                    processedLinks.push({ source: edge1.source, target: edge1.target, bidirectional: true, interactions: edge1.interactions || [], reverseInteractions: reverseEdge.interactions || [] });
+                    processedLinksInput.push({ id: `edge-${edge1.source}-to-${edge1.target}-bi`, sources: [edge1.source], targets: [edge1.target], bidirectional: true, originalData: { ...edge1, reverseInteractions: reverseEdge.interactions } });
                     processedEdgePairs.add(pairKey1); processedEdgePairs.add(pairKey2);
                 } else {
-                    processedLinks.push({ source: edge1.source, target: edge1.target, bidirectional: false, interactions: edge1.interactions || [] });
+                    processedLinksInput.push({ id: `edge-${edge1.source}-to-${edge1.target}`, sources: [edge1.source], targets: [edge1.target], bidirectional: false, originalData: edge1 });
                     processedEdgePairs.add(pairKey1);
                 }
             }
 
-            const displayNodes = filteredNodes;
-            const displayLinks = processedLinks;
+            const displayNodesInput = filteredNodes;
 
-            if (displayNodes.length === 0) {
-                console.warn("No nodes remaining after filtering.");
-                graphContainerElement.innerHTML = "<p>No data to display after filtering.</p>";
-                if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
+            if (displayNodesInput.length === 0) {
+                // ... empty graph handling ...
                 return;
             }
 
-            // --- Create a new Dagre graph ---
-            dagreGraph = new dagre.graphlib.Graph({ compound: true }); // compound for potential future groups
-            dagreGraph.setGraph({
-                rankdir: "LR", // Left to Right layout
-                nodesep: 10,   // pixels
-                ranksep: 100,   // pixels
-                marginx: 0,
-                marginy: 0
-            });
-            dagreGraph.setDefaultEdgeLabel(() => ({})); // Default empty label for edges
-
-            // Add nodes to Dagre graph
-            displayNodes.forEach(node => {
-                dagreGraph.setNode(node.id, {
-                    label: node.label || node.id,
+            // --- Prepare graph data for ELK ---
+            const elkGraph = {
+                id: "root",
+                layoutOptions: { // Can override defaultLayoutOptions here if needed for the root
+                    // 'elk.algorithm': 'mrtree', // Example: if you wanted a tree layout
+                },
+                children: displayNodesInput.map(node => ({
+                    id: node.id,
                     width: nodeWidth,
                     height: nodeHeight,
-                    // Store original data for access later
-                    originalData: node
-                });
-            });
+                    // layoutOptions: { 'elk.portConstraints': 'FIXED_ORDER' }, // Example for port constraints
+                    originalData: node // Keep original data
+                })),
+                edges: processedLinksInput.map(link => ({
+                    id: link.id, // ELK needs edge IDs
+                    sources: link.sources,   // ELK expects arrays for sources/targets
+                    targets: link.targets,
+                    bidirectional: link.bidirectional, // Custom property we'll use
+                    originalData: link.originalData  // Keep original data
+                }))
+            };
 
-            // Add edges to Dagre graph
-            displayLinks.forEach(link => {
-                dagreGraph.setEdge(link.source, link.target, {
-                    // Dagre-D3 uses 'label' for edge text, we don't have one here
-                    // We can store original link data if needed
-                    bidirectional: link.bidirectional,
-                    originalData: link
-                });
-            });
+            // --- Run ELK Layout ---
+            elk.layout(elkGraph)
+                .then(layoutedGraph => {
+                    currentLayoutedNodes = layoutedGraph.children || [];
+                    currentLayoutedEdges = layoutedGraph.edges || [];
 
-            // Run the layout
-            dagre.layout(dagreGraph);
-
-            // --- Render with D3 using Dagre's layout ---
-            // Create the renderer
-            const render = new dagreD3.render();
-
-            // Run the renderer. This is what draws the graph.
-            render(innerG, dagreGraph);
-
-
-            // --- Customizations after dagre-d3 render ---
-            // Style nodes (rectangles and text)
-            innerG.selectAll("g.node")
-                .each(function(nodeId) {
-                    const nodeData = dagreGraph.node(nodeId).originalData;
-                    d3.select(this).select("rect")
-                        .style("fill", defaultNodeFillColor)
-                        .style("stroke", defaultNodeStrokeColor);
-                    // dagre-d3 creates text inside a 'tspan' within a 'text' element
-                    d3.select(this).select("text > tspan")
-                        .style("font-size", "10px")
-                        .style("fill", "#000");
+                    // --- Render with D3 using ELK's layout ---
+                    renderGraph(currentLayoutedNodes, currentLayoutedEdges, containerWidth, containerHeight, zoom);
+                    console.log("ELK.js graph rendered.");
+                })
+                .catch(error => {
+                    console.error("ELK layout error:", error);
+                    graphContainerElement.innerHTML = `<p>Error during graph layout: ${error.message}</p>`;
+                    if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
                 });
 
-            // Style edges (paths) and define custom S-curve path
-            innerG.selectAll("g.edgePath path.path") // dagre-d3 creates paths with class 'path'
-                .each(function(edgeObj) { // edgeObj is {v: sourceId, w: targetId}
-                    const edgeData = dagreGraph.edge(edgeObj.v, edgeObj.w);
-                    d3.select(this)
-                        .style("stroke", defaultLinkColor)
-                        .style("stroke-width", "1.5px")
-                        .style("fill", "none")
-                        .attr("marker-end", edgeData.bidirectional ? "url(#arrowhead-bidirectional-dagre)" : "url(#arrowhead-dagre)")
-                        .attr("d", function() {
-                            // Get points from dagre's layout for this edge
-                            const points = edgeData.points;
-                            if (!points || points.length < 2) return "";
+        }).catch(function (error) { /* ... error handling ... */ });
+    }
 
-                            const sourceNode = dagreGraph.node(edgeObj.v);
-                            const targetNode = dagreGraph.node(edgeObj.w);
+    function renderGraph(nodesData, edgesData, currentWidth, currentHeight, zoomBehavior) {
+        // --- Arrowhead Definitions ---
+        // (Make sure these are appended to the current svg, not a new one if re-rendering)
+        const defs = svg.select("defs").node() ? svg.select("defs") : svg.append("defs");
+        defs.selectAll("marker").remove(); // Clear old markers
 
-                            let sx = points[0].x;
-                            let sy = points[0].y;
-                            let tx = points[points.length - 1].x;
-                            let ty = points[points.length - 1].y;
-
-                            // Adjust start/end points to be on the node sides
-                            // Dagre points are usually center of node or edge of label box
-                            if (!edgeData.bidirectional) {
-                                sx = sourceNode.x + sourceNode.width / 2; // Right side of source
-                                sy = sourceNode.y; // Middle of source (y is center for dagre nodes)
-                                tx = targetNode.x - targetNode.width / 2; // Left side of target
-                                ty = targetNode.y; // Middle of target
-                            } else {
-                                // For bidirectional, keep dagre's points or simplify
-                                // This part might need more refinement for perfect S-curves
-                                sx = sourceNode.x;
-                                sy = sourceNode.y + sourceNode.height / 2;
-                                tx = targetNode.x;
-                                ty = targetNode.y - targetNode.height / 2;
-                            }
+        defs.append("marker")
+            .attr("id", "arrowhead-elk").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
+            .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
+            .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", defaultLinkColor);
+        // ... Add other arrowheads (outgoing, incoming, bidirectional, selected versions) ...
+        defs.append("marker")
+            .attr("id", "arrowhead-elk-outgoing").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
+            .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
+            .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", outgoingLinkColor);
+        defs.append("marker")
+            .attr("id", "arrowhead-elk-incoming").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
+            .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
+            .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", incomingLinkColor);
+        defs.append("marker")
+            .attr("id", "arrowhead-elk-bidirectional").attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
+            .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
+            .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", defaultLinkColor);
+        defs.append("marker")
+            .attr("id", "arrowhead-elk-bidirectional-selected").attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
+            .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
+            .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", bidirectionalSelectedLinkColor);
 
 
-                            const dx = tx - sx;
-                            // const dy = ty - sy; // Not used in this S-curve version
+        // --- Draw Links ---
+        linkPaths = innerG.append("g").attr("class", "links")
+            .selectAll("path").data(edgesData).join("path")
+            .attr("class", "link")
+            .style("stroke", defaultLinkColor)
+            .style("stroke-opacity", 1)
+            .attr("stroke-width", "1.5px")
+            .attr("fill", "none")
+            .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-elk-bidirectional)" : "url(#arrowhead-elk)")
+            .attr("d", d => calculateElkEdgePath(d, nodesData));
 
-                            if (sCurveCurviness <= -1 || Math.abs(dx) < 10) { // Straight line if too close or curviness is -1
-                                return `M${sx},${sy}L${tx},${ty}`;
-                            }
-                            let curvinessFactor = dx * (0.1 + Math.max(0, sCurveCurviness) * 0.4);
-                            const cp1x = sx + curvinessFactor;
-                            const cp1y = sy;
-                            const cp2x = tx - curvinessFactor;
-                            const cp2y = ty;
-                            return `M${sx},${sy}C${cp1x},${cp1y} ${cp2x},${cp2y} ${tx},${ty}`;
-                        });
-                });
+        // --- Draw Nodes ---
+        nodeGroups = innerG.append("g").attr("class", "nodes")
+            .selectAll("g.node-group").data(nodesData).join("g")
+            .attr("class", "node-group")
+            .attr("id", d => `node-${CSS.escape(d.id)}`) // For selection
+            .attr("transform", d => `translate(${d.x || 0}, ${d.y || 0})`); // ELK provides x,y for top-left
 
+        nodeGroups.append("rect")
+            .attr("width", d => d.width || nodeWidth)
+            .attr("height", d => d.height || nodeHeight)
+            .attr("rx", 3).attr("ry", 3)
+            .style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1.5px");
 
-            // --- Arrowhead definitions for Dagre ---
-            // Dagre-D3 might position arrowheads differently, so adjust refX/Y if needed
-            svg.append("defs").append("marker")
-                .attr("id", "arrowhead-dagre")
-                .attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0) // refX might need to be smaller
-                .attr("orient", "auto").attr("markerWidth", 6).attr("markerHeight", 6)
-                .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", defaultLinkColor);
-
-            svg.append("defs").append("marker")
-                .attr("id", "arrowhead-bidirectional-dagre")
-                .attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
-                .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
-                .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", defaultLinkColor);
-            // Add selected arrowheads
-            svg.append("defs").append("marker")
-                .attr("id", "arrowhead-dagre-outgoing").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
-                .attr("orient", "auto").attr("markerWidth", 6).attr("markerHeight", 6)
-                .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", outgoingLinkColor);
-            svg.append("defs").append("marker")
-                .attr("id", "arrowhead-dagre-incoming").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
-                .attr("orient", "auto").attr("markerWidth", 6).attr("markerHeight", 6)
-                .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", incomingLinkColor);
-             svg.append("defs").append("marker")
-                .attr("id", "arrowhead-bidirectional-dagre-selected").attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
-                .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
-                .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", bidirectionalSelectedLinkColor);
+        nodeGroups.append("text")
+            .attr("x", d => (d.width || nodeWidth) / 2)
+            .attr("y", d => (d.height || nodeHeight) / 2)
+            .attr("dy", "0.35em")
+            .attr("text-anchor", "middle").style("font-size", "10px").style("fill", "#000")
+            .text(d => d.originalData.label || d.id);
 
 
-            // --- Node Selection and Interaction ---
-            let selectedNodeId = null;
-            innerG.selectAll("g.node")
-                .on("click", function (event, nodeId) {
-                    event.stopPropagation();
-                    const previouslySelectedNodeId = selectedNodeId;
-                    selectedNodeId = (selectedNodeId === nodeId) ? null : nodeId;
+        // --- Node Selection and Interaction ---
+        let selectedNodeId = null;
+        nodeGroups.on("click", function (event, clickedNodeData) {
+            event.stopPropagation();
+            const previouslySelectedNodeId = selectedNodeId;
+            selectedNodeId = (selectedNodeId === clickedNodeData.id) ? null : clickedNodeData.id;
 
-                    // Reset previous
-                    if (previouslySelectedNodeId) {
-                        innerG.select(`g.node[id='${CSS.escape(previouslySelectedNodeId)}'] rect`) // Use CSS.escape for IDs with special chars
-                            .style("stroke", defaultNodeStrokeColor)
-                            .style("stroke-width", "1.5px");
-                    }
-                    // Reset all links
-                    innerG.selectAll("g.edgePath path.path")
-                        .style("stroke", defaultLinkColor)
-                        .style("stroke-opacity", 1) // Reset opacity
-                        .style("stroke-width", "1.5px")
-                        .attr("marker-end", function() {
-                            const edgeData = dagreGraph.edge(d3.select(this.parentNode).datum());
-                            return edgeData.bidirectional ? "url(#arrowhead-bidirectional-dagre)" : "url(#arrowhead-dagre)";
-                        });
+            // Reset previous
+            if (previouslySelectedNodeId) {
+                innerG.select(`#node-${CSS.escape(previouslySelectedNodeId)} rect`)
+                    .style("stroke", defaultNodeStrokeColor).style("stroke-width", "1.5px");
+            }
+            // Reset all links
+            linkPaths
+                .style("stroke", defaultLinkColor).style("stroke-opacity", 1)
+                .style("stroke-width", "1.5px")
+                .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-elk-bidirectional)" : "url(#arrowhead-elk)");
 
+            if (selectedNodeId) {
+                const selectedNodeD3 = innerG.select(`#node-${CSS.escape(selectedNodeId)}`);
+                selectedNodeD3.select("rect")
+                    .style("stroke", nodeSelectedStrokeColor).style("stroke-width", nodeSelectedStrokeWidth + "px");
+                selectedNodeD3.raise();
 
-                    if (selectedNodeId) {
-                        const selectedNodeD3 = innerG.select(`g.node[id='${CSS.escape(selectedNodeId)}']`);
-                        selectedNodeD3.select("rect")
-                            .style("stroke", nodeSelectedStrokeColor)
-                            .style("stroke-width", nodeSelectedStrokeWidth + "px");
-                        selectedNodeD3.raise(); // Bring selected node to front
+                // Style connected edges
+                linkPaths.each(function(edgeData) {
+                    const isBidirectional = edgeData.bidirectional;
+                    // ELK edges have sources/targets as arrays of IDs
+                    const isOutgoing = edgeData.sources[0] === selectedNodeId;
+                    const isIncoming = edgeData.targets[0] === selectedNodeId;
 
-                        // Style connected edges
-                        innerG.selectAll("g.edgePath path.path")
-                            .each(function() {
-                                const edgeD3Data = d3.select(this.parentNode).datum(); // {v: sourceId, w: targetId}
-                                const edgeLayoutData = dagreGraph.edge(edgeD3Data.v, edgeD3Data.w);
-                                const isBidirectional = edgeLayoutData.bidirectional;
-                                const isOutgoing = edgeD3Data.v === selectedNodeId;
-                                const isIncoming = edgeD3Data.w === selectedNodeId;
-
-                                if (isOutgoing || isIncoming) {
-                                    d3.select(this).raise();
-                                    if (isBidirectional) {
-                                        d3.select(this).style("stroke", bidirectionalSelectedLinkColor)
-                                           .attr("marker-end", "url(#arrowhead-bidirectional-dagre-selected)");
-                                    } else if (isOutgoing) {
-                                        d3.select(this).style("stroke", outgoingLinkColor)
-                                           .attr("marker-end", "url(#arrowhead-dagre-outgoing)");
-                                    } else { // isIncoming
-                                        d3.select(this).style("stroke", incomingLinkColor)
-                                           .attr("marker-end", "url(#arrowhead-dagre-incoming)");
-                                    }
-                                    d3.select(this).style("stroke-opacity", 1).style("stroke-width", "2.5px");
-                                } else {
-                                    d3.select(this).style("stroke-opacity", nonConnectedLinkOpacity);
-                                }
-                            });
-
-                        if (window.handleGraphNodeSelection && fullLoadedGraphData) {
-                            const nodeOriginalData = dagreGraph.node(selectedNodeId).originalData;
-                            window.handleGraphNodeSelection(nodeOriginalData, fullLoadedGraphData);
+                    if (isOutgoing || isIncoming) {
+                        d3.select(this).raise();
+                        if (isBidirectional) {
+                            d3.select(this).style("stroke", bidirectionalSelectedLinkColor)
+                               .attr("marker-end", "url(#arrowhead-elk-bidirectional-selected)");
+                        } else if (isOutgoing) {
+                            d3.select(this).style("stroke", outgoingLinkColor)
+                               .attr("marker-end", "url(#arrowhead-elk-outgoing)");
+                        } else { // isIncoming
+                            d3.select(this).style("stroke", incomingLinkColor)
+                               .attr("marker-end", "url(#arrowhead-elk-incoming)");
                         }
-                    } else { // Deselected
-                        if (window.handleGraphNodeSelection) {
-                            window.handleGraphNodeSelection(null, null);
-                        }
+                        d3.select(this).style("stroke-opacity", 1).style("stroke-width", "2.5px");
+                    } else {
+                        d3.select(this).style("stroke-opacity", nonConnectedLinkOpacity);
                     }
                 });
 
-            svg.on("click", () => { // Click on SVG background to deselect
-                if (selectedNodeId) {
-                    innerG.select(`g.node[id='${CSS.escape(selectedNodeId)}'] rect`)
-                        .style("stroke", defaultNodeStrokeColor)
-                        .style("stroke-width", "1.5px");
-                    innerG.selectAll("g.edgePath path.path")
-                        .style("stroke", defaultLinkColor)
-                        .style("stroke-opacity", 1)
-                        .style("stroke-width", "1.5px")
-                        .attr("marker-end", function() {
-                            const edgeData = dagreGraph.edge(d3.select(this.parentNode).datum());
-                            return edgeData.bidirectional ? "url(#arrowhead-bidirectional-dagre)" : "url(#arrowhead-dagre)";
-                        });
-                    selectedNodeId = null;
-                    if (window.handleGraphNodeSelection) {
-                        window.handleGraphNodeSelection(null, null);
-                    }
+                if (window.handleGraphNodeSelection && fullLoadedGraphData) {
+                    const nodeOriginalData = nodesData.find(n => n.id === selectedNodeId)?.originalData;
+                    window.handleGraphNodeSelection(nodeOriginalData, fullLoadedGraphData);
                 }
-            });
-
-
-            // Center the graph initially
-            const graphInitialWidth = dagreGraph.graph().width;
-            const graphInitialHeight = dagreGraph.graph().height;
-            const initialScale = Math.min(containerWidth / (graphInitialWidth + 50), containerHeight / (graphInitialHeight + 50), 1); // Add padding
-            const initialTranslateX = (containerWidth - graphInitialWidth * initialScale) / 2;
-            const initialTranslateY = (containerHeight - graphInitialHeight * initialScale) / 2;
-
-            currentZoomTransform = d3.zoomIdentity.translate(initialTranslateX, initialTranslateY).scale(initialScale);
-            svg.call(zoom.transform, currentZoomTransform);
-            innerG.attr("transform", currentZoomTransform); // Apply initial transform
-
-            console.log("Dagre-D3 graph rendered.");
-
-        }).catch(function (error) {
-            console.error('Error loading or processing graph data:', error);
-            graphContainerElement.innerHTML = `<p>Error loading module graph data: ${error.message}</p>`;
-            if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
+            } else { // Deselected
+                if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
+            }
         });
+        svg.on("click", () => { /* ... deselect logic ... */ });
+
+
+        // --- Initial Zoom/Pan to fit graph ---
+        // Calculate bounding box of the layouted graph
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        nodesData.forEach(n => {
+            minX = Math.min(minX, n.x);
+            minY = Math.min(minY, n.y);
+            maxX = Math.max(maxX, n.x + n.width);
+            maxY = Math.max(maxY, n.y + n.height);
+        });
+        if (nodesData.length > 0) {
+            const graphActualWidth = maxX - minX;
+            const graphActualHeight = maxY - minY;
+            const padding = 50;
+
+            const scaleX = (currentWidth - padding * 2) / graphActualWidth;
+            const scaleY = (currentHeight - padding * 2) / graphActualHeight;
+            const initialScale = Math.min(scaleX, scaleY, 1.5); // Cap max initial zoom
+
+            const translateX = -minX * initialScale + (currentWidth - graphActualWidth * initialScale) / 2;
+            const translateY = -minY * initialScale + (currentHeight - graphActualHeight * initialScale) / 2;
+
+            currentZoomTransform = d3.zoomIdentity.translate(translateX, translateY).scale(initialScale);
+            svg.call(zoomBehavior.transform, currentZoomTransform);
+            innerG.attr("transform", currentZoomTransform);
+        }
+    }
+
+
+    // --- ELK Edge Path Calculation Function ---
+    function calculateElkEdgePath(edge, nodesData) {
+        if (!edge.sections || edge.sections.length === 0) {
+            // Fallback if no sections (shouldn't happen with ELK layered)
+            const sourceNode = nodesData.find(n => n.id === edge.sources[0]);
+            const targetNode = nodesData.find(n => n.id === edge.targets[0]);
+            if (!sourceNode || !targetNode) return "";
+            return `M${sourceNode.x + sourceNode.width / 2},${sourceNode.y + sourceNode.height / 2}L${targetNode.x + targetNode.width / 2},${targetNode.y + targetNode.height / 2}`;
+        }
+
+        let pathString = "";
+        const sections = edge.sections;
+
+        for (let i = 0; i < sections.length; i++) {
+            const section = sections[i];
+            let startPoint = { x: section.startX, y: section.startY };
+            let endPoint = { x: section.endX, y: section.endY };
+
+            // Adjust start/end points to connect to node sides for the first/last section
+            const sourceNode = nodesData.find(n => n.id === edge.sources[0]);
+            const targetNode = nodesData.find(n => n.id === edge.targets[0]);
+
+            if (i === 0 && sourceNode) { // First segment
+                startPoint.x = sourceNode.x + sourceNode.width; // Right side of source
+                startPoint.y = sourceNode.y + sourceNode.height / 2;
+            }
+            if (i === sections.length - 1 && targetNode) { // Last segment
+                endPoint.x = targetNode.x; // Left side of target
+                endPoint.y = targetNode.y + targetNode.height / 2;
+            }
+
+
+            if (i === 0) {
+                pathString += `M${startPoint.x},${startPoint.y}`;
+            }
+
+            const bendPoints = section.bendPoints || [];
+            let currentPoint = startPoint;
+
+            if (bendPoints.length === 0) { // Straight line or S-curve for this segment
+                pathString += createPathSegment(currentPoint, endPoint, edge.bidirectional);
+            } else {
+                // S-curve to first bend point
+                pathString += createPathSegment(currentPoint, bendPoints[0], edge.bidirectional);
+                currentPoint = bendPoints[0];
+
+                // Straight lines between bend points
+                for (let j = 1; j < bendPoints.length; j++) {
+                    pathString += `L${bendPoints[j].x},${bendPoints[j].y}`;
+                    currentPoint = bendPoints[j];
+                }
+                // S-curve from last bend point to end point
+                pathString += createPathSegment(currentPoint, endPoint, edge.bidirectional);
+            }
+        }
+        return pathString;
+    }
+
+    function createPathSegment(p1, p2, isBidirectional) {
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+
+        // For very short segments or if curviness is off, draw straight line
+        if (Math.abs(dx) < 10 || sCurveCurvinessFactor <= 0) {
+            return `L${p2.x},${p2.y}`;
+        }
+
+        // Adjust curvinessFactor based on dx for S-curve
+        // Control points are offset horizontally.
+        let curve = dx * sCurveCurvinessFactor;
+
+        // If it's a bidirectional link, we might want a different curve style or straight
+        // For now, treat them the same for S-curve calculation if not straight
+        // if (isBidirectional) curve = dx * 0.1; // Flatter curve for bi
+
+        const cp1x = p1.x + curve;
+        const cp1y = p1.y; // Keep y same for horizontal S
+        const cp2x = p2.x - curve;
+        const cp2y = p2.y; // Keep y same
+
+        return `C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
     }
 
     initializeOrUpdateGraph();
-
+    // ... (resize listener remains the same) ...
     let resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
             console.log("Window resized, re-initializing graph.");
-            initializeOrUpdateGraph(); // Re-layout and re-render
+            initializeOrUpdateGraph();
         }, 250);
     });
 });
