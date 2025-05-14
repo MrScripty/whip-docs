@@ -10,6 +10,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!graphDataPath) { console.error("`data-graph-src` attribute not found."); return; }
 
+    function sanitizeForDomId(idString) {
+        if (typeof idString !== 'string') return '';
+        let sanitized = idString.replace(/[^a-zA-Z0-9_]/g, '-');
+        if (/^\d/.test(sanitized)) {
+            sanitized = 'id-' + sanitized;
+        }
+        return sanitized;
+    }
+
     const baseNodeAspectRatio = 18 / 70; 
     const minNodePrimaryDimension = 18; 
     const maxNodePrimaryDimension = 70; 
@@ -38,12 +47,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const fadedLinkSaturationFactor = 0.1; const maxOpacityForFadedNonConnected = 0.35;
 
     const defaultNodeFillColor = "#f0f0f0";
-    const defaultNodeStrokeColor = "#333"; const nodeSelectedStrokeColor = "dodgerblue";
-    const nodeSelectedStrokeWidth = 2;
+    const defaultNodeStrokeColor = "#333"; 
+    const nodeSelectedStrokeColor = "dodgerblue"; 
+    const nodeSelectedStrokeWidth = 2.5;    
+    const nodeSelectedFillColor = "#e6f7ff"; 
+
     const clusterCircleStrokeColor = "#b0b0b0"; 
     const clusterCircleFillOpacity = 0.03;   
     const clusterLabelColor = "#555";
     const clusterLabelFontSize = "10px";
+
+    const selectedNodeClusterFillOpacity = 0.15;
+    const selectedNodeClusterStrokeColor = "orange";
+    const selectedNodeClusterStrokeWidth = 2.5;
+
+    const connectedClusterBaseStrokeColor = "#66afe9"; 
+    const connectedClusterBaseStrokeWidth = 2;
+    const minConnectedClusterFillOpacity = clusterCircleFillOpacity + 0.02; 
+    const maxConnectedClusterFillOpacity = 0.12; 
 
     const linkHueRandomizationPercent = 0.05;
 
@@ -77,44 +98,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function initializeOrUpdateGraph() {
         if (!graphContainerElement) return;
-
         const containerWidth = graphContainerElement.clientWidth;
         const containerHeight = graphContainerElement.clientHeight;
-
-        if (containerWidth === 0 || containerHeight === 0) {
-            // console.warn("Graph container has no dimensions. Deferring graph initialization.");
-            graphInitialized = false;
-            return;
-        }
+        if (containerWidth === 0 || containerHeight === 0) { graphInitialized = false; return; }
+        if (graphInitialized && svg && parseInt(svg.attr("width")) === containerWidth && parseInt(svg.attr("height")) === containerHeight) { return; }
         
-        if (graphInitialized && svg &&
-            parseInt(svg.attr("width")) === containerWidth &&
-            parseInt(svg.attr("height")) === containerHeight) {
-            return; 
-        }
-        
-        // console.log(`Initializing/Updating graph. Container: ${containerWidth}x${containerHeight}`);
-
         d3.select(graphContainerElement).select("svg").remove();
-        
         svg = d3.select(graphContainerElement).append("svg").attr("width", containerWidth).attr("height", containerHeight);
         innerG = svg.append("g");
-        
         const zoomBehavior = d3.zoom().scaleExtent([0.05, 5])
             .filter(event => (event.type === "wheel") || (event.type === "mousedown" && event.button === 0 && (event.target === svg.node() || event.target === innerG.node())))
             .on("zoom", event => { currentZoomTransform = event.transform; innerG.attr("transform", currentZoomTransform); });
         svg.call(zoomBehavior);
-        
-        if (currentZoomTransform) { 
-            svg.call(zoomBehavior.transform, currentZoomTransform);
-        }
+        if (currentZoomTransform) { svg.call(zoomBehavior.transform, currentZoomTransform); }
 
         const dataPromise = fullLoadedGraphData ? Promise.resolve(fullLoadedGraphData) : d3.json(graphDataPath);
-
         dataPromise.then(function (loadedData) {
-            if (!fullLoadedGraphData) { 
-                fullLoadedGraphData = loadedData;
-            }
+            if (!fullLoadedGraphData) { fullLoadedGraphData = loadedData; }
             
             let filteredNodesInput = fullLoadedGraphData.nodes.filter(n => !filesToIgnore.includes(n.label || n.id.split('/').pop()));
             const filteredNodeIds = new Set(filteredNodesInput.map(n => n.id));
@@ -138,76 +138,43 @@ document.addEventListener('DOMContentLoaded', function () {
             currentLinks = linksForSimulation;
             
             const forceResetPositions = !graphInitialized || (svg && (parseInt(svg.attr("width")) !== containerWidth || parseInt(svg.attr("height")) !== containerHeight));
-
-            // --- Node Size Scaling ---
             const lineCounts = filteredNodesInput.map(n => (typeof n.line_count === 'number' && n.line_count >= 0) ? n.line_count : 0);
-
             let minLines = 0, maxLines = 1; 
             if (lineCounts.length > 0) {
                 const validLineCounts = lineCounts.filter(lc => typeof lc === 'number' && lc >=0);
-                if (validLineCounts.length > 0) {
-                    minLines = d3.min(validLineCounts);
-                    maxLines = d3.max(validLineCounts);
-                }
+                if (validLineCounts.length > 0) { minLines = d3.min(validLineCounts); maxLines = d3.max(validLineCounts); }
             }
-            
             if (minLines === maxLines) {
                 if (lineCounts.length > 0) { 
                     minLines = Math.max(0, minLines - Math.max(1, Math.floor(minLines * 0.1))); 
                     maxLines = maxLines + Math.max(1, Math.floor(maxLines * 0.1));       
                     if (minLines === maxLines && maxLines === 0) maxLines = 1; 
                     else if (minLines === maxLines) maxLines = minLines + 1; 
-                } else { 
-                    minLines = 0; maxLines = 100; 
-                }
+                } else { minLines = 0; maxLines = 100; }
             }
-
-            nodePrimaryDimensionScale = d3.scaleSqrt()
-                                     .domain([minLines, maxLines])
-                                     .range([minNodePrimaryDimension, maxNodePrimaryDimension])
-                                     .clamp(true);
-
+            nodePrimaryDimensionScale = d3.scaleSqrt().domain([minLines, maxLines]).range([minNodePrimaryDimension, maxNodePrimaryDimension]).clamp(true);
             currentNodes = filteredNodesInput.map((n_new) => {
                 const existing_node = !forceResetPositions ? currentNodes.find(n_old => n_old.id === n_new.id) : null;
-                
                 const lineCount = (typeof n_new.line_count === 'number' && n_new.line_count >= 0) ? n_new.line_count : 0;
                 const primaryDim = nodePrimaryDimensionScale(lineCount);
                 const calcWidth = primaryDim / baseNodeAspectRatio;
-                
-                return {
-                    ...n_new,
-                    directory: n_new.id.substring(0, n_new.id.lastIndexOf('/')) || '[root]',
+                return { ...n_new, directory: n_new.id.substring(0, n_new.id.lastIndexOf('/')) || '[root]',
                     x: existing_node ? existing_node.x : containerWidth / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
                     y: existing_node ? existing_node.y : containerHeight / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
-                    fx: existing_node ? existing_node.fx : null, 
-                    fy: existing_node ? existing_node.fy : null,
-                    visualHeight: primaryDim, 
-                    visualWidth: calcWidth, 
+                    fx: existing_node ? existing_node.fx : null, fy: existing_node ? existing_node.fy : null,
+                    visualHeight: primaryDim, visualWidth: calcWidth, 
                 };
             });
-
-            if (currentNodes.length === 0) { 
-                // console.warn("No nodes to display after filtering."); 
-                graphInitialized = false; return; 
-            }
+            if (currentNodes.length === 0) { graphInitialized = false; return; }
 
             const nodesByDirectory = d3.group(currentNodes, d => d.directory);
             const sortedDirectoryPaths = Array.from(nodesByDirectory.keys()).sort();
-            
             const initialXOffset = Math.max(100, (containerWidth - (sortedDirectoryPaths.length * clusterColumnWidth)) / 2 + clusterColumnWidth / 2);
-
             clusterData = sortedDirectoryPaths.map((dirPath, index) => {
                 const nodesInThisCluster = nodesByDirectory.get(dirPath) || [];
                 nodesInThisCluster.forEach(node => node.clusterId = dirPath); 
-
-                return {
-                    id: dirPath, 
-                    nodesInCluster: nodesInThisCluster,
-                    initialCX: initialXOffset + (index * clusterColumnWidth),
-                    initialCY: containerHeight / 2,
-                };
+                return { id: dirPath, nodesInCluster: nodesInThisCluster, initialCX: initialXOffset + (index * clusterColumnWidth), initialCY: containerHeight / 2, };
             });
-
             const interactionCounts = currentLinks.map(l => l.interactionCount).filter(c => typeof c === 'number' && c >= 0);
             let minInteractions = 0, avgInteractions = 1, maxDomainPointForScale = 1;
             if (interactionCounts.length > 0) {
@@ -224,74 +191,39 @@ document.addEventListener('DOMContentLoaded', function () {
             linkWidthScale = d3.scaleLinear().domain(domainPoints).range([minLinkStrokeWidth, avgLinkStrokeWidth, maxLinkStrokeWidth]).clamp(true);
             linkOpacityScale = d3.scaleLinear().domain(domainPoints).range([minLinkOpacity, avgLinkOpacity, maxLinkOpacity]).clamp(true);
 
-            if (simulation) { 
-                simulation.stop();
-            }
-
+            if (simulation) { simulation.stop(); }
             simulation = d3.forceSimulation(currentNodes)
                 .force("link", d3.forceLink(currentLinks).id(d => d.id).distance(linkDistance)
                     .strength(link => (link.source.clusterId === link.target.clusterId) ? intraClusterLinkStrength : interClusterLinkStrength))
                 .force("charge", d3.forceManyBody().strength(chargeStrength))
                 .force("collision", d3.forceCollide().radius(d => Math.max(d.visualWidth, d.visualHeight) * 0.5 + 3).strength(nodeCollisionStrength)) 
-                .force("clusterCentroidX", d3.forceX(d => {
-                    const c = clusterData.find(cd => cd.id === d.clusterId);
-                    return c ? c.initialCX : containerWidth / 2;
-                }).strength(pullToClusterInitialCentroidStrength))
-                .force("clusterCentroidY", d3.forceY(d => {
-                    const c = clusterData.find(cd => cd.id === d.clusterId);
-                    return c ? c.initialCY : containerHeight / 2;
-                }).strength(pullToClusterInitialCentroidStrength))
+                .force("clusterCentroidX", d3.forceX(d => { const c = clusterData.find(cd => cd.id === d.clusterId); return c ? c.initialCX : containerWidth / 2; }).strength(pullToClusterInitialCentroidStrength))
+                .force("clusterCentroidY", d3.forceY(d => { const c = clusterData.find(cd => cd.id === d.clusterId); return c ? c.initialCY : containerHeight / 2; }).strength(pullToClusterInitialCentroidStrength))
                 .force("clusterRepel", customClusterRepelForce(clusterData)); 
 
             svg.select("defs").remove(); 
+            clusterVisualsGroup = innerG.append("g").attr("class", "cluster-visuals").selectAll("g.cluster-group").data(clusterData, d => d.id).join("g").attr("class", "cluster-group");
+            clusterVisualsGroup.append("circle").attr("class", "cluster-circle").style("fill", (d, i) => d3.schemeCategory10[i % 10]).style("fill-opacity", clusterCircleFillOpacity).style("stroke", clusterCircleStrokeColor).style("stroke-width", 1.5).style("pointer-events", "none");
+            clusterVisualsGroup.append("text").attr("class", "cluster-label").attr("text-anchor", "middle").style("font-size", clusterLabelFontSize).style("fill", clusterLabelColor).style("pointer-events", "none").text(d => d.id === '[root]' ? 'Project Root' : d.id);
 
-            clusterVisualsGroup = innerG.append("g").attr("class", "cluster-visuals")
-                .selectAll("g.cluster-group")
-                .data(clusterData, d => d.id)
-                .join("g")
-                .attr("class", "cluster-group");
-
-            clusterVisualsGroup.append("circle")
-                .attr("class", "cluster-circle")
-                .style("fill", (d, i) => d3.schemeCategory10[i % 10]) 
-                .style("fill-opacity", clusterCircleFillOpacity)
-                .style("stroke", clusterCircleStrokeColor)
-                .style("stroke-width", 1.5)
-                .style("pointer-events", "none");
-
-            clusterVisualsGroup.append("text")
-                .attr("class", "cluster-label")
-                .attr("text-anchor", "middle")
-                .style("font-size", clusterLabelFontSize)
-                .style("fill", clusterLabelColor)
-                .style("pointer-events", "none")
-                .text(d => d.id === '[root]' ? 'Project Root' : d.id);
-
-
-            linkPaths = innerG.append("g").attr("class", "links")
-                .selectAll("path.link-path").data(currentLinks, d => `${d.source.id || d.source}-${d.target.id || d.target}-${d.bidirectional}`)
-                .join("path").attr("class", "link-path")
-                .style("stroke", d => getBaseLinkColor(d, null, false))
-                .style("stroke-opacity", d => linkOpacityScale(d.interactionCount))
-                .attr("stroke-width", d => linkWidthScale(d.interactionCount))
-                .attr("fill", "none");
-
+            linkPaths = innerG.append("g").attr("class", "links").selectAll("path.link-path").data(currentLinks, d => `${d.source.id || d.source}-${d.target.id || d.target}-${d.bidirectional}`).join("path").attr("class", "link-path").style("stroke", d => getBaseLinkColor(d, null, false)).style("stroke-opacity", d => linkOpacityScale(d.interactionCount)).attr("stroke-width", d => linkWidthScale(d.interactionCount)).attr("fill", "none");
+            
             nodeGroups = innerG.append("g").attr("class", "nodes")
                 .selectAll("g.node-group").data(currentNodes, d => d.id).join("g")
-                .attr("class", "node-group").attr("id", d => `node-${CSS.escape(d.id)}`)
+                .attr("class", "node-group")
+                .attr("id", d => `node-${sanitizeForDomId(d.id)}`) 
                 .call(nodeDragBehavior(simulation));
             
             nodeGroups.append("rect")
-                .attr("width", d => d.visualWidth) 
-                .attr("height", d => d.visualHeight) 
-                .attr("x", d => -d.visualWidth / 2) 
-                .attr("y", d => -d.visualHeight / 2) 
-                .attr("rx", 2).attr("ry", 2)
+                .attr("width", d => d.visualWidth).attr("height", d => d.visualHeight)
+                .attr("x", d => -d.visualWidth / 2).attr("y", d => -d.visualHeight / 2)
+                .attr("rx", 5).attr("ry", 5) // Increased corner radius
                 .style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
             
             nodeGroups.append("text")
                 .attr("text-anchor", "middle").attr("dy", "0.35em")
-                .style("font-size", "8px").style("fill", "#000")
+                .style("font-size", "10px") // Increased font size
+                .style("fill", "#000")
                 .style("user-select", "none").style("-webkit-user-select", "none")
                 .style("-moz-user-select", "none").style("-ms-user-select", "none")
                 .text(d => d.label || d.id);
@@ -299,57 +231,88 @@ document.addEventListener('DOMContentLoaded', function () {
             let selectedNodeId = null;
             nodeGroups.on("click", function(event, clickedNodeData) {
                 event.stopPropagation();
-                const previouslySelectedNodeId = selectedNodeId;
                 selectedNodeId = (selectedNodeId === clickedNodeData.id) ? null : clickedNodeData.id;
 
-                if (previouslySelectedNodeId) {
-                    innerG.select(`#node-${CSS.escape(previouslySelectedNodeId)} rect`)
-                        .style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
-                }
-
-                linkPaths.each(function(linkData) {
-                    const isConnectedToSelected = selectedNodeId && (linkData.source.id === selectedNodeId || linkData.target.id === selectedNodeId);
-                    const baseWidth = linkWidthScale(linkData.interactionCount);
-                    let finalColor, finalOpacity, finalWidth = baseWidth;
-                    finalOpacity = linkOpacityScale(linkData.interactionCount);
-
-                    if (isConnectedToSelected) {
-                        finalColor = getBaseLinkColor(linkData, selectedNodeId, true);
-                        finalWidth = baseWidth + selectedLinkExtraWidth;
-                        d3.select(this).raise();
-                    } else {
-                        const baseSubtleColorWithRandomHue = getBaseLinkColor(linkData, null, false);
-                        let hslColor = d3.hsl(baseSubtleColorWithRandomHue);
-                        if (hslColor && typeof hslColor.s === 'number') {
-                           hslColor.s *= fadedLinkSaturationFactor; finalColor = hslColor.toString();
-                        } else { finalColor = baseSubtleColorWithRandomHue; }
-                        if (selectedNodeId) { finalOpacity = Math.min(finalOpacity, maxOpacityForFadedNonConnected); }
-                    }
-                    d3.select(this).style("stroke", finalColor).style("stroke-opacity", finalOpacity).attr("stroke-width", finalWidth);
-                });
+                nodeGroups.selectAll("rect").style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
+                innerG.selectAll(".cluster-circle").style("fill-opacity", clusterCircleFillOpacity).style("stroke", clusterCircleStrokeColor).style("stroke-width", 1.5);
+                linkPaths.style("stroke", d => getBaseLinkColor(d, null, false)).style("stroke-opacity", d => linkOpacityScale(d.interactionCount)).attr("stroke-width", d => linkWidthScale(d.interactionCount));
 
                 if (selectedNodeId) {
-                    const selectedD3Node = innerG.select(`#node-${CSS.escape(selectedNodeId)}`);
-                    selectedD3Node.select("rect").style("stroke", nodeSelectedStrokeColor).style("stroke-width", nodeSelectedStrokeWidth + "px");
-                    selectedD3Node.raise();
-                    if (window.handleGraphNodeSelection && fullLoadedGraphData) {
-                        const nodeOriginalData = currentNodes.find(n => n.id === selectedNodeId);
-                        window.handleGraphNodeSelection(nodeOriginalData, fullLoadedGraphData);
+                    const selectedNodeObject = currentNodes.find(n => n.id === selectedNodeId);
+                    if (!selectedNodeObject) return;
+
+                    const rectSelector = `#node-${sanitizeForDomId(selectedNodeId)} rect`; 
+                    const rectSelection = innerG.select(rectSelector); 
+
+                    if (rectSelection.node()) { 
+                        rectSelection
+                            .style("fill", nodeSelectedFillColor) 
+                            .style("stroke", nodeSelectedStrokeColor) 
+                            .style("stroke-width", nodeSelectedStrokeWidth + "px"); 
+                        
+                        const parentGroupSelector = `#node-${sanitizeForDomId(selectedNodeId)}`; 
+                        const parentGroup = innerG.select(parentGroupSelector);
+                        if (parentGroup.node()) {
+                            parentGroup.raise();
+                        }
                     }
-                } else {
-                    linkPaths.style("stroke", d => getBaseLinkColor(d, null, false))
-                        .style("stroke-opacity", d => linkOpacityScale(d.interactionCount))
-                        .attr("stroke-width", d => linkWidthScale(d.interactionCount));
+
+                    const selectedNodeClusterId = selectedNodeObject.clusterId;
+                    innerG.selectAll(".cluster-circle").filter(cd => cd.id === selectedNodeClusterId).style("fill-opacity", selectedNodeClusterFillOpacity).style("stroke", selectedNodeClusterStrokeColor).style("stroke-width", selectedNodeClusterStrokeWidth).raise();
+                    const connectedClusterCounts = new Map();
+                    let totalConnections = 0;
+                    currentLinks.forEach(link => {
+                        let otherNodeId = null;
+                        if (link.source.id === selectedNodeId) otherNodeId = link.target.id;
+                        else if (link.target.id === selectedNodeId) otherNodeId = link.source.id;
+                        if (otherNodeId) {
+                            totalConnections++;
+                            const otherNode = currentNodes.find(n => n.id === otherNodeId);
+                            if (otherNode) {
+                                const otherNodeClusterId = otherNode.clusterId; 
+                                if (otherNodeClusterId !== selectedNodeClusterId) {
+                                    connectedClusterCounts.set(otherNodeClusterId, (connectedClusterCounts.get(otherNodeClusterId) || 0) + 1);
+                                }
+                            }
+                        }
+                    });
+                    if (totalConnections > 0) {
+                        const opacityScaleForConnectedClusters = d3.scaleLinear().domain([0, 1]).range([minConnectedClusterFillOpacity, maxConnectedClusterFillOpacity]);
+                        connectedClusterCounts.forEach((count, clusterId) => {
+                            const proportion = count / totalConnections;
+                            const targetOpacity = opacityScaleForConnectedClusters(proportion);
+                            innerG.selectAll(".cluster-circle").filter(cd => cd.id === clusterId).style("fill-opacity", targetOpacity).style("stroke", connectedClusterBaseStrokeColor).style("stroke-width", connectedClusterBaseStrokeWidth).raise();
+                        });
+                    }
+                    linkPaths.each(function(linkData) {
+                        const isConnectedToSelected = (linkData.source.id === selectedNodeId || linkData.target.id === selectedNodeId);
+                        const baseWidth = linkWidthScale(linkData.interactionCount);
+                        let finalColor, finalOpacity, finalWidth = baseWidth;
+                        finalOpacity = linkOpacityScale(linkData.interactionCount);
+                        if (isConnectedToSelected) {
+                            finalColor = getBaseLinkColor(linkData, selectedNodeId, true);
+                            finalWidth = baseWidth + selectedLinkExtraWidth;
+                            d3.select(this).raise();
+                        } else {
+                            const baseSubtleColorWithRandomHue = getBaseLinkColor(linkData, null, false);
+                            let hslColor = d3.hsl(baseSubtleColorWithRandomHue);
+                            if (hslColor && typeof hslColor.s === 'number') { hslColor.s *= fadedLinkSaturationFactor; finalColor = hslColor.toString(); } 
+                            else { finalColor = baseSubtleColorWithRandomHue; }
+                            finalOpacity = Math.min(finalOpacity, maxOpacityForFadedNonConnected);
+                        }
+                        d3.select(this).style("stroke", finalColor).style("stroke-opacity", finalOpacity).attr("stroke-width", finalWidth);
+                    });
+                    if (window.handleGraphNodeSelection && fullLoadedGraphData) { window.handleGraphNodeSelection(selectedNodeObject, fullLoadedGraphData); }
+                } else { 
                     if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
                 }
             });
-            svg.on("click", () => {
+
+            svg.on("click", () => { 
                 if (selectedNodeId) {
-                    innerG.select(`#node-${CSS.escape(selectedNodeId)} rect`)
-                        .style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
-                    linkPaths.style("stroke", d => getBaseLinkColor(d, null, false))
-                        .style("stroke-opacity", d => linkOpacityScale(d.interactionCount))
-                        .attr("stroke-width", d => linkWidthScale(d.interactionCount));
+                    innerG.select(`#node-${sanitizeForDomId(selectedNodeId)} rect`).style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
+                    innerG.selectAll(".cluster-circle").style("fill-opacity", clusterCircleFillOpacity).style("stroke", clusterCircleStrokeColor).style("stroke-width", 1.5);
+                    linkPaths.style("stroke", d => getBaseLinkColor(d, null, false)).style("stroke-opacity", d => linkOpacityScale(d.interactionCount)).attr("stroke-width", d => linkWidthScale(d.interactionCount));
                     selectedNodeId = null;
                     if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
                 }
@@ -359,49 +322,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 clusterData.forEach(cData => {
                     const nodesInThisCluster = cData.nodesInCluster;
                     if (nodesInThisCluster.length === 0) {
-                        cData.currentCX = cData.initialCX; 
-                        cData.currentCY = cData.initialCY;
+                        cData.currentCX = cData.initialCX; cData.currentCY = cData.initialCY;
                         const minPossibleNodeWidth = nodePrimaryDimensionScale.range()[0] / baseNodeAspectRatio;
                         cData.currentR = minPossibleNodeWidth * 0.5 + clusterPadding / 2; 
                         return;
                     }
                     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
                     nodesInThisCluster.forEach(n => {
-                        minX = Math.min(minX, n.x - n.visualWidth / 2); 
-                        maxX = Math.max(maxX, n.x + n.visualWidth / 2);
-                        minY = Math.min(minY, n.y - n.visualHeight / 2);
-                        maxY = Math.max(maxY, n.y + n.visualHeight / 2);
+                        minX = Math.min(minX, n.x - n.visualWidth / 2); maxX = Math.max(maxX, n.x + n.visualWidth / 2);
+                        minY = Math.min(minY, n.y - n.visualHeight / 2); maxY = Math.max(maxY, n.y + n.visualHeight / 2);
                     });
-                    cData.currentCX = (minX + maxX) / 2;
-                    cData.currentCY = (minY + maxY) / 2;
-                    const spanX = maxX - minX;
-                    const spanY = maxY - minY;
+                    cData.currentCX = (minX + maxX) / 2; cData.currentCY = (minY + maxY) / 2;
+                    const spanX = maxX - minX; const spanY = maxY - minY;
                     cData.currentR = Math.max(spanX, spanY) / 2 + clusterPadding;
-                    
                     const avgNodeMaxDimInCluster = d3.mean(nodesInThisCluster, n => Math.max(n.visualWidth, n.visualHeight)) || (nodePrimaryDimensionScale.range()[0] / baseNodeAspectRatio);
                     cData.currentR = Math.max(cData.currentR, avgNodeMaxDimInCluster * 0.3 + clusterPadding); 
                 });
-
-                clusterVisualsGroup.select("circle.cluster-circle")
-                    .attr("cx", d => d.currentCX)
-                    .attr("cy", d => d.currentCY)
-                    .attr("r", d => d.currentR > 0 ? d.currentR : 0);
-                
-                clusterVisualsGroup.select("text.cluster-label")
-                    .attr("x", d => d.currentCX)
-                    .attr("y", d => d.currentCY - d.currentR - 5); 
-
-
+                clusterVisualsGroup.select("circle.cluster-circle").attr("cx", d => d.currentCX).attr("cy", d => d.currentCY).attr("r", d => d.currentR > 0 ? d.currentR : 0);
+                clusterVisualsGroup.select("text.cluster-label").attr("x", d => d.currentCX).attr("y", d => d.currentCY - d.currentR - 5); 
                 linkPaths.attr("d", d => calculateSCurvePathWithDynamicAnchors(d)); 
                 nodeGroups.attr("transform", d => `translate(${d.x}, ${d.y})`);
             });
             graphInitialized = true;
-            // console.log("D3 graph initialized/updated.");
-
-        }).catch(error => { 
-            console.error("Error loading or processing graph data:", error);
-            graphInitialized = false;
-        });
+        }).catch(error => { console.error("Error loading or processing graph data:", error); graphInitialized = false; });
     }
 
     function customClusterRepelForce(clusterDataRef) { 
@@ -409,56 +352,35 @@ document.addEventListener('DOMContentLoaded', function () {
             for (let iter = 0; iter < clusterRepulsionIterations; iter++) {
                 for (let i = 0; i < clusterDataRef.length; i++) {
                     for (let j = i + 1; j < clusterDataRef.length; j++) {
-                        const c1 = clusterDataRef[i];
-                        const c2 = clusterDataRef[j];
-
+                        const c1 = clusterDataRef[i]; const c2 = clusterDataRef[j];
                         if (c1.nodesInCluster.length === 0 || c2.nodesInCluster.length === 0 || !c1.currentR || !c2.currentR) continue;
-
-                        const dx = c2.currentCX - c1.currentCX;
-                        const dy = c2.currentCY - c1.currentCY;
+                        const dx = c2.currentCX - c1.currentCX; const dy = c2.currentCY - c1.currentCY;
                         let distance = Math.sqrt(dx * dx + dy * dy);
                         const minDistance = c1.currentR + c2.currentR + minClusterGap;
-
                         if (distance < minDistance && distance > 1e-6) { 
                             const overlap = minDistance - distance;
-                            const unitDx = dx / distance;
-                            const unitDy = dy / distance;
+                            const unitDx = dx / distance; const unitDy = dy / distance;
                             const push = overlap * 0.5 * clusterRepulsionStrength * alpha;
-
                             const numNodesC1 = c1.nodesInCluster.length || 1;
-                            c1.nodesInCluster.forEach(node => {
-                                node.x -= unitDx * push / Math.sqrt(numNodesC1);
-                                node.y -= unitDy * push / Math.sqrt(numNodesC1);
-                            });
+                            c1.nodesInCluster.forEach(node => { node.x -= unitDx * push / Math.sqrt(numNodesC1); node.y -= unitDy * push / Math.sqrt(numNodesC1); });
                             const numNodesC2 = c2.nodesInCluster.length || 1;
-                            c2.nodesInCluster.forEach(node => {
-                                node.x += unitDx * push / Math.sqrt(numNodesC2);
-                                node.y += unitDy * push / Math.sqrt(numNodesC2);
-                            });
+                            c2.nodesInCluster.forEach(node => { node.x += unitDx * push / Math.sqrt(numNodesC2); node.y += unitDy * push / Math.sqrt(numNodesC2); });
                         }
                     }
                 }
             }
         }
-        force.initialize = function(nodesPassedByD3) { };
-        return force;
+        force.initialize = function(nodesPassedByD3) { }; return force;
     }
 
     function calculateSCurvePathWithDynamicAnchors(linkData) {
         const sourceNode = linkData.source; const targetNode = linkData.target;
-        if (!sourceNode || !targetNode || typeof sourceNode.x !== 'number' || typeof targetNode.x !== 'number' ||
-            typeof sourceNode.visualWidth !== 'number' || typeof targetNode.visualWidth !== 'number') { 
-            return "";
-        }
-        
+        if (!sourceNode || !targetNode || typeof sourceNode.x !== 'number' || typeof targetNode.x !== 'number' || typeof sourceNode.visualWidth !== 'number' || typeof targetNode.visualWidth !== 'number') { return ""; }
         const sNodeWidth = sourceNode.visualWidth; const sNodeHeight = sourceNode.visualHeight;
         const tNodeWidth = targetNode.visualWidth; const tNodeHeight = targetNode.visualHeight;
-
         let sx, sy, tx, ty;
         if (linkData.bidirectional) { sx = sourceNode.x; sy = sourceNode.y; tx = targetNode.x; ty = targetNode.y; return `M${sx},${sy}L${tx},${ty}`; }
-        
         const dxTotal = targetNode.x - sourceNode.x; const dyTotal = targetNode.y - sourceNode.y;
-        
         if (Math.abs(dxTotal) > Math.abs(dyTotal) + sNodeWidth * 0.25) { 
             if (targetNode.x > sourceNode.x) { sx = sourceNode.x + sNodeWidth / 2; sy = sourceNode.y; tx = targetNode.x - tNodeWidth / 2; ty = targetNode.y; }
             else { sx = sourceNode.x - sNodeWidth / 2; sy = sourceNode.y; tx = targetNode.x + tNodeWidth / 2; ty = targetNode.y; }
@@ -466,7 +388,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (targetNode.y > sourceNode.y) { sx = sourceNode.x; sy = sourceNode.y + sNodeHeight / 2; tx = targetNode.x; ty = targetNode.y - tNodeHeight / 2; }
             else { sx = sourceNode.x; sy = sourceNode.y - sNodeHeight / 2; tx = targetNode.x; ty = targetNode.y + tNodeHeight / 2; }
         }
-        
         const dx = tx - sx; const dy = ty - sy;
         if (sCurveCurvinessFactor < -0.9 || (Math.abs(dx) < 1 && Math.abs(dy) < 1)) return `M${sx},${sy}L${tx},${ty}`;
         let cp1x, cp1y, cp2x, cp2y;
@@ -477,38 +398,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function nodeDragBehavior(simulationInstance) {
-        function dragstarted(event, d) { 
-            if (!event.active) simulationInstance.alphaTarget(0.3).restart(); 
-            d.fx = d.x; d.fy = d.y; 
-            event.sourceEvent.stopPropagation(); 
-        }
+        function dragstarted(event, d) { if (!event.active) simulationInstance.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; event.sourceEvent.stopPropagation(); }
         function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
         function dragended(event, d) { if (!event.active) simulationInstance.alphaTarget(0); } 
         return d3.drag().filter(event => event.button === 0).on("start", dragstarted).on("drag", dragged).on("end", dragended);
     }
 
     initializeOrUpdateGraph(); 
-    
     let resizeTimer;
-    window.addEventListener('resize', () => { 
-        clearTimeout(resizeTimer); 
-        resizeTimer = setTimeout(() => { 
-            // console.log("Window resize event triggered graph update.");
-            initializeOrUpdateGraph(); 
-        }, 250); 
-    });
-
+    window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { initializeOrUpdateGraph(); }, 250); });
     let visibilityChangeTimeout;
     document.addEventListener('visibilitychange', () => {
         clearTimeout(visibilityChangeTimeout);
         if (document.visibilityState === 'visible') {
-            // console.log("Tab became visible, scheduling graph update.");
-            requestAnimationFrame(() => {
-                visibilityChangeTimeout = setTimeout(() => {
-                    // console.log("Attempting to update graph on visibility change.");
-                    initializeOrUpdateGraph(); 
-                }, 10); 
-            });
+            requestAnimationFrame(() => { visibilityChangeTimeout = setTimeout(() => { initializeOrUpdateGraph(); }, 10); });
         }
     });
 });
