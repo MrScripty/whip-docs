@@ -1,6 +1,4 @@
-// /scripts/graphs/module_dependency_graph.js
 document.addEventListener('DOMContentLoaded', function () {
-    // ... (keep existing code from the start of the file) ...
     const graphContainerId = 'module-graph-area';
     const graphContainerElement = document.getElementById(graphContainerId);
 
@@ -23,44 +21,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const nodeWidth = 150;
     const nodeHeight = 30;
-    const linkStrokeColor = "#999"; // Default link color
-    const linkStrokeOpacity = 0.6; // Default link opacity
-    const linkStrokeWidth = 1.5;   // Default link width
-    const nodeFillColor = "#f0f0f0";
-    const nodeStrokeColor = "#333";
     const nodeSelectedStrokeColor = "dodgerblue";
     const nodeSelectedStrokeWidth = 3;
-    const textColor = "#000";
-    const fontSize = "10px";
+    const defaultNodeStrokeColor = "#333"; // For dagre-d3
+    const defaultNodeFillColor = "#f0f0f0"; // For dagre-d3
+    const sCurveCurviness = 0.5; // 0 for less curve, 1 for more (approx)
 
     // Colors for selected links (consistent with tree.js if possible)
     const outgoingLinkColor = "green";
     const incomingLinkColor = "red";
     const bidirectionalSelectedLinkColor = "purple";
+    const defaultLinkColor = "#999";
+    const nonConnectedLinkOpacity = 0.2;
 
-    // For non-selected edges when a node is selected
-    const nonConnectedLinkOpacity = 0.15; // Lower opacity for non-connected
-    const nonConnectedLinkWidth = 1.0;   // Thinner for non-connected
 
-    let svg, g, simulation, linkPaths, nodeGroups;
-    let currentWidth = graphContainerElement.clientWidth;
-    let currentHeight = graphContainerElement.clientHeight;
-    let fullLoadedGraphData = null;
+    let svg, innerG, currentZoomTransform;
+    let fullLoadedGraphData = null; // To store the complete unfiltered data for the tree
+    let dagreGraph; // To store the dagre graph object
 
     function initializeOrUpdateGraph() {
-        currentWidth = graphContainerElement.clientWidth;
-        currentHeight = graphContainerElement.clientHeight;
+        const containerWidth = graphContainerElement.clientWidth;
+        const containerHeight = graphContainerElement.clientHeight;
 
-        d3.select(graphContainerElement).select("svg").remove();
+        d3.select(graphContainerElement).select("svg").remove(); // Clear previous SVG
 
         svg = d3.select(graphContainerElement)
             .append("svg")
-            .attr("width", currentWidth)
-            .attr("height", currentHeight)
-            .attr("viewBox", [0, 0, currentWidth, currentHeight])
-            .style("display", "block");
+            .attr("width", containerWidth)
+            .attr("height", containerHeight);
 
-        g = svg.append("g");
+        innerG = svg.append("g"); // Group for zoomable/pannable content
+
+        // Set up zoom
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .filter(event => {
+                if (event.type === "wheel") return true;
+                if (event.type === "mousedown" && event.button === 0) { // Left click pan
+                    return event.target === svg.node() || event.target === innerG.node();
+                }
+                return false;
+            })
+            .on("zoom", (event) => {
+                currentZoomTransform = event.transform;
+                innerG.attr("transform", currentZoomTransform);
+            });
+        svg.call(zoom);
+
 
         d3.json(graphDataPath).then(function (loadedData) {
             if (!loadedData || !loadedData.nodes || !loadedData.edges) {
@@ -68,310 +75,294 @@ document.addEventListener('DOMContentLoaded', function () {
                 graphContainerElement.innerHTML = "<p>Error: Invalid graph data loaded.</p>";
                 return;
             }
-            fullLoadedGraphData = loadedData;
+            fullLoadedGraphData = loadedData; // Store for tree interaction
 
+            // --- Filtering ---
             let originalNodes = fullLoadedGraphData.nodes;
             let originalEdges = fullLoadedGraphData.edges;
-
             let filteredNodes = originalNodes.filter(node => {
                 const fileName = node.label || node.id.split('/').pop();
                 return !filesToIgnore.includes(fileName);
             });
             const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-
             let rawFilteredEdges = originalEdges.filter(edge =>
                 filteredNodeIds.has(edge.source) && filteredNodeIds.has(edge.target)
             );
-
+            // Process for bidirectional (same as before)
             const processedLinks = [];
             const processedEdgePairs = new Set();
-
             for (const edge1 of rawFilteredEdges) {
                 const pairKey1 = `${edge1.source}|${edge1.target}`;
                 const pairKey2 = `${edge1.target}|${edge1.source}`;
-
-                if (processedEdgePairs.has(pairKey1) || processedEdgePairs.has(pairKey2)) {
-                    continue;
-                }
-
-                const reverseEdge = rawFilteredEdges.find(
-                    edge2 => edge2.source === edge1.target && edge2.target === edge1.source
-                );
-
+                if (processedEdgePairs.has(pairKey1) || processedEdgePairs.has(pairKey2)) continue;
+                const reverseEdge = rawFilteredEdges.find(edge2 => edge2.source === edge1.target && edge2.target === edge1.source);
                 if (reverseEdge) {
-                    processedLinks.push({
-                        source: edge1.source,
-                        target: edge1.target,
-                        bidirectional: true,
-                        interactions: edge1.interactions || [],
-                        reverseInteractions: reverseEdge.interactions || []
-                    });
-                    processedEdgePairs.add(pairKey1);
-                    processedEdgePairs.add(pairKey2);
+                    processedLinks.push({ source: edge1.source, target: edge1.target, bidirectional: true, interactions: edge1.interactions || [], reverseInteractions: reverseEdge.interactions || [] });
+                    processedEdgePairs.add(pairKey1); processedEdgePairs.add(pairKey2);
                 } else {
-                    processedLinks.push({
-                        source: edge1.source,
-                        target: edge1.target,
-                        bidirectional: false,
-                        interactions: edge1.interactions || []
-                    });
+                    processedLinks.push({ source: edge1.source, target: edge1.target, bidirectional: false, interactions: edge1.interactions || [] });
                     processedEdgePairs.add(pairKey1);
                 }
             }
 
-            const nodes = filteredNodes.map(d => ({ ...d }));
-            const links = processedLinks;
+            const displayNodes = filteredNodes;
+            const displayLinks = processedLinks;
 
-            if (nodes.length === 0) {
-                console.warn("No nodes remaining after filtering. Graph will be empty.");
+            if (displayNodes.length === 0) {
+                console.warn("No nodes remaining after filtering.");
                 graphContainerElement.innerHTML = "<p>No data to display after filtering.</p>";
-                 if (window.handleGraphNodeSelection) {
-                    window.handleGraphNodeSelection(null, null);
-                }
+                if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
                 return;
             }
 
-            simulation = d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links).id(d => d.id).distance(130).strength(0.5))
-                .force("charge", d3.forceManyBody().strength(-400))
-                .force("center", d3.forceCenter(currentWidth / 2, currentHeight / 2))
-                .force("collision", d3.forceCollide().radius(nodeWidth / 2 + 20));
+            // --- Create a new Dagre graph ---
+            dagreGraph = new dagre.graphlib.Graph({ compound: true }); // compound for potential future groups
+            dagreGraph.setGraph({
+                rankdir: "LR", // Left to Right layout
+                nodesep: 10,   // pixels
+                ranksep: 100,   // pixels
+                marginx: 0,
+                marginy: 0
+            });
+            dagreGraph.setDefaultEdgeLabel(() => ({})); // Default empty label for edges
 
-            // Arrowhead Definitions (no changes here)
+            // Add nodes to Dagre graph
+            displayNodes.forEach(node => {
+                dagreGraph.setNode(node.id, {
+                    label: node.label || node.id,
+                    width: nodeWidth,
+                    height: nodeHeight,
+                    // Store original data for access later
+                    originalData: node
+                });
+            });
+
+            // Add edges to Dagre graph
+            displayLinks.forEach(link => {
+                dagreGraph.setEdge(link.source, link.target, {
+                    // Dagre-D3 uses 'label' for edge text, we don't have one here
+                    // We can store original link data if needed
+                    bidirectional: link.bidirectional,
+                    originalData: link
+                });
+            });
+
+            // Run the layout
+            dagre.layout(dagreGraph);
+
+            // --- Render with D3 using Dagre's layout ---
+            // Create the renderer
+            const render = new dagreD3.render();
+
+            // Run the renderer. This is what draws the graph.
+            render(innerG, dagreGraph);
+
+
+            // --- Customizations after dagre-d3 render ---
+            // Style nodes (rectangles and text)
+            innerG.selectAll("g.node")
+                .each(function(nodeId) {
+                    const nodeData = dagreGraph.node(nodeId).originalData;
+                    d3.select(this).select("rect")
+                        .style("fill", defaultNodeFillColor)
+                        .style("stroke", defaultNodeStrokeColor);
+                    // dagre-d3 creates text inside a 'tspan' within a 'text' element
+                    d3.select(this).select("text > tspan")
+                        .style("font-size", "10px")
+                        .style("fill", "#000");
+                });
+
+            // Style edges (paths) and define custom S-curve path
+            innerG.selectAll("g.edgePath path.path") // dagre-d3 creates paths with class 'path'
+                .each(function(edgeObj) { // edgeObj is {v: sourceId, w: targetId}
+                    const edgeData = dagreGraph.edge(edgeObj.v, edgeObj.w);
+                    d3.select(this)
+                        .style("stroke", defaultLinkColor)
+                        .style("stroke-width", "1.5px")
+                        .style("fill", "none")
+                        .attr("marker-end", edgeData.bidirectional ? "url(#arrowhead-bidirectional-dagre)" : "url(#arrowhead-dagre)")
+                        .attr("d", function() {
+                            // Get points from dagre's layout for this edge
+                            const points = edgeData.points;
+                            if (!points || points.length < 2) return "";
+
+                            const sourceNode = dagreGraph.node(edgeObj.v);
+                            const targetNode = dagreGraph.node(edgeObj.w);
+
+                            let sx = points[0].x;
+                            let sy = points[0].y;
+                            let tx = points[points.length - 1].x;
+                            let ty = points[points.length - 1].y;
+
+                            // Adjust start/end points to be on the node sides
+                            // Dagre points are usually center of node or edge of label box
+                            if (!edgeData.bidirectional) {
+                                sx = sourceNode.x + sourceNode.width / 2; // Right side of source
+                                sy = sourceNode.y; // Middle of source (y is center for dagre nodes)
+                                tx = targetNode.x - targetNode.width / 2; // Left side of target
+                                ty = targetNode.y; // Middle of target
+                            } else {
+                                // For bidirectional, keep dagre's points or simplify
+                                // This part might need more refinement for perfect S-curves
+                                sx = sourceNode.x;
+                                sy = sourceNode.y + sourceNode.height / 2;
+                                tx = targetNode.x;
+                                ty = targetNode.y - targetNode.height / 2;
+                            }
+
+
+                            const dx = tx - sx;
+                            // const dy = ty - sy; // Not used in this S-curve version
+
+                            if (sCurveCurviness <= -1 || Math.abs(dx) < 10) { // Straight line if too close or curviness is -1
+                                return `M${sx},${sy}L${tx},${ty}`;
+                            }
+                            let curvinessFactor = dx * (0.1 + Math.max(0, sCurveCurviness) * 0.4);
+                            const cp1x = sx + curvinessFactor;
+                            const cp1y = sy;
+                            const cp2x = tx - curvinessFactor;
+                            const cp2y = ty;
+                            return `M${sx},${sy}C${cp1x},${cp1y} ${cp2x},${cp2y} ${tx},${ty}`;
+                        });
+                });
+
+
+            // --- Arrowhead definitions for Dagre ---
+            // Dagre-D3 might position arrowheads differently, so adjust refX/Y if needed
             svg.append("defs").append("marker")
-                .attr("id", "arrowhead").attr("viewBox", "0 -5 10 10").attr("refX", 10).attr("refY", 0)
-                .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
-                .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", linkStrokeColor);
+                .attr("id", "arrowhead-dagre")
+                .attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0) // refX might need to be smaller
+                .attr("orient", "auto").attr("markerWidth", 6).attr("markerHeight", 6)
+                .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", defaultLinkColor);
+
             svg.append("defs").append("marker")
-                .attr("id", "arrowhead-outgoing").attr("viewBox", "0 -5 10 10").attr("refX", 10).attr("refY", 0)
-                .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
+                .attr("id", "arrowhead-bidirectional-dagre")
+                .attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
+                .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
+                .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", defaultLinkColor);
+            // Add selected arrowheads
+            svg.append("defs").append("marker")
+                .attr("id", "arrowhead-dagre-outgoing").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
+                .attr("orient", "auto").attr("markerWidth", 6).attr("markerHeight", 6)
                 .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", outgoingLinkColor);
             svg.append("defs").append("marker")
-                .attr("id", "arrowhead-incoming").attr("viewBox", "0 -5 10 10").attr("refX", 10).attr("refY", 0)
-                .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
+                .attr("id", "arrowhead-dagre-incoming").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
+                .attr("orient", "auto").attr("markerWidth", 6).attr("markerHeight", 6)
                 .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", incomingLinkColor);
-            svg.append("defs").append("marker")
-                .attr("id", "arrowhead-bidirectional").attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
-                .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
-                .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", linkStrokeColor);
-            svg.append("defs").append("marker")
-                .attr("id", "arrowhead-bidirectional-selected").attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
+             svg.append("defs").append("marker")
+                .attr("id", "arrowhead-bidirectional-dagre-selected").attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
                 .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
                 .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", bidirectionalSelectedLinkColor);
 
 
-            linkPaths = g.append("g").attr("class", "links")
-                .selectAll("path").data(links).join("path")
-                .attr("class", "link")
-                .style("stroke", linkStrokeColor)
-                .style("stroke-opacity", linkStrokeOpacity)
-                .attr("stroke-width", linkStrokeWidth)
-                .attr("fill", "none")
-                .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
+            // --- Node Selection and Interaction ---
+            let selectedNodeId = null;
+            innerG.selectAll("g.node")
+                .on("click", function (event, nodeId) {
+                    event.stopPropagation();
+                    const previouslySelectedNodeId = selectedNodeId;
+                    selectedNodeId = (selectedNodeId === nodeId) ? null : nodeId;
 
-            nodeGroups = g.append("g").attr("class", "nodes")
-                .selectAll("g.node-group").data(nodes).join("g")
-                .attr("class", "node-group");
-            nodeGroups.append("rect")
-                .attr("width", nodeWidth).attr("height", nodeHeight)
-                .attr("rx", 3).attr("ry", 3)
-                .attr("fill", nodeFillColor).attr("stroke", nodeStrokeColor).attr("stroke-width", 1.5);
-            nodeGroups.append("text")
-                .attr("x", nodeWidth / 2).attr("y", nodeHeight / 2).attr("dy", "0.35em")
-                .attr("text-anchor", "middle").style("font-size", fontSize).style("fill", textColor)
-                .text(d => d.label || d.id);
-
-            let selectedNodeElement = null;
-            let selectedNodeData = null;
-
-            nodeGroups.on("click", function (event, d_node) {
-                // Reset previous selection visuals
-                if (selectedNodeElement) {
-                    d3.select(selectedNodeElement).select("rect")
-                        .attr("stroke", nodeStrokeColor).attr("stroke-width", 1.5);
-                    d3.select(selectedNodeElement).classed("selected", false);
-                }
-                // Reset all links to default appearance
-                linkPaths
-                    .style("stroke", linkStrokeColor)
-                    .style("stroke-opacity", linkStrokeOpacity)
-                    .attr("stroke-width", linkStrokeWidth)
-                    .attr("marker-end", d_link => d_link.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
-
-
-                if (selectedNodeElement === this) { // Deselecting
-                    selectedNodeElement = null;
-                    selectedNodeData = null;
-                    if (window.handleGraphNodeSelection) {
-                        window.handleGraphNodeSelection(null, null);
+                    // Reset previous
+                    if (previouslySelectedNodeId) {
+                        innerG.select(`g.node[id='${CSS.escape(previouslySelectedNodeId)}'] rect`) // Use CSS.escape for IDs with special chars
+                            .style("stroke", defaultNodeStrokeColor)
+                            .style("stroke-width", "1.5px");
                     }
-                } else { // Selecting a new node
-                    selectedNodeElement = this;
-                    selectedNodeData = d_node;
-                    d3.select(this).select("rect")
-                        .attr("stroke", nodeSelectedStrokeColor).attr("stroke-width", nodeSelectedStrokeWidth);
-                    d3.select(this).classed("selected", true);
+                    // Reset all links
+                    innerG.selectAll("g.edgePath path.path")
+                        .style("stroke", defaultLinkColor)
+                        .style("stroke-opacity", 1) // Reset opacity
+                        .style("stroke-width", "1.5px")
+                        .attr("marker-end", function() {
+                            const edgeData = dagreGraph.edge(d3.select(this.parentNode).datum());
+                            return edgeData.bidirectional ? "url(#arrowhead-bidirectional-dagre)" : "url(#arrowhead-dagre)";
+                        });
 
-                    if (window.handleGraphNodeSelection && fullLoadedGraphData) {
-                        window.handleGraphNodeSelection(selectedNodeData, fullLoadedGraphData);
-                    }
 
-                    // Update link appearances based on selection
-                    linkPaths.each(function(d_link) {
-                        const isBidirectional = d_link.bidirectional;
-                        const isOutgoing = d_link.source.id === selectedNodeData.id;
-                        const isIncoming = d_link.target.id === selectedNodeData.id;
-                        const isConnected = isOutgoing || isIncoming;
+                    if (selectedNodeId) {
+                        const selectedNodeD3 = innerG.select(`g.node[id='${CSS.escape(selectedNodeId)}']`);
+                        selectedNodeD3.select("rect")
+                            .style("stroke", nodeSelectedStrokeColor)
+                            .style("stroke-width", nodeSelectedStrokeWidth + "px");
+                        selectedNodeD3.raise(); // Bring selected node to front
 
-                        if (isConnected) {
-                            d3.select(this).raise(); // Bring connected links to front
-                            if (isBidirectional) { // This covers cases where selectedNode is source OR target of a bidirectional link
-                                d3.select(this)
-                                    .style("stroke", bidirectionalSelectedLinkColor)
-                                    .style("stroke-opacity", 1)
-                                    .attr("stroke-width", linkStrokeWidth + 1) // Extra pixel width
-                                    .attr("marker-end", "url(#arrowhead-bidirectional-selected)");
-                            } else if (isOutgoing) {
-                                d3.select(this)
-                                    .style("stroke", outgoingLinkColor)
-                                    .style("stroke-opacity", 1)
-                                    .attr("stroke-width", linkStrokeWidth + 1) // Extra pixel width
-                                    .attr("marker-end", "url(#arrowhead-outgoing)");
-                            } else if (isIncoming) {
-                                d3.select(this)
-                                    .style("stroke", incomingLinkColor)
-                                    .style("stroke-opacity", 1)
-                                    .attr("stroke-width", linkStrokeWidth + 1) // Extra pixel width
-                                    .attr("marker-end", "url(#arrowhead-incoming)");
-                            }
-                        } else { // Not connected to the selected node
-                            d3.select(this)
-                                .style("stroke-opacity", nonConnectedLinkOpacity)
-                                .attr("stroke-width", nonConnectedLinkWidth)
-                                // Keep original marker, but it will be less visible due to opacity
-                                .attr("marker-end", d_link.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
+                        // Style connected edges
+                        innerG.selectAll("g.edgePath path.path")
+                            .each(function() {
+                                const edgeD3Data = d3.select(this.parentNode).datum(); // {v: sourceId, w: targetId}
+                                const edgeLayoutData = dagreGraph.edge(edgeD3Data.v, edgeD3Data.w);
+                                const isBidirectional = edgeLayoutData.bidirectional;
+                                const isOutgoing = edgeD3Data.v === selectedNodeId;
+                                const isIncoming = edgeD3Data.w === selectedNodeId;
+
+                                if (isOutgoing || isIncoming) {
+                                    d3.select(this).raise();
+                                    if (isBidirectional) {
+                                        d3.select(this).style("stroke", bidirectionalSelectedLinkColor)
+                                           .attr("marker-end", "url(#arrowhead-bidirectional-dagre-selected)");
+                                    } else if (isOutgoing) {
+                                        d3.select(this).style("stroke", outgoingLinkColor)
+                                           .attr("marker-end", "url(#arrowhead-dagre-outgoing)");
+                                    } else { // isIncoming
+                                        d3.select(this).style("stroke", incomingLinkColor)
+                                           .attr("marker-end", "url(#arrowhead-dagre-incoming)");
+                                    }
+                                    d3.select(this).style("stroke-opacity", 1).style("stroke-width", "2.5px");
+                                } else {
+                                    d3.select(this).style("stroke-opacity", nonConnectedLinkOpacity);
+                                }
+                            });
+
+                        if (window.handleGraphNodeSelection && fullLoadedGraphData) {
+                            const nodeOriginalData = dagreGraph.node(selectedNodeId).originalData;
+                            window.handleGraphNodeSelection(nodeOriginalData, fullLoadedGraphData);
                         }
-                    });
-                }
-                event.stopPropagation();
-            });
+                    } else { // Deselected
+                        if (window.handleGraphNodeSelection) {
+                            window.handleGraphNodeSelection(null, null);
+                        }
+                    }
+                });
 
             svg.on("click", () => { // Click on SVG background to deselect
-                if (selectedNodeElement) {
-                     d3.select(selectedNodeElement).select("rect")
-                        .attr("stroke", nodeStrokeColor).attr("stroke-width", 1.5);
-                    d3.select(selectedNodeElement).classed("selected", false);
-                    selectedNodeElement = null;
-                    selectedNodeData = null;
-
-                    // Reset all links to default appearance
-                    linkPaths
-                        .style("stroke", linkStrokeColor)
-                        .style("stroke-opacity", linkStrokeOpacity)
-                        .attr("stroke-width", linkStrokeWidth)
-                        .attr("marker-end", d_link => d_link.bidirectional ? "url(#arrowhead-bidirectional)" : "url(#arrowhead)");
-
+                if (selectedNodeId) {
+                    innerG.select(`g.node[id='${CSS.escape(selectedNodeId)}'] rect`)
+                        .style("stroke", defaultNodeStrokeColor)
+                        .style("stroke-width", "1.5px");
+                    innerG.selectAll("g.edgePath path.path")
+                        .style("stroke", defaultLinkColor)
+                        .style("stroke-opacity", 1)
+                        .style("stroke-width", "1.5px")
+                        .attr("marker-end", function() {
+                            const edgeData = dagreGraph.edge(d3.select(this.parentNode).datum());
+                            return edgeData.bidirectional ? "url(#arrowhead-bidirectional-dagre)" : "url(#arrowhead-dagre)";
+                        });
+                    selectedNodeId = null;
                     if (window.handleGraphNodeSelection) {
                         window.handleGraphNodeSelection(null, null);
                     }
                 }
             });
 
-            // ... (simulation.on("tick"), zoomBehavior, nodeDrag remain the same) ...
-            simulation.on("tick", () => {
-                linkPaths.attr("d", d => {
-                    if (typeof d.source === "string" || typeof d.target === "string" ||
-                        typeof d.source.x !== 'number' || typeof d.source.y !== 'number' ||
-                        typeof d.target.x !== 'number' || typeof d.target.y !== 'number') {
-                        return "";
-                    }
-                    const sx = d.source.x, sy = d.source.y;
-                    let tx = d.target.x, ty = d.target.y;
-                    const targetNodeHalfWidth = nodeWidth / 2, targetNodeHalfHeight = nodeHeight / 2;
-                    const dx_orig = tx - sx, dy_orig = ty - sy;
-                    if (Math.abs(dx_orig) < 0.1 && Math.abs(dy_orig) < 0.1) return "";
-                    const angle = Math.atan2(dy_orig, dx_orig);
-                    let endX, endY;
-                    if (Math.abs(dx_orig) < 0.01) {
-                        endX = tx; endY = ty + (dy_orig > 0 ? -targetNodeHalfHeight : targetNodeHalfHeight);
-                    } else if (Math.abs(dy_orig) < 0.01) {
-                        endY = ty; endX = tx + (dx_orig > 0 ? -targetNodeHalfWidth : targetNodeHalfWidth);
-                    } else {
-                        const tanAngle = Math.abs(dy_orig / dx_orig);
-                        const tanNodeAspect = targetNodeHalfHeight / targetNodeHalfWidth;
-                        if (tanAngle < tanNodeAspect) {
-                            endX = tx + (dx_orig > 0 ? -targetNodeHalfWidth : targetNodeHalfWidth);
-                            endY = sy + (endX - sx) * Math.tan(angle);
-                        } else {
-                            endY = ty + (dy_orig > 0 ? -targetNodeHalfHeight : targetNodeHalfHeight);
-                            endX = sx + (endY - sy) / Math.tan(angle);
-                        }
-                    }
-                    tx = endX; ty = endY;
-                    const R_final = Math.sqrt(Math.pow(tx - sx, 2) + Math.pow(ty - sy, 2));
-                    const dr_final = R_final * 1.5; // Curvature factor
-                    if (R_final < 1) return ""; // Avoid issues with tiny links
-                    return `M${sx},${sy}A${dr_final},${dr_final} 0 0,1 ${tx},${ty}`;
-                });
-                nodeGroups.attr("transform", d => {
-                    const xPos = typeof d.x === 'number' ? d.x : currentWidth / 2;
-                    const yPos = typeof d.y === 'number' ? d.y : currentHeight / 2;
-                    return `translate(${xPos - nodeWidth / 2}, ${yPos - nodeHeight / 2})`;
-                });
-            });
 
-            const zoomBehavior = d3.zoom().scaleExtent([0.1, 8])
-                .filter(event => {
-                    if (event.type === "wheel") return true; // Allow wheel zoom anywhere
-                    // Allow pan (mousedown + drag) only if mousedown is on svg or g, not on a node
-                    if (event.type === "mousedown" && event.button === 0) {
-                        return event.target === svg.node() || event.target === g.node();
-                    }
-                    return false;
-                })
-                .on("zoom", (event) => {
-                    g.attr("transform", event.transform);
-                });
+            // Center the graph initially
+            const graphInitialWidth = dagreGraph.graph().width;
+            const graphInitialHeight = dagreGraph.graph().height;
+            const initialScale = Math.min(containerWidth / (graphInitialWidth + 50), containerHeight / (graphInitialHeight + 50), 1); // Add padding
+            const initialTranslateX = (containerWidth - graphInitialWidth * initialScale) / 2;
+            const initialTranslateY = (containerHeight - graphInitialHeight * initialScale) / 2;
 
-            svg.call(zoomBehavior)
-               .on("dblclick.zoom", null); // Disable double click zoom
+            currentZoomTransform = d3.zoomIdentity.translate(initialTranslateX, initialTranslateY).scale(initialScale);
+            svg.call(zoom.transform, currentZoomTransform);
+            innerG.attr("transform", currentZoomTransform); // Apply initial transform
 
-            // Drag behavior for nodes
-            function nodeDrag(simulationInstance) {
-                function dragstarted(event, d) {
-                    event.sourceEvent.stopPropagation(); // Prevent triggering SVG click/pan
-                    if (!event.active) simulationInstance.alphaTarget(0.3).restart();
-                    d.fx = d.x;
-                    d.fy = d.y;
-                }
-                function dragged(event, d) {
-                    d.fx = event.x;
-                    d.fy = event.y;
-                }
-                function dragended(event, d) {
-                    if (!event.active) simulationInstance.alphaTarget(0);
-                    // Keep fx, fy null if you want them to be free after drag
-                    // d.fx = null;
-                    // d.fy = null;
-                    // If you want them to stay fixed after drag, comment out the above two lines
-                }
-                return d3.drag()
-                    .filter(event => event.button === 0) // Only left mouse button
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended);
-            }
-
-            nodeGroups.call(nodeDrag(simulation));
-
-            console.log("D3 graph initialized/updated.");
+            console.log("Dagre-D3 graph rendered.");
 
         }).catch(function (error) {
             console.error('Error loading or processing graph data:', error);
             graphContainerElement.innerHTML = `<p>Error loading module graph data: ${error.message}</p>`;
-            if (window.handleGraphNodeSelection) {
-                window.handleGraphNodeSelection(null, null);
-            }
+            if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
         });
     }
 
@@ -382,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function () {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
             console.log("Window resized, re-initializing graph.");
-            initializeOrUpdateGraph();
+            initializeOrUpdateGraph(); // Re-layout and re-render
         }, 250);
     });
 });
