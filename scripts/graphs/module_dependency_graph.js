@@ -10,7 +10,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!graphDataPath) { console.error("`data-graph-src` attribute not found."); return; }
 
-    const visualNodeWidth = 70; const visualNodeHeight = 18;
+    const baseNodeAspectRatio = 18 / 70; 
+    const minNodePrimaryDimension = 18; 
+    const maxNodePrimaryDimension = 70; 
+
     const sCurveCurvinessFactor = 0.3;
     const clusterColumnWidth = 350; 
     const clusterPadding = 40;      
@@ -20,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const intraClusterLinkStrength = 0.7; const interClusterLinkStrength = 0.04;
     const linkDistance = 90; const chargeStrength = -180; 
-    const nodeCollisionRadius = visualNodeWidth * 0.45; const nodeCollisionStrength = 0.9;
+    const nodeCollisionStrength = 0.9;
     const pullToClusterInitialCentroidStrength = 0.15; 
 
     const vibrantOutgoingLinkColor = "#28a745"; const vibrantIncomingLinkColor = "#dc3545";
@@ -47,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let svg, innerG, simulation, linkPaths, nodeGroups, clusterVisualsGroup, currentZoomTransform;
     let fullLoadedGraphData = null; let currentNodes = []; let currentLinks = [];
     let clusterData = []; 
-    let linkWidthScale, linkOpacityScale;
+    let linkWidthScale, linkOpacityScale, nodePrimaryDimensionScale;
     let graphInitialized = false;
 
     function getBaseLinkColor(linkData, selectedNodeId, isSelectedContext) {
@@ -79,22 +82,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const containerHeight = graphContainerElement.clientHeight;
 
         if (containerWidth === 0 || containerHeight === 0) {
-            console.warn("Graph container has no dimensions. Deferring graph initialization.");
+            // console.warn("Graph container has no dimensions. Deferring graph initialization.");
             graphInitialized = false;
             return;
         }
         
-        // Check if we really need to redraw
         if (graphInitialized && svg &&
             parseInt(svg.attr("width")) === containerWidth &&
             parseInt(svg.attr("height")) === containerHeight) {
-            // console.log("Graph dimensions appear unchanged. Skipping full redraw unless forced by context.");
-            // This skip is mostly for simple window resizes that don't change the container.
-            // Tab switches or resizer init will effectively force by ensuring this runs after layout changes.
             return; 
         }
         
-        console.log(`Initializing/Updating graph. Container: ${containerWidth}x${containerHeight}`);
+        // console.log(`Initializing/Updating graph. Container: ${containerWidth}x${containerHeight}`);
 
         d3.select(graphContainerElement).select("svg").remove();
         
@@ -140,19 +139,57 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const forceResetPositions = !graphInitialized || (svg && (parseInt(svg.attr("width")) !== containerWidth || parseInt(svg.attr("height")) !== containerHeight));
 
-            currentNodes = filteredNodesInput.map(n_new => {
+            // --- Node Size Scaling ---
+            const lineCounts = filteredNodesInput.map(n => (typeof n.line_count === 'number' && n.line_count >= 0) ? n.line_count : 0);
+
+            let minLines = 0, maxLines = 1; 
+            if (lineCounts.length > 0) {
+                const validLineCounts = lineCounts.filter(lc => typeof lc === 'number' && lc >=0);
+                if (validLineCounts.length > 0) {
+                    minLines = d3.min(validLineCounts);
+                    maxLines = d3.max(validLineCounts);
+                }
+            }
+            
+            if (minLines === maxLines) {
+                if (lineCounts.length > 0) { 
+                    minLines = Math.max(0, minLines - Math.max(1, Math.floor(minLines * 0.1))); 
+                    maxLines = maxLines + Math.max(1, Math.floor(maxLines * 0.1));       
+                    if (minLines === maxLines && maxLines === 0) maxLines = 1; 
+                    else if (minLines === maxLines) maxLines = minLines + 1; 
+                } else { 
+                    minLines = 0; maxLines = 100; 
+                }
+            }
+
+            nodePrimaryDimensionScale = d3.scaleSqrt()
+                                     .domain([minLines, maxLines])
+                                     .range([minNodePrimaryDimension, maxNodePrimaryDimension])
+                                     .clamp(true);
+
+            currentNodes = filteredNodesInput.map((n_new) => {
                 const existing_node = !forceResetPositions ? currentNodes.find(n_old => n_old.id === n_new.id) : null;
+                
+                const lineCount = (typeof n_new.line_count === 'number' && n_new.line_count >= 0) ? n_new.line_count : 0;
+                const primaryDim = nodePrimaryDimensionScale(lineCount);
+                const calcWidth = primaryDim / baseNodeAspectRatio;
+                
                 return {
                     ...n_new,
                     directory: n_new.id.substring(0, n_new.id.lastIndexOf('/')) || '[root]',
                     x: existing_node ? existing_node.x : containerWidth / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
                     y: existing_node ? existing_node.y : containerHeight / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
                     fx: existing_node ? existing_node.fx : null, 
-                    fy: existing_node ? existing_node.fy : null
+                    fy: existing_node ? existing_node.fy : null,
+                    visualHeight: primaryDim, 
+                    visualWidth: calcWidth, 
                 };
             });
 
-            if (currentNodes.length === 0) { console.warn("No nodes to display after filtering."); graphInitialized = false; return; }
+            if (currentNodes.length === 0) { 
+                // console.warn("No nodes to display after filtering."); 
+                graphInitialized = false; return; 
+            }
 
             const nodesByDirectory = d3.group(currentNodes, d => d.directory);
             const sortedDirectoryPaths = Array.from(nodesByDirectory.keys()).sort();
@@ -195,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .force("link", d3.forceLink(currentLinks).id(d => d.id).distance(linkDistance)
                     .strength(link => (link.source.clusterId === link.target.clusterId) ? intraClusterLinkStrength : interClusterLinkStrength))
                 .force("charge", d3.forceManyBody().strength(chargeStrength))
-                .force("collision", d3.forceCollide().radius(nodeCollisionRadius).strength(nodeCollisionStrength))
+                .force("collision", d3.forceCollide().radius(d => Math.max(d.visualWidth, d.visualHeight) * 0.5 + 3).strength(nodeCollisionStrength)) 
                 .force("clusterCentroidX", d3.forceX(d => {
                     const c = clusterData.find(cd => cd.id === d.clusterId);
                     return c ? c.initialCX : containerWidth / 2;
@@ -243,11 +280,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 .selectAll("g.node-group").data(currentNodes, d => d.id).join("g")
                 .attr("class", "node-group").attr("id", d => `node-${CSS.escape(d.id)}`)
                 .call(nodeDragBehavior(simulation));
+            
             nodeGroups.append("rect")
-                .attr("width", visualNodeWidth).attr("height", visualNodeHeight)
-                .attr("x", -visualNodeWidth / 2).attr("y", -visualNodeHeight / 2)
+                .attr("width", d => d.visualWidth) 
+                .attr("height", d => d.visualHeight) 
+                .attr("x", d => -d.visualWidth / 2) 
+                .attr("y", d => -d.visualHeight / 2) 
                 .attr("rx", 2).attr("ry", 2)
                 .style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
+            
             nodeGroups.append("text")
                 .attr("text-anchor", "middle").attr("dy", "0.35em")
                 .style("font-size", "8px").style("fill", "#000")
@@ -320,22 +361,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (nodesInThisCluster.length === 0) {
                         cData.currentCX = cData.initialCX; 
                         cData.currentCY = cData.initialCY;
-                        cData.currentR = visualNodeWidth * 0.5 + clusterPadding / 2; 
+                        const minPossibleNodeWidth = nodePrimaryDimensionScale.range()[0] / baseNodeAspectRatio;
+                        cData.currentR = minPossibleNodeWidth * 0.5 + clusterPadding / 2; 
                         return;
                     }
                     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
                     nodesInThisCluster.forEach(n => {
-                        minX = Math.min(minX, n.x - visualNodeWidth / 2); 
-                        maxX = Math.max(maxX, n.x + visualNodeWidth / 2);
-                        minY = Math.min(minY, n.y - visualNodeHeight / 2);
-                        maxY = Math.max(maxY, n.y + visualNodeHeight / 2);
+                        minX = Math.min(minX, n.x - n.visualWidth / 2); 
+                        maxX = Math.max(maxX, n.x + n.visualWidth / 2);
+                        minY = Math.min(minY, n.y - n.visualHeight / 2);
+                        maxY = Math.max(maxY, n.y + n.visualHeight / 2);
                     });
                     cData.currentCX = (minX + maxX) / 2;
                     cData.currentCY = (minY + maxY) / 2;
                     const spanX = maxX - minX;
                     const spanY = maxY - minY;
                     cData.currentR = Math.max(spanX, spanY) / 2 + clusterPadding;
-                    cData.currentR = Math.max(cData.currentR, visualNodeWidth * 0.6 + clusterPadding); 
+                    
+                    const avgNodeMaxDimInCluster = d3.mean(nodesInThisCluster, n => Math.max(n.visualWidth, n.visualHeight)) || (nodePrimaryDimensionScale.range()[0] / baseNodeAspectRatio);
+                    cData.currentR = Math.max(cData.currentR, avgNodeMaxDimInCluster * 0.3 + clusterPadding); 
                 });
 
                 clusterVisualsGroup.select("circle.cluster-circle")
@@ -348,11 +392,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     .attr("y", d => d.currentCY - d.currentR - 5); 
 
 
-                linkPaths.attr("d", d => calculateSCurvePathWithDynamicAnchors(d, visualNodeWidth, visualNodeHeight));
+                linkPaths.attr("d", d => calculateSCurvePathWithDynamicAnchors(d)); 
                 nodeGroups.attr("transform", d => `translate(${d.x}, ${d.y})`);
             });
             graphInitialized = true;
-            console.log("D3 graph initialized/updated.");
+            // console.log("D3 graph initialized/updated.");
 
         }).catch(error => { 
             console.error("Error loading or processing graph data:", error);
@@ -400,19 +444,29 @@ document.addEventListener('DOMContentLoaded', function () {
         return force;
     }
 
-    function calculateSCurvePathWithDynamicAnchors(linkData, vNodeWidth, vNodeHeight) {
+    function calculateSCurvePathWithDynamicAnchors(linkData) {
         const sourceNode = linkData.source; const targetNode = linkData.target;
-        if (!sourceNode || !targetNode || typeof sourceNode.x !== 'number' || typeof targetNode.x !== 'number') return "";
+        if (!sourceNode || !targetNode || typeof sourceNode.x !== 'number' || typeof targetNode.x !== 'number' ||
+            typeof sourceNode.visualWidth !== 'number' || typeof targetNode.visualWidth !== 'number') { 
+            return "";
+        }
+        
+        const sNodeWidth = sourceNode.visualWidth; const sNodeHeight = sourceNode.visualHeight;
+        const tNodeWidth = targetNode.visualWidth; const tNodeHeight = targetNode.visualHeight;
+
         let sx, sy, tx, ty;
         if (linkData.bidirectional) { sx = sourceNode.x; sy = sourceNode.y; tx = targetNode.x; ty = targetNode.y; return `M${sx},${sy}L${tx},${ty}`; }
+        
         const dxTotal = targetNode.x - sourceNode.x; const dyTotal = targetNode.y - sourceNode.y;
-        if (Math.abs(dxTotal) > Math.abs(dyTotal) + vNodeWidth * 0.25) {
-            if (targetNode.x > sourceNode.x) { sx = sourceNode.x + vNodeWidth / 2; sy = sourceNode.y; tx = targetNode.x - vNodeWidth / 2; ty = targetNode.y; }
-            else { sx = sourceNode.x - vNodeWidth / 2; sy = sourceNode.y; tx = targetNode.x + vNodeWidth / 2; ty = targetNode.y; }
-        } else {
-            if (targetNode.y > sourceNode.y) { sx = sourceNode.x; sy = sourceNode.y + vNodeHeight / 2; tx = targetNode.x; ty = targetNode.y - vNodeHeight / 2; }
-            else { sx = sourceNode.x; sy = sourceNode.y - vNodeHeight / 2; tx = targetNode.x; ty = targetNode.y + vNodeHeight / 2; }
+        
+        if (Math.abs(dxTotal) > Math.abs(dyTotal) + sNodeWidth * 0.25) { 
+            if (targetNode.x > sourceNode.x) { sx = sourceNode.x + sNodeWidth / 2; sy = sourceNode.y; tx = targetNode.x - tNodeWidth / 2; ty = targetNode.y; }
+            else { sx = sourceNode.x - sNodeWidth / 2; sy = sourceNode.y; tx = targetNode.x + tNodeWidth / 2; ty = targetNode.y; }
+        } else { 
+            if (targetNode.y > sourceNode.y) { sx = sourceNode.x; sy = sourceNode.y + sNodeHeight / 2; tx = targetNode.x; ty = targetNode.y - tNodeHeight / 2; }
+            else { sx = sourceNode.x; sy = sourceNode.y - sNodeHeight / 2; tx = targetNode.x; ty = targetNode.y + tNodeHeight / 2; }
         }
+        
         const dx = tx - sx; const dy = ty - sy;
         if (sCurveCurvinessFactor < -0.9 || (Math.abs(dx) < 1 && Math.abs(dy) < 1)) return `M${sx},${sy}L${tx},${ty}`;
         let cp1x, cp1y, cp2x, cp2y;
@@ -421,6 +475,7 @@ document.addEventListener('DOMContentLoaded', function () {
         else { return `M${sx},${sy}L${tx},${ty}`; }
         return `M${sx},${sy}C${cp1x},${cp1y} ${cp2x},${cp2y} ${tx},${ty}`;
     }
+
     function nodeDragBehavior(simulationInstance) {
         function dragstarted(event, d) { 
             if (!event.active) simulationInstance.alphaTarget(0.3).restart(); 
@@ -432,14 +487,13 @@ document.addEventListener('DOMContentLoaded', function () {
         return d3.drag().filter(event => event.button === 0).on("start", dragstarted).on("drag", dragged).on("end", dragended);
     }
 
-    // Initial call on DOMContentLoaded
     initializeOrUpdateGraph(); 
     
     let resizeTimer;
     window.addEventListener('resize', () => { 
         clearTimeout(resizeTimer); 
         resizeTimer = setTimeout(() => { 
-            console.log("Window resize event triggered graph update.");
+            // console.log("Window resize event triggered graph update.");
             initializeOrUpdateGraph(); 
         }, 250); 
     });
@@ -448,10 +502,10 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('visibilitychange', () => {
         clearTimeout(visibilityChangeTimeout);
         if (document.visibilityState === 'visible') {
-            console.log("Tab became visible, scheduling graph update.");
+            // console.log("Tab became visible, scheduling graph update.");
             requestAnimationFrame(() => {
                 visibilityChangeTimeout = setTimeout(() => {
-                    console.log("Attempting to update graph on visibility change.");
+                    // console.log("Attempting to update graph on visibility change.");
                     initializeOrUpdateGraph(); 
                 }, 10); 
             });

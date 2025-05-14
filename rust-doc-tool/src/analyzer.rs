@@ -26,6 +26,7 @@ pub enum AnalyzerError {
 pub struct Node {
     pub id: String,    // e.g., "module/file.rs"
     pub label: String, // e.g., "file.rs"
+    pub line_count: usize, // Number of non-comment lines of code
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -53,6 +54,59 @@ pub struct ModuleGraph {
     pub nodes: Vec<Node>,
     pub edges: Vec<Edge>,
 }
+
+// Helper to count non-comment lines of code
+fn count_code_lines(content: &str) -> usize {
+    let mut count = 0;
+    let mut in_block_comment = false;
+
+    for line_str in content.lines() {
+        let mut current_segment = line_str.trim_start(); 
+        let original_trimmed_line_is_empty = current_segment.is_empty();
+        let mut has_code_on_this_line = false;
+
+        if original_trimmed_line_is_empty {
+            continue; 
+        }
+        
+        while !current_segment.is_empty() {
+            if in_block_comment {
+                if let Some(end_comment_idx) = current_segment.find("*/") {
+                    in_block_comment = false;
+                    current_segment = current_segment[end_comment_idx + 2..].trim_start();
+                } else {
+                    current_segment = ""; 
+                }
+            } else { 
+                if let Some(start_comment_idx) = current_segment.find("/*") {
+                    let code_before_block = current_segment[..start_comment_idx].trim();
+                    if !code_before_block.is_empty() && !code_before_block.starts_with("//") {
+                        has_code_on_this_line = true;
+                    }
+                    in_block_comment = true;
+                    current_segment = current_segment[start_comment_idx..].trim_start(); 
+                } else if let Some(line_comment_idx) = current_segment.find("//") {
+                    let code_before_line_comment = current_segment[..line_comment_idx].trim();
+                    if !code_before_line_comment.is_empty() {
+                        has_code_on_this_line = true;
+                    }
+                    current_segment = ""; 
+                } else {
+                    if !current_segment.trim().is_empty() { 
+                         has_code_on_this_line = true;
+                    }
+                    current_segment = ""; 
+                }
+            }
+        }
+
+        if has_code_on_this_line {
+            count += 1;
+        }
+    }
+    count
+}
+
 
 // Helper to check if a file ID string refers to a "mod.rs" file.
 fn is_mod_file(file_id: &str) -> bool {
@@ -112,6 +166,16 @@ pub fn analyze_project(project_path: &Path) -> Result<ModuleGraph, AnalyzerError
         .filter(|e| e.path().extension().map_or(false, |ext| ext == "rs"))
     {
         let file_path = entry.path();
+        
+        let content_for_line_count = match fs::read_to_string(file_path) {
+            Ok(c) => c,
+            Err(e) => {
+                log::warn!("Could not read file {} for line count: {}. Defaulting to 0 lines.", file_path.display(), e);
+                String::new() // Empty string will result in 0 lines for count_code_lines
+            }
+        };
+        let line_count = count_code_lines(&content_for_line_count);
+        
         let file_id = to_relative_id(file_path, &src_path)?;
 
         let label = file_path
@@ -122,6 +186,7 @@ pub fn analyze_project(project_path: &Path) -> Result<ModuleGraph, AnalyzerError
             graph.nodes.push(Node {
                 id: file_id,
                 label,
+                line_count, // Store the calculated line count
             });
         }
     }
@@ -129,7 +194,7 @@ pub fn analyze_project(project_path: &Path) -> Result<ModuleGraph, AnalyzerError
 
     // Pass 2: Parse files to find direct `use` and `mod` declarations and their targets.
     log::debug!("Pass 2: Parsing files and finding direct interactions...");
-    for node in &graph.nodes {
+    for node in &graph.nodes { // Iterate over a copy or indices if modifying graph.nodes
         let source_file_id = &node.id;
         let file_path = src_path.join(source_file_id.replace("/", std::path::MAIN_SEPARATOR_STR));
 
@@ -152,6 +217,7 @@ pub fn analyze_project(project_path: &Path) -> Result<ModuleGraph, AnalyzerError
                     file_path.display(),
                     e
                 );
+                // Store 0 for line count if parsing fails for AST, though line count is done before this
                 continue;
             }
         };
@@ -165,26 +231,24 @@ pub fn analyze_project(project_path: &Path) -> Result<ModuleGraph, AnalyzerError
                 Item::Use(item_use) => {
                     collect_interactions_from_use_tree(
                         &item_use.tree,
-                        &mut Vec::new(), // current_path_segments for recursive calls
+                        &mut Vec::new(), 
                         source_interactions_map,
                         source_file_id,
-                        &src_path, // Pass src_path for relative resolution
+                        &src_path, 
                         &discovered_files_set,
                     );
                 }
                 Item::Mod(item_mod) => {
-                    if item_mod.content.is_none() { // Handles `mod foo;`, not `mod foo { ... }`
+                    if item_mod.content.is_none() { 
                         let mod_name = item_mod.ident.to_string();
                         let current_dir_relative_to_src = PathBuf::from(source_file_id)
                             .parent()
-                            .unwrap_or_else(|| Path::new("")) // Handle files in src root
+                            .unwrap_or_else(|| Path::new("")) 
                             .to_path_buf();
 
-                        // Check for `module_name.rs`
                         let mod_file_rs_relative = current_dir_relative_to_src.join(format!("{}.rs", mod_name));
                         let mod_file_rs_id = mod_file_rs_relative.to_string_lossy().replace(std::path::MAIN_SEPARATOR, "/");
 
-                        // Check for `module_name/mod.rs`
                         let mod_dir_mod_rs_relative = current_dir_relative_to_src.join(&mod_name).join("mod.rs");
                         let mod_dir_mod_rs_id = mod_dir_mod_rs_relative.to_string_lossy().replace(std::path::MAIN_SEPARATOR, "/");
 
@@ -197,7 +261,7 @@ pub fn analyze_project(project_path: &Path) -> Result<ModuleGraph, AnalyzerError
                         };
 
                         if let Some(target_id) = target_file_id_option {
-                            if target_id != *source_file_id { // Avoid self-reference for mod decl
+                            if target_id != *source_file_id { 
                                 source_interactions_map
                                     .entry(target_id)
                                     .or_default()
@@ -211,44 +275,37 @@ pub fn analyze_project(project_path: &Path) -> Result<ModuleGraph, AnalyzerError
                         }
                     }
                 }
-                _ => {} // Other items like functions, structs, etc., are not directly analyzed for file dependencies here
+                _ => {} 
             }
         }
     }
 
     // Pass 3: Resolve effective dependencies by traversing through `mod.rs` files
-    // and create the final edges with aggregated interactions.
     log::debug!("Pass 3: Resolving effective dependencies and creating final edges...");
     let mut final_edges_map: HashMap<(String, String), HashSet<Interaction>> = HashMap::new();
 
     for initial_source_id in &discovered_files_set {
         if is_mod_file(initial_source_id) {
-            // We typically don't want edges *from* mod.rs files in the graph,
-            // as their purpose is to re-export. Their content is "merged" into parents.
             continue;
         }
 
         if let Some(targets_with_interactions) = direct_file_interactions.get(initial_source_id) {
             for (direct_target_id, direct_interactions_set) in targets_with_interactions {
                 let mut queue: VecDeque<(String, HashSet<Interaction>)> = VecDeque::new();
-                // Start BFS with the direct target and its specific interactions from the source.
                 queue.push_back((direct_target_id.clone(), direct_interactions_set.clone()));
 
                 let mut visited_in_bfs: HashSet<String> = HashSet::new();
-                visited_in_bfs.insert(initial_source_id.clone()); // Don't trace back to the original source
+                visited_in_bfs.insert(initial_source_id.clone()); 
 
                 while let Some((current_bfs_node_id, inherited_interactions)) = queue.pop_front() {
                     if !visited_in_bfs.insert(current_bfs_node_id.clone()) {
-                        continue; // Already visited this node in the current BFS path
+                        continue; 
                     }
 
                     if is_mod_file(&current_bfs_node_id) {
-                        // If the current node is a mod.rs, its "dependencies" are things it re-exports.
-                        // Continue BFS to those re-exported files, carrying over the interactions.
                         if let Some(dependencies_of_mod_file) = direct_file_interactions.get(&current_bfs_node_id) {
                             for (deeper_dependency_id, interactions_from_mod) in dependencies_of_mod_file {
                                 if *initial_source_id != *deeper_dependency_id {
-                                    // Combine interactions: those leading to mod.rs + those re-exported by mod.rs
                                     let mut combined_interactions = inherited_interactions.clone();
                                     combined_interactions.extend(interactions_from_mod.iter().cloned());
                                     queue.push_back((deeper_dependency_id.clone(), combined_interactions));
@@ -256,9 +313,7 @@ pub fn analyze_project(project_path: &Path) -> Result<ModuleGraph, AnalyzerError
                             }
                         }
                     } else {
-                        // This is a non-mod.rs file, so it's a final target for this path.
-                        // Establish the edge from the initial_source_id to this current_bfs_node_id.
-                        if *initial_source_id != current_bfs_node_id { // Ensure not a self-loop
+                        if *initial_source_id != current_bfs_node_id { 
                             log::trace!("Effective edge: {} -> {} with interactions: {:?}", initial_source_id, current_bfs_node_id, inherited_interactions);
                             final_edges_map
                                 .entry((initial_source_id.clone(), current_bfs_node_id.clone()))
@@ -278,7 +333,6 @@ pub fn analyze_project(project_path: &Path) -> Result<ModuleGraph, AnalyzerError
             target: t,
             interactions: {
                 let mut v: Vec<_> = interactions_set.into_iter().collect();
-                // Sort interactions for consistent output (name then kind)
                 v.sort_by(|a, b| a.name.cmp(&b.name).then_with(|| format!("{:?}",a.kind).cmp(&format!("{:?}",b.kind))));
                 v
             }
@@ -291,15 +345,13 @@ pub fn analyze_project(project_path: &Path) -> Result<ModuleGraph, AnalyzerError
     Ok(graph)
 }
 
-// Recursive helper to extract imported names from a `syn::UseTree`
-// and resolve them to their source files.
 fn collect_interactions_from_use_tree(
     tree: &UseTree,
-    current_path_segments: &mut Vec<String>, // Tracks the path in `use a::b::c;`
-    source_interactions_map: &mut HashMap<String, HashSet<Interaction>>, // source_file -> (target_file -> Set<Interaction>)
-    current_file_id_str: &str, // The file containing this use statement
-    src_path_base: &Path,      // This is still needed to be passed down
-    discovered_files_set: &HashSet<String>, // All known .rs files in src/
+    current_path_segments: &mut Vec<String>, 
+    source_interactions_map: &mut HashMap<String, HashSet<Interaction>>, 
+    current_file_id_str: &str, 
+    src_path_base: &Path,      
+    discovered_files_set: &HashSet<String>, 
 ) {
     match tree {
         UseTree::Path(use_path) => {
@@ -309,64 +361,50 @@ fn collect_interactions_from_use_tree(
                 current_path_segments,
                 source_interactions_map,
                 current_file_id_str,
-                src_path_base, // Pass it along
+                src_path_base, 
                 discovered_files_set,
             );
-            current_path_segments.pop(); // Backtrack
+            current_path_segments.pop(); 
         }
         UseTree::Name(use_name) => {
-            // This is a terminal item in a use path, e.g., `c` in `use a::b::c;`
             current_path_segments.push(use_name.ident.to_string());
             add_interaction_if_resolved(
                 current_path_segments,
-                &use_name.ident, // The actual item being imported
+                &use_name.ident, 
                 source_interactions_map,
                 current_file_id_str,
                 src_path_base,
                 discovered_files_set,
             );
-            current_path_segments.pop(); // Backtrack
+            current_path_segments.pop(); 
         }
         UseTree::Rename(use_rename) => {
-            // e.g., `c as d` in `use a::b::c as d;`
-            // The original name `c` (use_rename.ident) comes from the source module.
-            // The alias `d` (use_rename.rename) is used in the current file.
-            // We care about the original item for dependency tracking.
             current_path_segments.push(use_rename.ident.to_string());
             add_interaction_if_resolved(
                 current_path_segments,
-                &use_rename.ident, // The original name from the source module
+                &use_rename.ident, 
                 source_interactions_map,
                 current_file_id_str,
                 src_path_base,
                 discovered_files_set,
             );
-            current_path_segments.pop(); // Backtrack
+            current_path_segments.pop(); 
         }
         UseTree::Glob(_) => {
-            // e.g., `*` in `use a::b::*;`
-            // The path to the module being glob-imported is in `current_path_segments`.
-            // We create a synthetic ident "*" to represent the glob import.
-            //let glob_ident = Ident::new("*", proc_macro2::Span::call_site());
             add_interaction_if_resolved(
-                current_path_segments, // These segments point to the module whose contents are globbed
-                //&glob_ident, // Represents the glob itself
+                current_path_segments, 
                 &Ident::new("___GLOB___", proc_macro2::Span::call_site()),
                 source_interactions_map,
                 current_file_id_str,
                 src_path_base,
                 discovered_files_set,
             );
-            // No push/pop needed for glob_ident as it's not part of current_path_segments
         }
         UseTree::Group(use_group) => {
-            // e.g., `{c, d}` in `use a::b::{c, d};`
-            // `current_path_segments` already contains `a, b`.
-            // Recursively process each item in the group.
             for item_tree_in_group in &use_group.items {
                 collect_interactions_from_use_tree(
                     item_tree_in_group,
-                    current_path_segments, // Pass along the current path prefix
+                    current_path_segments, 
                     source_interactions_map,
                     current_file_id_str,
                     src_path_base,
@@ -377,77 +415,61 @@ fn collect_interactions_from_use_tree(
     }
 }
 
-// Helper to resolve a `use` path (represented by `path_segments`) to a file
-// and add an `Interaction` record if successful.
 fn add_interaction_if_resolved(
-    path_segments: &[String], // Full path from `use` statement, e.g., ["crate", "module_a", "ItemName"]
-    imported_item_name_ident: &Ident, // The specific item/symbol being imported (or our placeholder for glob)
+    path_segments: &[String], 
+    imported_item_name_ident: &Ident, 
     source_interactions_map: &mut HashMap<String, HashSet<Interaction>>,
-    current_file_id_str: &str, // ID of the file containing the `use` statement
-    src_path_base: &Path,      // Absolute path to the project's `src` directory
-    discovered_files_set: &HashSet<String>, // Set of all known `*.rs` file IDs in the project
+    current_file_id_str: &str, 
+    _src_path_base: &Path,      // Not directly used for path construction here, but kept for signature consistency
+    discovered_files_set: &HashSet<String>, 
 ) {
     if path_segments.is_empty() {
-        return; // Should not happen if called correctly
+        return; 
     }
 
-    // `module_path_parts` will be the segments leading to the module file,
-    // excluding the final imported item name (unless it's a glob import of a module itself).
     let module_path_parts: &[String];
-    let item_name_for_interaction: String;
+    let mut item_name_for_interaction: String;
 
-    if imported_item_name_ident.to_string() == "___GLOB___" { // Check for our placeholder
-        // For `use some::module::*;`, path_segments is ["some", "module"].
-        // The "item" is the glob, and it refers to the module defined by path_segments.
+    if imported_item_name_ident.to_string() == "___GLOB___" { 
         module_path_parts = path_segments;
-        item_name_for_interaction = format!("{}::*", path_segments.join("::"));
+        item_name_for_interaction = format!("{}::*", path_segments.join("::")); // Represent glob as "module::*"
+         if path_segments.is_empty() { // e.g. use *; (highly unlikely but guard)
+            item_name_for_interaction = "*".to_string();
+        }
     } else if path_segments.last().map_or(false, |s| s == &imported_item_name_ident.to_string()) {
-        // For `use some::module::Item;`, path_segments is ["some", "module", "Item"].
-        // module_path_parts should be ["some", "module"].
         module_path_parts = &path_segments[..path_segments.len() - 1];
         item_name_for_interaction = imported_item_name_ident.to_string();
     } else {
-        // This case might occur for `use my_module;` which is like `use my_module::self as my_module;`
-        // or if the parsing logic for `current_path_segments` is slightly off.
-        // As a fallback, assume path_segments points to the module.
         log::trace!("Ambiguous path for item '{}' with segments {:?}. Assuming segments point to module.", imported_item_name_ident, path_segments);
         module_path_parts = path_segments;
         item_name_for_interaction = imported_item_name_ident.to_string();
     }
 
-
-    // Determine the starting directory for resolution based on `crate`, `super`, or relative.
     let mut base_dir_for_resolution_relative_to_src = PathBuf::new();
     let mut remaining_module_path_parts = module_path_parts;
 
     if !module_path_parts.is_empty() {
         match module_path_parts[0].as_str() {
             "crate" => {
-                // `use crate::module::item;` -> base_dir is src root.
-                // remaining_module_path_parts = ["module"]
                 remaining_module_path_parts = &module_path_parts[1..];
             }
             "super" => {
-                // `use super::module::item;`
                 let current_file_path_obj = PathBuf::from(current_file_id_str.replace("/", std::path::MAIN_SEPARATOR_STR));
-                if let Some(parent_dir) = current_file_path_obj.parent() {
+                if let Some(parent_dir) = current_file_path_obj.parent().and_then(|p| p.parent()) { // parent of current file's dir
                     base_dir_for_resolution_relative_to_src = parent_dir.to_path_buf();
                     remaining_module_path_parts = &module_path_parts[1..];
-                } else {
-                    log::warn!("Cannot resolve 'super' from src root for item '{}' in file '{}'", item_name_for_interaction, current_file_id_str);
-                    return;
+                } else { // current file is in src or src/module.rs, super refers to src
+                     base_dir_for_resolution_relative_to_src = PathBuf::new(); // effectively src/
+                     remaining_module_path_parts = &module_path_parts[1..];
                 }
             }
             "self" => {
-                // `use self::item;` or `use self::sub_module::item;`
-                // `self` refers to the current module. If current file is `foo.rs`, `self` is `foo`.
-                // If current file is `foo/mod.rs`, `self` is also `foo`.
                 let current_file_path_obj = PathBuf::from(current_file_id_str.replace("/", std::path::MAIN_SEPARATOR_STR));
                 if is_mod_file(current_file_id_str) {
-                    if let Some(parent_dir) = current_file_path_obj.parent() { // The directory containing mod.rs
+                    if let Some(parent_dir) = current_file_path_obj.parent() { 
                         base_dir_for_resolution_relative_to_src = parent_dir.to_path_buf();
                     }
-                } else { // A file like `module.rs`, `self` refers to items within this file or its submodules
+                } else { 
                     if let Some(parent_dir) = current_file_path_obj.parent() {
                          base_dir_for_resolution_relative_to_src = parent_dir.join(current_file_path_obj.file_stem().unwrap_or_default());
                     } else {
@@ -457,31 +479,23 @@ fn add_interaction_if_resolved(
                 remaining_module_path_parts = &module_path_parts[1..];
             }
             _ => {
-                // Relative path: `use my_sibling_module::item;`
                 let current_file_path_obj = PathBuf::from(current_file_id_str.replace("/", std::path::MAIN_SEPARATOR_STR));
                 if let Some(parent_dir) = current_file_path_obj.parent() {
                     base_dir_for_resolution_relative_to_src = parent_dir.to_path_buf();
-                    // remaining_module_path_parts remains module_path_parts
-                } else {
-                    // current file is in src root, path is relative to src root
-                    // remaining_module_path_parts remains module_path_parts
-                }
+                } 
             }
         }
     }
 
 
-    // Construct the full path to the potential module file/directory relative to src.
     let mut potential_module_path_relative_to_src = base_dir_for_resolution_relative_to_src;
     for part in remaining_module_path_parts {
         potential_module_path_relative_to_src.push(part);
     }
 
-    // Try to resolve to `path/to/module.rs`
     let target_file_as_rs_id = potential_module_path_relative_to_src.with_extension("rs")
         .to_string_lossy().replace(std::path::MAIN_SEPARATOR, "/");
 
-    // Try to resolve to `path/to/module/mod.rs`
     let target_file_as_mod_rs_id = potential_module_path_relative_to_src.join("mod.rs")
         .to_string_lossy().replace(std::path::MAIN_SEPARATOR, "/");
 
@@ -489,34 +503,56 @@ fn add_interaction_if_resolved(
         Some(target_file_as_rs_id)
     } else if discovered_files_set.contains(&target_file_as_mod_rs_id) {
         Some(target_file_as_mod_rs_id)
-    } else if module_path_parts.is_empty() && (path_segments.first().map_or(false, |s| s == "self") || path_segments.is_empty()) {
-        // `use self::Item` or `use Item` (if Item is in current file)
-        // This implies the item is from the current file itself.
-        // We don't create dependency edges for items within the same file.
-        // However, if `self` was part of a longer path that resolved to current file, it's okay.
-        // This condition is tricky. For now, if module_path_parts is empty, assume it's from current file.
-        None
+    } else if module_path_parts.is_empty() && 
+              (path_segments.first().map_or(false, |s| s == "self" || s == "crate") || path_segments.is_empty()) &&
+              item_name_for_interaction != format!("{}::*", path_segments.join("::")) // Not a glob of self/crate
+    {
+        // `use self::Item` or `use Item` (if Item is in current file) or `use crate::Item` (if Item is in lib.rs/main.rs)
+        // If module_path_parts is empty, it implies the item is sought in the current file's scope or root scope.
+        // If path_segments starts with "crate" and module_path_parts is empty, it means `use crate::Item;`
+        // This should resolve to lib.rs or main.rs if they exist at src root.
+        let root_file_candidates = ["lib.rs", "main.rs"];
+        let mut found_root_candidate = None;
+        if path_segments.first().map_or(false, |s| s == "crate") && module_path_parts.is_empty() {
+            for candidate in root_file_candidates.iter() {
+                if discovered_files_set.contains(*candidate) {
+                    found_root_candidate = Some(candidate.to_string());
+                    break;
+                }
+            }
+        }
+        // If it's `use self::Item` or `use Item` (local), it's from the current file.
+        // If it's `use crate::Item` and resolves to a root file, that's the target.
+        // Otherwise, it's an unresolved local item or an item from the current file.
+        if found_root_candidate.is_some() {
+            found_root_candidate
+        } else if path_segments.first().map_or(false, |s| s == "self") || module_path_parts.is_empty() {
+             None // Assumed to be from current file, no edge needed
+        } else {
+            None
+        }
     }
     else {
         log::trace!(
-            "Could not resolve module path '{}' (for item '{}') in file '{}' to a specific project file. Tried '{}' and '{}'",
+            "Could not resolve module path '{}' (for item '{}') in file '{}' to a specific project file. Tried '{}' and '{}'. Path segments: {:?}",
             potential_module_path_relative_to_src.display(),
             item_name_for_interaction,
             current_file_id_str,
             target_file_as_rs_id,
-            target_file_as_mod_rs_id
+            target_file_as_mod_rs_id,
+            path_segments
         );
         None
     };
 
     if let Some(target_id) = resolved_target_file_id {
-        if target_id != current_file_id_str { // Don't record self-imports as dependencies
+        if target_id != current_file_id_str { 
             source_interactions_map
-                .entry(target_id) // The file where the item is defined
+                .entry(target_id) 
                 .or_default()
                 .insert(Interaction {
                     kind: InteractionKind::Import,
-                    name: item_name_for_interaction, // The name of the item being imported
+                    name: item_name_for_interaction, 
                 });
         }
     }
@@ -524,6 +560,9 @@ fn add_interaction_if_resolved(
 
 fn log_graph_summary(graph: &ModuleGraph) {
     log::debug!("Graph Summary: {} nodes, {} edges.", graph.nodes.len(), graph.edges.len());
+    for node in &graph.nodes {
+        log::trace!("Node: {} ({}), Lines: {}", node.id, node.label, node.line_count);
+    }
     for edge in &graph.edges {
         if !edge.interactions.is_empty() {
             log::trace!("Edge: {} -> {} (Interactions: {})", edge.source, edge.target, edge.interactions.len());
