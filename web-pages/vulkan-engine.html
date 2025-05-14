@@ -5,52 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vulkan Engine - Engine Docs</title>
     <link rel="stylesheet" href="shared-styles.css">
-    <!-- highlight.js CSS might not be needed if info panel is gone, but keep if tree might use it later -->
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css"> -->
     <style>
+        /* ... (all your existing CSS from the previous correct version) ... */
         html, body {
             height: 100%;
             margin: 0;
-            overflow: hidden; /* Prevent body scrollbars */
-            font-family: sans-serif; /* Basic font */
+            overflow: hidden; 
+            font-family: sans-serif; 
         }
         body {
             display: flex;
             flex-direction: column;
         }
-        .main-header {
+        .main-header { 
+            background-color: #4F5B66;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 100;
             flex-shrink: 0;
-            padding: 10px 20px;
-            background-color: #333;
-            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 50px;
         }
         .main-header .site-title {
-            color: white;
+            color: #EAEAEA;
+            font-size: 1.4em;
+            font-weight: 300;
             text-decoration: none;
-            font-size: 1.5em;
+        }
+         .main-header .site-title:hover {
+            color: #ffffff;
         }
         .main-header nav ul {
             list-style: none;
-            padding: 0;
             margin: 0;
+            padding: 0;
             display: flex;
         }
         .main-header nav li {
             margin-left: 15px;
         }
         .main-header nav a {
-            color: #ddd;
+            color: #C0C0C0;
             text-decoration: none;
+            padding: 10px 5px;
+            display: block;
+            font-size: 1em;
+            border-bottom: 2px solid transparent;
+            transition: color 0.2s ease, border-color 0.2s ease;
+        }
+        .main-header nav a:hover {
+            color: #ffffff;
         }
         .main-header nav a.active {
-            color: white;
-            font-weight: bold;
+            color: #ffffff;
+            font-weight: 500;
+            border-bottom-color: #88CDF5;
         }
 
-        .main-content {
-            flex-grow: 1;
+        .main-content { 
+            flex: 1;
+            overflow: hidden;
             display: flex;
-            min-height: 0;
+            padding: 15px;
+            box-sizing: border-box;
         }
 
         .two-column-layout {
@@ -59,43 +78,57 @@
             width: 100%;
             overflow: hidden;
             min-height: 0;
+            border: 1px solid #d1d5db; 
+            border-radius: 8px;      
+            background-color: #ffffff; 
         }
 
         .left-column {
-            width: 35%;
-            max-width: 600px;
-            min-width: 320px;
-            display: flex; /* Changed: left-column itself is now the flex container for tree-panel */
-            flex-direction: column; /* tree-panel will grow */
-            border-right: 1px solid #d1d5db;
+            width: 30%; 
+            min-width: 200px; 
+            max-width: 60%; 
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
-            background-color: #f9fafb;
+            background-color: #f9fafb; 
+            position: relative; 
+        }
+
+        .column-divider {
+            flex: 0 0 5px; 
+            background-color: #d1d5db; 
+            cursor: col-resize;
+            position: relative;
+            z-index: 5;
+        }
+        .column-divider:hover {
+            background-color: #b0b0b0; 
         }
 
         .right-column {
-            flex-grow: 1;
+            flex-grow: 1; 
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background-color: #ffffff;
+            background-color: #ffffff; 
+            min-width: 300px; 
         }
 
-        /* Styles for the Tree (Left Column) */
         .tree-panel {
             display: flex;
             flex-direction: column;
-            flex-grow: 1; /* tree-panel now takes all vertical space in left-column */
+            flex-grow: 1;
             min-height: 0;
             overflow: hidden;
         }
 
         .combined-sticky-header {
-            position: relative;
+            position: relative; 
             z-index: 10;
-            background-color: #f3f4f6;
+            background-color: #f3f4f6; 
             border-bottom: 1px solid #e5e7eb;
             flex-shrink: 0;
-            padding: 0 10px;
+            padding: 0 10px; 
         }
         .sticky-headers-container {
             overflow: hidden;
@@ -104,151 +137,158 @@
         .sticky-header-item {
             display: flex;
             align-items: center;
-            font-size: 0.875em;
-            line-height: 1.25rem;
+            font-size: 0.875em; 
+            line-height: 1.25rem; 
             cursor: default;
-            color: #374151;
+            color: #374151; 
         }
-        .sticky-header-item .tree-toggle {
-             visibility: hidden;
-             width: 20px;
-             margin-right: 5px;
+        .sticky-header-item .tree-toggle { 
+             visibility: hidden; 
+             width: 20px; 
+             margin-right: 5px; 
              flex-shrink: 0;
         }
         .sticky-header-item .path-segment {
             cursor: pointer;
             padding: 2px 6px;
-            border-radius: 0.25rem;
+            border-radius: 0.25rem; 
             margin: 0 1px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .sticky-header-item .path-segment:hover {
-            background-color: #e5e7eb;
+            background-color: #e5e7eb; 
         }
         .sticky-header-item .path-separator {
             margin: 0 3px;
-            color: #9ca3af;
+            color: #9ca3af; 
         }
 
-        .tree-column {
+        .tree-column { 
             flex-grow: 1;
             overflow-y: auto;
-            position: relative;
-            display: flex;
+            position: relative; 
+            display: flex; 
         }
 
         .branch-indicator-bar-area {
-            width: 6px;
+            width: 6px; 
             flex-shrink: 0;
-            position: sticky;
+            position: sticky; 
             top: 0;
-            background-color: #e5e7eb;
+            background-color: #e5e7eb; 
         }
         .bar-segment {
             width: 100%;
-            position: absolute;
+            position: absolute; 
             left: 0;
         }
 
         .tree-content-wrapper {
-            padding: 8px 10px 8px 0;
-            flex-grow: 1;
+            padding: 8px 10px 8px 0; 
+            flex-grow: 1; 
         }
         .tree-content-wrapper ul {
             list-style-type: none;
-            padding-left: 18px;
+            padding-left: 18px; 
             margin: 0;
         }
         .tree-content-wrapper li {
-            margin: 1px 0;
-            position: relative;
+            margin: 1px 0; 
+            position: relative; 
         }
         .tree-item-row {
             display: flex;
             align-items: center;
-            padding: 5px 8px;
+            padding: 5px 8px; 
             cursor: pointer;
-            border-radius: 0.25rem;
-            min-height: 28px;
+            border-radius: 0.25rem; 
+            min-height: 28px; 
         }
         .tree-item-row:hover {
-            background-color: #e5e7eb;
+            background-color: #e5e7eb; 
         }
         .tree-toggle {
-            width: 20px;
+            width: 20px; 
             text-align: center;
             margin-right: 5px;
-            color: #6b7280;
-            font-family: monospace;
-            font-size: 0.875em;
-            flex-shrink: 0;
+            color: #6b7280; 
+            font-family: monospace; 
+            font-size: 0.875em; 
+            flex-shrink: 0; 
         }
         .tree-item-content {
-            flex-grow: 1;
-            font-size: 0.875em;
-            color: #374151;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .essential-text { color: #1f2937; font-weight: 500; }
-        .secondary-text { color: #374151; }
-        .advanced-text { color: #6b7280; }
-        .other-text { color: #9ca3af; }
-
-        .selected-item-dark-li > .tree-item-row { /* This class might not be used by new tree */
-            background-color: #3b82f6 !important;
-        }
-        .selected-item-dark-li > .tree-item-row .tree-item-content,
-        .selected-item-dark-li > .tree-item-row .tree-toggle {
-            color: white !important;
+            flex-grow: 1; 
+            font-size: 0.875em; 
+            color: #374151; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
         }
 
-
-        /* Right Column: Graph Area (styles remain largely the same) */
         .right-column .engine-content {
             padding: 20px;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            min-height: 0;
-            overflow: hidden;
+            min-height: 0; 
+            overflow: hidden; 
         }
         .right-column .engine-content h1 {
-            font-size: 1.5em;
-            color: #111827;
+            font-size: 1.5em; 
+            color: #111827; 
             margin: 0 0 8px 0;
-            flex-shrink: 0;
+            flex-shrink: 0; 
         }
         .right-column .engine-content p {
             font-size: 0.9em;
-            color: #4b5563;
+            color: #4b5563; 
             margin: 0 0 16px 0;
             line-height: 1.5;
             flex-shrink: 0;
         }
         .graph-container-wrapper {
-            flex-grow: 1;
+            flex-grow: 1; 
             display: flex;
-            align-items: stretch;
-            justify-content: center;
-            min-height: 300px;
-            overflow: hidden;
+            align-items: stretch; 
+            justify-content: center; 
+            min-height: 300px; 
+            overflow: hidden; 
         }
         .graph-container {
             width: 100%;
             height: 100%;
-            border: 1px solid #d1d5db;
-            background-color: #f9fafb;
-            overflow: hidden;
-            position: relative;
+            border: 1px solid #d1d5db; 
+            background-color: #f9fafb; 
+            overflow: hidden; 
+            position: relative; 
         }
         .node rect { stroke: #333; stroke-width: 1.5px; cursor: pointer; }
         .node text { font-size: 10px; pointer-events: none; text-anchor: middle; dominant-baseline: middle; fill: #222; }
         .link { stroke: #999; stroke-opacity: 0.6; fill: none; }
         .node.selected rect { stroke: dodgerblue; stroke-width: 3px; }
+
+        @media (max-width: 768px) {
+            .two-column-layout {
+                flex-direction: column;
+            }
+            .left-column {
+                width: 100% !important; 
+                max-width: 100%;
+                height: 40vh; 
+                min-height: 200px;
+                border-right: none;
+                border-bottom: 1px solid #d1d5db;
+            }
+            .column-divider {
+                display: none; 
+            }
+            .right-column {
+                height: 60vh; 
+                min-height: 300px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -264,29 +304,23 @@
 
     <main class="main-content">
         <div class="two-column-layout">
-            <!-- Left Column for Dynamic Tree -->
             <div class="left-column">
-                <div class="tree-panel"> <!-- This panel will now take full height of left-column -->
+                <div class="tree-panel">
                     <div class="combined-sticky-header">
                         <div class="sticky-headers-container">
-                            <!-- Sticky headers will be populated by JS -->
                         </div>
                     </div>
                     <div class="tree-column">
                         <div class="branch-indicator-bar-area">
-                            <!-- Branch indicator segments will be populated by JS -->
                         </div>
                         <div class="tree-content-wrapper">
                             <ul>
-                                <!-- Tree nodes will be populated by graph_interaction_tree.js -->
                             </ul>
                         </div>
                     </div>
                 </div>
-                <!-- Info Panel has been removed -->
             </div>
-
-            <!-- Right Column for Graph -->
+            <div class="column-divider"></div>
             <div class="right-column">
                 <div class="engine-content">
                     <h1>Vulkan Engine Module Map</h1>
@@ -306,10 +340,40 @@
     </main>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- IMPORTANT: Resizer script and its init first -->
+    <script src="../scripts/ui/column-resizer.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const leftColumn = document.querySelector('.two-column-layout .left-column');
+            const divider = document.querySelector('.two-column-layout .column-divider');
+            const twoColumnLayout = document.querySelector('.two-column-layout');
+            if (leftColumn && divider && twoColumnLayout) {
+                initColumnResizer(
+                    leftColumn,
+                    divider,
+                    twoColumnLayout,
+                    'whipDocsEngine_leftColumnWidth',
+                    false, // Uses width, not flex-basis
+                    () => { 
+                        // This callback is for when the user *manually* drags the divider
+                        window.dispatchEvent(new Event('resize')); 
+                    }
+                );
+                // After the resizer has initialized and potentially applied localStorage width,
+                // explicitly tell the graph to update.
+                // A small delay ensures the browser has reflowed from the resizer's change.
+                setTimeout(() => {
+                    console.log("Triggering graph update after resizer init.");
+                    window.dispatchEvent(new Event('resize'));
+                }, 0); // 0ms timeout, effectively "next tick"
+            }
+        });
+    </script>
+
+    <!-- Graph and Tree scripts after resizer -->
     <script src="../scripts/graphs/module_dependency_graph.js"></script>
-    <!-- Scripts for the new dynamic tree view -->
-    <!-- marked.js and highlight.js are removed as the info panel is gone -->
-    <script src="../scripts/lists/graph_interaction_tree.js"></script> <!-- NEW SCRIPT -->
+    <script src="../scripts/lists/graph_interaction_tree.js"></script>
 
 </body>
 </html>

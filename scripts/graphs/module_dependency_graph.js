@@ -10,121 +10,124 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!graphDataPath) { console.error("`data-graph-src` attribute not found."); return; }
 
-    // --- TUNABLE PARAMETERS & VISUALS ---
     const visualNodeWidth = 70; const visualNodeHeight = 18;
     const sCurveCurvinessFactor = 0.3;
-    const clusterColumnWidth = 300; const clusterPadding = 30; const minClusterGap = 20;
-    const clusterRepulsionStrength = 0.6; const clusterRepulsionIterations = 5;
+    const clusterColumnWidth = 350; 
+    const clusterPadding = 40;      
+    const minClusterGap = 30;       
+    const clusterRepulsionStrength = 0.5; 
+    const clusterRepulsionIterations = 3; 
 
     const intraClusterLinkStrength = 0.7; const interClusterLinkStrength = 0.04;
-    const linkDistance = 90; const chargeStrength = -150;
+    const linkDistance = 90; const chargeStrength = -180; 
     const nodeCollisionRadius = visualNodeWidth * 0.45; const nodeCollisionStrength = 0.9;
-    const pullToClusterCentroidStrength = 0.2;
+    const pullToClusterInitialCentroidStrength = 0.15; 
 
-    // --- Colors and Styles ---
     const vibrantOutgoingLinkColor = "#28a745"; const vibrantIncomingLinkColor = "#dc3545";
     const vibrantBidirectionalLinkColor = "#6f42c1";
     const subtleOutgoingLinkColor = "#a4d4ae"; const subtleIncomingLinkColor = "#f4c2c7";
     const subtleBidirectionalLinkColor = "#d3c5e8";
 
-    // Line widths
     const minLinkStrokeWidth = 0.25; const avgLinkStrokeWidth = 2; const maxLinkStrokeWidth = 4;
     const selectedLinkExtraWidth = 1.5;
 
-    // Opacity for links
-    const minLinkOpacity = 0.75;
-    const avgLinkOpacity = 0.85; // Default average opacity
-    const maxLinkOpacity = 1.0;  // Default max opacity (for most interactions)
-
-    // For non-connected edges when a node is selected
-    const fadedLinkSaturationFactor = 0.1;
-    const maxOpacityForFadedNonConnected = 0.35; // Non-connected links won't exceed this opacity
+    const minLinkOpacity = 0.75; const avgLinkOpacity = 0.85; const maxLinkOpacity = 1.0;
+    const fadedLinkSaturationFactor = 0.1; const maxOpacityForFadedNonConnected = 0.35;
 
     const defaultNodeFillColor = "#f0f0f0";
     const defaultNodeStrokeColor = "#333"; const nodeSelectedStrokeColor = "dodgerblue";
-    const nodeSelectedStrokeWidth = 2; const clusterCircleStrokeColor = "#a0a0a0";
-    const clusterCircleFillOpacity = 0.05;
+    const nodeSelectedStrokeWidth = 2;
+    const clusterCircleStrokeColor = "#b0b0b0"; 
+    const clusterCircleFillOpacity = 0.03;   
+    const clusterLabelColor = "#555";
+    const clusterLabelFontSize = "10px";
 
-    // Hue randomization for links
-    const linkHueRandomizationPercent = 0.05; // e.g., 0.05 means +/- 5% of 360 degrees hue rotation
+    const linkHueRandomizationPercent = 0.05;
 
-    let svg, innerG, simulation, linkPaths, nodeGroups, clusterCirclesGroup, currentZoomTransform;
+    let svg, innerG, simulation, linkPaths, nodeGroups, clusterVisualsGroup, currentZoomTransform;
     let fullLoadedGraphData = null; let currentNodes = []; let currentLinks = [];
-    let clusterData = []; let linkWidthScale, linkOpacityScale;
-
+    let clusterData = []; 
+    let linkWidthScale, linkOpacityScale;
+    let graphInitialized = false;
 
     function getBaseLinkColor(linkData, selectedNodeId, isSelectedContext) {
         let baseColorString;
-
         if (isSelectedContext && selectedNodeId) {
-            const sourceId = linkData.source.id;
-            const targetId = linkData.target.id;
-
-            if (linkData.bidirectional) {
-                baseColorString = vibrantBidirectionalLinkColor;
-            } else if (sourceId === selectedNodeId) {
-                baseColorString = vibrantOutgoingLinkColor;
-            } else if (targetId === selectedNodeId) {
-                baseColorString = vibrantIncomingLinkColor;
-            }
-            // If isSelectedContext is true, one of the above conditions must be met,
-            // as isSelectedContext is true iff the link is connected to selectedNodeId.
-            // So, baseColorString should be assigned if isSelectedContext is true.
+            const sourceId = linkData.source.id; const targetId = linkData.target.id;
+            if (linkData.bidirectional) { baseColorString = vibrantBidirectionalLinkColor; }
+            else if (sourceId === selectedNodeId) { baseColorString = vibrantOutgoingLinkColor; }
+            else if (targetId === selectedNodeId) { baseColorString = vibrantIncomingLinkColor; }
         }
-
-        if (!baseColorString) { // Not in selected context, or (improbably) no specific vibrant color matched
-            if (linkData.bidirectional) {
-                baseColorString = subtleBidirectionalLinkColor;
-            } else {
-                baseColorString = subtleOutgoingLinkColor;
-            }
+        if (!baseColorString) {
+            baseColorString = linkData.bidirectional ? subtleBidirectionalLinkColor : subtleOutgoingLinkColor;
         }
-
-        // Apply hue randomization
         if (linkData.hueShiftFactor !== undefined) {
             let hslColor = d3.hsl(baseColorString);
             if (hslColor && typeof hslColor.h === 'number' && !isNaN(hslColor.h)) {
-                hslColor.h = (hslColor.h + (linkData.hueShiftFactor * 360));
-                hslColor.h = (hslColor.h % 360 + 360) % 360; // Ensure hue is within [0, 360)
+                hslColor.h = (hslColor.h + (linkData.hueShiftFactor * 360)) % 360;
+                hslColor.h = (hslColor.h + 360) % 360;
                 return hslColor.toString();
             }
         }
-        return baseColorString; // Return original if no shift or parsing failed
+        return baseColorString;
     }
 
     function initializeOrUpdateGraph() {
+        if (!graphContainerElement) return;
+
         const containerWidth = graphContainerElement.clientWidth;
         const containerHeight = graphContainerElement.clientHeight;
+
+        if (containerWidth === 0 || containerHeight === 0) {
+            console.warn("Graph container has no dimensions. Deferring graph initialization.");
+            graphInitialized = false;
+            return;
+        }
+        
+        // Check if we really need to redraw
+        if (graphInitialized && svg &&
+            parseInt(svg.attr("width")) === containerWidth &&
+            parseInt(svg.attr("height")) === containerHeight) {
+            // console.log("Graph dimensions appear unchanged. Skipping full redraw unless forced by context.");
+            // This skip is mostly for simple window resizes that don't change the container.
+            // Tab switches or resizer init will effectively force by ensuring this runs after layout changes.
+            return; 
+        }
+        
+        console.log(`Initializing/Updating graph. Container: ${containerWidth}x${containerHeight}`);
+
         d3.select(graphContainerElement).select("svg").remove();
+        
         svg = d3.select(graphContainerElement).append("svg").attr("width", containerWidth).attr("height", containerHeight);
         innerG = svg.append("g");
+        
         const zoomBehavior = d3.zoom().scaleExtent([0.05, 5])
             .filter(event => (event.type === "wheel") || (event.type === "mousedown" && event.button === 0 && (event.target === svg.node() || event.target === innerG.node())))
             .on("zoom", event => { currentZoomTransform = event.transform; innerG.attr("transform", currentZoomTransform); });
         svg.call(zoomBehavior);
+        
+        if (currentZoomTransform) { 
+            svg.call(zoomBehavior.transform, currentZoomTransform);
+        }
 
-        d3.json(graphDataPath).then(function (loadedData) {
-            fullLoadedGraphData = loadedData;
+        const dataPromise = fullLoadedGraphData ? Promise.resolve(fullLoadedGraphData) : d3.json(graphDataPath);
+
+        dataPromise.then(function (loadedData) {
+            if (!fullLoadedGraphData) { 
+                fullLoadedGraphData = loadedData;
+            }
+            
             let filteredNodesInput = fullLoadedGraphData.nodes.filter(n => !filesToIgnore.includes(n.label || n.id.split('/').pop()));
             const filteredNodeIds = new Set(filteredNodesInput.map(n => n.id));
             let rawFilteredEdges = fullLoadedGraphData.edges.filter(e => filteredNodeIds.has(e.source) && filteredNodeIds.has(e.target));
+            
             const linksForSimulation = []; const processedEdgePairs = new Set();
             rawFilteredEdges.forEach(edge1 => {
                 const pairKey1 = `${edge1.source}|${edge1.target}`; const pairKey2 = `${edge1.target}|${edge1.source}`;
                 if (processedEdgePairs.has(pairKey1) || processedEdgePairs.has(pairKey2)) return;
                 const interactions1 = edge1.interactions || []; let currentInteractionCount = interactions1.length;
-
-                // Generate a random hue shift factor for this link
                 const hueShift = (Math.random() * 2 - 1) * linkHueRandomizationPercent;
-
-                let linkObject = {
-                    source: edge1.source,
-                    target: edge1.target,
-                    bidirectional: false,
-                    originalEdgeData1: edge1,
-                    interactionCount: 0,
-                    hueShiftFactor: hueShift // Store the random hue shift
-                };
+                let linkObject = { source: edge1.source, target: edge1.target, bidirectional: false, originalEdgeData1: edge1, interactionCount: 0, hueShiftFactor: hueShift };
                 const reverseEdge = rawFilteredEdges.find(edge2 => edge2.source === edge1.target && edge2.target === edge1.source);
                 if (reverseEdge) {
                     const interactions2 = reverseEdge.interactions || []; currentInteractionCount += interactions2.length;
@@ -134,12 +137,39 @@ document.addEventListener('DOMContentLoaded', function () {
                 processedEdgePairs.add(pairKey1);
             });
             currentLinks = linksForSimulation;
-            currentNodes = filteredNodesInput.map(n => ({
-                ...n, clusterId: 0,
-                x: containerWidth / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
-                y: containerHeight / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1
-            }));
-            if (currentNodes.length === 0) { console.warn("No nodes to display after filtering."); return; }
+            
+            const forceResetPositions = !graphInitialized || (svg && (parseInt(svg.attr("width")) !== containerWidth || parseInt(svg.attr("height")) !== containerHeight));
+
+            currentNodes = filteredNodesInput.map(n_new => {
+                const existing_node = !forceResetPositions ? currentNodes.find(n_old => n_old.id === n_new.id) : null;
+                return {
+                    ...n_new,
+                    directory: n_new.id.substring(0, n_new.id.lastIndexOf('/')) || '[root]',
+                    x: existing_node ? existing_node.x : containerWidth / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
+                    y: existing_node ? existing_node.y : containerHeight / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
+                    fx: existing_node ? existing_node.fx : null, 
+                    fy: existing_node ? existing_node.fy : null
+                };
+            });
+
+            if (currentNodes.length === 0) { console.warn("No nodes to display after filtering."); graphInitialized = false; return; }
+
+            const nodesByDirectory = d3.group(currentNodes, d => d.directory);
+            const sortedDirectoryPaths = Array.from(nodesByDirectory.keys()).sort();
+            
+            const initialXOffset = Math.max(100, (containerWidth - (sortedDirectoryPaths.length * clusterColumnWidth)) / 2 + clusterColumnWidth / 2);
+
+            clusterData = sortedDirectoryPaths.map((dirPath, index) => {
+                const nodesInThisCluster = nodesByDirectory.get(dirPath) || [];
+                nodesInThisCluster.forEach(node => node.clusterId = dirPath); 
+
+                return {
+                    id: dirPath, 
+                    nodesInCluster: nodesInThisCluster,
+                    initialCX: initialXOffset + (index * clusterColumnWidth),
+                    initialCY: containerHeight / 2,
+                };
+            });
 
             const interactionCounts = currentLinks.map(l => l.interactionCount).filter(c => typeof c === 'number' && c >= 0);
             let minInteractions = 0, avgInteractions = 1, maxDomainPointForScale = 1;
@@ -157,35 +187,54 @@ document.addEventListener('DOMContentLoaded', function () {
             linkWidthScale = d3.scaleLinear().domain(domainPoints).range([minLinkStrokeWidth, avgLinkStrokeWidth, maxLinkStrokeWidth]).clamp(true);
             linkOpacityScale = d3.scaleLinear().domain(domainPoints).range([minLinkOpacity, avgLinkOpacity, maxLinkOpacity]).clamp(true);
 
-            const nodeMap = new Map(currentNodes.map(n => [n.id, n]));
-            currentNodes.forEach(n => { n.visitedInDepthCalc = false; n.inDegree = 0; });
-            currentLinks.forEach(l => { if (!l.bidirectional) { const t = nodeMap.get(l.target); if(t) t.inDegree++; } });
-            let maxClusterId = 0; function assignClusterByDepth(node, currentClusterId) { if (node.visitedInDepthCalc && node.clusterId >= currentClusterId) return; node.visitedInDepthCalc = true; node.clusterId = currentClusterId; maxClusterId = Math.max(maxClusterId, currentClusterId); currentLinks.forEach(link => { if (link.source === node.id && !link.bidirectional) { const targetNode = nodeMap.get(link.target); if (targetNode) assignClusterByDepth(targetNode, currentClusterId + 1); } }); }
-            currentNodes.filter(n => n.inDegree === 0).forEach(r => assignClusterByDepth(r, 0)); currentNodes.filter(n => !n.visitedInDepthCalc).forEach(n => assignClusterByDepth(n, 0));
-            clusterData = []; const initialXOffset = Math.max(100, (containerWidth - (maxClusterId * clusterColumnWidth)) / 2);
-            for (let i = 0; i <= maxClusterId; i++) { const initialClusterX = initialXOffset + (i * clusterColumnWidth); clusterData.push({ id: i, nodesInCluster: currentNodes.filter(n => n.clusterId === i), calculatedCX: initialClusterX, calculatedCY: containerHeight / 2, calculatedR: visualNodeWidth + clusterPadding }); }
-            currentNodes.forEach(n => { if (n.clusterId < 0 || n.clusterId > maxClusterId || !clusterData[n.clusterId]) n.clusterId = 0; });
+            if (simulation) { 
+                simulation.stop();
+            }
 
             simulation = d3.forceSimulation(currentNodes)
-                .force("link", d3.forceLink(currentLinks).id(d => d.id).distance(linkDistance).strength(link => (link.source.clusterId === link.target.clusterId) ? intraClusterLinkStrength : interClusterLinkStrength))
+                .force("link", d3.forceLink(currentLinks).id(d => d.id).distance(linkDistance)
+                    .strength(link => (link.source.clusterId === link.target.clusterId) ? intraClusterLinkStrength : interClusterLinkStrength))
                 .force("charge", d3.forceManyBody().strength(chargeStrength))
                 .force("collision", d3.forceCollide().radius(nodeCollisionRadius).strength(nodeCollisionStrength))
-                .force("clusterCentroidX", d3.forceX(d => { const c = clusterData[d.clusterId]; return c ? c.calculatedCX : containerWidth / 2; }).strength(pullToClusterCentroidStrength))
-                .force("clusterCentroidY", d3.forceY(d => { const c = clusterData[d.clusterId]; return c ? c.calculatedCY : containerHeight / 2; }).strength(pullToClusterCentroidStrength))
-                .force("clusterRepel", customClusterRepelForce());
+                .force("clusterCentroidX", d3.forceX(d => {
+                    const c = clusterData.find(cd => cd.id === d.clusterId);
+                    return c ? c.initialCX : containerWidth / 2;
+                }).strength(pullToClusterInitialCentroidStrength))
+                .force("clusterCentroidY", d3.forceY(d => {
+                    const c = clusterData.find(cd => cd.id === d.clusterId);
+                    return c ? c.initialCY : containerHeight / 2;
+                }).strength(pullToClusterInitialCentroidStrength))
+                .force("clusterRepel", customClusterRepelForce(clusterData)); 
 
-            svg.select("defs").remove();
+            svg.select("defs").remove(); 
 
-            clusterCirclesGroup = innerG.append("g").attr("class", "cluster-circles")
-                .selectAll("circle").data(clusterData, d => d.id).join("circle")
-                .style("fill", (d, i) => d3.schemeCategory10[i % 10]).style("fill-opacity", clusterCircleFillOpacity)
-                .style("stroke", clusterCircleStrokeColor).style("stroke-width", 1.5)
-                .style("pointer-events", "none"); // Make circles non-interactive for clicks/drags
+            clusterVisualsGroup = innerG.append("g").attr("class", "cluster-visuals")
+                .selectAll("g.cluster-group")
+                .data(clusterData, d => d.id)
+                .join("g")
+                .attr("class", "cluster-group");
+
+            clusterVisualsGroup.append("circle")
+                .attr("class", "cluster-circle")
+                .style("fill", (d, i) => d3.schemeCategory10[i % 10]) 
+                .style("fill-opacity", clusterCircleFillOpacity)
+                .style("stroke", clusterCircleStrokeColor)
+                .style("stroke-width", 1.5)
+                .style("pointer-events", "none");
+
+            clusterVisualsGroup.append("text")
+                .attr("class", "cluster-label")
+                .attr("text-anchor", "middle")
+                .style("font-size", clusterLabelFontSize)
+                .style("fill", clusterLabelColor)
+                .style("pointer-events", "none")
+                .text(d => d.id === '[root]' ? 'Project Root' : d.id);
+
 
             linkPaths = innerG.append("g").attr("class", "links")
                 .selectAll("path.link-path").data(currentLinks, d => `${d.source.id || d.source}-${d.target.id || d.target}-${d.bidirectional}`)
                 .join("path").attr("class", "link-path")
-                .style("stroke", d => getBaseLinkColor(d, null, false)) // Uses randomized hue
+                .style("stroke", d => getBaseLinkColor(d, null, false))
                 .style("stroke-opacity", d => linkOpacityScale(d.interactionCount))
                 .attr("stroke-width", d => linkWidthScale(d.interactionCount))
                 .attr("fill", "none");
@@ -202,12 +251,9 @@ document.addEventListener('DOMContentLoaded', function () {
             nodeGroups.append("text")
                 .attr("text-anchor", "middle").attr("dy", "0.35em")
                 .style("font-size", "8px").style("fill", "#000")
-                .style("user-select", "none") // Prevent text selection
-                .style("-webkit-user-select", "none") // For Safari
-                .style("-moz-user-select", "none") // For Firefox
-                .style("-ms-user-select", "none") // For IE/Edge
+                .style("user-select", "none").style("-webkit-user-select", "none")
+                .style("-moz-user-select", "none").style("-ms-user-select", "none")
                 .text(d => d.label || d.id);
-
 
             let selectedNodeId = null;
             nodeGroups.on("click", function(event, clickedNodeData) {
@@ -223,35 +269,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 linkPaths.each(function(linkData) {
                     const isConnectedToSelected = selectedNodeId && (linkData.source.id === selectedNodeId || linkData.target.id === selectedNodeId);
                     const baseWidth = linkWidthScale(linkData.interactionCount);
-                    let finalColor;
-                    let finalOpacity;
-                    let finalWidth = baseWidth;
-
+                    let finalColor, finalOpacity, finalWidth = baseWidth;
                     finalOpacity = linkOpacityScale(linkData.interactionCount);
 
                     if (isConnectedToSelected) {
-                        finalColor = getBaseLinkColor(linkData, selectedNodeId, true); // Vibrant, with randomized hue
+                        finalColor = getBaseLinkColor(linkData, selectedNodeId, true);
                         finalWidth = baseWidth + selectedLinkExtraWidth;
                         d3.select(this).raise();
                     } else {
-                        const baseSubtleColorWithRandomHue = getBaseLinkColor(linkData, null, false); // Subtle, with randomized hue
+                        const baseSubtleColorWithRandomHue = getBaseLinkColor(linkData, null, false);
                         let hslColor = d3.hsl(baseSubtleColorWithRandomHue);
-                        if (hslColor && typeof hslColor.s === 'number') { // Check if saturation is valid
-                           hslColor.s *= fadedLinkSaturationFactor; // Desaturate
-                           finalColor = hslColor.toString();
-                        } else {
-                           finalColor = baseSubtleColorWithRandomHue; // Fallback if HSL conversion failed
-                        }
-
-                        if (selectedNodeId) {
-                           finalOpacity = Math.min(finalOpacity, maxOpacityForFadedNonConnected);
-                        }
+                        if (hslColor && typeof hslColor.s === 'number') {
+                           hslColor.s *= fadedLinkSaturationFactor; finalColor = hslColor.toString();
+                        } else { finalColor = baseSubtleColorWithRandomHue; }
+                        if (selectedNodeId) { finalOpacity = Math.min(finalOpacity, maxOpacityForFadedNonConnected); }
                     }
-
-                    d3.select(this)
-                        .style("stroke", finalColor)
-                        .style("stroke-opacity", finalOpacity)
-                        .attr("stroke-width", finalWidth);
+                    d3.select(this).style("stroke", finalColor).style("stroke-opacity", finalOpacity).attr("stroke-width", finalWidth);
                 });
 
                 if (selectedNodeId) {
@@ -263,8 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         window.handleGraphNodeSelection(nodeOriginalData, fullLoadedGraphData);
                     }
                 } else {
-                    linkPaths
-                        .style("stroke", d => getBaseLinkColor(d, null, false)) // Reset to subtle, with randomized hue
+                    linkPaths.style("stroke", d => getBaseLinkColor(d, null, false))
                         .style("stroke-opacity", d => linkOpacityScale(d.interactionCount))
                         .attr("stroke-width", d => linkWidthScale(d.interactionCount));
                     if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
@@ -274,8 +306,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (selectedNodeId) {
                     innerG.select(`#node-${CSS.escape(selectedNodeId)} rect`)
                         .style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
-                    linkPaths
-                        .style("stroke", d => getBaseLinkColor(d, null, false)) // Reset to subtle, with randomized hue
+                    linkPaths.style("stroke", d => getBaseLinkColor(d, null, false))
                         .style("stroke-opacity", d => linkOpacityScale(d.interactionCount))
                         .attr("stroke-width", d => linkWidthScale(d.interactionCount));
                     selectedNodeId = null;
@@ -286,24 +317,89 @@ document.addEventListener('DOMContentLoaded', function () {
             simulation.on("tick", () => {
                 clusterData.forEach(cData => {
                     const nodesInThisCluster = cData.nodesInCluster;
-                    if (nodesInThisCluster.length === 0) { cData.calculatedCX = initialXOffset + (cData.id * clusterColumnWidth); cData.calculatedCY = containerHeight / 2; cData.calculatedR = visualNodeWidth * 0.5 + clusterPadding; return; }
-                    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity; nodesInThisCluster.forEach(n => { minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x); minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y); });
-                    cData.calculatedCX = (minX + maxX) / 2; cData.calculatedCY = (minY + maxY) / 2;
-                    let maxNodeDistFromCentroidSq = 0; nodesInThisCluster.forEach(n => { const distSq = (n.x - cData.calculatedCX)**2 + (n.y - cData.calculatedCY)**2; maxNodeDistFromCentroidSq = Math.max(maxNodeDistFromCentroidSq, distSq); });
-                    const furthestNodeRadius = Math.sqrt(maxNodeDistFromCentroidSq); const nodeVisualDiagonal = Math.sqrt(visualNodeWidth**2 + visualNodeHeight**2) / 2;
-                    cData.calculatedR = furthestNodeRadius + nodeVisualDiagonal + clusterPadding; cData.calculatedR = Math.max(cData.calculatedR, visualNodeWidth * 0.6 + clusterPadding);
+                    if (nodesInThisCluster.length === 0) {
+                        cData.currentCX = cData.initialCX; 
+                        cData.currentCY = cData.initialCY;
+                        cData.currentR = visualNodeWidth * 0.5 + clusterPadding / 2; 
+                        return;
+                    }
+                    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                    nodesInThisCluster.forEach(n => {
+                        minX = Math.min(minX, n.x - visualNodeWidth / 2); 
+                        maxX = Math.max(maxX, n.x + visualNodeWidth / 2);
+                        minY = Math.min(minY, n.y - visualNodeHeight / 2);
+                        maxY = Math.max(maxY, n.y + visualNodeHeight / 2);
+                    });
+                    cData.currentCX = (minX + maxX) / 2;
+                    cData.currentCY = (minY + maxY) / 2;
+                    const spanX = maxX - minX;
+                    const spanY = maxY - minY;
+                    cData.currentR = Math.max(spanX, spanY) / 2 + clusterPadding;
+                    cData.currentR = Math.max(cData.currentR, visualNodeWidth * 0.6 + clusterPadding); 
                 });
-                clusterCirclesGroup.attr("cx", d => d.calculatedCX).attr("cy", d => d.calculatedCY).attr("r", d => d.calculatedR > 0 ? d.calculatedR : 0);
+
+                clusterVisualsGroup.select("circle.cluster-circle")
+                    .attr("cx", d => d.currentCX)
+                    .attr("cy", d => d.currentCY)
+                    .attr("r", d => d.currentR > 0 ? d.currentR : 0);
+                
+                clusterVisualsGroup.select("text.cluster-label")
+                    .attr("x", d => d.currentCX)
+                    .attr("y", d => d.currentCY - d.currentR - 5); 
+
+
                 linkPaths.attr("d", d => calculateSCurvePathWithDynamicAnchors(d, visualNodeWidth, visualNodeHeight));
                 nodeGroups.attr("transform", d => `translate(${d.x}, ${d.y})`);
             });
-            console.log("D3 graph with refined link opacity and randomized link hue initialized.");
-        }).catch(error => { console.error("Error loading or processing graph data:", error); });
+            graphInitialized = true;
+            console.log("D3 graph initialized/updated.");
+
+        }).catch(error => { 
+            console.error("Error loading or processing graph data:", error);
+            graphInitialized = false;
+        });
     }
 
-    function customClusterRepelForce() {
-        let allNodes; function force(alpha) { for (let iter = 0; iter < clusterRepulsionIterations; iter++) { for (let i = 0; i < clusterData.length; i++) { for (let j = i + 1; j < clusterData.length; j++) { const c1 = clusterData[i]; const c2 = clusterData[j]; if (c1.nodesInCluster.length === 0 || c2.nodesInCluster.length === 0 || c1.calculatedR <= 0 || c2.calculatedR <= 0) continue; const dx = c2.calculatedCX - c1.calculatedCX; const dy = c2.calculatedCY - c1.calculatedCY; let distance = Math.sqrt(dx * dx + dy * dy); const minDistance = c1.calculatedR + c2.calculatedR + minClusterGap; if (distance < minDistance && distance > 1e-6) { const overlap = minDistance - distance; const unitDx = dx / distance; const unitDy = dy / distance; const push = overlap * 0.5 * clusterRepulsionStrength * alpha; if (c1.nodesInCluster.length > 0) { c1.nodesInCluster.forEach(node => { node.x -= unitDx * push / Math.sqrt(c1.nodesInCluster.length); node.y -= unitDy * push / Math.sqrt(c1.nodesInCluster.length); }); } if (c2.nodesInCluster.length > 0) { c2.nodesInCluster.forEach(node => { node.x += unitDx * push / Math.sqrt(c2.nodesInCluster.length); node.y += unitDy * push / Math.sqrt(c2.nodesInCluster.length); }); } } } } } } force.initialize = function(nodesPassedByD3) { allNodes = nodesPassedByD3; }; return force;
+    function customClusterRepelForce(clusterDataRef) { 
+        function force(alpha) {
+            for (let iter = 0; iter < clusterRepulsionIterations; iter++) {
+                for (let i = 0; i < clusterDataRef.length; i++) {
+                    for (let j = i + 1; j < clusterDataRef.length; j++) {
+                        const c1 = clusterDataRef[i];
+                        const c2 = clusterDataRef[j];
+
+                        if (c1.nodesInCluster.length === 0 || c2.nodesInCluster.length === 0 || !c1.currentR || !c2.currentR) continue;
+
+                        const dx = c2.currentCX - c1.currentCX;
+                        const dy = c2.currentCY - c1.currentCY;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+                        const minDistance = c1.currentR + c2.currentR + minClusterGap;
+
+                        if (distance < minDistance && distance > 1e-6) { 
+                            const overlap = minDistance - distance;
+                            const unitDx = dx / distance;
+                            const unitDy = dy / distance;
+                            const push = overlap * 0.5 * clusterRepulsionStrength * alpha;
+
+                            const numNodesC1 = c1.nodesInCluster.length || 1;
+                            c1.nodesInCluster.forEach(node => {
+                                node.x -= unitDx * push / Math.sqrt(numNodesC1);
+                                node.y -= unitDy * push / Math.sqrt(numNodesC1);
+                            });
+                            const numNodesC2 = c2.nodesInCluster.length || 1;
+                            c2.nodesInCluster.forEach(node => {
+                                node.x += unitDx * push / Math.sqrt(numNodesC2);
+                                node.y += unitDy * push / Math.sqrt(numNodesC2);
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        force.initialize = function(nodesPassedByD3) { };
+        return force;
     }
+
     function calculateSCurvePathWithDynamicAnchors(linkData, vNodeWidth, vNodeHeight) {
         const sourceNode = linkData.source; const targetNode = linkData.target;
         if (!sourceNode || !targetNode || typeof sourceNode.x !== 'number' || typeof targetNode.x !== 'number') return "";
@@ -326,13 +422,39 @@ document.addEventListener('DOMContentLoaded', function () {
         return `M${sx},${sy}C${cp1x},${cp1y} ${cp2x},${cp2y} ${tx},${ty}`;
     }
     function nodeDragBehavior(simulationInstance) {
-        function dragstarted(event, d) { event.sourceEvent.stopPropagation(); if (!event.active) simulationInstance.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
+        function dragstarted(event, d) { 
+            if (!event.active) simulationInstance.alphaTarget(0.3).restart(); 
+            d.fx = d.x; d.fy = d.y; 
+            event.sourceEvent.stopPropagation(); 
+        }
         function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
-        function dragended(event, d) { if (!event.active) simulationInstance.alphaTarget(0); d.fx = null; d.fy = null; }
+        function dragended(event, d) { if (!event.active) simulationInstance.alphaTarget(0); } 
         return d3.drag().filter(event => event.button === 0).on("start", dragstarted).on("drag", dragged).on("end", dragended);
     }
 
-    initializeOrUpdateGraph();
+    // Initial call on DOMContentLoaded
+    initializeOrUpdateGraph(); 
+    
     let resizeTimer;
-    window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { initializeOrUpdateGraph(); }, 250); });
+    window.addEventListener('resize', () => { 
+        clearTimeout(resizeTimer); 
+        resizeTimer = setTimeout(() => { 
+            console.log("Window resize event triggered graph update.");
+            initializeOrUpdateGraph(); 
+        }, 250); 
+    });
+
+    let visibilityChangeTimeout;
+    document.addEventListener('visibilitychange', () => {
+        clearTimeout(visibilityChangeTimeout);
+        if (document.visibilityState === 'visible') {
+            console.log("Tab became visible, scheduling graph update.");
+            requestAnimationFrame(() => {
+                visibilityChangeTimeout = setTimeout(() => {
+                    console.log("Attempting to update graph on visibility change.");
+                    initializeOrUpdateGraph(); 
+                }, 10); 
+            });
+        }
+    });
 });

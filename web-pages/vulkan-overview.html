@@ -4,38 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vulkan Overview - Engine Docs</title>
-    <!-- Shared Styles -->
     <link rel="stylesheet" href="shared-styles.css">
-    <!-- highlight.js Theme -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-    <!-- Page-specific Styles (Tree View) -->
     <style>
-        /* Styles specific to the tree view layout */
-        .overview-container { /* Renamed from .container */
+        .overview-container {
             display: flex;
-            flex: 1; /* Fill main-content area */
-            overflow: hidden; /* Contain children */
+            flex: 1; 
+            overflow: hidden; 
             width: 100%;
-            /* Removed max-width, margin, shadow, border-radius - handled by main-content or not needed */
             flex-direction: row;
-            background-color: #ffffff; /* Background for the split panel */
+            background-color: #ffffff; 
             border: 1px solid #e0e0e0;
             border-radius: 8px;
         }
 
         .tree-column {
-            flex: 1;
-            overflow-y: auto; /* Scroll tree column */
-            border-right: 1px solid #e0e0e0;
+            flex: 0 0 30%; 
+            min-width: 200px; 
+            max-width: 70%;   
+            overflow-y: auto; 
+            /* border-right: 1px solid #e0e0e0; REMOVED - Divider handles this */
             padding: 0;
-            position: relative; /* For sticky header and branch bar positioning */
-            /* Removed background, border-radius - handled by overview-container */
-            /* Removed height: 100% - flexbox handles height */
+            position: relative; 
+            /* cursor: col-resize; REMOVED - Divider handles this */
+        }
+
+        .column-divider {
+            flex: 0 0 5px; /* Width of the divider */
+            background-color: #e0e0e0; /* Visible color for the divider */
+            cursor: col-resize;
+            position: relative;
+            z-index: 5; /* Ensure it's clickable */
+        }
+        .column-divider:hover {
+            background-color: #c0c0c0; /* Darker on hover */
+        }
+
+
+        .info-column {
+            flex: 1 1 auto; 
+            min-width: 250px; 
+            overflow-y: hidden; 
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
 
         .combined-sticky-header {
             position: sticky;
-            top: 0; /* Stick to the top of the .tree-column scroll container */
+            top: 0; 
             z-index: 10;
             background-color: #ffffff;
             width: 100%;
@@ -43,11 +61,11 @@
 
         .branch-indicator-bar-area {
             position: absolute;
-            top: 20px; /* Initial offset from top of tree content */
+            top: 20px; 
             left: 0;
             width: 8px;
             flex-shrink: 0;
-            background-color: #ffffff; /* Match tree background */
+            background-color: #ffffff; 
             z-index: 9;
         }
 
@@ -81,23 +99,12 @@
         .path-separator { margin: 0 4px; color: #637C8A; }
 
         .tree-content-wrapper {
-            padding: 20px 20px 20px 8px; /* Top, Right, Bottom, Left (space for bar) */
+            padding: 20px 20px 20px 8px; 
             position: relative;
         }
 
         .tree-content-wrapper > ul { list-style: none; padding-left: 10px; margin: 0; }
         .tree-content-wrapper ul ul { padding-left: 20px; }
-
-        .info-column {
-            flex: 1;
-            overflow-y: hidden; /* Hide direct scrollbar, manage scrolling within #info-content */
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            /* Removed background, border-radius - handled by overview-container */
-            /* Removed height: 100% - flexbox handles height */
-        }
 
         .info-tags-bar {
             display: flex;
@@ -134,7 +141,7 @@
         .info-link .external-link-icon { margin-left: 5px; font-size: 0.9em; }
 
         #info-content {
-            flex: 1; /* Grow to fill info-column */
+            flex: 1; 
             background-color: #fdfdfd;
             border: 1px solid #dddddd;
             color: #333;
@@ -144,9 +151,8 @@
             border-radius: 4px;
             line-height: 1.6;
             min-height: 100px;
-            overflow-y: auto; /* Enable scrolling *within* the info content div */
+            overflow-y: auto; 
         }
-        /* Markdown/Code styling */
         #info-content pre { background-color: #282c34; color: #abb2bf; padding: 1em; border-radius: 5px; overflow-x: auto; }
         #info-content code { font-family: 'Consolas', 'Courier New', Courier, monospace; font-size: 0.9em; }
         #info-content pre code { background: none; padding: 0; font-size: 1em; }
@@ -160,7 +166,6 @@
         #info-content a { color: #337ab7; text-decoration: none; }
         #info-content a:hover { text-decoration: underline; }
 
-        /* Tree Item Styling */
         .tree-content-wrapper li { position: relative; padding: 0; cursor: default; user-select: none; margin-bottom: 1px; box-sizing: border-box; display: flex; flex-direction: column; }
         .tree-item-row { display: flex; align-items: center; padding: 4px 0; position: relative; z-index: 2; }
         .tree-content-wrapper ul ul > li > .tree-item-row::before { content: ""; position: absolute; left: -12px; top: 0; bottom: 0; width: 1px; background-color: #cccccc; }
@@ -179,62 +184,64 @@
         .tree-content-wrapper li.selected-item-dark-li > .tree-item-row > .tree-item-content { color: #ffffff !important; font-weight: 500; }
         .tree-content-wrapper li.selected-item-dark-li > .tree-item-row:hover { background-color: #526570 !important; }
 
-        /* Responsive adjustments if needed */
         @media (max-width: 768px) {
             .overview-container {
                 flex-direction: column;
-                height: auto; /* Allow container to grow vertically */
-                max-height: calc(100vh - 70px); /* Example: Limit height below header */
+                height: auto; 
+                max-height: calc(100vh - 70px); 
             }
             .tree-column {
                 border-right: none;
                 border-bottom: 1px solid #e0e0e0;
-                max-height: 45vh; /* Limit height on small screens */
-                height: auto; /* Let content determine height up to max */
-                flex: none; /* Override flex: 1 */
+                max-height: 45vh; 
+                height: auto; 
+                flex-basis: auto !important; 
+                flex-grow: 0; flex-shrink:0; 
+                width: 100%; 
+                /* cursor: default; REMOVED - Divider is hidden */
+            }
+            .column-divider {
+                display: none; /* Hide divider in stacked mobile view */
             }
             .info-column {
-                max-height: 45vh; /* Limit height */
+                max-height: 45vh; 
                 height: auto;
-                flex: none;
+                flex-basis: auto !important;
+                flex-grow: 1; 
+                width: 100%;
             }
             .main-content {
-                 padding: 10px; /* Reduce padding on smaller screens */
+                 padding: 10px; 
             }
         }
     </style>
 </head>
 <body>
-    <!-- Main Header -->
     <header class="main-header">
         <a href="../index.html" class="site-title">Engine Docs</a>
         <nav>
             <ul>
                 <li><a href="vulkan-overview.html" class="active">Vulkan Overview</a></li>
                 <li><a href="vulkan-engine.html">Vulkan Engine</a></li>
-                <!-- Add more pages here -->
             </ul>
         </nav>
     </header>
 
-    <!-- Main Content Area for this page -->
     <main class="main-content">
         <div class="overview-container">
             <div class="tree-column">
                 <div class="combined-sticky-header">
                     <div class="sticky-headers-container">
-                        <!-- Single sticky header item (path text) will be injected here -->
                     </div>
                 </div>
                 <div class="tree-content-wrapper">
                     <div class="branch-indicator-bar-area">
-                        <!-- Bar segments will be injected here by JavaScript -->
                     </div>
                     <ul>
-                        <!-- Tree will be dynamically inserted here -->
                     </ul>
                 </div>
             </div>
+            <div class="column-divider"></div>
             <div class="info-column">
                 <div class="info-tags-bar">
                     <span class="tag-badge tag-required">Required</span>
@@ -257,12 +264,27 @@
         </div>
     </main>
 
-    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>hljs.highlightAll();</script>
 
-    <!-- Page Specific Script (Tree View Logic) - Note the path change -->
     <script src="../scripts/lists/tree.js"></script>
+    <script src="../scripts/ui/column-resizer.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const treeColumn = document.querySelector('.overview-container .tree-column');
+            const divider = document.querySelector('.overview-container .column-divider');
+            const overviewContainer = document.querySelector('.overview-container');
+            if (treeColumn && divider && overviewContainer) {
+                initColumnResizer(
+                    treeColumn,
+                    divider,
+                    overviewContainer,
+                    'whipDocsOverview_leftColumnWidth',
+                    true // Uses flex-basis
+                );
+            }
+        });
+    </script>
 </body>
 </html>
