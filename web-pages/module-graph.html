@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Module Graph - Engine Docs</title>
     <link rel="stylesheet" href="shared-styles.css">
+    <link rel="stylesheet" href="components/commit-banner.css">
+    <link rel="stylesheet" href="components/code-viewer.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <style>
-        /* ... (all your existing CSS from the previous correct version) ... */
+        /* ... your existing CSS ... */
         html, body {
             height: 100%;
             margin: 0;
@@ -276,8 +279,8 @@
             .left-column {
                 width: 100% !important; 
                 max-width: 100%;
-                height: 40vh; 
-                min-height: 200px;
+                height: 35vh; 
+                min-height: 180px; 
                 border-right: none;
                 border-bottom: 1px solid #d1d5db;
             }
@@ -285,8 +288,15 @@
                 display: none; 
             }
             .right-column {
-                height: 60vh; 
-                min-height: 300px;
+                height: 55vh; 
+                min-height: 280px; 
+            }
+            .main-content { 
+                 max-height: calc(100vh - 50px - 40px); 
+                 overflow-y: auto;
+            }
+            body { 
+                overflow-y: auto;
             }
         }
     </style>
@@ -301,6 +311,10 @@
             </ul>
         </nav>
     </header>
+
+    <div id="dynamic-commit-banner-placeholder" class="commit-banner-placeholder">
+        <!-- Banner content will be loaded here by JS -->
+    </div>
 
     <main class="main-content">
         <div class="two-column-layout">
@@ -338,12 +352,36 @@
         </div>
     </main>
 
+    <!-- External Libraries First -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    
-    <!-- IMPORTANT: Resizer script and its init first -->
+
+    <!-- Configure highlight.js -->
+    <script>
+        // It's good practice to ensure hljs is available before configuring
+        if (window.hljs) {
+            window.hljs.configure({ ignoreUnescapedHTML: true });
+            console.log("highlight.js configured.");
+        } else {
+            console.error("highlight.js (hljs) not found on window for configuration!");
+        }
+    </script>
+
+    <!-- UI Utilities -->
     <script src="../scripts/ui/column-resizer.js"></script>
+    <script src="../scripts/ui/commit-banner.js"></script>
+    
+    <!-- Core page logic scripts -->
+    <script src="../scripts/graphs/module_dependency_graph.js"></script>
+    <script src="../scripts/lists/graph_interaction_tree.js"></script>
+
+    <!-- Code Viewer - load this after graph scripts as it depends on global var from module_dependency_graph.js -->
+    <script src="../scripts/ui/code-viewer.js"></script>
+
+    <!-- Inline script for column resizer initialization (depends on DOM ready) -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("module-graph.html: DOMContentLoaded for resizer init.");
             const leftColumn = document.querySelector('.two-column-layout .left-column');
             const divider = document.querySelector('.two-column-layout .column-divider');
             const twoColumnLayout = document.querySelector('.two-column-layout');
@@ -353,26 +391,19 @@
                     divider,
                     twoColumnLayout,
                     'whipDocsEngine_leftColumnWidth',
-                    false, // Uses width, not flex-basis
+                    false, 
                     () => { 
-                        // This callback is for when the user *manually* drags the divider
                         window.dispatchEvent(new Event('resize')); 
                     }
                 );
-                // After the resizer has initialized and potentially applied localStorage width,
-                // explicitly tell the graph to update.
-                // A small delay ensures the browser has reflowed from the resizer's change.
-                setTimeout(() => {
-                    console.log("Triggering graph update after resizer init.");
-                    window.dispatchEvent(new Event('resize'));
-                }, 0); // 0ms timeout, effectively "next tick"
+                // The graph's own resize listener should handle updates after resizer init
+                // setTimeout(() => {
+                //     window.dispatchEvent(new Event('resize'));
+                // }, 0);
+            } else {
+                console.warn("Column resizer elements not all found for module-graph.html.");
             }
         });
     </script>
-
-    <!-- Graph and Tree scripts after resizer -->
-    <script src="../scripts/graphs/module_dependency_graph.js"></script>
-    <script src="../scripts/lists/graph_interaction_tree.js"></script>
-
 </body>
 </html>

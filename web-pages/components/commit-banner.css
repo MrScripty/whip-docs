@@ -1,0 +1,87 @@
+/* web-pages/components/commit-banner.css */
+.commit-banner-placeholder { /* Style for the placeholder div itself */
+    width: 100%;
+    background-color: #3a4750; /* Dark background for the banner area */
+    color: #eaeaea;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow-x: hidden; /* Changed from auto to hidden for drag scroll */
+    white-space: nowrap; /* Keep items in a single line */
+    border-bottom: 1px solid #2a3740;
+    height: 40px; /* Reduced height */
+    display: flex;
+    align-items: center;
+    cursor: grab; /* Indicate draggable */
+    user-select: none; /* Prevent text selection during drag attempts */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.commit-banner { /* The actual banner content container loaded from commit-banner.html */
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 10px; /* Adjusted padding */
+    gap: 10px; /* Adjusted space */
+    height: 38px; /* Reduced height, fits within placeholder */
+    width: 100%;
+}
+
+.commit-banner ul#commit-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 10px; /* Space between commit items */
+    align-items: stretch;
+    height: 100%;
+}
+
+.commit-banner .commit-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: #4f5b66;
+    padding: 4px 8px; /* Adjusted padding */
+    border-radius: 3px; /* Slightly smaller radius */
+    border: 1px solid #5a6770;
+    font-size: 0.75em; /* Slightly smaller font */
+    min-width: 140px;
+    max-width: 250px;
+    height: 100%;
+    box-sizing: border-box;
+    transition: background-color 0.2s ease; /* Removed transform for simplicity with drag */
+    /* cursor: pointer; /* Handled by JS for opening link */
+}
+.commit-banner .commit-item:hover {
+    background-color: #5a6770;
+}
+
+/* No direct <a> tag anymore, item itself is clickable via JS */
+
+.commit-banner .commit-message {
+    font-weight: 500;
+    color: #c0c5ce;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 1px; /* Adjusted margin */
+}
+
+.commit-banner .commit-sha { /* This class might be unused now if SHA is only in tooltip */
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #88cdf5;
+}
+
+/* .commit-banner .commit-author removed */
+
+.commit-banner .commit-date {
+    font-size: 0.85em;
+    color: #a0a5ae;
+    margin-top: 2px; /* Adjusted margin */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

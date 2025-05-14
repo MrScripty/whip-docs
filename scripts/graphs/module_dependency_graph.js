@@ -1,3 +1,6 @@
+// scripts/graphs/module_dependency_graph.js
+window.currentlySelectedGraphNodeData = null; // Used by code-viewer.js
+
 document.addEventListener('DOMContentLoaded', function () {
     const graphContainerId = 'module-graph-area';
     const graphContainerElement = document.getElementById(graphContainerId);
@@ -19,9 +22,8 @@ document.addEventListener('DOMContentLoaded', function () {
         return sanitized;
     }
 
-    // const baseNodeAspectRatio = 18 / 70; // No longer strictly needed for circles, but visualHeight is still primary
-    const minNodePrimaryDimension = 50; // This will now be min diameter
-    const maxNodePrimaryDimension = 200; // This will now be max diameter
+    const minNodePrimaryDimension = 50; 
+    const maxNodePrimaryDimension = 200; 
 
     const sCurveCurvinessFactor = 0.3;
     const clusterColumnWidth = 350; 
@@ -71,16 +73,17 @@ document.addEventListener('DOMContentLoaded', function () {
     let svg, innerG, simulation, linkPaths, nodeGroups, clusterVisualsGroup, currentZoomTransform;
     let fullLoadedGraphData = null; let currentNodes = []; let currentLinks = [];
     let clusterData = []; 
-    let linkWidthScale, linkOpacityScale, nodePrimaryDimensionScale; // nodePrimaryDimensionScale now scales diameter
+    let linkWidthScale, linkOpacityScale, nodePrimaryDimensionScale;
     let graphInitialized = false;
+    let selectedNodeId = null; // Keep track of the selected node ID at this scope
 
-    function getBaseLinkColor(linkData, selectedNodeId, isSelectedContext) {
+    function getBaseLinkColor(linkData, currentSelectedNodeId, isSelectedContext) {
         let baseColorString;
-        if (isSelectedContext && selectedNodeId) {
+        if (isSelectedContext && currentSelectedNodeId) {
             const sourceId = linkData.source.id; const targetId = linkData.target.id;
             if (linkData.bidirectional) { baseColorString = vibrantBidirectionalLinkColor; }
-            else if (sourceId === selectedNodeId) { baseColorString = vibrantOutgoingLinkColor; }
-            else if (targetId === selectedNodeId) { baseColorString = vibrantIncomingLinkColor; }
+            else if (sourceId === currentSelectedNodeId) { baseColorString = vibrantOutgoingLinkColor; }
+            else if (targetId === currentSelectedNodeId) { baseColorString = vibrantIncomingLinkColor; }
         }
         if (!baseColorString) {
             baseColorString = linkData.bidirectional ? subtleBidirectionalLinkColor : subtleOutgoingLinkColor;
@@ -152,7 +155,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     else if (minLines === maxLines) maxLines = minLines + 1; 
                 } else { minLines = 0; maxLines = 100; }
             }
-            // nodePrimaryDimensionScale now scales the diameter of the circle
             nodePrimaryDimensionScale = d3.scaleSqrt().domain([minLines, maxLines]).range([minNodePrimaryDimension, maxNodePrimaryDimension]).clamp(true);
             
             currentNodes = filteredNodesInput.map((n_new) => {
@@ -164,8 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     x: existing_node ? existing_node.x : containerWidth / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
                     y: existing_node ? existing_node.y : containerHeight / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
                     fx: existing_node ? existing_node.fx : null, fy: existing_node ? existing_node.fy : null,
-                    radius: diameter / 2, // Store radius
-                    // visualHeight and visualWidth might still be useful for other calculations or if you switch back
+                    radius: diameter / 2, 
                     visualHeight: diameter, 
                     visualWidth: diameter, 
                 };
@@ -201,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .force("link", d3.forceLink(currentLinks).id(d => d.id).distance(linkDistance)
                     .strength(link => (link.source.clusterId === link.target.clusterId) ? intraClusterLinkStrength : interClusterLinkStrength))
                 .force("charge", d3.forceManyBody().strength(chargeStrength))
-                .force("collision", d3.forceCollide().radius(d => d.radius + 3).strength(nodeCollisionStrength)) // Use d.radius for collision
+                .force("collision", d3.forceCollide().radius(d => d.radius + 3).strength(nodeCollisionStrength))
                 .force("clusterCentroidX", d3.forceX(d => { const c = clusterData.find(cd => cd.id === d.clusterId); return c ? c.initialCX : containerWidth / 2; }).strength(pullToClusterInitialCentroidStrength))
                 .force("clusterCentroidY", d3.forceY(d => { const c = clusterData.find(cd => cd.id === d.clusterId); return c ? c.initialCY : containerHeight / 2; }).strength(pullToClusterInitialCentroidStrength))
                 .force("clusterRepel", customClusterRepelForce(clusterData)); 
@@ -219,29 +220,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 .attr("id", d => `node-${sanitizeForDomId(d.id)}`) 
                 .call(nodeDragBehavior(simulation));
             
-            // --- CHANGE: Append circle instead of rect ---
             nodeGroups.append("circle")
                 .attr("r", d => d.radius)
-                .attr("cx", 0) // Center of the group
-                .attr("cy", 0) // Center of the group
+                .attr("cx", 0) 
+                .attr("cy", 0) 
                 .style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
             
             nodeGroups.append("text")
-                .attr("text-anchor", "middle").attr("dy", "0.35em") // dy might need adjustment if text looks off in circles
+                .attr("text-anchor", "middle").attr("dy", "0.35em") 
                 .style("font-size", "10px") 
                 .style("fill", "#000")
-                .style("pointer-events", "none") // Allow clicks to pass through to the circle
+                .style("pointer-events", "none") 
                 .style("user-select", "none").style("-webkit-user-select", "none")
                 .style("-moz-user-select", "none").style("-ms-user-select", "none")
                 .text(d => d.label || d.id);
 
-            let selectedNodeId = null;
+            // --- NODE CLICK HANDLER ---
             nodeGroups.on("click", function(event, clickedNodeData) {
                 event.stopPropagation();
-                selectedNodeId = (selectedNodeId === clickedNodeData.id) ? null : clickedNodeData.id;
+                // Toggle selection
+                if (selectedNodeId === clickedNodeData.id) {
+                    selectedNodeId = null; // Deselect
+                    window.currentlySelectedGraphNodeData = null;
+                    console.log("Node deselected. window.currentlySelectedGraphNodeData:", window.currentlySelectedGraphNodeData);
+                } else {
+                    selectedNodeId = clickedNodeData.id; // Select
+                    const selectedNodeObject = currentNodes.find(n => n.id === selectedNodeId);
+                    window.currentlySelectedGraphNodeData = selectedNodeObject || null;
+                    console.log("Node selected:", selectedNodeId, "window.currentlySelectedGraphNodeData:", window.currentlySelectedGraphNodeData);
+                }
 
                 // Reset visual state for all nodes (circles)
-                nodeGroups.selectAll("circle") // Select circle now
+                nodeGroups.selectAll("circle")
                     .style("fill", defaultNodeFillColor)
                     .style("stroke", defaultNodeStrokeColor)
                     .style("stroke-width", "1px");
@@ -249,11 +259,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 innerG.selectAll(".cluster-circle").style("fill-opacity", clusterCircleFillOpacity).style("stroke", clusterCircleStrokeColor).style("stroke-width", 1.5);
                 linkPaths.style("stroke", d => getBaseLinkColor(d, null, false)).style("stroke-opacity", d => linkOpacityScale(d.interactionCount)).attr("stroke-width", d => linkWidthScale(d.interactionCount));
 
-                if (selectedNodeId) {
-                    const selectedNodeObject = currentNodes.find(n => n.id === selectedNodeId);
-                    if (!selectedNodeObject) return;
+                if (selectedNodeId) { // If a node is now selected
+                    const selectedNodeObjectForStyling = currentNodes.find(n => n.id === selectedNodeId);
+                    if (!selectedNodeObjectForStyling) return; // Should not happen if selectedNodeId is set from clickedNodeData
 
-                    const circleSelector = `#node-${sanitizeForDomId(selectedNodeId)} circle`; // Selector for the circle
+                    const circleSelector = `#node-${sanitizeForDomId(selectedNodeId)} circle`;
                     const circleSelection = innerG.select(circleSelector); 
 
                     if (circleSelection.node()) { 
@@ -269,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     }
 
-                    const selectedNodeClusterId = selectedNodeObject.clusterId;
+                    const selectedNodeClusterId = selectedNodeObjectForStyling.clusterId;
                     innerG.selectAll(".cluster-circle").filter(cd => cd.id === selectedNodeClusterId).style("fill-opacity", selectedNodeClusterFillOpacity).style("stroke", selectedNodeClusterStrokeColor).style("stroke-width", selectedNodeClusterStrokeWidth).raise();
                     const connectedClusterCounts = new Map();
                     let totalConnections = 0;
@@ -314,22 +324,34 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                         d3.select(this).style("stroke", finalColor).style("stroke-opacity", finalOpacity).attr("stroke-width", finalWidth);
                     });
-                    if (window.handleGraphNodeSelection && fullLoadedGraphData) { window.handleGraphNodeSelection(selectedNodeObject, fullLoadedGraphData); }
-                } else { 
-                    if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
+                }
+                // Call handleGraphNodeSelection regardless of whether a node is selected or deselected
+                // It will receive null if deselected.
+                if (window.handleGraphNodeSelection && fullLoadedGraphData) { 
+                    window.handleGraphNodeSelection(window.currentlySelectedGraphNodeData, fullLoadedGraphData); 
                 }
             });
 
+            // --- SVG CLICK HANDLER (BACKGROUND DESELECT) ---
             svg.on("click", () => { 
-                if (selectedNodeId) {
-                    innerG.select(`#node-${sanitizeForDomId(selectedNodeId)} circle`) // Select circle
+                if (selectedNodeId) { // If a node was selected
+                    // Visually deselect the node in the graph
+                    innerG.select(`#node-${sanitizeForDomId(selectedNodeId)} circle`)
                         .style("fill", defaultNodeFillColor)
                         .style("stroke", defaultNodeStrokeColor)
                         .style("stroke-width", "1px");
+                    
+                    // Reset cluster and link styles
                     innerG.selectAll(".cluster-circle").style("fill-opacity", clusterCircleFillOpacity).style("stroke", clusterCircleStrokeColor).style("stroke-width", 1.5);
                     linkPaths.style("stroke", d => getBaseLinkColor(d, null, false)).style("stroke-opacity", d => linkOpacityScale(d.interactionCount)).attr("stroke-width", d => linkWidthScale(d.interactionCount));
+                    
                     selectedNodeId = null;
-                    if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
+                    window.currentlySelectedGraphNodeData = null;
+                    console.log("SVG background clicked. Node deselected. window.currentlySelectedGraphNodeData:", window.currentlySelectedGraphNodeData);
+
+                    if (window.handleGraphNodeSelection) {
+                        window.handleGraphNodeSelection(null, null); // Notify interaction tree
+                    }
                 }
             });
 
@@ -343,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         return;
                     }
                     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-                    nodesInThisCluster.forEach(n => { // Use radius for cluster boundary
+                    nodesInThisCluster.forEach(n => { 
                         minX = Math.min(minX, n.x - n.radius); 
                         maxX = Math.max(maxX, n.x + n.radius);
                         minY = Math.min(minY, n.y - n.radius);
@@ -393,7 +415,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function calculateSCurvePathWithDynamicAnchors(linkData) {
         const sourceNode = linkData.source; const targetNode = linkData.target;
-        // Ensure nodes and their positions/radii are defined
         if (!sourceNode || !targetNode || 
             typeof sourceNode.x !== 'number' || typeof sourceNode.y !== 'number' || typeof sourceNode.radius !== 'number' ||
             typeof targetNode.x !== 'number' || typeof targetNode.y !== 'number' || typeof targetNode.radius !== 'number') { 
@@ -410,11 +431,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         let sx, sy, tx, ty;
 
-        if (distTotal === 0) { // Nodes are at the same position, draw a tiny line or nothing
+        if (distTotal === 0) { 
             return `M${sourceNode.x},${sourceNode.y}L${targetNode.x},${targetNode.y}`;
         }
 
-        // Calculate anchor points on the circumference of the circles
         sx = sourceNode.x + (dxTotal / distTotal) * sourceNode.radius;
         sy = sourceNode.y + (dyTotal / distTotal) * sourceNode.radius;
         tx = targetNode.x - (dxTotal / distTotal) * targetNode.radius;
@@ -423,7 +443,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const dx = tx - sx; const dy = ty - sy;
         if (sCurveCurvinessFactor < -0.9 || (Math.abs(dx) < 1 && Math.abs(dy) < 1)) return `M${sx},${sy}L${tx},${ty}`;
         let cp1x, cp1y, cp2x, cp2y;
-        // S-curve logic can remain similar, using the adjusted sx, sy, tx, ty
         if (Math.abs(dx) >= Math.abs(dy) || Math.abs(dx) > 10) { let curve = dx * sCurveCurvinessFactor; cp1x = sx + curve; cp1y = sy; cp2x = tx - curve; cp2y = ty; }
         else if (Math.abs(dy) > 10) { let curve = dy * sCurveCurvinessFactor; cp1x = sx; cp1y = sy + curve; cp2x = tx; cp2y = ty - curve; }
         else { return `M${sx},${sy}L${tx},${ty}`; }

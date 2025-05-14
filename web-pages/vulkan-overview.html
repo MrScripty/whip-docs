@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vulkan Overview - Engine Docs</title>
     <link rel="stylesheet" href="shared-styles.css">
+    <link rel="stylesheet" href="components/commit-banner.css"> <!-- Added banner CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <style>
         .overview-container {
@@ -188,23 +189,22 @@
             .overview-container {
                 flex-direction: column;
                 height: auto; 
-                max-height: calc(100vh - 70px); 
+                max-height: calc(100vh - 50px - 40px); /* Adjusted for header and banner */
             }
             .tree-column {
                 border-right: none;
                 border-bottom: 1px solid #e0e0e0;
-                max-height: 45vh; 
+                max-height: 40vh; /* Adjusted */
                 height: auto; 
                 flex-basis: auto !important; 
                 flex-grow: 0; flex-shrink:0; 
                 width: 100%; 
-                /* cursor: default; REMOVED - Divider is hidden */
             }
             .column-divider {
-                display: none; /* Hide divider in stacked mobile view */
+                display: none; 
             }
             .info-column {
-                max-height: 45vh; 
+                max-height: 40vh; /* Adjusted */
                 height: auto;
                 flex-basis: auto !important;
                 flex-grow: 1; 
@@ -212,6 +212,9 @@
             }
             .main-content {
                  padding: 10px; 
+            }
+            body { /* Ensure body can scroll if content + banner exceeds viewport on small screens */
+                overflow-y: auto;
             }
         }
     </style>
@@ -226,6 +229,10 @@
             </ul>
         </nav>
     </header>
+
+    <div id="dynamic-commit-banner-placeholder" class="commit-banner-placeholder">
+        <!-- Banner content will be loaded here by JS -->
+    </div>
 
     <main class="main-content">
         <div class="overview-container">
@@ -270,6 +277,7 @@
 
     <script src="../scripts/lists/tree.js"></script>
     <script src="../scripts/ui/column-resizer.js"></script>
+    <script src="../scripts/ui/commit-banner.js"></script> <!-- Added banner script -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const treeColumn = document.querySelector('.overview-container .tree-column');
