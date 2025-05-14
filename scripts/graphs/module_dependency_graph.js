@@ -2,411 +2,337 @@ document.addEventListener('DOMContentLoaded', function () {
     const graphContainerId = 'module-graph-area';
     const graphContainerElement = document.getElementById(graphContainerId);
 
-    if (!graphContainerElement) {
-        console.error(`Graph container #${graphContainerId} not found.`);
-        return;
-    }
+    if (!graphContainerElement) { console.error(`Graph container #${graphContainerId} not found.`); return; }
 
     const graphDataPath = graphContainerElement.dataset.graphSrc;
     const ignoreFilesAttribute = graphContainerElement.dataset.ignoreFiles || "";
     const filesToIgnore = ignoreFilesAttribute.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
-    if (!graphDataPath) {
-        console.error("`data-graph-src` attribute not found on graph container.");
-        graphContainerElement.innerHTML = "<p>Error: Graph data source not specified.</p>";
-        return;
-    }
-    console.log("Graph data source:", graphDataPath);
-    console.log("Files to ignore:", filesToIgnore);
+    if (!graphDataPath) { console.error("`data-graph-src` attribute not found."); return; }
 
-    const nodeWidth = 150;
-    const nodeHeight = 30;
-    const nodeSelectedStrokeColor = "dodgerblue";
-    const nodeSelectedStrokeWidth = 3;
-    const defaultNodeStrokeColor = "#333";
+    // --- TUNABLE PARAMETERS & VISUALS ---
+    const visualNodeWidth = 70; const visualNodeHeight = 18;
+    const sCurveCurvinessFactor = 0.3;
+    const clusterColumnWidth = 300; const clusterPadding = 30; const minClusterGap = 20;
+    const clusterRepulsionStrength = 0.6; const clusterRepulsionIterations = 5;
+
+    const intraClusterLinkStrength = 0.7; const interClusterLinkStrength = 0.04;
+    const linkDistance = 90; const chargeStrength = -150;
+    const nodeCollisionRadius = visualNodeWidth * 0.45; const nodeCollisionStrength = 0.9;
+    const pullToClusterCentroidStrength = 0.2;
+
+    // --- Colors and Styles ---
+    const vibrantOutgoingLinkColor = "#28a745"; const vibrantIncomingLinkColor = "#dc3545";
+    const vibrantBidirectionalLinkColor = "#6f42c1";
+    const subtleOutgoingLinkColor = "#a4d4ae"; const subtleIncomingLinkColor = "#f4c2c7";
+    const subtleBidirectionalLinkColor = "#d3c5e8";
+
+    // Line widths
+    const minLinkStrokeWidth = 0.25; const avgLinkStrokeWidth = 2; const maxLinkStrokeWidth = 4;
+    const selectedLinkExtraWidth = 1.5;
+
+    // Opacity for links
+    const minLinkOpacity = 0.75;
+    const avgLinkOpacity = 0.85; // Default average opacity
+    const maxLinkOpacity = 1.0;  // Default max opacity (for most interactions)
+
+    // For non-connected edges when a node is selected
+    const fadedLinkSaturationFactor = 0.1;
+    const maxOpacityForFadedNonConnected = 0.35; // Non-connected links won't exceed this opacity
+
     const defaultNodeFillColor = "#f0f0f0";
-    const sCurveCurvinessFactor = 1; // Controls S-curve "bulge" (0 for straight, ~0.5 for noticeable S)
+    const defaultNodeStrokeColor = "#333"; const nodeSelectedStrokeColor = "dodgerblue";
+    const nodeSelectedStrokeWidth = 2; const clusterCircleStrokeColor = "#a0a0a0";
+    const clusterCircleFillOpacity = 0.05;
 
-    const outgoingLinkColor = "green";
-    const incomingLinkColor = "red";
-    const bidirectionalSelectedLinkColor = "purple";
-    const defaultLinkColor = "#999";
-    const nonConnectedLinkOpacity = 0.2;
+    // Hue randomization for links
+    const linkHueRandomizationPercent = 0.05; // e.g., 0.05 means +/- 5% of 360 degrees hue rotation
+
+    let svg, innerG, simulation, linkPaths, nodeGroups, clusterCirclesGroup, currentZoomTransform;
+    let fullLoadedGraphData = null; let currentNodes = []; let currentLinks = [];
+    let clusterData = []; let linkWidthScale, linkOpacityScale;
 
 
-    let svg, innerG, currentZoomTransform;
-    let fullLoadedGraphData = null;
-    let currentLayoutedNodes = [];
-    let currentLayoutedEdges = [];
+    function getBaseLinkColor(linkData, selectedNodeId, isSelectedContext) {
+        let baseColorString;
 
-    // Initialize ELK layout engine
-    const elk = new ELK({
-        // Default layout options for ELK. Can be overridden per element.
-        defaultLayoutOptions: {
-            'elk.algorithm': 'layered', // Use the layered (Sugiyama-style) algorithm
-            'elk.direction': 'RIGHT',   // Layout from Left to Right
-            'elk.spacing.nodeNode': '40.0', // Vertical spacing between nodes in same layer
-            'elk.layered.spacing.nodeNodeBetweenLayers': '70.0', // Horizontal spacing between layers
-            'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX', // Or 'BRANDES_KOEPF' or 'SIMPLE'
-            'elk.layered.cycleBreaking.strategy': 'GREEDY',
-            // 'elk.edgeRouting': 'ORTHOGONAL', // Try 'POLYLINE' or 'SPLINES' for smoother routes
-            'elk.padding': '[top=20,left=20,bottom=20,right=20]', // Padding around the whole graph
-            'elk.layered.spacing.edgeNode': '15.0', // Spacing between edge and node border
-            'elk.layered.mergeEdges': 'true', // If multiple edges between same nodes, merge them visually (can simplify)
+        if (isSelectedContext && selectedNodeId) {
+            const sourceId = linkData.source.id;
+            const targetId = linkData.target.id;
+
+            if (linkData.bidirectional) {
+                baseColorString = vibrantBidirectionalLinkColor;
+            } else if (sourceId === selectedNodeId) {
+                baseColorString = vibrantOutgoingLinkColor;
+            } else if (targetId === selectedNodeId) {
+                baseColorString = vibrantIncomingLinkColor;
+            }
+            // If isSelectedContext is true, one of the above conditions must be met,
+            // as isSelectedContext is true iff the link is connected to selectedNodeId.
+            // So, baseColorString should be assigned if isSelectedContext is true.
         }
-    });
+
+        if (!baseColorString) { // Not in selected context, or (improbably) no specific vibrant color matched
+            if (linkData.bidirectional) {
+                baseColorString = subtleBidirectionalLinkColor;
+            } else {
+                baseColorString = subtleOutgoingLinkColor;
+            }
+        }
+
+        // Apply hue randomization
+        if (linkData.hueShiftFactor !== undefined) {
+            let hslColor = d3.hsl(baseColorString);
+            if (hslColor && typeof hslColor.h === 'number' && !isNaN(hslColor.h)) {
+                hslColor.h = (hslColor.h + (linkData.hueShiftFactor * 360));
+                hslColor.h = (hslColor.h % 360 + 360) % 360; // Ensure hue is within [0, 360)
+                return hslColor.toString();
+            }
+        }
+        return baseColorString; // Return original if no shift or parsing failed
+    }
 
     function initializeOrUpdateGraph() {
         const containerWidth = graphContainerElement.clientWidth;
         const containerHeight = graphContainerElement.clientHeight;
-
         d3.select(graphContainerElement).select("svg").remove();
-
-        svg = d3.select(graphContainerElement)
-            .append("svg")
-            .attr("width", containerWidth)
-            .attr("height", containerHeight);
-
+        svg = d3.select(graphContainerElement).append("svg").attr("width", containerWidth).attr("height", containerHeight);
         innerG = svg.append("g");
-
-        const zoom = d3.zoom()
-            .scaleExtent([0.05, 4]) // Adjusted min scale for potentially larger ELK layouts
-            .filter(event => {
-                if (event.type === "wheel") return true;
-                if (event.type === "mousedown" && event.button === 0) {
-                    return event.target === svg.node() || event.target === innerG.node();
-                }
-                return false;
-            })
-            .on("zoom", (event) => {
-                currentZoomTransform = event.transform;
-                innerG.attr("transform", currentZoomTransform);
-            });
-        svg.call(zoom);
+        const zoomBehavior = d3.zoom().scaleExtent([0.05, 5])
+            .filter(event => (event.type === "wheel") || (event.type === "mousedown" && event.button === 0 && (event.target === svg.node() || event.target === innerG.node())))
+            .on("zoom", event => { currentZoomTransform = event.transform; innerG.attr("transform", currentZoomTransform); });
+        svg.call(zoomBehavior);
 
         d3.json(graphDataPath).then(function (loadedData) {
-            if (!loadedData || !loadedData.nodes || !loadedData.edges) {
-                // ... error handling ...
-                return;
-            }
             fullLoadedGraphData = loadedData;
+            let filteredNodesInput = fullLoadedGraphData.nodes.filter(n => !filesToIgnore.includes(n.label || n.id.split('/').pop()));
+            const filteredNodeIds = new Set(filteredNodesInput.map(n => n.id));
+            let rawFilteredEdges = fullLoadedGraphData.edges.filter(e => filteredNodeIds.has(e.source) && filteredNodeIds.has(e.target));
+            const linksForSimulation = []; const processedEdgePairs = new Set();
+            rawFilteredEdges.forEach(edge1 => {
+                const pairKey1 = `${edge1.source}|${edge1.target}`; const pairKey2 = `${edge1.target}|${edge1.source}`;
+                if (processedEdgePairs.has(pairKey1) || processedEdgePairs.has(pairKey2)) return;
+                const interactions1 = edge1.interactions || []; let currentInteractionCount = interactions1.length;
 
-            // --- Filtering (same as before) ---
-            let originalNodes = fullLoadedGraphData.nodes;
-            let originalEdges = fullLoadedGraphData.edges;
-            let filteredNodes = originalNodes.filter(node => {
-                const fileName = node.label || node.id.split('/').pop();
-                return !filesToIgnore.includes(fileName);
-            });
-            const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
-            let rawFilteredEdges = originalEdges.filter(edge =>
-                filteredNodeIds.has(edge.source) && filteredNodeIds.has(edge.target)
-            );
-            // Process for bidirectional (same as before)
-            const processedLinksInput = [];
-            const processedEdgePairs = new Set();
-            for (const edge1 of rawFilteredEdges) {
-                const pairKey1 = `${edge1.source}|${edge1.target}`;
-                const pairKey2 = `${edge1.target}|${edge1.source}`;
-                if (processedEdgePairs.has(pairKey1) || processedEdgePairs.has(pairKey2)) continue;
+                // Generate a random hue shift factor for this link
+                const hueShift = (Math.random() * 2 - 1) * linkHueRandomizationPercent;
+
+                let linkObject = {
+                    source: edge1.source,
+                    target: edge1.target,
+                    bidirectional: false,
+                    originalEdgeData1: edge1,
+                    interactionCount: 0,
+                    hueShiftFactor: hueShift // Store the random hue shift
+                };
                 const reverseEdge = rawFilteredEdges.find(edge2 => edge2.source === edge1.target && edge2.target === edge1.source);
                 if (reverseEdge) {
-                    processedLinksInput.push({ id: `edge-${edge1.source}-to-${edge1.target}-bi`, sources: [edge1.source], targets: [edge1.target], bidirectional: true, originalData: { ...edge1, reverseInteractions: reverseEdge.interactions } });
-                    processedEdgePairs.add(pairKey1); processedEdgePairs.add(pairKey2);
-                } else {
-                    processedLinksInput.push({ id: `edge-${edge1.source}-to-${edge1.target}`, sources: [edge1.source], targets: [edge1.target], bidirectional: false, originalData: edge1 });
-                    processedEdgePairs.add(pairKey1);
+                    const interactions2 = reverseEdge.interactions || []; currentInteractionCount += interactions2.length;
+                    linkObject.bidirectional = true; linkObject.originalEdgeData2 = reverseEdge; processedEdgePairs.add(pairKey2);
                 }
-            }
+                linkObject.interactionCount = currentInteractionCount; linksForSimulation.push(linkObject);
+                processedEdgePairs.add(pairKey1);
+            });
+            currentLinks = linksForSimulation;
+            currentNodes = filteredNodesInput.map(n => ({
+                ...n, clusterId: 0,
+                x: containerWidth / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
+                y: containerHeight / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1
+            }));
+            if (currentNodes.length === 0) { console.warn("No nodes to display after filtering."); return; }
 
-            const displayNodesInput = filteredNodes;
+            const interactionCounts = currentLinks.map(l => l.interactionCount).filter(c => typeof c === 'number' && c >= 0);
+            let minInteractions = 0, avgInteractions = 1, maxDomainPointForScale = 1;
+            if (interactionCounts.length > 0) {
+                minInteractions = d3.min(interactionCounts); avgInteractions = d3.mean(interactionCounts);
+                const maxActualInteractions = d3.max(interactionCounts);
+                minInteractions = Math.max(0, minInteractions); avgInteractions = Math.max(1, avgInteractions);
+                maxDomainPointForScale = Math.max(avgInteractions * 2, maxActualInteractions, avgInteractions + 1);
+            } else { minInteractions = 0; avgInteractions = 1; maxDomainPointForScale = 2; }
+            let domainPoints = [minInteractions, avgInteractions, maxDomainPointForScale];
+            if (minInteractions === avgInteractions && avgInteractions === maxDomainPointForScale) {
+                if (avgInteractions === 0) domainPoints = [0, 1, 2]; else domainPoints = [Math.max(0, avgInteractions -1), avgInteractions, avgInteractions + 1];
+            } else if (minInteractions === avgInteractions) { domainPoints = [minInteractions, (minInteractions + maxDomainPointForScale)/2 , maxDomainPointForScale]; }
+            else if (avgInteractions === maxDomainPointForScale) { domainPoints = [minInteractions, (minInteractions + avgInteractions)/2 , avgInteractions];}
+            linkWidthScale = d3.scaleLinear().domain(domainPoints).range([minLinkStrokeWidth, avgLinkStrokeWidth, maxLinkStrokeWidth]).clamp(true);
+            linkOpacityScale = d3.scaleLinear().domain(domainPoints).range([minLinkOpacity, avgLinkOpacity, maxLinkOpacity]).clamp(true);
 
-            if (displayNodesInput.length === 0) {
-                // ... empty graph handling ...
-                return;
-            }
+            const nodeMap = new Map(currentNodes.map(n => [n.id, n]));
+            currentNodes.forEach(n => { n.visitedInDepthCalc = false; n.inDegree = 0; });
+            currentLinks.forEach(l => { if (!l.bidirectional) { const t = nodeMap.get(l.target); if(t) t.inDegree++; } });
+            let maxClusterId = 0; function assignClusterByDepth(node, currentClusterId) { if (node.visitedInDepthCalc && node.clusterId >= currentClusterId) return; node.visitedInDepthCalc = true; node.clusterId = currentClusterId; maxClusterId = Math.max(maxClusterId, currentClusterId); currentLinks.forEach(link => { if (link.source === node.id && !link.bidirectional) { const targetNode = nodeMap.get(link.target); if (targetNode) assignClusterByDepth(targetNode, currentClusterId + 1); } }); }
+            currentNodes.filter(n => n.inDegree === 0).forEach(r => assignClusterByDepth(r, 0)); currentNodes.filter(n => !n.visitedInDepthCalc).forEach(n => assignClusterByDepth(n, 0));
+            clusterData = []; const initialXOffset = Math.max(100, (containerWidth - (maxClusterId * clusterColumnWidth)) / 2);
+            for (let i = 0; i <= maxClusterId; i++) { const initialClusterX = initialXOffset + (i * clusterColumnWidth); clusterData.push({ id: i, nodesInCluster: currentNodes.filter(n => n.clusterId === i), calculatedCX: initialClusterX, calculatedCY: containerHeight / 2, calculatedR: visualNodeWidth + clusterPadding }); }
+            currentNodes.forEach(n => { if (n.clusterId < 0 || n.clusterId > maxClusterId || !clusterData[n.clusterId]) n.clusterId = 0; });
 
-            // --- Prepare graph data for ELK ---
-            const elkGraph = {
-                id: "root",
-                layoutOptions: { // Can override defaultLayoutOptions here if needed for the root
-                    // 'elk.algorithm': 'mrtree', // Example: if you wanted a tree layout
-                },
-                children: displayNodesInput.map(node => ({
-                    id: node.id,
-                    width: nodeWidth,
-                    height: nodeHeight,
-                    // layoutOptions: { 'elk.portConstraints': 'FIXED_ORDER' }, // Example for port constraints
-                    originalData: node // Keep original data
-                })),
-                edges: processedLinksInput.map(link => ({
-                    id: link.id, // ELK needs edge IDs
-                    sources: link.sources,   // ELK expects arrays for sources/targets
-                    targets: link.targets,
-                    bidirectional: link.bidirectional, // Custom property we'll use
-                    originalData: link.originalData  // Keep original data
-                }))
-            };
+            simulation = d3.forceSimulation(currentNodes)
+                .force("link", d3.forceLink(currentLinks).id(d => d.id).distance(linkDistance).strength(link => (link.source.clusterId === link.target.clusterId) ? intraClusterLinkStrength : interClusterLinkStrength))
+                .force("charge", d3.forceManyBody().strength(chargeStrength))
+                .force("collision", d3.forceCollide().radius(nodeCollisionRadius).strength(nodeCollisionStrength))
+                .force("clusterCentroidX", d3.forceX(d => { const c = clusterData[d.clusterId]; return c ? c.calculatedCX : containerWidth / 2; }).strength(pullToClusterCentroidStrength))
+                .force("clusterCentroidY", d3.forceY(d => { const c = clusterData[d.clusterId]; return c ? c.calculatedCY : containerHeight / 2; }).strength(pullToClusterCentroidStrength))
+                .force("clusterRepel", customClusterRepelForce());
 
-            // --- Run ELK Layout ---
-            elk.layout(elkGraph)
-                .then(layoutedGraph => {
-                    currentLayoutedNodes = layoutedGraph.children || [];
-                    currentLayoutedEdges = layoutedGraph.edges || [];
+            svg.select("defs").remove();
 
-                    // --- Render with D3 using ELK's layout ---
-                    renderGraph(currentLayoutedNodes, currentLayoutedEdges, containerWidth, containerHeight, zoom);
-                    console.log("ELK.js graph rendered.");
-                })
-                .catch(error => {
-                    console.error("ELK layout error:", error);
-                    graphContainerElement.innerHTML = `<p>Error during graph layout: ${error.message}</p>`;
-                    if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
-                });
+            clusterCirclesGroup = innerG.append("g").attr("class", "cluster-circles")
+                .selectAll("circle").data(clusterData, d => d.id).join("circle")
+                .style("fill", (d, i) => d3.schemeCategory10[i % 10]).style("fill-opacity", clusterCircleFillOpacity)
+                .style("stroke", clusterCircleStrokeColor).style("stroke-width", 1.5)
+                .style("pointer-events", "none"); // Make circles non-interactive for clicks/drags
 
-        }).catch(function (error) { /* ... error handling ... */ });
-    }
+            linkPaths = innerG.append("g").attr("class", "links")
+                .selectAll("path.link-path").data(currentLinks, d => `${d.source.id || d.source}-${d.target.id || d.target}-${d.bidirectional}`)
+                .join("path").attr("class", "link-path")
+                .style("stroke", d => getBaseLinkColor(d, null, false)) // Uses randomized hue
+                .style("stroke-opacity", d => linkOpacityScale(d.interactionCount))
+                .attr("stroke-width", d => linkWidthScale(d.interactionCount))
+                .attr("fill", "none");
 
-    function renderGraph(nodesData, edgesData, currentWidth, currentHeight, zoomBehavior) {
-        // --- Arrowhead Definitions ---
-        // (Make sure these are appended to the current svg, not a new one if re-rendering)
-        const defs = svg.select("defs").node() ? svg.select("defs") : svg.append("defs");
-        defs.selectAll("marker").remove(); // Clear old markers
-
-        defs.append("marker")
-            .attr("id", "arrowhead-elk").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
-            .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
-            .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", defaultLinkColor);
-        // ... Add other arrowheads (outgoing, incoming, bidirectional, selected versions) ...
-        defs.append("marker")
-            .attr("id", "arrowhead-elk-outgoing").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
-            .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
-            .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", outgoingLinkColor);
-        defs.append("marker")
-            .attr("id", "arrowhead-elk-incoming").attr("viewBox", "0 -5 10 10").attr("refX", 9).attr("refY", 0)
-            .attr("orient", "auto-start-reverse").attr("markerWidth", 6).attr("markerHeight", 6)
-            .append("svg:path").attr("d", "M0,-5L10,0L0,5").attr("fill", incomingLinkColor);
-        defs.append("marker")
-            .attr("id", "arrowhead-elk-bidirectional").attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
-            .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
-            .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", defaultLinkColor);
-        defs.append("marker")
-            .attr("id", "arrowhead-elk-bidirectional-selected").attr("viewBox", "-5 -5 10 10").attr("refX", 0).attr("refY", 0)
-            .attr("orient", "auto").attr("markerWidth", 7).attr("markerHeight", 7)
-            .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 3.5).attr("fill", bidirectionalSelectedLinkColor);
-
-
-        // --- Draw Links ---
-        linkPaths = innerG.append("g").attr("class", "links")
-            .selectAll("path").data(edgesData).join("path")
-            .attr("class", "link")
-            .style("stroke", defaultLinkColor)
-            .style("stroke-opacity", 1)
-            .attr("stroke-width", "1.5px")
-            .attr("fill", "none")
-            .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-elk-bidirectional)" : "url(#arrowhead-elk)")
-            .attr("d", d => calculateElkEdgePath(d, nodesData));
-
-        // --- Draw Nodes ---
-        nodeGroups = innerG.append("g").attr("class", "nodes")
-            .selectAll("g.node-group").data(nodesData).join("g")
-            .attr("class", "node-group")
-            .attr("id", d => `node-${CSS.escape(d.id)}`) // For selection
-            .attr("transform", d => `translate(${d.x || 0}, ${d.y || 0})`); // ELK provides x,y for top-left
-
-        nodeGroups.append("rect")
-            .attr("width", d => d.width || nodeWidth)
-            .attr("height", d => d.height || nodeHeight)
-            .attr("rx", 3).attr("ry", 3)
-            .style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1.5px");
-
-        nodeGroups.append("text")
-            .attr("x", d => (d.width || nodeWidth) / 2)
-            .attr("y", d => (d.height || nodeHeight) / 2)
-            .attr("dy", "0.35em")
-            .attr("text-anchor", "middle").style("font-size", "10px").style("fill", "#000")
-            .text(d => d.originalData.label || d.id);
+            nodeGroups = innerG.append("g").attr("class", "nodes")
+                .selectAll("g.node-group").data(currentNodes, d => d.id).join("g")
+                .attr("class", "node-group").attr("id", d => `node-${CSS.escape(d.id)}`)
+                .call(nodeDragBehavior(simulation));
+            nodeGroups.append("rect")
+                .attr("width", visualNodeWidth).attr("height", visualNodeHeight)
+                .attr("x", -visualNodeWidth / 2).attr("y", -visualNodeHeight / 2)
+                .attr("rx", 2).attr("ry", 2)
+                .style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
+            nodeGroups.append("text")
+                .attr("text-anchor", "middle").attr("dy", "0.35em")
+                .style("font-size", "8px").style("fill", "#000")
+                .style("user-select", "none") // Prevent text selection
+                .style("-webkit-user-select", "none") // For Safari
+                .style("-moz-user-select", "none") // For Firefox
+                .style("-ms-user-select", "none") // For IE/Edge
+                .text(d => d.label || d.id);
 
 
-        // --- Node Selection and Interaction ---
-        let selectedNodeId = null;
-        nodeGroups.on("click", function (event, clickedNodeData) {
-            event.stopPropagation();
-            const previouslySelectedNodeId = selectedNodeId;
-            selectedNodeId = (selectedNodeId === clickedNodeData.id) ? null : clickedNodeData.id;
+            let selectedNodeId = null;
+            nodeGroups.on("click", function(event, clickedNodeData) {
+                event.stopPropagation();
+                const previouslySelectedNodeId = selectedNodeId;
+                selectedNodeId = (selectedNodeId === clickedNodeData.id) ? null : clickedNodeData.id;
 
-            // Reset previous
-            if (previouslySelectedNodeId) {
-                innerG.select(`#node-${CSS.escape(previouslySelectedNodeId)} rect`)
-                    .style("stroke", defaultNodeStrokeColor).style("stroke-width", "1.5px");
-            }
-            // Reset all links
-            linkPaths
-                .style("stroke", defaultLinkColor).style("stroke-opacity", 1)
-                .style("stroke-width", "1.5px")
-                .attr("marker-end", d => d.bidirectional ? "url(#arrowhead-elk-bidirectional)" : "url(#arrowhead-elk)");
+                if (previouslySelectedNodeId) {
+                    innerG.select(`#node-${CSS.escape(previouslySelectedNodeId)} rect`)
+                        .style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
+                }
 
-            if (selectedNodeId) {
-                const selectedNodeD3 = innerG.select(`#node-${CSS.escape(selectedNodeId)}`);
-                selectedNodeD3.select("rect")
-                    .style("stroke", nodeSelectedStrokeColor).style("stroke-width", nodeSelectedStrokeWidth + "px");
-                selectedNodeD3.raise();
+                linkPaths.each(function(linkData) {
+                    const isConnectedToSelected = selectedNodeId && (linkData.source.id === selectedNodeId || linkData.target.id === selectedNodeId);
+                    const baseWidth = linkWidthScale(linkData.interactionCount);
+                    let finalColor;
+                    let finalOpacity;
+                    let finalWidth = baseWidth;
 
-                // Style connected edges
-                linkPaths.each(function(edgeData) {
-                    const isBidirectional = edgeData.bidirectional;
-                    // ELK edges have sources/targets as arrays of IDs
-                    const isOutgoing = edgeData.sources[0] === selectedNodeId;
-                    const isIncoming = edgeData.targets[0] === selectedNodeId;
+                    finalOpacity = linkOpacityScale(linkData.interactionCount);
 
-                    if (isOutgoing || isIncoming) {
+                    if (isConnectedToSelected) {
+                        finalColor = getBaseLinkColor(linkData, selectedNodeId, true); // Vibrant, with randomized hue
+                        finalWidth = baseWidth + selectedLinkExtraWidth;
                         d3.select(this).raise();
-                        if (isBidirectional) {
-                            d3.select(this).style("stroke", bidirectionalSelectedLinkColor)
-                               .attr("marker-end", "url(#arrowhead-elk-bidirectional-selected)");
-                        } else if (isOutgoing) {
-                            d3.select(this).style("stroke", outgoingLinkColor)
-                               .attr("marker-end", "url(#arrowhead-elk-outgoing)");
-                        } else { // isIncoming
-                            d3.select(this).style("stroke", incomingLinkColor)
-                               .attr("marker-end", "url(#arrowhead-elk-incoming)");
-                        }
-                        d3.select(this).style("stroke-opacity", 1).style("stroke-width", "2.5px");
                     } else {
-                        d3.select(this).style("stroke-opacity", nonConnectedLinkOpacity);
+                        const baseSubtleColorWithRandomHue = getBaseLinkColor(linkData, null, false); // Subtle, with randomized hue
+                        let hslColor = d3.hsl(baseSubtleColorWithRandomHue);
+                        if (hslColor && typeof hslColor.s === 'number') { // Check if saturation is valid
+                           hslColor.s *= fadedLinkSaturationFactor; // Desaturate
+                           finalColor = hslColor.toString();
+                        } else {
+                           finalColor = baseSubtleColorWithRandomHue; // Fallback if HSL conversion failed
+                        }
+
+                        if (selectedNodeId) {
+                           finalOpacity = Math.min(finalOpacity, maxOpacityForFadedNonConnected);
+                        }
                     }
+
+                    d3.select(this)
+                        .style("stroke", finalColor)
+                        .style("stroke-opacity", finalOpacity)
+                        .attr("stroke-width", finalWidth);
                 });
 
-                if (window.handleGraphNodeSelection && fullLoadedGraphData) {
-                    const nodeOriginalData = nodesData.find(n => n.id === selectedNodeId)?.originalData;
-                    window.handleGraphNodeSelection(nodeOriginalData, fullLoadedGraphData);
+                if (selectedNodeId) {
+                    const selectedD3Node = innerG.select(`#node-${CSS.escape(selectedNodeId)}`);
+                    selectedD3Node.select("rect").style("stroke", nodeSelectedStrokeColor).style("stroke-width", nodeSelectedStrokeWidth + "px");
+                    selectedD3Node.raise();
+                    if (window.handleGraphNodeSelection && fullLoadedGraphData) {
+                        const nodeOriginalData = currentNodes.find(n => n.id === selectedNodeId);
+                        window.handleGraphNodeSelection(nodeOriginalData, fullLoadedGraphData);
+                    }
+                } else {
+                    linkPaths
+                        .style("stroke", d => getBaseLinkColor(d, null, false)) // Reset to subtle, with randomized hue
+                        .style("stroke-opacity", d => linkOpacityScale(d.interactionCount))
+                        .attr("stroke-width", d => linkWidthScale(d.interactionCount));
+                    if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
                 }
-            } else { // Deselected
-                if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
-            }
-        });
-        svg.on("click", () => { /* ... deselect logic ... */ });
+            });
+            svg.on("click", () => {
+                if (selectedNodeId) {
+                    innerG.select(`#node-${CSS.escape(selectedNodeId)} rect`)
+                        .style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
+                    linkPaths
+                        .style("stroke", d => getBaseLinkColor(d, null, false)) // Reset to subtle, with randomized hue
+                        .style("stroke-opacity", d => linkOpacityScale(d.interactionCount))
+                        .attr("stroke-width", d => linkWidthScale(d.interactionCount));
+                    selectedNodeId = null;
+                    if (window.handleGraphNodeSelection) window.handleGraphNodeSelection(null, null);
+                }
+            });
 
-
-        // --- Initial Zoom/Pan to fit graph ---
-        // Calculate bounding box of the layouted graph
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        nodesData.forEach(n => {
-            minX = Math.min(minX, n.x);
-            minY = Math.min(minY, n.y);
-            maxX = Math.max(maxX, n.x + n.width);
-            maxY = Math.max(maxY, n.y + n.height);
-        });
-        if (nodesData.length > 0) {
-            const graphActualWidth = maxX - minX;
-            const graphActualHeight = maxY - minY;
-            const padding = 50;
-
-            const scaleX = (currentWidth - padding * 2) / graphActualWidth;
-            const scaleY = (currentHeight - padding * 2) / graphActualHeight;
-            const initialScale = Math.min(scaleX, scaleY, 1.5); // Cap max initial zoom
-
-            const translateX = -minX * initialScale + (currentWidth - graphActualWidth * initialScale) / 2;
-            const translateY = -minY * initialScale + (currentHeight - graphActualHeight * initialScale) / 2;
-
-            currentZoomTransform = d3.zoomIdentity.translate(translateX, translateY).scale(initialScale);
-            svg.call(zoomBehavior.transform, currentZoomTransform);
-            innerG.attr("transform", currentZoomTransform);
-        }
+            simulation.on("tick", () => {
+                clusterData.forEach(cData => {
+                    const nodesInThisCluster = cData.nodesInCluster;
+                    if (nodesInThisCluster.length === 0) { cData.calculatedCX = initialXOffset + (cData.id * clusterColumnWidth); cData.calculatedCY = containerHeight / 2; cData.calculatedR = visualNodeWidth * 0.5 + clusterPadding; return; }
+                    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity; nodesInThisCluster.forEach(n => { minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x); minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y); });
+                    cData.calculatedCX = (minX + maxX) / 2; cData.calculatedCY = (minY + maxY) / 2;
+                    let maxNodeDistFromCentroidSq = 0; nodesInThisCluster.forEach(n => { const distSq = (n.x - cData.calculatedCX)**2 + (n.y - cData.calculatedCY)**2; maxNodeDistFromCentroidSq = Math.max(maxNodeDistFromCentroidSq, distSq); });
+                    const furthestNodeRadius = Math.sqrt(maxNodeDistFromCentroidSq); const nodeVisualDiagonal = Math.sqrt(visualNodeWidth**2 + visualNodeHeight**2) / 2;
+                    cData.calculatedR = furthestNodeRadius + nodeVisualDiagonal + clusterPadding; cData.calculatedR = Math.max(cData.calculatedR, visualNodeWidth * 0.6 + clusterPadding);
+                });
+                clusterCirclesGroup.attr("cx", d => d.calculatedCX).attr("cy", d => d.calculatedCY).attr("r", d => d.calculatedR > 0 ? d.calculatedR : 0);
+                linkPaths.attr("d", d => calculateSCurvePathWithDynamicAnchors(d, visualNodeWidth, visualNodeHeight));
+                nodeGroups.attr("transform", d => `translate(${d.x}, ${d.y})`);
+            });
+            console.log("D3 graph with refined link opacity and randomized link hue initialized.");
+        }).catch(error => { console.error("Error loading or processing graph data:", error); });
     }
 
-
-    // --- ELK Edge Path Calculation Function ---
-    function calculateElkEdgePath(edge, nodesData) {
-        if (!edge.sections || edge.sections.length === 0) {
-            // Fallback if no sections (shouldn't happen with ELK layered)
-            const sourceNode = nodesData.find(n => n.id === edge.sources[0]);
-            const targetNode = nodesData.find(n => n.id === edge.targets[0]);
-            if (!sourceNode || !targetNode) return "";
-            return `M${sourceNode.x + sourceNode.width / 2},${sourceNode.y + sourceNode.height / 2}L${targetNode.x + targetNode.width / 2},${targetNode.y + targetNode.height / 2}`;
-        }
-
-        let pathString = "";
-        const sections = edge.sections;
-
-        for (let i = 0; i < sections.length; i++) {
-            const section = sections[i];
-            let startPoint = { x: section.startX, y: section.startY };
-            let endPoint = { x: section.endX, y: section.endY };
-
-            // Adjust start/end points to connect to node sides for the first/last section
-            const sourceNode = nodesData.find(n => n.id === edge.sources[0]);
-            const targetNode = nodesData.find(n => n.id === edge.targets[0]);
-
-            if (i === 0 && sourceNode) { // First segment
-                startPoint.x = sourceNode.x + sourceNode.width; // Right side of source
-                startPoint.y = sourceNode.y + sourceNode.height / 2;
-            }
-            if (i === sections.length - 1 && targetNode) { // Last segment
-                endPoint.x = targetNode.x; // Left side of target
-                endPoint.y = targetNode.y + targetNode.height / 2;
-            }
-
-
-            if (i === 0) {
-                pathString += `M${startPoint.x},${startPoint.y}`;
-            }
-
-            const bendPoints = section.bendPoints || [];
-            let currentPoint = startPoint;
-
-            if (bendPoints.length === 0) { // Straight line or S-curve for this segment
-                pathString += createPathSegment(currentPoint, endPoint, edge.bidirectional);
-            } else {
-                // S-curve to first bend point
-                pathString += createPathSegment(currentPoint, bendPoints[0], edge.bidirectional);
-                currentPoint = bendPoints[0];
-
-                // Straight lines between bend points
-                for (let j = 1; j < bendPoints.length; j++) {
-                    pathString += `L${bendPoints[j].x},${bendPoints[j].y}`;
-                    currentPoint = bendPoints[j];
-                }
-                // S-curve from last bend point to end point
-                pathString += createPathSegment(currentPoint, endPoint, edge.bidirectional);
-            }
-        }
-        return pathString;
+    function customClusterRepelForce() {
+        let allNodes; function force(alpha) { for (let iter = 0; iter < clusterRepulsionIterations; iter++) { for (let i = 0; i < clusterData.length; i++) { for (let j = i + 1; j < clusterData.length; j++) { const c1 = clusterData[i]; const c2 = clusterData[j]; if (c1.nodesInCluster.length === 0 || c2.nodesInCluster.length === 0 || c1.calculatedR <= 0 || c2.calculatedR <= 0) continue; const dx = c2.calculatedCX - c1.calculatedCX; const dy = c2.calculatedCY - c1.calculatedCY; let distance = Math.sqrt(dx * dx + dy * dy); const minDistance = c1.calculatedR + c2.calculatedR + minClusterGap; if (distance < minDistance && distance > 1e-6) { const overlap = minDistance - distance; const unitDx = dx / distance; const unitDy = dy / distance; const push = overlap * 0.5 * clusterRepulsionStrength * alpha; if (c1.nodesInCluster.length > 0) { c1.nodesInCluster.forEach(node => { node.x -= unitDx * push / Math.sqrt(c1.nodesInCluster.length); node.y -= unitDy * push / Math.sqrt(c1.nodesInCluster.length); }); } if (c2.nodesInCluster.length > 0) { c2.nodesInCluster.forEach(node => { node.x += unitDx * push / Math.sqrt(c2.nodesInCluster.length); node.y += unitDy * push / Math.sqrt(c2.nodesInCluster.length); }); } } } } } } force.initialize = function(nodesPassedByD3) { allNodes = nodesPassedByD3; }; return force;
     }
-
-    function createPathSegment(p1, p2, isBidirectional) {
-        const dx = p2.x - p1.x;
-        const dy = p2.y - p1.y;
-
-        // For very short segments or if curviness is off, draw straight line
-        if (Math.abs(dx) < 10 || sCurveCurvinessFactor <= 0) {
-            return `L${p2.x},${p2.y}`;
+    function calculateSCurvePathWithDynamicAnchors(linkData, vNodeWidth, vNodeHeight) {
+        const sourceNode = linkData.source; const targetNode = linkData.target;
+        if (!sourceNode || !targetNode || typeof sourceNode.x !== 'number' || typeof targetNode.x !== 'number') return "";
+        let sx, sy, tx, ty;
+        if (linkData.bidirectional) { sx = sourceNode.x; sy = sourceNode.y; tx = targetNode.x; ty = targetNode.y; return `M${sx},${sy}L${tx},${ty}`; }
+        const dxTotal = targetNode.x - sourceNode.x; const dyTotal = targetNode.y - sourceNode.y;
+        if (Math.abs(dxTotal) > Math.abs(dyTotal) + vNodeWidth * 0.25) {
+            if (targetNode.x > sourceNode.x) { sx = sourceNode.x + vNodeWidth / 2; sy = sourceNode.y; tx = targetNode.x - vNodeWidth / 2; ty = targetNode.y; }
+            else { sx = sourceNode.x - vNodeWidth / 2; sy = sourceNode.y; tx = targetNode.x + vNodeWidth / 2; ty = targetNode.y; }
+        } else {
+            if (targetNode.y > sourceNode.y) { sx = sourceNode.x; sy = sourceNode.y + vNodeHeight / 2; tx = targetNode.x; ty = targetNode.y - vNodeHeight / 2; }
+            else { sx = sourceNode.x; sy = sourceNode.y - vNodeHeight / 2; tx = targetNode.x; ty = targetNode.y + vNodeHeight / 2; }
         }
-
-        // Adjust curvinessFactor based on dx for S-curve
-        // Control points are offset horizontally.
-        let curve = dx * sCurveCurvinessFactor;
-
-        // If it's a bidirectional link, we might want a different curve style or straight
-        // For now, treat them the same for S-curve calculation if not straight
-        // if (isBidirectional) curve = dx * 0.1; // Flatter curve for bi
-
-        const cp1x = p1.x + curve;
-        const cp1y = p1.y; // Keep y same for horizontal S
-        const cp2x = p2.x - curve;
-        const cp2y = p2.y; // Keep y same
-
-        return `C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+        const dx = tx - sx; const dy = ty - sy;
+        if (sCurveCurvinessFactor < -0.9 || (Math.abs(dx) < 1 && Math.abs(dy) < 1)) return `M${sx},${sy}L${tx},${ty}`;
+        let cp1x, cp1y, cp2x, cp2y;
+        if (Math.abs(dx) >= Math.abs(dy) || Math.abs(dx) > 10) { let curve = dx * sCurveCurvinessFactor; cp1x = sx + curve; cp1y = sy; cp2x = tx - curve; cp2y = ty; }
+        else if (Math.abs(dy) > 10) { let curve = dy * sCurveCurvinessFactor; cp1x = sx; cp1y = sy + curve; cp2x = tx; cp2y = ty - curve; }
+        else { return `M${sx},${sy}L${tx},${ty}`; }
+        return `M${sx},${sy}C${cp1x},${cp1y} ${cp2x},${cp2y} ${tx},${ty}`;
+    }
+    function nodeDragBehavior(simulationInstance) {
+        function dragstarted(event, d) { event.sourceEvent.stopPropagation(); if (!event.active) simulationInstance.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
+        function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
+        function dragended(event, d) { if (!event.active) simulationInstance.alphaTarget(0); d.fx = null; d.fy = null; }
+        return d3.drag().filter(event => event.button === 0).on("start", dragstarted).on("drag", dragged).on("end", dragended);
     }
 
     initializeOrUpdateGraph();
-    // ... (resize listener remains the same) ...
     let resizeTimer;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            console.log("Window resized, re-initializing graph.");
-            initializeOrUpdateGraph();
-        }, 250);
-    });
+    window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { initializeOrUpdateGraph(); }, 250); });
 });

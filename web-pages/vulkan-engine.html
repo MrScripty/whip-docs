@@ -247,7 +247,7 @@
         }
         .node rect { stroke: #333; stroke-width: 1.5px; cursor: pointer; }
         .node text { font-size: 10px; pointer-events: none; text-anchor: middle; dominant-baseline: middle; fill: #222; }
-        .link { stroke: #999; stroke-opacity: 0.6; stroke-width: 1.5px; fill: none; }
+        .link { stroke: #999; stroke-opacity: 0.6; fill: none; }
         .node.selected rect { stroke: dodgerblue; stroke-width: 3px; }
     </style>
 </head>
@@ -306,10 +306,7 @@
     </main>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://unpkg.com/elkjs/lib/elk.bundled.js"></script>
-
     <script src="../scripts/graphs/module_dependency_graph.js"></script>
-
     <!-- Scripts for the new dynamic tree view -->
     <!-- marked.js and highlight.js are removed as the info panel is gone -->
     <script src="../scripts/lists/graph_interaction_tree.js"></script> <!-- NEW SCRIPT -->
