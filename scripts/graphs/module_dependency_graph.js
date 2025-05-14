@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', function () {
         return sanitized;
     }
 
-    const baseNodeAspectRatio = 18 / 70; 
-    const minNodePrimaryDimension = 18; 
-    const maxNodePrimaryDimension = 70; 
+    // const baseNodeAspectRatio = 18 / 70; // No longer strictly needed for circles, but visualHeight is still primary
+    const minNodePrimaryDimension = 50; // This will now be min diameter
+    const maxNodePrimaryDimension = 200; // This will now be max diameter
 
     const sCurveCurvinessFactor = 0.3;
     const clusterColumnWidth = 350; 
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let svg, innerG, simulation, linkPaths, nodeGroups, clusterVisualsGroup, currentZoomTransform;
     let fullLoadedGraphData = null; let currentNodes = []; let currentLinks = [];
     let clusterData = []; 
-    let linkWidthScale, linkOpacityScale, nodePrimaryDimensionScale;
+    let linkWidthScale, linkOpacityScale, nodePrimaryDimensionScale; // nodePrimaryDimensionScale now scales diameter
     let graphInitialized = false;
 
     function getBaseLinkColor(linkData, selectedNodeId, isSelectedContext) {
@@ -152,17 +152,22 @@ document.addEventListener('DOMContentLoaded', function () {
                     else if (minLines === maxLines) maxLines = minLines + 1; 
                 } else { minLines = 0; maxLines = 100; }
             }
+            // nodePrimaryDimensionScale now scales the diameter of the circle
             nodePrimaryDimensionScale = d3.scaleSqrt().domain([minLines, maxLines]).range([minNodePrimaryDimension, maxNodePrimaryDimension]).clamp(true);
+            
             currentNodes = filteredNodesInput.map((n_new) => {
                 const existing_node = !forceResetPositions ? currentNodes.find(n_old => n_old.id === n_new.id) : null;
                 const lineCount = (typeof n_new.line_count === 'number' && n_new.line_count >= 0) ? n_new.line_count : 0;
-                const primaryDim = nodePrimaryDimensionScale(lineCount);
-                const calcWidth = primaryDim / baseNodeAspectRatio;
+                const diameter = nodePrimaryDimensionScale(lineCount);
+                
                 return { ...n_new, directory: n_new.id.substring(0, n_new.id.lastIndexOf('/')) || '[root]',
                     x: existing_node ? existing_node.x : containerWidth / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
                     y: existing_node ? existing_node.y : containerHeight / 2 + (Math.random() - 0.5) * Math.min(containerWidth, containerHeight) * 0.1,
                     fx: existing_node ? existing_node.fx : null, fy: existing_node ? existing_node.fy : null,
-                    visualHeight: primaryDim, visualWidth: calcWidth, 
+                    radius: diameter / 2, // Store radius
+                    // visualHeight and visualWidth might still be useful for other calculations or if you switch back
+                    visualHeight: diameter, 
+                    visualWidth: diameter, 
                 };
             });
             if (currentNodes.length === 0) { graphInitialized = false; return; }
@@ -196,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .force("link", d3.forceLink(currentLinks).id(d => d.id).distance(linkDistance)
                     .strength(link => (link.source.clusterId === link.target.clusterId) ? intraClusterLinkStrength : interClusterLinkStrength))
                 .force("charge", d3.forceManyBody().strength(chargeStrength))
-                .force("collision", d3.forceCollide().radius(d => Math.max(d.visualWidth, d.visualHeight) * 0.5 + 3).strength(nodeCollisionStrength)) 
+                .force("collision", d3.forceCollide().radius(d => d.radius + 3).strength(nodeCollisionStrength)) // Use d.radius for collision
                 .force("clusterCentroidX", d3.forceX(d => { const c = clusterData.find(cd => cd.id === d.clusterId); return c ? c.initialCX : containerWidth / 2; }).strength(pullToClusterInitialCentroidStrength))
                 .force("clusterCentroidY", d3.forceY(d => { const c = clusterData.find(cd => cd.id === d.clusterId); return c ? c.initialCY : containerHeight / 2; }).strength(pullToClusterInitialCentroidStrength))
                 .force("clusterRepel", customClusterRepelForce(clusterData)); 
@@ -214,16 +219,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 .attr("id", d => `node-${sanitizeForDomId(d.id)}`) 
                 .call(nodeDragBehavior(simulation));
             
-            nodeGroups.append("rect")
-                .attr("width", d => d.visualWidth).attr("height", d => d.visualHeight)
-                .attr("x", d => -d.visualWidth / 2).attr("y", d => -d.visualHeight / 2)
-                .attr("rx", 5).attr("ry", 5) // Increased corner radius
+            // --- CHANGE: Append circle instead of rect ---
+            nodeGroups.append("circle")
+                .attr("r", d => d.radius)
+                .attr("cx", 0) // Center of the group
+                .attr("cy", 0) // Center of the group
                 .style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
             
             nodeGroups.append("text")
-                .attr("text-anchor", "middle").attr("dy", "0.35em")
-                .style("font-size", "10px") // Increased font size
+                .attr("text-anchor", "middle").attr("dy", "0.35em") // dy might need adjustment if text looks off in circles
+                .style("font-size", "10px") 
                 .style("fill", "#000")
+                .style("pointer-events", "none") // Allow clicks to pass through to the circle
                 .style("user-select", "none").style("-webkit-user-select", "none")
                 .style("-moz-user-select", "none").style("-ms-user-select", "none")
                 .text(d => d.label || d.id);
@@ -233,7 +240,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 event.stopPropagation();
                 selectedNodeId = (selectedNodeId === clickedNodeData.id) ? null : clickedNodeData.id;
 
-                nodeGroups.selectAll("rect").style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
+                // Reset visual state for all nodes (circles)
+                nodeGroups.selectAll("circle") // Select circle now
+                    .style("fill", defaultNodeFillColor)
+                    .style("stroke", defaultNodeStrokeColor)
+                    .style("stroke-width", "1px");
+
                 innerG.selectAll(".cluster-circle").style("fill-opacity", clusterCircleFillOpacity).style("stroke", clusterCircleStrokeColor).style("stroke-width", 1.5);
                 linkPaths.style("stroke", d => getBaseLinkColor(d, null, false)).style("stroke-opacity", d => linkOpacityScale(d.interactionCount)).attr("stroke-width", d => linkWidthScale(d.interactionCount));
 
@@ -241,11 +253,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     const selectedNodeObject = currentNodes.find(n => n.id === selectedNodeId);
                     if (!selectedNodeObject) return;
 
-                    const rectSelector = `#node-${sanitizeForDomId(selectedNodeId)} rect`; 
-                    const rectSelection = innerG.select(rectSelector); 
+                    const circleSelector = `#node-${sanitizeForDomId(selectedNodeId)} circle`; // Selector for the circle
+                    const circleSelection = innerG.select(circleSelector); 
 
-                    if (rectSelection.node()) { 
-                        rectSelection
+                    if (circleSelection.node()) { 
+                        circleSelection
                             .style("fill", nodeSelectedFillColor) 
                             .style("stroke", nodeSelectedStrokeColor) 
                             .style("stroke-width", nodeSelectedStrokeWidth + "px"); 
@@ -310,7 +322,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             svg.on("click", () => { 
                 if (selectedNodeId) {
-                    innerG.select(`#node-${sanitizeForDomId(selectedNodeId)} rect`).style("fill", defaultNodeFillColor).style("stroke", defaultNodeStrokeColor).style("stroke-width", "1px");
+                    innerG.select(`#node-${sanitizeForDomId(selectedNodeId)} circle`) // Select circle
+                        .style("fill", defaultNodeFillColor)
+                        .style("stroke", defaultNodeStrokeColor)
+                        .style("stroke-width", "1px");
                     innerG.selectAll(".cluster-circle").style("fill-opacity", clusterCircleFillOpacity).style("stroke", clusterCircleStrokeColor).style("stroke-width", 1.5);
                     linkPaths.style("stroke", d => getBaseLinkColor(d, null, false)).style("stroke-opacity", d => linkOpacityScale(d.interactionCount)).attr("stroke-width", d => linkWidthScale(d.interactionCount));
                     selectedNodeId = null;
@@ -323,20 +338,23 @@ document.addEventListener('DOMContentLoaded', function () {
                     const nodesInThisCluster = cData.nodesInCluster;
                     if (nodesInThisCluster.length === 0) {
                         cData.currentCX = cData.initialCX; cData.currentCY = cData.initialCY;
-                        const minPossibleNodeWidth = nodePrimaryDimensionScale.range()[0] / baseNodeAspectRatio;
-                        cData.currentR = minPossibleNodeWidth * 0.5 + clusterPadding / 2; 
+                        const minPossibleNodeDiameter = nodePrimaryDimensionScale.range()[0];
+                        cData.currentR = minPossibleNodeDiameter / 2 + clusterPadding / 2; 
                         return;
                     }
                     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-                    nodesInThisCluster.forEach(n => {
-                        minX = Math.min(minX, n.x - n.visualWidth / 2); maxX = Math.max(maxX, n.x + n.visualWidth / 2);
-                        minY = Math.min(minY, n.y - n.visualHeight / 2); maxY = Math.max(maxY, n.y + n.visualHeight / 2);
+                    nodesInThisCluster.forEach(n => { // Use radius for cluster boundary
+                        minX = Math.min(minX, n.x - n.radius); 
+                        maxX = Math.max(maxX, n.x + n.radius);
+                        minY = Math.min(minY, n.y - n.radius);
+                        maxY = Math.max(maxY, n.y + n.radius);
                     });
                     cData.currentCX = (minX + maxX) / 2; cData.currentCY = (minY + maxY) / 2;
                     const spanX = maxX - minX; const spanY = maxY - minY;
                     cData.currentR = Math.max(spanX, spanY) / 2 + clusterPadding;
-                    const avgNodeMaxDimInCluster = d3.mean(nodesInThisCluster, n => Math.max(n.visualWidth, n.visualHeight)) || (nodePrimaryDimensionScale.range()[0] / baseNodeAspectRatio);
-                    cData.currentR = Math.max(cData.currentR, avgNodeMaxDimInCluster * 0.3 + clusterPadding); 
+                    
+                    const avgNodeRadiusInCluster = d3.mean(nodesInThisCluster, n => n.radius) || (nodePrimaryDimensionScale.range()[0] / 2);
+                    cData.currentR = Math.max(cData.currentR, avgNodeRadiusInCluster + clusterPadding); 
                 });
                 clusterVisualsGroup.select("circle.cluster-circle").attr("cx", d => d.currentCX).attr("cy", d => d.currentCY).attr("r", d => d.currentR > 0 ? d.currentR : 0);
                 clusterVisualsGroup.select("text.cluster-label").attr("x", d => d.currentCX).attr("y", d => d.currentCY - d.currentR - 5); 
@@ -375,22 +393,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function calculateSCurvePathWithDynamicAnchors(linkData) {
         const sourceNode = linkData.source; const targetNode = linkData.target;
-        if (!sourceNode || !targetNode || typeof sourceNode.x !== 'number' || typeof targetNode.x !== 'number' || typeof sourceNode.visualWidth !== 'number' || typeof targetNode.visualWidth !== 'number') { return ""; }
-        const sNodeWidth = sourceNode.visualWidth; const sNodeHeight = sourceNode.visualHeight;
-        const tNodeWidth = targetNode.visualWidth; const tNodeHeight = targetNode.visualHeight;
-        let sx, sy, tx, ty;
-        if (linkData.bidirectional) { sx = sourceNode.x; sy = sourceNode.y; tx = targetNode.x; ty = targetNode.y; return `M${sx},${sy}L${tx},${ty}`; }
-        const dxTotal = targetNode.x - sourceNode.x; const dyTotal = targetNode.y - sourceNode.y;
-        if (Math.abs(dxTotal) > Math.abs(dyTotal) + sNodeWidth * 0.25) { 
-            if (targetNode.x > sourceNode.x) { sx = sourceNode.x + sNodeWidth / 2; sy = sourceNode.y; tx = targetNode.x - tNodeWidth / 2; ty = targetNode.y; }
-            else { sx = sourceNode.x - sNodeWidth / 2; sy = sourceNode.y; tx = targetNode.x + tNodeWidth / 2; ty = targetNode.y; }
-        } else { 
-            if (targetNode.y > sourceNode.y) { sx = sourceNode.x; sy = sourceNode.y + sNodeHeight / 2; tx = targetNode.x; ty = targetNode.y - tNodeHeight / 2; }
-            else { sx = sourceNode.x; sy = sourceNode.y - sNodeHeight / 2; tx = targetNode.x; ty = targetNode.y + tNodeHeight / 2; }
+        // Ensure nodes and their positions/radii are defined
+        if (!sourceNode || !targetNode || 
+            typeof sourceNode.x !== 'number' || typeof sourceNode.y !== 'number' || typeof sourceNode.radius !== 'number' ||
+            typeof targetNode.x !== 'number' || typeof targetNode.y !== 'number' || typeof targetNode.radius !== 'number') { 
+            return ""; 
         }
+
+        if (linkData.bidirectional) { 
+            return `M${sourceNode.x},${sourceNode.y}L${targetNode.x},${targetNode.y}`; 
+        }
+        
+        const dxTotal = targetNode.x - sourceNode.x; 
+        const dyTotal = targetNode.y - sourceNode.y;
+        const distTotal = Math.sqrt(dxTotal * dxTotal + dyTotal * dyTotal);
+
+        let sx, sy, tx, ty;
+
+        if (distTotal === 0) { // Nodes are at the same position, draw a tiny line or nothing
+            return `M${sourceNode.x},${sourceNode.y}L${targetNode.x},${targetNode.y}`;
+        }
+
+        // Calculate anchor points on the circumference of the circles
+        sx = sourceNode.x + (dxTotal / distTotal) * sourceNode.radius;
+        sy = sourceNode.y + (dyTotal / distTotal) * sourceNode.radius;
+        tx = targetNode.x - (dxTotal / distTotal) * targetNode.radius;
+        ty = targetNode.y - (dyTotal / distTotal) * targetNode.radius;
+        
         const dx = tx - sx; const dy = ty - sy;
         if (sCurveCurvinessFactor < -0.9 || (Math.abs(dx) < 1 && Math.abs(dy) < 1)) return `M${sx},${sy}L${tx},${ty}`;
         let cp1x, cp1y, cp2x, cp2y;
+        // S-curve logic can remain similar, using the adjusted sx, sy, tx, ty
         if (Math.abs(dx) >= Math.abs(dy) || Math.abs(dx) > 10) { let curve = dx * sCurveCurvinessFactor; cp1x = sx + curve; cp1y = sy; cp2x = tx - curve; cp2y = ty; }
         else if (Math.abs(dy) > 10) { let curve = dy * sCurveCurvinessFactor; cp1x = sx; cp1y = sy + curve; cp2x = tx; cp2y = ty - curve; }
         else { return `M${sx},${sy}L${tx},${ty}`; }
