@@ -1,10 +1,11 @@
 // scripts/ui/commit-viewer-header.js
 
-// CONSTANTS for the script (can be defined outside the event listener)
+// CONSTANTS for the script
 const GITHUB_REPO_API_URL = "https://api.github.com/repos/MrScripty/Studio-Whip/commits";
 const NUM_COMMITS_TO_DISPLAY = 15;
+const SELECTED_COMMIT_STORAGE_KEY = 'whipDocsSelectedCommitSHA'; // Key for localStorage
 
-// --- HELPER FUNCTIONS (defined globally or within initCommitViewer) ---
+// --- HELPER FUNCTIONS ---
 function formatDateYYYYMMDD(date) {
     if (!(date instanceof Date) || isNaN(date)) return "Invalid Date";
     const year = date.getFullYear();
@@ -13,34 +14,31 @@ function formatDateYYYYMMDD(date) {
     return `${year}-${month}-${day}`;
 }
 
-// Main initialization function for the commit viewer
 async function initCommitViewer() {
-    const placeholderId = 'header-commit-viewer-placeholder'; // This ID is INSIDE the loaded main-header.html
+    const placeholderId = 'header-commit-viewer-placeholder';
     const viewerHtmlPath = '../web-pages/components/commit-viewer-header.html';
 
-    // DOM Element References
     let viewerContainer, singleCommitMessage, singleCommitDate, singleCommitShaCollapsed,
         scrollWrapper, commitListUl, toggleButton,
         notesDropdown, notesDropdownContent;
 
-    // STATE VARIABLES
     let placeholderElement = document.getElementById(placeholderId);
 
     let commitsData = [];
-    let selectedCommit = null;
+    let selectedCommit = null; // This will now be loaded from localStorage or API
     let latestCommit = null;
     let isExpanded = false;
     let isDragging = false;
     let startX, scrollLeftStart;
     let notesHideTimeout = null;
     let originalPlaceholderLeftOffset = 0;
-    let mainHeaderElement = null; // Will be the actual .main-header element
+    let mainHeaderElement = null;
 
     if (!placeholderElement) {
         console.error(`Commit viewer placeholder (#${placeholderId}) NOT FOUND after main header loaded. Script cannot proceed.`);
         return;
     }
-    console.log("Commit viewer placeholder found:", placeholderElement);
+    // console.log("Commit viewer placeholder found:", placeholderElement);
 
 
     async function fetchCommits() {
@@ -140,6 +138,13 @@ async function initCommitViewer() {
                     console.warn('Failed to copy commit SHA:', err);
                 }
                 selectedCommit = commit;
+                // --- PERSISTENCE: Save selected commit SHA to localStorage ---
+                if (selectedCommit) {
+                    localStorage.setItem(SELECTED_COMMIT_STORAGE_KEY, selectedCommit.sha);
+                } else {
+                    localStorage.removeItem(SELECTED_COMMIT_STORAGE_KEY); // Should not happen here
+                }
+                // --- END PERSISTENCE ---
                 isExpanded = false;
                 hideNotesDropdown();
                 renderViewerState();
@@ -204,7 +209,6 @@ async function initCommitViewer() {
             viewerContainer.classList.add('expanded');
             if (mainHeaderElement) {
                 const mainHeaderRect = mainHeaderElement.getBoundingClientRect();
-                // The placeholderElement for commit-viewer is *inside* mainHeaderElement
                 const placeholderRect = placeholderElement.getBoundingClientRect(); 
                 let leftRelativeToMainHeader = placeholderRect.left - mainHeaderRect.left;
                 viewerContainer.style.left = `${leftRelativeToMainHeader}px`;
@@ -212,7 +216,7 @@ async function initCommitViewer() {
                 viewerContainer.style.left = '150px'; 
                 console.warn("mainHeaderElement not found by commit-viewer, using fallback positioning for expanded viewer.");
             }
-            renderCommitList();
+            renderCommitList(); // Re-render list to highlight selected if any
         } else {
             viewerContainer.classList.remove('expanded');
             viewerContainer.classList.add('collapsed');
@@ -281,13 +285,9 @@ async function initCommitViewer() {
         }
         
         const viewerHtmlString = await response.text();
-        // console.log("Fetched HTML string for commit viewer component:", viewerHtmlString);
-        
         if(placeholderElement) placeholderElement.innerHTML = viewerHtmlString;
-        // console.log("Commit viewer component HTML set into its placeholder.");
 
         viewerContainer = document.getElementById('header-commit-viewer');
-        // console.log("1. viewerContainer (commit viewer component root):", viewerContainer);
 
         if (viewerContainer) {
             singleCommitMessage = viewerContainer.querySelector('.hcv-commit-display .hcv-commit-message');
@@ -296,37 +296,48 @@ async function initCommitViewer() {
             scrollWrapper = viewerContainer.querySelector('.hcv-scroll-wrapper');
             commitListUl = viewerContainer.querySelector('#hcv-commit-list');
             toggleButton = viewerContainer.querySelector('#hcv-toggle-button');
-            notesDropdown = viewerContainer.querySelector('#hcv-notes-dropdown'); // Notes dropdown is part of the component's HTML
+            notesDropdown = viewerContainer.querySelector('#hcv-notes-dropdown'); 
         } else {
             console.error("Commit viewer's main container ('#header-commit-viewer') not found after injection.");
-            return; // Critical failure
+            return; 
         }
         
         if (notesDropdown) {
             notesDropdownContent = notesDropdown.querySelector('.hcv-notes-content');
-            document.body.appendChild(notesDropdown); // Move to body for global positioning
+            document.body.appendChild(notesDropdown); 
         }
-
 
         if (!viewerContainer || !singleCommitMessage || !singleCommitShaCollapsed || !singleCommitDate || !scrollWrapper || !commitListUl || !toggleButton || !notesDropdown || !notesDropdownContent) {
             console.error("Some commit viewer internal elements not found. Check HTML structure and selectors.");
-            // Log which one is missing for easier debugging
-            if (!singleCommitMessage) console.error("- singleCommitMessage missing");
-            if (!singleCommitShaCollapsed) console.error("- singleCommitShaCollapsed missing");
-            if (!singleCommitDate) console.error("- singleCommitDate missing");
-            // ... etc.
             return;
         }
         
-        // Get the actual .main-header element, which is the parent of placeholderElement
         mainHeaderElement = placeholderElement.closest('.main-header'); 
         if (!mainHeaderElement) {
             console.warn("Could not find .main-header ancestor for commit viewer. Positioning may be affected.");
         }
         
-        commitsData = await fetchCommits();
-        if (commitsData.length > 0) {
+        commitsData = await fetchCommits(); // Fetch all commits
+
+        // --- PERSISTENCE: Load selected commit SHA from localStorage ---
+        const storedCommitSHA = localStorage.getItem(SELECTED_COMMIT_STORAGE_KEY);
+        if (storedCommitSHA && commitsData.length > 0) {
+            const foundCommit = commitsData.find(c => c.sha === storedCommitSHA);
+            if (foundCommit) {
+                selectedCommit = foundCommit;
+                console.log("Loaded selected commit from localStorage:", selectedCommit.sha.substring(0,7));
+            } else {
+                // Stored SHA not in current fetched list (e.g., very old commit)
+                localStorage.removeItem(SELECTED_COMMIT_STORAGE_KEY); // Clear invalid stored SHA
+                selectedCommit = null; // Fallback to latest
+            }
+        }
+        // --- END PERSISTENCE ---
+
+        if (commitsData.length > 0 && !selectedCommit) { // If no stored or invalid stored, use latest
             latestCommit = commitsData[0];
+        } else if (commitsData.length > 0 && selectedCommit) {
+            latestCommit = commitsData[0]; // Still set latestCommit for reference
         }
         
         renderViewerState(); 
@@ -335,7 +346,7 @@ async function initCommitViewer() {
         toggleButton.addEventListener('click', toggleExpansion); 
         document.addEventListener('click', handleClickOutside);
         setupDragScroll();
-        console.log("Commit viewer initialized successfully.");
+        // console.log("Commit viewer initialized successfully.");
 
     } catch (error) {
         console.error("Error setting up header commit viewer:", error);
@@ -345,13 +356,6 @@ async function initCommitViewer() {
 
 // Listen for the custom event dispatched by header-loader.js
 document.addEventListener('mainHeaderLoaded', () => {
-    console.log("'mainHeaderLoaded' event received. Initializing commit viewer.");
-    initCommitViewer(); // Now initialize the commit viewer
+    // console.log("'mainHeaderLoaded' event received. Initializing commit viewer.");
+    initCommitViewer(); 
 });
-
-// Fallback: If mainHeaderLoaded isn't dispatched (e.g. header-loader fails or is missing),
-// try to initialize on DOMContentLoaded anyway, but it might fail if placeholder isn't ready.
-// This is less ideal but provides a small chance of working if the event system has an issue.
-// However, the primary mechanism is now the custom event.
-// document.addEventListener('DOMContentLoaded', initCommitViewer); // This line is now effectively replaced by the custom event listener.
-// It's better to rely solely on the event for clarity.
