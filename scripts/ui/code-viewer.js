@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const GITHUB_RAW_CONTENT_BASE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/`;
 
-    let panelContainer, panelFilename, panelCodeBlock, panelCloseBtn, codeViewerWrapperDiv, contentWrapper; // Added contentWrapper
+    let panelContainer, panelFilename, panelCodeBlock, panelCloseBtn, codeViewerWrapperDiv, contentWrapper;
     let isViewerVisible = false;
     let isPanelInitialized = false;
 
@@ -19,8 +19,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentFoldableRegions = [];
     let currentRawCodeText = ""; 
 
-    // Keywords that can start a foldable block (functions, structs, impls, enums, traits, modules)
-    // Regex will be like: /^\s*(pub(\(\w+\))?\s+)?(unsafe\s+)?(async\s+)?(fn|struct|impl|enum|trait|mod)\b/
     const FOLDABLE_KEYWORDS_REGEX = /^\s*(?:pub(?:\([^)]*\))?\s*)?(?:unsafe\s+)?(?:async\s+)?(fn|struct|impl|enum|trait|mod)\b/;
 
 
@@ -44,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             panelFilename = document.getElementById('cv-filename');
             panelCodeBlock = document.getElementById('cv-code-block');
             panelCloseBtn = document.getElementById('cv-close-btn');
-            contentWrapper = document.getElementById('cv-content-wrapper'); // Get the content wrapper
+            contentWrapper = document.getElementById('cv-content-wrapper'); 
 
             if (!panelContainer || !panelFilename || !panelCodeBlock || !panelCloseBtn || !contentWrapper) {
                 console.error("code-viewer.js: Critical elements missing after HTML injection!");
@@ -126,9 +124,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     function identifyFoldableRegions(codeText) {
         const lines = codeText.split(/\r\n|\r|\n/);
         const regions = [];
-        // Stack stores: { keywordLine: number, keyword: string, level: number, actualBraceLine: number }
         const stack = []; 
-        let potentialKeywordStart = null; // { keywordLine: number, keyword: string }
+        let potentialKeywordStart = null;
 
         let inMultiLineComment = false;
         let inSingleLineCommentThisLine = false;
@@ -138,14 +135,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         lines.forEach((lineContent, index) => {
             const lineNumber = index + 1;
             inSingleLineCommentThisLine = false;
-            let trimmedLine = lineContent.trimStart(); // Only trim start for regex matching
+            let trimmedLine = lineContent.trimStart(); 
 
-            // Check for foldable keywords if not in a multi-line comment or string
             if (!inMultiLineComment && !inString) {
                 const match = trimmedLine.match(FOLDABLE_KEYWORDS_REGEX);
                 if (match) {
-                    // Basic check: ensure the keyword is not inside a single-line comment on this line
-                    const keywordIndexInOriginal = lineContent.indexOf(match[1]); // match[1] is the keyword (fn, struct, etc.)
+                    const keywordIndexInOriginal = lineContent.indexOf(match[1]); 
                     let isRealKeyword = true;
                     if (keywordIndexInOriginal > -1) {
                         for (let k = 0; k < keywordIndexInOriginal; k++) {
@@ -178,24 +173,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (char === '/' && nextChar === '/') { inSingleLineCommentThisLine = true; i++; continue; }
                 if (char === '/' && nextChar === '*') { inMultiLineComment = true; i++; continue; }
-                if (char === '"' || char === "'" || (char === 'r' && (nextChar === '"' || (nextChar === '#' && lineContent[i+2] === '"')))) { // Basic raw string check
+                if (char === '"' || char === "'" || (char === 'r' && (nextChar === '"' || (nextChar === '#' && lineContent[i+2] === '"')))) { 
                     inString = true;
-                    stringChar = '"'; // Simplification for raw strings, actual terminator is more complex
+                    stringChar = '"'; 
                     if (char === "'") stringChar = "'";
-                    if (char === 'r') i = lineContent.indexOf('"', i) -1; // Jump to quote start
+                    if (char === 'r') i = lineContent.indexOf('"', i) -1; 
                     continue;
                 }
 
                 if (char === '{') {
-                    let type = 'generic_block'; // Default for non-keyword related braces
+                    let type = 'generic_block'; 
                     let startLineForRegion = lineNumber;
                     let keywordForRegion = null;
 
                     if (potentialKeywordStart) {
-                        type = potentialKeywordStart.keyword; // fn, struct, etc.
+                        type = potentialKeywordStart.keyword; 
                         startLineForRegion = potentialKeywordStart.keywordLine;
                         keywordForRegion = potentialKeywordStart.keyword;
-                        potentialKeywordStart = null; // Consumed
+                        potentialKeywordStart = null; 
                     }
                     stack.push({ 
                         keywordLine: startLineForRegion, 
@@ -206,16 +201,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else if (char === '}') {
                     if (stack.length > 0) {
                         const openBraceInfo = stack.pop();
-                        // Only create a foldable region for our designated keywords
                         if (openBraceInfo.keyword && ['fn', 'struct', 'impl', 'enum', 'trait', 'mod'].includes(openBraceInfo.keyword)) {
-                            // Ensure the block is not empty or trivial (e.g. {} on one line, or { \n })
-                            if (lineNumber > openBraceInfo.actualBraceLine) { // Closing brace must be on a later line
+                            if (lineNumber > openBraceInfo.actualBraceLine) { 
                                 regions.push({
-                                    startLine: openBraceInfo.keywordLine, // Line of 'fn', 'struct', etc.
-                                    endLine: lineNumber,                  // Line of '}'
+                                    startLine: openBraceInfo.keywordLine, 
+                                    endLine: lineNumber,                  
                                     level: openBraceInfo.level,
                                     type: openBraceInfo.keyword,
-                                    actualBraceLine: openBraceInfo.actualBraceLine, // Line of '{'
+                                    actualBraceLine: openBraceInfo.actualBraceLine, 
                                     isFolded: false
                                 });
                             }
@@ -223,10 +216,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
             }
-            // Heuristic: If a keyword was pending but line ended without '{', and it's not a typical multi-line signature ender
             if (potentialKeywordStart && potentialKeywordStart.keywordLine === lineNumber && !lineContent.includes('{')) {
                  if (!trimmedLine.endsWith('->') && !trimmedLine.endsWith(',') && !trimmedLine.endsWith('(') && !trimmedLine.endsWith('where') && !trimmedLine.endsWith(')') && !trimmedLine.endsWith('>')) {
-                    potentialKeywordStart = null; // Reset if it seems like the { isn't coming soon for this keyword
+                    potentialKeywordStart = null; 
                 }
             }
         });
@@ -242,18 +234,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const region = currentFoldableRegions[regionIndex];
         
-        // --- Try to preserve scroll position ---
         const oldScrollTop = contentWrapper.scrollTop;
         let lineElementForScroll = foldToggleElement.closest('.cv-line');
         const oldLineOffsetTop = lineElementForScroll ? lineElementForScroll.offsetTop - panelCodeBlock.offsetTop : 0;
-        // ---
 
         region.isFolded = !region.isFolded;
-        renderCodeWithFolds(currentRawCodeText, currentFoldableRegions);
+        renderCodeWithFolds(currentRawCodeText, currentFoldableRegions); // This will also call addBottomPadding
 
-        // --- Restore scroll position ---
-        // Need to find the re-rendered line element. We can use its line number.
-        // This assumes line numbers are unique and stable in the DOM structure.
         const newLineElement = Array.from(panelCodeBlock.querySelectorAll('.cv-line .cv-line-number'))
                                 .find(numSpan => parseInt(numSpan.textContent) === region.startLine)
                                 ?.closest('.cv-line');
@@ -263,15 +250,76 @@ document.addEventListener('DOMContentLoaded', async () => {
             const scrollDiff = newLineOffsetTop - oldLineOffsetTop;
             contentWrapper.scrollTop = oldScrollTop + scrollDiff;
         } else {
-            // Fallback if element not found (shouldn't happen for startLine)
-            // or if just unfolding, try to keep top visible
             if (!region.isFolded) contentWrapper.scrollTop = oldScrollTop;
         }
-        // ---
     }
 
+    // --- NEW FUNCTION: Add blank lines to fill viewer ---
+    function addBottomPadding() {
+        if (!panelCodeBlock || !contentWrapper) return;
+
+        // Remove any existing padding lines first to prevent accumulation
+        const existingPaddingLines = panelCodeBlock.querySelectorAll('.cv-padding-line');
+        existingPaddingLines.forEach(line => line.remove());
+
+        const contentWrapperHeight = contentWrapper.clientHeight;
+        const panelCodeBlockHeight = panelCodeBlock.offsetHeight;
+
+        if (panelCodeBlockHeight < contentWrapperHeight) {
+            const firstLine = panelCodeBlock.querySelector('.cv-line');
+            if (!firstLine) return; // No lines to measure
+
+            const singleLineHeight = firstLine.offsetHeight;
+            if (singleLineHeight <= 0) return; // Cannot calculate
+
+            const remainingHeight = contentWrapperHeight - panelCodeBlockHeight;
+            let linesToAdd = Math.floor(remainingHeight / singleLineHeight);
+            
+            // Optional: Add a small buffer so it doesn't always perfectly touch bottom
+            // linesToAdd = Math.max(0, linesToAdd - 1); 
+
+            const lastLineNumberElement = Array.from(panelCodeBlock.querySelectorAll('.cv-line:not(.cv-padding-line) .cv-line-number')).pop();
+            let nextLineNumber = 1;
+            if (lastLineNumberElement) {
+                nextLineNumber = parseInt(lastLineNumberElement.textContent) + 1;
+            }
+
+
+            for (let i = 0; i < linesToAdd; i++) {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'cv-line cv-padding-line'; // Add a class to identify padding lines
+
+                const gutterSpan = document.createElement('span');
+                gutterSpan.className = 'cv-gutter';
+
+                // Padding lines don't get fold toggles
+                const togglePlaceholder = document.createElement('span');
+                togglePlaceholder.className = 'cv-fold-toggle-placeholder';
+                gutterSpan.appendChild(togglePlaceholder);
+
+                const numberSpan = document.createElement('span');
+                numberSpan.className = 'cv-line-number';
+                // numberSpan.innerHTML = ' '; // Or make them look different, e.g., with a '~' or empty
+                numberSpan.textContent = (nextLineNumber + i).toString(); // Continue numbering for context
+                numberSpan.style.opacity = "0.5"; // Make padding line numbers less prominent
+
+
+                gutterSpan.appendChild(numberSpan);
+                lineDiv.appendChild(gutterSpan);
+
+                const codeSpan = document.createElement('span');
+                codeSpan.className = 'cv-line-code';
+                codeSpan.innerHTML = ' '; // Just an empty space
+
+                lineDiv.appendChild(codeSpan);
+                panelCodeBlock.appendChild(lineDiv);
+            }
+        }
+    }
+
+
     function renderCodeWithFolds(codeText, foldableRegions) {
-        if (!panelCodeBlock || !window.hljs) {
+        if (!panelCodeBlock || !window.hljs || !contentWrapper) { // Added contentWrapper check
             if (panelCodeBlock) panelCodeBlock.textContent = codeText;
             return;
         }
@@ -315,9 +363,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const lineDiv = document.createElement('div');
             lineDiv.className = 'cv-line';
-            // Store line number for easier lookup if needed later
             lineDiv.dataset.lineNumber = lineNumber.toString();
-
 
             const gutterSpan = document.createElement('span');
             gutterSpan.className = 'cv-gutter';
@@ -333,7 +379,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 foldToggle.innerHTML = regionStartingHere.isFolded ? '►' : '▼';
                 foldToggle.title = regionStartingHere.isFolded ? 'Expand' : 'Collapse';
                 const regionIndex = foldableRegions.indexOf(regionStartingHere);
-                // Pass the toggle element itself for scroll preservation
                 foldToggle.addEventListener('click', (e) => toggleFoldRegion(regionIndex, e.currentTarget));
                 gutterSpan.appendChild(foldToggle);
             } else {
@@ -357,19 +402,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (linesFoldedCount < 0) linesFoldedCount = 0; 
 
                 placeholder.textContent = ` ... {${linesFoldedCount}} lines ... `;
-                
-                // If the startLine (e.g. `fn foo()`) does not contain the opening brace for the body,
-                // the placeholder should appear on the line that *does* contain the opening brace.
-                // However, our current structure adds the placeholder to the codeSpan of the region's startLine.
-                // For simplicity, we'll keep it this way. A more complex DOM manipulation would be needed
-                // to inject the placeholder onto a *different* line's codeSpan if startLine !== actualBraceLine.
-                // This means for multi-line function signatures, the "..." might appear on the `fn` line.
                 codeSpan.appendChild(placeholder);
             }
             
             lineDiv.appendChild(codeSpan);
             panelCodeBlock.appendChild(lineDiv);
         });
+
+        // After rendering actual code, add padding lines
+        addBottomPadding();
     }
 
     async function displayCodeForNode(nodeData) {
@@ -426,7 +467,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             currentFoldableRegions = identifyFoldableRegions(currentRawCodeText);
             
-            renderCodeWithFolds(currentRawCodeText, currentFoldableRegions);
+            renderCodeWithFolds(currentRawCodeText, currentFoldableRegions); // This will also call addBottomPadding
 
         } catch (error) {
             console.error(`code-viewer.js: Failed to load or display code for ${justFileName} from GitHub:`, error);
@@ -492,6 +533,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     });
+
+    // Optional: Add resize listener to re-calculate padding if viewer size changes
+    // This can be complex due to performance and interaction with folding.
+    // For now, padding is calculated once per render.
+    // window.addEventListener('resize', () => {
+    //     if (isViewerVisible && panelCodeBlock && panelCodeBlock.firstChild) {
+    //         addBottomPadding();
+    //     }
+    // });
 
     initializeCodeViewer().catch(err => console.error("code-viewer.js: Initial code viewer initialization promise failed:", err));
 });
