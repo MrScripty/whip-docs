@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function initializeCodeViewer() {
         if (isPanelInitialized) {
-            // console.log("code-viewer.js: initializeCodeViewer - already initialized.");
             return true;
         }
         console.log("code-viewer.js: initializeCodeViewer attempting initialization.");
@@ -26,20 +25,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             codeViewerWrapperDiv = document.getElementById('code-viewer-dynamic-injection-point');
             if (!codeViewerWrapperDiv) {
-                // console.log("code-viewer.js: Creating injection point div.");
                 codeViewerWrapperDiv = document.createElement('div');
                 codeViewerWrapperDiv.id = 'code-viewer-dynamic-injection-point';
                 document.body.appendChild(codeViewerWrapperDiv);
             }
 
-            // console.log(`code-viewer.js: Fetching panel HTML from ${CODE_VIEWER_COMPONENT_PATH}`);
             const response = await fetch(CODE_VIEWER_COMPONENT_PATH);
             if (!response.ok) {
                 console.error(`code-viewer.js: Failed to load ${CODE_VIEWER_COMPONENT_PATH}. Status: ${response.status} ${response.statusText}`);
                 throw new Error(`Failed to load ${CODE_VIEWER_COMPONENT_PATH}: ${response.statusText}`);
             }
             const viewerHtml = await response.text();
-            // console.log("code-viewer.js: Panel HTML fetched successfully.");
             
             codeViewerWrapperDiv.innerHTML = viewerHtml;
 
@@ -132,9 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     async function displayCodeForNode(nodeData) {
-        // console.log("code-viewer.js: displayCodeForNode called with nodeData:", nodeData);
         if (!isPanelInitialized || !panelContainer) {
-            // console.warn("code-viewer.js: displayCodeForNode - Panel not ready. Attempting re-init.");
             const initialized = await initializeCodeViewer();
             if (!initialized || !panelContainer) {
                 console.error("code-viewer.js: displayCodeForNode - Failed to initialize panel on demand.");
@@ -142,7 +136,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
         if (!nodeData || !nodeData.id) {
-            // console.warn("code-viewer.js: displayCodeForNode - No node data or ID. Hiding viewer.");
             hideCodeViewer();
             return;
         }
@@ -153,54 +146,103 @@ document.addEventListener('DOMContentLoaded', async () => {
         const fullCodeUrl = `${GITHUB_RAW_CONTENT_BASE_URL}${defaultBranch}/${fullPathInRepo}`;
         const justFileName = filePathFromNodeId.split('/').pop();
 
-        // console.log(`code-viewer.js: Preparing to display code for ${justFileName} from GitHub: ${fullCodeUrl}`);
         panelFilename.textContent = justFileName;
         
-        // --- METHOD 2 IMPLEMENTATION ---
-        panelCodeBlock.innerHTML = ''; // Clear previous content (spans, text, etc.)
-        // Set className for semantic purposes and if CSS targets it, though hljs.highlight won't use it for language detection here
-        panelCodeBlock.className = 'language-rust'; 
-        panelCodeBlock.textContent = `Loading ${justFileName} from GitHub...`; // Temporary loading message
+        panelCodeBlock.innerHTML = ''; 
+        panelCodeBlock.className = 'language-rust hljs'; // Add hljs class for theme styling
+        
+        const loadingLineDiv = document.createElement('div');
+        loadingLineDiv.className = 'cv-line';
+        const emptyNumberSpanLoading = document.createElement('span');
+        emptyNumberSpanLoading.className = 'cv-line-number';
+        emptyNumberSpanLoading.innerHTML = ' ';
+        const loadingMsgSpan = document.createElement('span');
+        loadingMsgSpan.className = 'cv-line-code'; 
+        loadingMsgSpan.textContent = `Loading ${justFileName} from GitHub...`;
+        loadingLineDiv.appendChild(emptyNumberSpanLoading);
+        loadingLineDiv.appendChild(loadingMsgSpan);
+        panelCodeBlock.appendChild(loadingLineDiv);
 
         try {
             console.log(`code-viewer.js: Fetching code from GitHub: ${fullCodeUrl}`);
             const response = await fetch(fullCodeUrl);
             if (!response.ok) {
                 let errorMsg = `HTTP error ${response.status} fetching from GitHub.`;
-                if (response.status === 404) {
-                    errorMsg += ` File not found at path '${fullPathInRepo}' in branch '${defaultBranch}'.`;
-                } else if (response.status === 403) {
-                    errorMsg += ` GitHub API rate limit likely exceeded or private repository/file.`;
-                }
+                if (response.status === 404) errorMsg += ` File not found at path '${fullPathInRepo}' in branch '${defaultBranch}'.`;
+                else if (response.status === 403) errorMsg += ` GitHub API rate limit likely exceeded or private repository/file.`;
                 console.error(`code-viewer.js: ${errorMsg} URL: ${fullCodeUrl}`);
                 throw new Error(errorMsg);
             }
             const codeText = await response.text();
             console.log(`code-viewer.js: Code for ${justFileName} fetched successfully from GitHub.`);
             
+            panelCodeBlock.innerHTML = ''; // Clear loading message
+
             if (window.hljs) {
-                // Use hljs.highlight to get the HTML string with highlighting
+                // First, get the highlighted HTML string for the entire code block
                 const highlighted = hljs.highlight(codeText, { language: 'rust', ignoreIllegals: true });
-                panelCodeBlock.innerHTML = highlighted.value; // Set the innerHTML to the highlighted code
-                console.log(`code-viewer.js: Applied syntax highlighting to ${justFileName} using hljs.highlight.`);
-            } else {
-                panelCodeBlock.textContent = codeText; // Fallback to plain text if hljs not found
-                console.warn("code-viewer.js: highlight.js (hljs) not found.");
+                // Split the highlighted HTML by newlines. HLJS output uses '\n'.
+                const highlightedHtmlLines = highlighted.value.split('\n');
+
+                highlightedHtmlLines.forEach((htmlLineContent, index) => {
+                    const lineDiv = document.createElement('div');
+                    lineDiv.className = 'cv-line';
+
+                    const numberSpan = document.createElement('span');
+                    numberSpan.className = 'cv-line-number';
+                    numberSpan.textContent = (index + 1).toString();
+
+                    const codeSpan = document.createElement('span');
+                    codeSpan.className = 'cv-line-code';
+                    // htmlLineContent is already HTML, so set innerHTML
+                    codeSpan.innerHTML = htmlLineContent || ' '; // Use ' ' for empty lines to maintain height
+
+                    lineDiv.appendChild(numberSpan);
+                    lineDiv.appendChild(codeSpan);
+                    panelCodeBlock.appendChild(lineDiv);
+                });
+                console.log(`code-viewer.js: Applied syntax highlighting to ${justFileName}.`);
+            } else { // Fallback if hljs is not available
+                const plainTextLines = codeText.split(/\r\n|\r|\n/);
+                plainTextLines.forEach((line, index) => {
+                    const lineDiv = document.createElement('div');
+                    lineDiv.className = 'cv-line';
+                    const numberSpan = document.createElement('span');
+                    numberSpan.className = 'cv-line-number';
+                    numberSpan.textContent = (index + 1).toString();
+                    const codeSpan = document.createElement('span');
+                    codeSpan.className = 'cv-line-code';
+                    codeSpan.textContent = line;
+                    lineDiv.appendChild(numberSpan);
+                    lineDiv.appendChild(codeSpan);
+                    panelCodeBlock.appendChild(lineDiv);
+                });
+                console.warn("code-viewer.js: highlight.js (hljs) not found. Displaying plain text with line numbers.");
+                panelCodeBlock.classList.remove('hljs'); // Remove hljs class if not used
             }
-            // --- END METHOD 2 IMPLEMENTATION ---
 
         } catch (error) {
             console.error(`code-viewer.js: Failed to load or display code for ${justFileName} from GitHub:`, error);
-            panelCodeBlock.innerHTML = ''; // Clear on error
-            panelCodeBlock.textContent = `Error loading code for ${justFileName} from GitHub.\n${error.message}\n(URL: ${fullCodeUrl})`;
-            panelCodeBlock.className = ''; // Remove language class on error
+            panelCodeBlock.innerHTML = ''; 
+            const errorLineDiv = document.createElement('div');
+            errorLineDiv.className = 'cv-line'; 
+            const emptyNumberSpanError = document.createElement('span');
+            emptyNumberSpanError.className = 'cv-line-number';
+            emptyNumberSpanError.innerHTML = ' ';
+            const errorMsgSpan = document.createElement('span');
+            errorMsgSpan.className = 'cv-line-code'; 
+            errorMsgSpan.style.whiteSpace = 'pre-wrap'; 
+            errorMsgSpan.textContent = `Error loading code for ${justFileName} from GitHub.\n${error.message}\n(URL: ${fullCodeUrl})`;
+            errorLineDiv.appendChild(emptyNumberSpanError);
+            errorLineDiv.appendChild(errorMsgSpan);
+            panelCodeBlock.appendChild(errorLineDiv);
+            panelCodeBlock.className = ''; 
+            panelCodeBlock.classList.remove('hljs');
         }
 
-        // console.log("code-viewer.js: Attempting to show panel. Current display:", panelContainer.style.display);
         panelContainer.style.display = 'flex';
         panelContainer.dataset.currentNodeId = nodeData.id;
         isViewerVisible = true;
-        // console.log("code-viewer.js: Panel display set to 'flex'. isViewerVisible:", isViewerVisible, "Actual display:", panelContainer.style.display);
     }
 
     function hideCodeViewer() {
@@ -208,37 +250,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             panelContainer.style.display = 'none';
         }
         isViewerVisible = false;
-        // console.log("code-viewer.js: Code viewer hidden.");
     }
 
     document.addEventListener('keydown', async (event) => {
         if (!isPanelInitialized) {
             const success = await initializeCodeViewer();
-            if (!success) {
-                // console.warn("code-viewer.js: Keydown - Panel not initialized, event ignored.");
-                return; 
-            }
+            if (!success) return; 
         }
         
         if (event.key === 'Escape' && isViewerVisible) {
-            // console.log("code-viewer.js: Escape key pressed, hiding viewer.");
             hideCodeViewer();
         } else if ((event.key === '~' || event.key === '`')) {
             event.preventDefault(); 
-            // console.log(`code-viewer.js: '${event.key}' key pressed.`);
             if (window.currentlySelectedGraphNodeData) {
-                // console.log("code-viewer.js: Node selected, processing viewer toggle/update.");
                 if (isViewerVisible && panelContainer && panelContainer.dataset.currentNodeId === window.currentlySelectedGraphNodeData.id) {
-                    // console.log("code-viewer.js: Viewer visible and same node, toggling off.");
                     hideCodeViewer();
                 } else {
-                    // console.log("code-viewer.js: Viewer not visible or different node, displaying/updating.");
                     await displayCodeForNode(window.currentlySelectedGraphNodeData);
                 }
             } else {
-                // console.log("code-viewer.js: Key pressed, but no graph node selected.");
                 if (isViewerVisible) {
-                    // console.log("code-viewer.js: Hiding viewer as no node is selected.");
                     hideCodeViewer();
                 }
             }

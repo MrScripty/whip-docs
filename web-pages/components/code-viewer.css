@@ -8,14 +8,14 @@
     max-width: 950px;
     height: 80vh;
     max-height: 750px;
-    background-color: #282c34; /* atom-one-dark background */
+    background-color: #282c34; /* atom-one-dark background for the panel itself */
     border: 1px solid #4f5b66;
     border-radius: 6px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
     z-index: 2000; /* Very high z-index */
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: hidden; /* Important: content wrapper will scroll */
 }
 
 .cv-header {
@@ -58,31 +58,68 @@
 
 .cv-content-wrapper {
     flex-grow: 1;
-    overflow: auto; /* Scrollbars for the code content */
-    padding: 0;
+    overflow: auto; /* Scrollbars for the code content (both vertical and horizontal) */
+    padding: 0; /* Padding will be on the code block itself */
+    position: relative; 
 }
 
 .cv-content-wrapper pre {
     margin: 0;
-    height: 100%;
+    height: 100%; /* Allow pre to fill wrapper if content is short */
     box-sizing: border-box;
+    /* The background color will come from the .hljs class on the <code> child */
 }
 
-.cv-content-wrapper pre code.hljs { /* Target specifically highlighted code */
-    padding: 1em;
-    font-size: 0.82em; /* Slightly smaller for more code visibility */
-    line-height: 1.45;
-    display: block;
+/* Styles for the <code> block that contains all lines */
+/* When hljs runs, it adds .hljs to this element */
+.cv-content-wrapper pre code#cv-code-block {
+    display: block; /* Behaves like a div */
+    padding: 1em; /* Padding around all lines */
+    font-size: 0.82em; 
+    line-height: 1.45; /* Base line height for calculations */
     min-height: 100%; /* Ensure background covers area for short files */
     box-sizing: border-box;
+    color: #abb2bf; /* Default text color, hljs spans will override */
+    /* background-color will be applied by highlight.js theme, e.g. atom-one-dark */
 }
 
-/* Style for placeholder text before code loads or on error */
-.cv-content-wrapper pre code:not(.hljs) {
-    padding: 1em;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 0.82em;
-    line-height: 1.45;
-    color: #abb2bf; /* Light text on dark background */
-    white-space: pre-wrap; /* Allow error messages to wrap */
+/* Styles for each line (container for number + code) */
+.cv-line {
+    display: flex;
+    min-height: 1.45em; /* Match line-height to prevent collapse of empty lines */
+                            /* This should be same as line-height of code#cv-code-block */
+}
+
+.cv-line-number {
+    display: inline-block;
+    width: 3.5em; /* Accommodate up to 4-digit line numbers comfortably */
+    padding-right: 1em;
+    text-align: right;
+    color: #5c6370; /* Atom one dark comment color - for line numbers */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    flex-shrink: 0; /* Prevent line number column from shrinking */
+}
+
+.cv-line-code {
+    flex-grow: 1;
+    white-space: pre; /* Preserve whitespace, allow horizontal scroll via wrapper */
+    /* hljs will insert its <span> tags within this element for syntax highlighting */
+}
+
+/* Style for placeholder/error text when not using hljs or before load */
+/* This targets the .cv-line-code span when it's directly holding the message */
+/* This is a fallback, JS adds specific styling for error messages (white-space: pre-wrap) */
+.cv-content-wrapper pre code#cv-code-block .cv-line .cv-line-code:only-child {
+    /* If cv-line-code is the only child (e.g. no line number span, or for general messages) */
+    /* This might be used for the initial "Loading..." or error messages if they don't have line numbers */
+    padding-left: 0; /* No indent if there's no line number */
+}
+
+/* Ensure hljs spans within .cv-line-code inherit font settings correctly if needed */
+/* Typically, hljs themes handle this well. */
+.cv-line-code span[class^="hljs-"] {
+    /* font-family: inherit; /* Usually not needed */
 }
