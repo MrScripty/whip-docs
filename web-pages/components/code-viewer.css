@@ -8,14 +8,14 @@
     max-width: 950px;
     height: 80vh;
     max-height: 750px;
-    background-color: #282c34; /* atom-one-dark background for the panel itself */
+    background-color: #282c34;
     border: 1px solid #4f5b66;
     border-radius: 6px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    z-index: 2000; /* Very high z-index */
+    z-index: 2000;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Important: content wrapper will scroll */
+    overflow: hidden;
 }
 
 .cv-header {
@@ -58,68 +58,95 @@
 
 .cv-content-wrapper {
     flex-grow: 1;
-    overflow: auto; /* Scrollbars for the code content (both vertical and horizontal) */
-    padding: 0; /* Padding will be on the code block itself */
+    overflow: auto;
+    padding: 0;
     position: relative; 
 }
 
 .cv-content-wrapper pre {
     margin: 0;
-    height: 100%; /* Allow pre to fill wrapper if content is short */
+    height: 100%;
     box-sizing: border-box;
-    /* The background color will come from the .hljs class on the <code> child */
 }
 
-/* Styles for the <code> block that contains all lines */
-/* When hljs runs, it adds .hljs to this element */
 .cv-content-wrapper pre code#cv-code-block {
-    display: block; /* Behaves like a div */
-    padding: 1em; /* Padding around all lines */
+    display: block;
+    padding: 1em;
     font-size: 0.82em; 
-    line-height: 1.45; /* Base line height for calculations */
-    min-height: 100%; /* Ensure background covers area for short files */
+    line-height: 1.45;
+    min-height: 100%;
     box-sizing: border-box;
-    color: #abb2bf; /* Default text color, hljs spans will override */
-    /* background-color will be applied by highlight.js theme, e.g. atom-one-dark */
+    color: #abb2bf;
 }
 
-/* Styles for each line (container for number + code) */
 .cv-line {
     display: flex;
-    min-height: 1.45em; /* Match line-height to prevent collapse of empty lines */
-                            /* This should be same as line-height of code#cv-code-block */
+    min-height: 1.45em; /* From code#cv-code-block line-height * font-size (approx) */
+    /* Or simply use the same line-height as code#cv-code-block if font-size is consistent */
+    line-height: 1.45; /* Ensure consistent line height for all parts */
 }
 
-.cv-line-number {
-    display: inline-block;
-    width: 3.5em; /* Accommodate up to 4-digit line numbers comfortably */
-    padding-right: 1em;
+/* NEW: Gutter for fold toggle and line number */
+.cv-gutter {
+    display: inline-flex; /* Use flex to align toggle and number */
+    align-items: center;
+    width: 5.5em; /* Adjusted width: ~2em for toggle, ~3.5em for number */
+    padding-right: 0.5em; /* Space between gutter and code */
     text-align: right;
-    color: #5c6370; /* Atom one dark comment color - for line numbers */
+    color: #5c6370;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-    flex-shrink: 0; /* Prevent line number column from shrinking */
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+/* NEW: Fold toggle icon */
+.cv-fold-toggle {
+    display: inline-block;
+    width: 1.5em; /* Width for the toggle character */
+    cursor: pointer;
+    text-align: center; /* Center the triangle/plus */
+    font-size: 0.9em; /* Make toggle slightly smaller */
+    color: #6d788d; /* A bit more prominent than line numbers */
+}
+.cv-fold-toggle:hover {
+    color: #abb2bf;
+}
+
+/* NEW: Placeholder for alignment when no toggle is present */
+.cv-fold-toggle-placeholder {
+    display: inline-block;
+    width: 1.5em; /* Match toggle width */
+}
+
+
+.cv-line-number {
+    display: inline-block;
+    width: 3.5em; /* Width for line numbers */
+    text-align: right;
+    /* color inherited from .cv-gutter or can be set specifically */
+    padding-right: 0.5em; /* Small space if needed, but gutter handles overall padding */
 }
 
 .cv-line-code {
     flex-grow: 1;
-    white-space: pre; /* Preserve whitespace, allow horizontal scroll via wrapper */
-    /* hljs will insert its <span> tags within this element for syntax highlighting */
+    white-space: pre;
 }
 
-/* Style for placeholder/error text when not using hljs or before load */
-/* This targets the .cv-line-code span when it's directly holding the message */
-/* This is a fallback, JS adds specific styling for error messages (white-space: pre-wrap) */
-.cv-content-wrapper pre code#cv-code-block .cv-line .cv-line-code:only-child {
-    /* If cv-line-code is the only child (e.g. no line number span, or for general messages) */
-    /* This might be used for the initial "Loading..." or error messages if they don't have line numbers */
-    padding-left: 0; /* No indent if there's no line number */
+/* NEW: Folded content placeholder */
+.cv-fold-placeholder {
+    display: inline-block;
+    background-color: #3a404a; /* Slightly different background for placeholder */
+    color: #7f899a;
+    padding: 0 0.5em;
+    border-radius: 3px;
+    font-style: italic;
+    cursor: default;
+    margin-left: 0.5em; /* Space it from the opening brace */
 }
 
-/* Ensure hljs spans within .cv-line-code inherit font settings correctly if needed */
-/* Typically, hljs themes handle this well. */
 .cv-line-code span[class^="hljs-"] {
-    /* font-family: inherit; /* Usually not needed */
+    /* HLJS styles apply here */
 }
