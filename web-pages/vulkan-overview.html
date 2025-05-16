@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vulkan Overview - Engine Docs</title>
     <link rel="stylesheet" href="shared-styles.css">
-    <link rel="stylesheet" href="components/commit-banner.css"> <!-- Added banner CSS -->
+    <link rel="stylesheet" href="components/commit-viewer-header.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <style>
+        /* ... your existing vulkan-overview.html styles ... */
+        /* Styles for .main-header are in shared-styles.css and will apply once loaded */
         .overview-container {
             display: flex;
             flex: 1; 
@@ -24,21 +26,19 @@
             min-width: 200px; 
             max-width: 70%;   
             overflow-y: auto; 
-            /* border-right: 1px solid #e0e0e0; REMOVED - Divider handles this */
             padding: 0;
             position: relative; 
-            /* cursor: col-resize; REMOVED - Divider handles this */
         }
 
         .column-divider {
-            flex: 0 0 5px; /* Width of the divider */
-            background-color: #e0e0e0; /* Visible color for the divider */
+            flex: 0 0 5px; 
+            background-color: #e0e0e0; 
             cursor: col-resize;
             position: relative;
-            z-index: 5; /* Ensure it's clickable */
+            z-index: 5; 
         }
         .column-divider:hover {
-            background-color: #c0c0c0; /* Darker on hover */
+            background-color: #c0c0c0; 
         }
 
 
@@ -189,12 +189,12 @@
             .overview-container {
                 flex-direction: column;
                 height: auto; 
-                max-height: calc(100vh - 50px - 40px); /* Adjusted for header and banner */
+                max-height: calc(100vh - 50px); 
             }
             .tree-column {
                 border-right: none;
                 border-bottom: 1px solid #e0e0e0;
-                max-height: 40vh; /* Adjusted */
+                max-height: 40vh; 
                 height: auto; 
                 flex-basis: auto !important; 
                 flex-grow: 0; flex-shrink:0; 
@@ -204,7 +204,7 @@
                 display: none; 
             }
             .info-column {
-                max-height: 40vh; /* Adjusted */
+                max-height: 40vh; 
                 height: auto;
                 flex-basis: auto !important;
                 flex-grow: 1; 
@@ -213,25 +213,15 @@
             .main-content {
                  padding: 10px; 
             }
-            body { /* Ensure body can scroll if content + banner exceeds viewport on small screens */
+            body { 
                 overflow-y: auto;
             }
         }
     </style>
 </head>
 <body>
-    <header class="main-header">
-        <a href="../index.html" class="site-title">Whip Docs</a>
-        <nav>
-            <ul>
-                <li><a href="vulkan-overview.html" class="active">Vulkan Overview</a></li>
-                <li><a href="module-graph.html">Module Graph</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <div id="dynamic-commit-banner-placeholder" class="commit-banner-placeholder">
-        <!-- Banner content will be loaded here by JS -->
+    <div id="main-header-placeholder">
+        <!-- The main header will be loaded here by header-loader.js -->
     </div>
 
     <main class="main-content">
@@ -273,11 +263,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script>hljs.highlightAll();</script>
+    <script>if(window.hljs) { hljs.highlightAll(); }</script> <!-- Added if check -->
 
+    <script src="../scripts/ui/header-loader.js"></script> <!-- LOAD HEADER COMPONENT -->
     <script src="../scripts/lists/tree.js"></script>
     <script src="../scripts/ui/column-resizer.js"></script>
-    <script src="../scripts/ui/commit-banner.js"></script> <!-- Added banner script -->
+    <script src="../scripts/ui/commit-viewer-header.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const treeColumn = document.querySelector('.overview-container .tree-column');
@@ -289,7 +280,7 @@
                     divider,
                     overviewContainer,
                     'whipDocsOverview_leftColumnWidth',
-                    true // Uses flex-basis
+                    true 
                 );
             }
         });

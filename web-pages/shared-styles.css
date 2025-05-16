@@ -25,6 +25,7 @@ body {
     justify-content: space-between; /* Space out title and nav */
     align-items: center;
     height: 50px; /* Fixed header height */
+    position: relative;
 }
 
 .main-header .site-title {

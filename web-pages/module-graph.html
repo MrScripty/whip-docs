@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Module Graph - Engine Docs</title>
     <link rel="stylesheet" href="shared-styles.css">
-    <link rel="stylesheet" href="components/commit-banner.css">
     <link rel="stylesheet" href="components/code-viewer.css">
+    <link rel="stylesheet" href="components/commit-viewer-header.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <style>
-        /* ... your existing CSS ... */
+        /* ... your existing page-specific CSS ... */
         html, body {
             height: 100%;
             margin: 0;
@@ -20,52 +20,14 @@
             display: flex;
             flex-direction: column;
         }
-        .main-header { 
-            background-color: #4F5B66;
-            padding: 0 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 100;
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 50px;
+        /* .main-header styles are in shared-styles.css and will apply once loaded */
+        /* Ensure .main-header has position: relative; in shared-styles.css */
+
+
+        #header-commit-viewer-placeholder {
+            /* Styles for the placeholder div itself, if needed for layout before JS loads */
         }
-        .main-header .site-title {
-            color: #EAEAEA;
-            font-size: 1.4em;
-            font-weight: 300;
-            text-decoration: none;
-        }
-         .main-header .site-title:hover {
-            color: #ffffff;
-        }
-        .main-header nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-        }
-        .main-header nav li {
-            margin-left: 15px;
-        }
-        .main-header nav a {
-            color: #C0C0C0;
-            text-decoration: none;
-            padding: 10px 5px;
-            display: block;
-            font-size: 1em;
-            border-bottom: 2px solid transparent;
-            transition: color 0.2s ease, border-color 0.2s ease;
-        }
-        .main-header nav a:hover {
-            color: #ffffff;
-        }
-        .main-header nav a.active {
-            color: #ffffff;
-            font-weight: 500;
-            border-bottom-color: #88CDF5;
-        }
+
 
         .main-content { 
             flex: 1;
@@ -292,7 +254,7 @@
                 min-height: 280px; 
             }
             .main-content { 
-                 max-height: calc(100vh - 50px - 40px); 
+                 max-height: calc(100vh - 50px); 
                  overflow-y: auto;
             }
             body { 
@@ -302,19 +264,12 @@
     </style>
 </head>
 <body>
-    <header class="main-header">
-         <a href="../index.html" class="site-title">Whip Docs</a>
-        <nav>
-            <ul>
-                <li><a href="vulkan-overview.html">Vulkan Overview</a></li>
-                <li><a href="module-graph.html" class="active">Module Graph</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <div id="dynamic-commit-banner-placeholder" class="commit-banner-placeholder">
-        <!-- Banner content will be loaded here by JS -->
+    <!-- === MODIFICATION START === -->
+    <div id="main-header-placeholder">
+        <!-- The main header (including the #header-commit-viewer-placeholder) 
+             will be loaded here by header-loader.js -->
     </div>
+    <!-- === MODIFICATION END === -->
 
     <main class="main-content">
         <div class="two-column-layout">
@@ -356,32 +311,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
 
-    <!-- Configure highlight.js -->
     <script>
-        // It's good practice to ensure hljs is available before configuring
         if (window.hljs) {
             window.hljs.configure({ ignoreUnescapedHTML: true });
-            console.log("highlight.js configured.");
+            // console.log("highlight.js configured."); // Optional: uncomment for debugging
         } else {
             console.error("highlight.js (hljs) not found on window for configuration!");
         }
     </script>
 
     <!-- UI Utilities -->
+    <!-- IMPORTANT: header-loader.js MUST come before commit-viewer-header.js -->
+    <script src="../scripts/ui/header-loader.js"></script> 
+    <script src="../scripts/ui/commit-viewer-header.js"></script> 
     <script src="../scripts/ui/column-resizer.js"></script>
-    <script src="../scripts/ui/commit-banner.js"></script>
     
     <!-- Core page logic scripts -->
     <script src="../scripts/graphs/module_dependency_graph.js"></script>
     <script src="../scripts/lists/graph_interaction_tree.js"></script>
 
-    <!-- Code Viewer - load this after graph scripts as it depends on global var from module_dependency_graph.js -->
+    <!-- Code Viewer -->
     <script src="../scripts/ui/code-viewer.js"></script>
 
-    <!-- Inline script for column resizer initialization (depends on DOM ready) -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("module-graph.html: DOMContentLoaded for resizer init.");
+            // console.log("module-graph.html: DOMContentLoaded for resizer init."); // Optional
             const leftColumn = document.querySelector('.two-column-layout .left-column');
             const divider = document.querySelector('.two-column-layout .column-divider');
             const twoColumnLayout = document.querySelector('.two-column-layout');
@@ -396,10 +350,6 @@
                         window.dispatchEvent(new Event('resize')); 
                     }
                 );
-                // The graph's own resize listener should handle updates after resizer init
-                // setTimeout(() => {
-                //     window.dispatchEvent(new Event('resize'));
-                // }, 0);
             } else {
                 console.warn("Column resizer elements not all found for module-graph.html.");
             }

@@ -1,0 +1,238 @@
+/* web-pages/components/commit-viewer-header.css */
+.header-commit-viewer-container {
+    position: relative; 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 36px; 
+    background-color: #3a4750;
+    border-radius: 5px;
+    border: 1px solid #2a3740;
+    color: #eaeaea;
+    transition: width 0.25s ease-in-out, left 0.25s ease-in-out, opacity 0.25s ease-in-out;
+    overflow: hidden;
+    padding: 0 8px;
+    box-sizing: border-box;
+    flex-shrink: 0; 
+    z-index: 1001; 
+}
+
+.header-commit-viewer-container.collapsed {
+    width: 230px; 
+    cursor: pointer;
+    opacity: 1;
+    top: auto;
+    left: auto; 
+    right: auto;
+    transform: none;
+    position: relative; 
+}
+.header-commit-viewer-container.collapsed:hover {
+    background-color: #424e57;
+}
+
+.header-commit-viewer-container.expanded {
+    position: absolute; 
+    top: 50%; 
+    transform: translateY(-50%);
+    right: 10px; 
+    height: 36px; 
+    max-width: none; 
+    cursor: default;
+    z-index: 1050; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    opacity: 1;
+}
+
+.hcv-commit-display {
+    display: none; 
+    flex-direction: column; /* Stack message and details */
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+    flex-grow: 1;
+    font-size: 0.78em;
+    margin-right: 5px; 
+}
+.header-commit-viewer-container.collapsed .hcv-commit-display {
+    display: flex;
+}
+
+.hcv-commit-display .hcv-commit-message {
+    font-weight: 500;
+    color: #c0c5ce;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    /* margin-bottom: 1px; /* Optional: small space before details line */
+}
+
+.hcv-commit-display .hcv-commit-details-collapsed {
+    display: flex;
+    justify-content: space-between; /* SHA left, Date right */
+    align-items: center;
+    font-size: 0.9em; /* Relative to .hcv-commit-display font-size */
+    color: #a0a5ae; 
+    margin-top: 1px; /* Small space from message */
+}
+
+.hcv-commit-display .hcv-commit-sha-collapsed {
+    font-family: monospace;
+    color: #88cdf5; 
+    margin-right: 6px; /* Space between SHA and Date */
+}
+
+.hcv-commit-display .hcv-commit-date {
+    /* font-size: 1em; /* Inherits from .hcv-commit-details-collapsed */
+    /* color: #a0a5ae; /* Inherits from .hcv-commit-details-collapsed */
+    white-space: nowrap; /* Prevent date from wrapping if space is tight */
+}
+
+
+.hcv-scroll-wrapper {
+    display: none; 
+    flex-grow: 1;
+    height: 100%; 
+    overflow-x: auto;
+    margin-right: 5px; 
+    scrollbar-width: none; 
+    -ms-overflow-style: none;
+}
+.hcv-scroll-wrapper::-webkit-scrollbar {
+    display: none;
+}
+.header-commit-viewer-container.expanded .hcv-scroll-wrapper {
+    display: block;
+    cursor: grab;
+}
+
+.hcv-commit-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    height: 100%; 
+    align-items: center; 
+    gap: 8px;
+}
+
+.hcv-commit-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #4f5b66;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid #5a6770;
+    font-size: 0.75em;
+    min-width: 200px; 
+    max-width: 300px; 
+    height: calc(100% - 4px); 
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    white-space: normal; 
+    overflow: hidden;
+    position: relative; 
+}
+.hcv-commit-item:hover {
+    background-color: #5a6770;
+}
+.hcv-commit-item.hcv-selected {
+    background-color: #637C8A; 
+    border-color: #88CDF5; 
+    box-shadow: 0 0 3px #88CDF5;
+}
+
+.hcv-commit-number {
+    font-size: 0.85em;
+    color: #88cdf5; 
+    font-weight: bold;
+    padding-right: 4px;
+    margin-right: 4px;
+    border-right: 1px solid #5a6770;
+    align-self: stretch; 
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.hcv-commit-item-text-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
+    overflow: hidden; 
+    flex-grow: 1;
+}
+
+.hcv-commit-item .hcv-commit-message { 
+    font-size: 1em; 
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hcv-commit-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.88em;
+    color: #a0a5ae;
+    width: 100%;
+}
+.hcv-commit-item .hcv-commit-sha {
+    color: #88cdf5; 
+    font-family: monospace;
+    margin-left: 5px; 
+}
+
+.hcv-toggle-button {
+    background: none;
+    border: none;
+    color: #c0c5ce;
+    padding: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 3px;
+}
+.hcv-toggle-button:hover {
+    background-color: #526570; 
+}
+.hcv-arrow-icon {
+    transition: transform 0.2s ease-in-out;
+}
+.header-commit-viewer-container.expanded .hcv-arrow-icon {
+    transform: rotate(180deg);
+}
+
+.hcv-notes-dropdown {
+    position: fixed; 
+    background-color: #2c313a; 
+    border: 1px solid #4f5b66;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    padding: 8px 10px;
+    z-index: 1100; 
+    max-width: 380px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 0.78em;
+    color: #abb2bf; 
+    line-height: 1.4;
+    scrollbar-width: thin;
+    scrollbar-color: #5a6770 #2c313a;
+}
+.hcv-notes-dropdown::-webkit-scrollbar { width: 6px; height: 6px; }
+.hcv-notes-dropdown::-webkit-scrollbar-track { background: #2c313a; }
+.hcv-notes-dropdown::-webkit-scrollbar-thumb { background-color: #5a6770; border-radius: 3px; }
+
+.hcv-notes-dropdown pre.hcv-notes-content {
+    margin: 0;
+    padding: 0;
+    white-space: pre-wrap; 
+    word-break: break-word; 
+    font-family: 'Consolas', 'Courier New', monospace;
+}
