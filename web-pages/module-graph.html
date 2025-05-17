@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Module Graph - Engine Docs</title>
     <link rel="stylesheet" href="shared-styles.css">
-    <link rel="stylesheet" href="components/code-viewer.css">
+    <!-- REMOVED: <link rel="stylesheet" href="components/code-viewer.css"> -->
+    <link rel="stylesheet" href="components/integrated-code-viewer.css"> <!-- ADDED -->
     <link rel="stylesheet" href="components/commit-viewer-header.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <style>
-        /* ... your existing page-specific CSS ... */
+        /* Styles are identical to your provided original module-graph.html */
         html, body {
             height: 100%;
             margin: 0;
@@ -20,14 +21,10 @@
             display: flex;
             flex-direction: column;
         }
-        /* .main-header styles are in shared-styles.css and will apply once loaded */
-        /* Ensure .main-header has position: relative; in shared-styles.css */
-
-
+        
         #header-commit-viewer-placeholder {
             /* Styles for the placeholder div itself, if needed for layout before JS loads */
         }
-
 
         .main-content { 
             flex: 1;
@@ -192,7 +189,7 @@
             text-overflow: ellipsis; 
         }
 
-        .right-column .engine-content {
+        .right-column .engine-content { /* This is a key flex container */
             padding: 20px;
             flex-grow: 1;
             display: flex;
@@ -213,13 +210,14 @@
             line-height: 1.5;
             flex-shrink: 0;
         }
-        .graph-container-wrapper {
+        .graph-container-wrapper { /* This will shrink/grow */
             flex-grow: 1; 
             display: flex;
             align-items: stretch; 
             justify-content: center; 
-            min-height: 300px; 
+            min-height: 300px; /* Original min-height */
             overflow: hidden; 
+            /* Removed transition from here, apply to icv-panel for its own animation */
         }
         .graph-container {
             width: 100%;
@@ -229,6 +227,14 @@
             overflow: hidden; 
             position: relative; 
         }
+        
+        /* Placeholder for the integrated code viewer */
+        #integrated-code-viewer-placeholder {
+            flex-shrink: 0; /* Important: viewer should not shrink beyond its content */
+            /* Height and visibility are controlled by JS and integrated-code-viewer.css */
+            /* It will be a direct child of .engine-content (flex column) */
+        }
+
         .node rect { stroke: #333; stroke-width: 1.5px; cursor: pointer; }
         .node text { font-size: 10px; pointer-events: none; text-anchor: middle; dominant-baseline: middle; fill: #222; }
         .link { stroke: #999; stroke-opacity: 0.6; fill: none; }
@@ -250,8 +256,9 @@
                 display: none; 
             }
             .right-column {
-                height: 55vh; 
+                /* height: 55vh; /* Let flexbox determine height */
                 min-height: 280px; 
+                flex-grow: 1; /* Allow right column to take remaining space */
             }
             .main-content { 
                  max-height: calc(100vh - 50px); 
@@ -260,16 +267,17 @@
             body { 
                 overflow-y: auto;
             }
+            .graph-container-wrapper {
+                min-height: 250px; /* Adjust for mobile */
+            }
+            /* .icv-panel.visible style in integrated-code-viewer.css will handle mobile height */
         }
     </style>
 </head>
 <body>
-    <!-- === MODIFICATION START === -->
     <div id="main-header-placeholder">
-        <!-- The main header (including the #header-commit-viewer-placeholder) 
-             will be loaded here by header-loader.js -->
+        <!-- Header loaded by header-loader.js -->
     </div>
-    <!-- === MODIFICATION END === -->
 
     <main class="main-content">
         <div class="two-column-layout">
@@ -294,6 +302,7 @@
                 <div class="engine-content">
                     <h1>Studio Whip Module Map</h1>
                     <p>This diagram visualizes the relationships between modules in the Studio Whip source code.
+                       Press <strong>~ (tilde/backtick)</strong> to toggle the code viewer for the selected module.
                     </p>
                     <div class="graph-container-wrapper">
                         <div id="module-graph-area"
@@ -302,6 +311,8 @@
                              data-ignore-files="mod.rs,lib.rs">
                         </div>
                     </div>
+                    <!-- ADDED: Placeholder for the integrated code viewer -->
+                    <div id="integrated-code-viewer-placeholder"></div>
                 </div>
             </div>
         </div>
@@ -314,14 +325,12 @@
     <script>
         if (window.hljs) {
             window.hljs.configure({ ignoreUnescapedHTML: true });
-            // console.log("highlight.js configured."); // Optional: uncomment for debugging
         } else {
             console.error("highlight.js (hljs) not found on window for configuration!");
         }
     </script>
 
     <!-- UI Utilities -->
-    <!-- IMPORTANT: header-loader.js MUST come before commit-viewer-header.js -->
     <script src="../scripts/ui/header-loader.js"></script> 
     <script src="../scripts/ui/commit-viewer-header.js"></script> 
     <script src="../scripts/ui/column-resizer.js"></script>
@@ -330,12 +339,11 @@
     <script src="../scripts/graphs/module_dependency_graph.js"></script>
     <script src="../scripts/lists/graph_interaction_tree.js"></script>
 
-    <!-- Code Viewer -->
-    <script src="../scripts/ui/code-viewer.js"></script>
+    <!-- REMOVED: <script src="../scripts/ui/code-viewer.js"></script> -->
+    <script src="../scripts/ui/integrated-code-viewer.js"></script> <!-- ADDED -->
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // console.log("module-graph.html: DOMContentLoaded for resizer init."); // Optional
             const leftColumn = document.querySelector('.two-column-layout .left-column');
             const divider = document.querySelector('.two-column-layout .column-divider');
             const twoColumnLayout = document.querySelector('.two-column-layout');

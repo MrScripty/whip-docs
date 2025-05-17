@@ -1,0 +1,137 @@
+/* web-pages/components/integrated-code-viewer.css */
+.icv-panel {
+    background-color: #282c34; /* Same as popup editor */
+    border-top: 1px solid #4f5b66;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 0; /* Initially hidden */
+    opacity: 0;
+    transition: height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    flex-shrink: 0; /* Important for flex layout */
+}
+
+.icv-panel.visible {
+    height: 40vh; /* Default expanded height, can be adjusted */
+    min-height: 150px; /* Minimum sensible height */
+    opacity: 1;
+}
+
+.icv-header {
+    background-color: #3a4750;
+    color: #e0e0e0;
+    padding: 6px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #4f5b66;
+    user-select: none;
+    -webkit-user-select: none;
+    flex-shrink: 0;
+    height: 30px; /* Fixed header height */
+    box-sizing: border-box;
+}
+
+.icv-filename {
+    font-weight: 500;
+    font-size: 0.8em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.icv-minimize-btn {
+    background: none;
+    border: none;
+    color: #b0b0b0;
+    font-size: 1.4em;
+    line-height: 1;
+    padding: 0 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.icv-minimize-btn:hover {
+    color: #ffffff;
+}
+
+.icv-content-wrapper {
+    flex-grow: 1;
+    overflow: auto; /* Enables scrolling for code content */
+    padding: 0;
+    position: relative;
+}
+
+.icv-content-wrapper pre {
+    margin: 0;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.icv-content-wrapper pre code#icv-code-block {
+    display: block;
+    padding: 0.8em 1em; /* Slightly reduced padding */
+    font-size: 0.80em; /* Slightly smaller font for integrated view */
+    line-height: 1.45;
+    min-height: 100%;
+    box-sizing: border-box;
+    color: #abb2bf; /* Default text color from atom-one-dark */
+}
+
+/* Reusing existing .cv-line, .cv-gutter, etc. styles by targeting them within .icv-panel */
+/* This assumes hljs output structure is consistent */
+.icv-panel .cv-line { /* If hljs output uses cv-line, adapt it */
+    display: flex;
+    line-height: 1.45;
+}
+.icv-panel .cv-gutter {
+    display: inline-flex;
+    align-items: center;
+    width: 5.5em;
+    padding-right: 0.5em;
+    text-align: right;
+    color: #5c6370;
+    user-select: none;
+    -webkit-user-select: none;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+.icv-panel .cv-fold-toggle {
+    display: inline-block;
+    width: 1.5em;
+    cursor: pointer;
+    text-align: center;
+    font-size: 0.9em;
+    color: #6d788d;
+}
+.icv-panel .cv-fold-toggle:hover {
+    color: #abb2bf;
+}
+.icv-panel .cv-fold-toggle-placeholder {
+    display: inline-block;
+    width: 1.5em;
+}
+.icv-panel .cv-line-number {
+    display: inline-block;
+    width: 3.5em;
+    text-align: right;
+    padding-right: 0.5em;
+}
+.icv-panel .cv-line-code {
+    flex-grow: 1;
+    white-space: pre; /* Keep pre for code lines */
+}
+.icv-panel .cv-fold-placeholder {
+    display: inline-block;
+    background-color: #3a404a;
+    color: #7f899a;
+    padding: 0 0.5em;
+    border-radius: 3px;
+    font-style: italic;
+    cursor: default;
+    margin-left: 0.5em;
+}
+
+/* Ensure hljs styles are scoped if necessary, or rely on global hljs theme */
+.icv-panel .hljs {
+    /* Styles from atom-one-dark.min.css will apply */
+}
