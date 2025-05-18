@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Module Graph - Engine Docs</title>
     <link rel="stylesheet" href="shared-styles.css">
-    <!-- REMOVED: <link rel="stylesheet" href="components/code-viewer.css"> -->
-    <link rel="stylesheet" href="components/integrated-code-viewer.css"> <!-- ADDED -->
+    <link rel="stylesheet" href="components/integrated-code-viewer.css"> 
     <link rel="stylesheet" href="components/commit-viewer-header.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <style>
@@ -217,7 +216,6 @@
             justify-content: center; 
             min-height: 300px; /* Original min-height */
             overflow: hidden; 
-            /* Removed transition from here, apply to icv-panel for its own animation */
         }
         .graph-container {
             width: 100%;
@@ -228,11 +226,8 @@
             position: relative; 
         }
         
-        /* Placeholder for the integrated code viewer */
         #integrated-code-viewer-placeholder {
-            flex-shrink: 0; /* Important: viewer should not shrink beyond its content */
-            /* Height and visibility are controlled by JS and integrated-code-viewer.css */
-            /* It will be a direct child of .engine-content (flex column) */
+            flex-shrink: 0; 
         }
 
         .node rect { stroke: #333; stroke-width: 1.5px; cursor: pointer; }
@@ -256,9 +251,8 @@
                 display: none; 
             }
             .right-column {
-                /* height: 55vh; /* Let flexbox determine height */
                 min-height: 280px; 
-                flex-grow: 1; /* Allow right column to take remaining space */
+                flex-grow: 1; 
             }
             .main-content { 
                  max-height: calc(100vh - 50px); 
@@ -268,9 +262,8 @@
                 overflow-y: auto;
             }
             .graph-container-wrapper {
-                min-height: 250px; /* Adjust for mobile */
+                min-height: 250px; 
             }
-            /* .icv-panel.visible style in integrated-code-viewer.css will handle mobile height */
         }
     </style>
 </head>
@@ -311,7 +304,6 @@
                              data-ignore-files="mod.rs,lib.rs">
                         </div>
                     </div>
-                    <!-- ADDED: Placeholder for the integrated code viewer -->
                     <div id="integrated-code-viewer-placeholder"></div>
                 </div>
             </div>
@@ -339,8 +331,8 @@
     <script src="../scripts/graphs/module_dependency_graph.js"></script>
     <script src="../scripts/lists/graph_interaction_tree.js"></script>
 
-    <!-- REMOVED: <script src="../scripts/ui/code-viewer.js"></script> -->
-    <script src="../scripts/ui/integrated-code-viewer.js"></script> <!-- ADDED -->
+    <!-- Integrated Code Viewer - Ensure type="module" -->
+    <script type="module" src="../scripts/ui/integrated-code-viewer.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
