@@ -1,3 +1,6 @@
+This is an experimental interface that is not current to Whip Studio. Do not use it.
+
+
 # whip-docs
 
 This is the web documentation for [Studio Whip](https://github.com/MrScripty/Studio-Whip)
