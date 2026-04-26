@@ -3,8 +3,10 @@
   import { TauriArchitectureBackend } from './backends/TauriArchitectureBackend';
   import {
     ArchitectureService,
+    buildGraphLayout,
     commandErrorMessage,
     filterGraphNodes,
+    graphLabel,
     graphNodeKinds,
   } from './lib/services';
   import {
@@ -31,11 +33,14 @@
       ? filterGraphNodes($graphSnapshot.nodes, {
           query: graphQuery,
           kinds: selectedKind ? [selectedKind] : [],
-          limit: 48,
+          limit: 96,
         })
       : [],
   );
   let visibleKinds = $derived($graphSnapshot ? graphNodeKinds($graphSnapshot.nodes) : []);
+  let graphLayout = $derived(
+    $graphSnapshot ? buildGraphLayout(visibleNodes, $graphSnapshot.edges) : null,
+  );
 
   onMount(async () => {
     const appStatus = await backend.getAppStatus();
@@ -115,8 +120,11 @@
   <section class="workspace" aria-label="Architecture graph workspace">
     <div class="graph-surface">
       {#if $graphSnapshot}
-        <span>{$graphSnapshot.nodes.length} nodes</span>
-        <span>{$graphSnapshot.edges.length} edges</span>
+        <div class="graph-summary" aria-label="Graph summary">
+          <span>{$graphSnapshot.nodes.length} nodes</span>
+          <span>{$graphSnapshot.edges.length} edges</span>
+          <span>{visibleNodes.length} visible</span>
+        </div>
         <div class="graph-filters" aria-label="Graph filters">
           <input bind:value={graphQuery} placeholder="Search graph" />
           <select bind:value={selectedKind}>
@@ -126,18 +134,62 @@
             {/each}
           </select>
         </div>
-        <div class="node-list" aria-label="Graph nodes">
-          {#each visibleNodes as node (node.id)}
-            <button
-              type="button"
-              class:selected={$selectedNodeId === node.id}
-              onclick={() => { void selectNode(node.id); }}
+        {#if graphLayout && graphLayout.nodes.length > 0}
+          <div class="graph-canvas-frame">
+            <svg
+              class="graph-canvas"
+              role="img"
+              aria-label="Connected architecture graph"
+              viewBox={`0 0 ${graphLayout.width} ${graphLayout.height}`}
+              style={`width: ${Math.max(graphLayout.width, 1120)}px; height: ${Math.max(graphLayout.height, 560)}px;`}
             >
-              <strong>{node.label}</strong>
-              <small>{node.kind}</small>
-            </button>
-          {/each}
-        </div>
+              <defs>
+                <marker
+                  id="edge-arrow"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" />
+                </marker>
+              </defs>
+              {#each graphLayout.edges as edge (edge.id)}
+                <g class={`graph-edge graph-edge-${edge.kind}`}>
+                  <path d={edge.path} marker-end="url(#edge-arrow)" />
+                  <text x={edge.labelX} y={edge.labelY}>{edge.kind}</text>
+                </g>
+              {/each}
+              {#each graphLayout.nodes as node (node.id)}
+                <g
+                  class:selected={$selectedNodeId === node.id}
+                  class="graph-node"
+                  role="button"
+                  tabindex="0"
+                  aria-label={`${node.kind}: ${node.label}`}
+                  transform={`translate(${node.x}, ${node.y})`}
+                  onclick={() => { void selectNode(node.id); }}
+                  onkeydown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      void selectNode(node.id);
+                    }
+                  }}
+                >
+                  <rect width={node.width} height={node.height} rx="6" />
+                  <text class="graph-node-label" x="12" y="25">{graphLabel(node.label)}</text>
+                  <text class="graph-node-kind" x="12" y="46">{node.kind}</text>
+                </g>
+              {/each}
+            </svg>
+          </div>
+        {:else}
+          <div class="empty-graph">No nodes match the current filters.</div>
+        {/if}
+      {:else}
+        <div class="empty-graph">Set a local Rust repository and run analysis.</div>
       {/if}
     </div>
     <aside class="inspector">
@@ -159,6 +211,18 @@
         <h2>Graph</h2>
         <p>{$graphSnapshot.generatedAt}</p>
         <p>{$graphSnapshot.diagnostics.length} diagnostics</p>
+        <div class="node-list" aria-label="Visible graph nodes">
+          {#each visibleNodes.slice(0, 32) as node (node.id)}
+            <button
+              type="button"
+              class:selected={$selectedNodeId === node.id}
+              onclick={() => { void selectNode(node.id); }}
+            >
+              <strong>{node.label}</strong>
+              <small>{node.kind}</small>
+            </button>
+          {/each}
+        </div>
       {/if}
       {#if $sourceSnippet}
         <h2>Source</h2>

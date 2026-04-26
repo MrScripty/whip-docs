@@ -1,3 +1,3 @@
 export { ArchitectureService, commandErrorMessage } from './ArchitectureService';
-export { filterGraphNodes, graphNodeKinds } from './graphView';
-export type { GraphNodeFilter } from './graphView';
+export { buildGraphLayout, filterGraphNodes, graphLabel, graphNodeKinds } from './graphView';
+export type { GraphLayout, GraphLayoutEdge, GraphLayoutNode, GraphNodeFilter } from './graphView';

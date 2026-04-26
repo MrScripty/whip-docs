@@ -100,8 +100,7 @@ textarea {
 
 .graph-surface {
   display: grid;
-  grid-template-columns: repeat(2, max-content) minmax(0, 1fr);
-  align-items: start;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 12px;
   min-height: 0;
   padding: 18px;
@@ -112,8 +111,13 @@ textarea {
   background-size: 28px 28px;
 }
 
+.graph-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .graph-filters {
-  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: minmax(220px, 360px) 180px;
   gap: 8px;
@@ -130,7 +134,7 @@ textarea {
   color: #17202a;
 }
 
-.graph-surface span {
+.graph-summary span {
   min-width: 88px;
   border: 1px solid #c3cad4;
   border-radius: 6px;
@@ -140,16 +144,97 @@ textarea {
   font-size: 13px;
 }
 
-.node-list {
-  grid-column: 1 / -1;
+.graph-canvas-frame {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid #c3cad4;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.graph-canvas {
+  display: block;
+}
+
+.graph-canvas marker path {
+  fill: #617080;
+}
+
+.graph-edge path {
+  fill: none;
+  stroke: #617080;
+  stroke-width: 1.6;
+}
+
+.graph-edge-calls path,
+.graph-edge-exposes_command path {
+  stroke: #1f6f8b;
+  stroke-width: 2;
+}
+
+.graph-edge-implements path {
+  stroke: #7a5c00;
+}
+
+.graph-edge text {
+  fill: #52606d;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 4px;
+  text-anchor: middle;
+  font-size: 11px;
+}
+
+.graph-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.graph-node rect {
+  fill: #ffffff;
+  stroke: #9ba7b5;
+  stroke-width: 1.2;
+}
+
+.graph-node.selected rect,
+.graph-node:focus rect {
+  stroke: #1f6f8b;
+  stroke-width: 2.4;
+}
+
+.graph-node-label {
+  fill: #17202a;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.graph-node-kind {
+  fill: #5d6875;
+  font-size: 11px;
+}
+
+.empty-graph {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  place-items: center;
+  min-height: 360px;
+  border: 1px dashed #aab4c0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #52606d;
+}
+
+.node-list {
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 8px;
   min-width: 0;
+  max-height: 280px;
+  overflow: auto;
 }
 
 .node-list button {
-  min-height: 58px;
+  min-height: 52px;
   border: 1px solid #c3cad4;
   border-radius: 6px;
   padding: 8px 10px;
@@ -177,9 +262,13 @@ textarea {
 }
 
 .inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   padding: 18px;
   border-left: 1px solid #d6dbe1;
   background: #ffffff;
+  min-width: 0;
 }
 
 .inspector pre {
