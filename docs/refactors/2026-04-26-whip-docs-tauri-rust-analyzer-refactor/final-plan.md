@@ -663,12 +663,12 @@ rust-analyzer semantic enrichment.
 - [x] Add stores for transient UI state only.
 - [x] Use event-driven command responses/status events for analysis progress. If
       polling is unavoidable, scope it to one owner and add cleanup tests.
-- [ ] Move graph interaction/filter/search helpers into pure TypeScript modules
+- [x] Move graph interaction/filter/search helpers into pure TypeScript modules
       with colocated tests instead of burying behavior in large Svelte files.
-- [ ] Render graph snapshot with search/filter/selection.
+- [x] Render graph snapshot with search/filter/selection.
 - [x] Add source snippet panel backed by `get_source_snippet`.
 - [x] Add diagnostics/progress panel for analyzer status.
-- [ ] Remove old DOM-script rendering from the active app path.
+- [x] Remove old DOM-script rendering from the active app path.
 - [x] Do not use `innerHTML`/manual DOM tree construction for normal rendering;
       isolate any graph-canvas imperative integration behind a component with
       teardown tests.
@@ -680,17 +680,17 @@ rust-analyzer semantic enrichment.
 - `App.svelte` now provides local repo configuration, explicit analysis,
   analyzer status, snapshot counters, a bounded node list with selection, and a
   backend-backed source snippet panel.
-- Search/filter helpers remain open and should move to pure TypeScript modules
-  before Milestone 7 is marked complete.
+- Added pure TypeScript graph view helpers for query/kind filtering and stable
+  node-kind extraction with colocated Node tests.
 
 **Verification:**
 - `npm run check`: passed.
-- Frontend unit/component tests for source path validation errors, analysis
-  status display, graph rendering, filter behavior, and snippet loading.
-- Accessibility checks for controls and graph navigation where practical.
+- Frontend unit tests for backend validation error preservation and graph
+  search/filter helpers: passed.
+- Component-level accessibility checks remain manual; current controls use
+  labels, keyed lists, and button/select/input semantics.
 
-**Status:** In progress; functional graph snapshot and source snippet UI are
-present, search/filter helper extraction remains open.
+**Status:** Completed; commit pending.
 
 ### Milestone 8: Cleanup, Documentation, And Release Readiness
 
@@ -865,6 +865,10 @@ Cleanup requirements:
 - Milestone 6 completed: Tauri command/app-state composition now exposes
   explicit analysis and latest graph snapshot retrieval over backend-owned
   graph state.
+- Milestone 7 completed: declarative Svelte UI now configures a local repo,
+  runs analysis, renders/searches/filters graph snapshot nodes, tracks
+  selection, displays analyzer diagnostics/status, and loads source snippets by
+  graph node ID.
 
 ### Deviations
 
@@ -874,7 +878,6 @@ Cleanup requirements:
 
 ### Follow-Ups
 
-- Confirm the preferred graph rendering library before Milestone 7.
 - Confirm whether rust-analyzer is allowed as an external runtime prerequisite
   or must be bundled/discovered by the app.
 

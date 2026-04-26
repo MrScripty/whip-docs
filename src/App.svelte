@@ -1,7 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { TauriArchitectureBackend } from './backends/TauriArchitectureBackend';
-  import { ArchitectureService, commandErrorMessage } from './lib/services';
+  import {
+    ArchitectureService,
+    commandErrorMessage,
+    filterGraphNodes,
+    graphNodeKinds,
+  } from './lib/services';
   import {
     analysisStatus,
     appConfig,
@@ -19,6 +24,18 @@
   let sourceRepoPath = $state('');
   let savingSourceRepo = $state(false);
   let analyzing = $state(false);
+  let graphQuery = $state('');
+  let selectedKind = $state('');
+  let visibleNodes = $derived(
+    $graphSnapshot
+      ? filterGraphNodes($graphSnapshot.nodes, {
+          query: graphQuery,
+          kinds: selectedKind ? [selectedKind] : [],
+          limit: 48,
+        })
+      : [],
+  );
+  let visibleKinds = $derived($graphSnapshot ? graphNodeKinds($graphSnapshot.nodes) : []);
 
   onMount(async () => {
     const appStatus = await backend.getAppStatus();
@@ -100,8 +117,17 @@
       {#if $graphSnapshot}
         <span>{$graphSnapshot.nodes.length} nodes</span>
         <span>{$graphSnapshot.edges.length} edges</span>
+        <div class="graph-filters" aria-label="Graph filters">
+          <input bind:value={graphQuery} placeholder="Search graph" />
+          <select bind:value={selectedKind}>
+            <option value="">All kinds</option>
+            {#each visibleKinds as kind (kind)}
+              <option value={kind}>{kind}</option>
+            {/each}
+          </select>
+        </div>
         <div class="node-list" aria-label="Graph nodes">
-          {#each $graphSnapshot.nodes.slice(0, 24) as node (node.id)}
+          {#each visibleNodes as node (node.id)}
             <button
               type="button"
               class:selected={$selectedNodeId === node.id}

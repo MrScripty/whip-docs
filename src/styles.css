@@ -112,6 +112,24 @@ textarea {
   background-size: 28px 28px;
 }
 
+.graph-filters {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(220px, 360px) 180px;
+  gap: 8px;
+}
+
+.graph-filters input,
+.graph-filters select {
+  min-height: 34px;
+  min-width: 0;
+  border: 1px solid #c3cad4;
+  border-radius: 6px;
+  padding: 0 10px;
+  background: #ffffff;
+  color: #17202a;
+}
+
 .graph-surface span {
   min-width: 88px;
   border: 1px solid #c3cad4;
@@ -123,6 +141,7 @@ textarea {
 }
 
 .node-list {
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 8px;

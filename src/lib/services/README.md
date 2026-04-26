@@ -9,6 +9,8 @@ backend adapters for the UI.
 |-------------|-------------|
 | `ArchitectureService.ts` | Frontend service facade for app config, analyzer status, graph analysis, graph snapshot access, source snippets, and source repository setup. |
 | `ArchitectureService.test.ts` | Unit coverage for command error message preservation. |
+| `graphView.ts` | Pure graph node search/filter helpers for Svelte views. |
+| `graphView.test.ts` | Unit coverage for graph search/filter helper behavior. |
 | `index.ts` | Public service export point. |
 
 ## Problem
