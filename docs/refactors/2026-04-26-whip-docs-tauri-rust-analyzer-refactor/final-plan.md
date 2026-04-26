@@ -505,35 +505,60 @@ configuration.
 - `npm run check`: passed.
 - `git diff --check`: passed.
 
-**Status:** Completed; commit pending.
+**Status:** Completed in commit `e0d1cff`.
 
 ### Milestone 4: rust-analyzer Service Boundary
 
 **Goal:** Add a backend-owned rust-analyzer client with explicit lifecycle.
 
 **Tasks:**
-- [ ] Add an analyzer service that starts rust-analyzer for a validated Cargo
+- [x] Add an analyzer service that starts rust-analyzer for a validated Cargo
       workspace.
-- [ ] Implement initialization, readiness, timeout, cancellation, shutdown, and
+- [x] Implement initialization, readiness, timeout, cancellation, shutdown, and
       restart behavior.
-- [ ] Add bounded concurrency policy: one active analysis job per app state until
+- [x] Add bounded concurrency policy: one active analysis job per app state until
       a later milestone explicitly supports queues.
-- [ ] Kill or gracefully terminate child processes on cancellation, restart, app
+- [x] Kill or gracefully terminate child processes on cancellation, restart, app
       shutdown, and test teardown.
-- [ ] Add typed request helpers for document symbols, definitions, references,
+- [x] Add typed request helpers for document symbols, definitions, references,
       and call hierarchy.
-- [ ] Select the LSP client approach only after `cargo tree` review; avoid
+- [x] Select the LSP client approach only after `cargo tree` review; avoid
       server-oriented LSP framework crates unless justified in the plan.
-- [ ] Add structured diagnostics when rust-analyzer is missing or returns
+- [x] Add structured diagnostics when rust-analyzer is missing or returns
       partial data.
-- [ ] Keep rust-analyzer process state out of the frontend.
+- [x] Keep rust-analyzer process state out of the frontend.
+
+**Implementation Notes:**
+- Added `RustAnalyzerService` with backend-owned settings, lifecycle status,
+  process start, restart, cancellation, shutdown, startup timeout handling, and
+  one-active-job enforcement.
+- Added `AnalysisStatusDto`, analyzer lifecycle phases, structured diagnostics,
+  and Tauri/frontend mirrors for `get_analysis_status`.
+- Added typed JSON-RPC/LSP request builders for document symbols, definitions,
+  references, prepare call hierarchy, incoming calls, and outgoing calls.
+- Reviewed the current dependency tree with `cargo tree` and chose a small
+  owned JSON-RPC request boundary for this milestone instead of introducing a
+  server-oriented LSP framework crate.
+- Wired app shutdown to request analyzer cleanup asynchronously while keeping
+  process handles private to the Rust backend.
 
 **Verification:**
-- Unit tests for lifecycle state machine.
-- Integration test against a tiny fixture Cargo project.
-- Timeout/cancellation test using a controlled fake LSP process or adapter.
+- Unit tests for lifecycle status defaults, request builders, request timeout,
+  single active analysis job, job completion, and job cancellation: passed.
+- Integration-style tests against a tiny fixture Cargo project using a managed
+  `/bin/sh` process for start, restart, cancellation, and shutdown cleanup:
+  passed on Unix.
+- Missing rust-analyzer binary test with structured failed status diagnostic:
+  passed.
+- Timeout test using a controlled pending readiness future: passed.
+- `cargo tree --manifest-path src-tauri/Cargo.toml`: reviewed before selecting
+  the owned JSON-RPC request boundary.
+- `cargo test --manifest-path src-tauri/Cargo.toml`: passed.
+- `cargo fmt --check --manifest-path src-tauri/Cargo.toml`: passed.
+- `npm run check`: passed.
+- `git diff --check`: passed.
 
-**Status:** Not started.
+**Status:** Completed in `feat(analyzer): add rust analyzer lifecycle boundary`.
 
 ### Milestone 5: Rust Graph Extraction Pipeline
 
@@ -779,6 +804,9 @@ Cleanup requirements:
 - Milestone 3 completed: backend-owned local repository config persistence,
   validated canonical path handling, symlink-safe child resolution, Tauri config
   commands, typed frontend service/store wiring, and pinned npm dependencies.
+- Milestone 4 completed: backend-owned rust-analyzer lifecycle service,
+  analyzer status command, single-job concurrency guard, startup timeout,
+  cancellation/restart/shutdown cleanup, and typed LSP request builders.
 
 ### Deviations
 

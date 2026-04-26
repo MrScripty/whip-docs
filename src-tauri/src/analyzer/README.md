@@ -7,7 +7,7 @@ extraction services.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `mod.rs` | Placeholder module for analyzer lifecycle and extraction pipeline. |
+| `mod.rs` | rust-analyzer settings, lifecycle status DTOs, process service, analysis job guard methods, and LSP request builders. |
 
 ## Problem
 Whip Docs needs semantic Rust facts that `syn` alone cannot provide, while the
@@ -19,7 +19,8 @@ frontend must not spawn or manage analyzer processes.
 - Only one active analysis job is allowed until a queue policy is added.
 
 ## Decision
-Create an analyzer service boundary that owns the LSP process and emits facts
+Create an analyzer service boundary that owns the LSP process, exposes
+structured lifecycle state, enforces one active analysis job, and emits facts
 for graph normalization.
 
 ## Alternatives Rejected
@@ -43,18 +44,18 @@ for graph normalization.
 **External:** rust-analyzer process, Tokio process APIs, LSP types.
 
 ## Related ADRs
-- None identified as of 2026-04-26.
-- Reason: analyzer ownership ADR is scheduled after DTO freeze.
-- Revisit trigger: LSP client approach is selected.
+- `docs/adr/ADR-001-tauri-rust-analyzer-graph-contracts.md`: records backend
+  ownership of analyzer lifecycle and graph contracts.
 
 ## Usage Examples
 ```rust
-// Future app state will call analyzer services with a ValidatedRepoPath.
+let service = RustAnalyzerService::default();
+let status = service.start_for_workspace(&repo).await?;
 ```
 
 ## API Consumer Contract
 - Inputs: validated Cargo workspace roots and explicit analyze requests.
-- Outputs: analyzer facts, progress status, and diagnostics.
+- Outputs: analyzer facts, progress status, lifecycle state, and diagnostics.
 - Lifecycle: service starts rust-analyzer on demand and stops it during
   cancellation or app shutdown.
 - Errors: missing binary, timeout, and partial data are structured diagnostics.
@@ -66,4 +67,3 @@ for graph normalization.
 - Enum semantics: lifecycle states describe process ownership.
 - Compatibility: analyzer fact changes must preserve graph contract behavior.
 - Regeneration or migration: no persisted analyzer artifacts are produced yet.
-

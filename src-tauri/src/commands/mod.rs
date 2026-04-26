@@ -3,6 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
+use crate::analyzer::{AnalysisStatusDto, RustAnalyzerService};
 use crate::config::{AppConfigDto, ConfigStore, SourceRepoStatusDto};
 use crate::source::ValidatedRepoPath;
 
@@ -10,6 +11,7 @@ pub struct AppState {
     shutdown_requested: AtomicBool,
     config_store: ConfigStore,
     config: RwLock<AppConfigDto>,
+    analyzer_service: RustAnalyzerService,
 }
 
 impl std::fmt::Debug for AppState {
@@ -18,16 +20,26 @@ impl std::fmt::Debug for AppState {
             .debug_struct("AppState")
             .field("shutdown_requested", &self.shutdown_requested())
             .field("config_path", &self.config_store.config_path())
+            .field("analyzer_status", &"<async>")
             .finish_non_exhaustive()
     }
 }
 
 impl AppState {
     pub fn new(config_store: ConfigStore, config: AppConfigDto) -> Self {
+        Self::with_analyzer(config_store, config, RustAnalyzerService::default())
+    }
+
+    pub fn with_analyzer(
+        config_store: ConfigStore,
+        config: AppConfigDto,
+        analyzer_service: RustAnalyzerService,
+    ) -> Self {
         Self {
             shutdown_requested: AtomicBool::new(false),
             config_store,
             config: RwLock::new(config),
+            analyzer_service,
         }
     }
 
@@ -41,6 +53,18 @@ impl AppState {
 
     pub async fn app_config(&self) -> AppConfigDto {
         self.config.read().await.clone()
+    }
+
+    pub async fn analysis_status(&self) -> AnalysisStatusDto {
+        self.analyzer_service.status().await
+    }
+
+    pub async fn shutdown_services(&self) -> Result<(), CommandErrorDto> {
+        self.analyzer_service
+            .shutdown()
+            .await
+            .map_err(|error| CommandErrorDto::internal(error.to_string()))?;
+        Ok(())
     }
 
     pub async fn set_source_repo_path(
@@ -117,6 +141,13 @@ pub async fn get_app_config(
 }
 
 #[tauri::command]
+pub async fn get_analysis_status(
+    state: tauri::State<'_, std::sync::Arc<AppState>>,
+) -> Result<AnalysisStatusDto, CommandErrorDto> {
+    Ok(state.analysis_status().await)
+}
+
+#[tauri::command]
 pub async fn set_source_repo_path(
     path: String,
     state: tauri::State<'_, std::sync::Arc<AppState>>,
@@ -127,6 +158,7 @@ pub async fn set_source_repo_path(
 #[cfg(test)]
 mod tests {
     use super::{AppState, CommandErrorDto};
+    use crate::analyzer::AnalyzerLifecyclePhase;
     use crate::config::{AppConfigDto, ConfigStore, SourceRepoStatusDto};
     use std::fs;
     use std::path::PathBuf;
@@ -204,5 +236,17 @@ mod tests {
 
         assert_eq!(error.code, "validation_error");
         assert!(error.recoverable);
+    }
+
+    #[tokio::test]
+    async fn app_state_exposes_analysis_status() {
+        let app_dir = unique_temp_dir("analysis-status-app");
+        let store = ConfigStore::new(&app_dir);
+        let state = AppState::new(store, AppConfigDto::default());
+
+        let status = state.analysis_status().await;
+
+        assert_eq!(status.phase, AnalyzerLifecyclePhase::Idle);
+        assert_eq!(status.active_job_id, None);
     }
 }

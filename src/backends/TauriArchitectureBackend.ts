@@ -20,6 +20,28 @@ export type AppConfigDto = {
   sourceRepoStatus: SourceRepoStatusDto;
 };
 
+export type AnalyzerLifecyclePhase =
+  | 'idle'
+  | 'starting'
+  | 'ready'
+  | 'busy'
+  | 'stopping'
+  | 'stopped'
+  | 'failed';
+
+export type AnalyzerDiagnosticDto = {
+  code: string;
+  message: string;
+  recoverable: boolean;
+};
+
+export type AnalysisStatusDto = {
+  phase: AnalyzerLifecyclePhase;
+  workspaceRoot: string | null;
+  activeJobId: string | null;
+  diagnostics: AnalyzerDiagnosticDto[];
+};
+
 export type CommandErrorDto = {
   code: string;
   message: string;
@@ -33,6 +55,10 @@ export class TauriArchitectureBackend {
 
   async getAppConfig(): Promise<AppConfigDto> {
     return invoke<AppConfigDto>('get_app_config');
+  }
+
+  async getAnalysisStatus(): Promise<AnalysisStatusDto> {
+    return invoke<AnalysisStatusDto>('get_analysis_status');
   }
 
   async setSourceRepoPath(path: string): Promise<AppConfigDto> {

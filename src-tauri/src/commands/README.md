@@ -6,7 +6,7 @@ This directory contains Tauri command adapters and command-facing DTOs.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `mod.rs` | App state, app status, app config, source repo path commands, and command error DTO. |
+| `mod.rs` | App state, app status, app config, analyzer status, source repo path commands, and command error DTO. |
 
 ## Problem
 Frontend IPC needs a stable Rust boundary while backend services retain
@@ -60,7 +60,8 @@ pub fn get_app_status(state: tauri::State<'_, std::sync::Arc<AppState>>) -> AppS
 ## API Consumer Contract
 - Inputs: Tauri invoke payloads and managed app state.
 - Outputs: serde DTOs returned to the frontend adapter.
-- Lifecycle: commands may request work but do not own app shutdown.
+- Lifecycle: commands may request work but do not own app shutdown; app state
+  delegates shutdown cleanup to backend services.
 - Errors: recoverable failures return structured command errors once error DTOs
   are introduced.
 - Compatibility: command names and payload shapes are frontend-visible

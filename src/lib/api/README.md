@@ -48,7 +48,7 @@ wire shape requires explicit mapping.
 
 ## Usage Examples
 ```ts
-import type { AppStatusDto } from './api';
+import type { AnalysisStatusDto, AppStatusDto } from './api';
 ```
 
 ## API Consumer Contract

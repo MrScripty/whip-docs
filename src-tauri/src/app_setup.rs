@@ -25,6 +25,7 @@ pub fn run_app() -> AppStartupResult<()> {
         .invoke_handler(tauri::generate_handler![
             commands::get_app_status,
             commands::get_app_config,
+            commands::get_analysis_status,
             commands::set_source_repo_path
         ])
         .build(tauri::generate_context!())?

@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { TauriArchitectureBackend } from './backends/TauriArchitectureBackend';
   import { ArchitectureService, commandErrorMessage } from './lib/services';
-  import { appConfig, sourceRepoError } from './lib/stores';
+  import { analysisStatus, appConfig, sourceRepoError } from './lib/stores';
 
   const backend = new TauriArchitectureBackend();
   const architectureService = new ArchitectureService(backend);
@@ -14,8 +14,10 @@
   onMount(async () => {
     const appStatus = await backend.getAppStatus();
     const config = await architectureService.getConfig();
+    const analyzer = await architectureService.getAnalysisStatus();
     status = appStatus.activeProduct;
     appConfig.set(config);
+    analysisStatus.set(analyzer);
     sourceRepoPath = config.sourceRepoPath ?? '';
   });
 
@@ -64,6 +66,8 @@
       {#if $sourceRepoError}
         <p class="error">{$sourceRepoError}</p>
       {/if}
+      <h2>Analyzer</h2>
+      <p>{$analysisStatus.phase}</p>
     </aside>
   </section>
 </main>
