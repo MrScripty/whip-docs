@@ -120,6 +120,7 @@ impl RustGraphExtractor {
             }
         }
 
+        graph.link_imports();
         graph.link_calls();
         graph.warn_if_large();
         Ok(graph.finish())
@@ -216,6 +217,7 @@ struct GraphAccumulator {
     diagnostics: Vec<AnalyzerDiagnosticDto>,
     file_paths: BTreeSet<String>,
     functions_by_name: BTreeMap<String, String>,
+    pending_imports: Vec<PendingImport>,
     pending_calls: Vec<PendingCall>,
 }
 
@@ -300,6 +302,31 @@ impl GraphAccumulator {
         }
     }
 
+    fn link_imports(&mut self) {
+        for pending_import in std::mem::take(&mut self.pending_imports) {
+            let Some(target_path) = resolve_import_path(
+                &pending_import.source_path,
+                &pending_import.import,
+                &self.file_paths,
+            ) else {
+                continue;
+            };
+
+            if target_path == pending_import.source_path {
+                continue;
+            }
+
+            let target_id = stable_node_id(GraphNodeKind::File, &[target_path.as_str()]);
+            self.add_edge(
+                GraphEdgeKind::Imports,
+                &pending_import.source_id,
+                &target_id,
+                EdgeProvenanceDto::Syn,
+                EdgeConfidenceDto::Inferred,
+            );
+        }
+    }
+
     fn warn_if_large(&mut self) {
         let snapshot_size = self.nodes.len() + self.edges.len();
         if snapshot_size > SNAPSHOT_SIZE_WARNING_THRESHOLD {
@@ -328,6 +355,13 @@ struct PendingCall {
     source_id: String,
     target_name: String,
     source_path: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PendingImport {
+    source_id: String,
+    source_path: String,
+    import: String,
 }
 
 fn extract_items(
@@ -529,6 +563,11 @@ fn extract_use(relative_path: &str, file_id: &str, graph: &mut GraphAccumulator,
             EdgeProvenanceDto::Syn,
             EdgeConfidenceDto::Partial,
         );
+        graph.pending_imports.push(PendingImport {
+            source_id: file_id.to_string(),
+            source_path: relative_path.to_string(),
+            import,
+        });
     }
 }
 
@@ -858,6 +897,53 @@ fn source_range(relative_path: &str, line: u32) -> SourceRangeDto {
     }
 }
 
+fn resolve_import_path(
+    source_path: &str,
+    import: &str,
+    file_paths: &BTreeSet<String>,
+) -> Option<String> {
+    let mut segments: Vec<&str> = import
+        .split("::")
+        .filter(|segment| !segment.is_empty())
+        .collect();
+
+    if segments
+        .first()
+        .is_some_and(|segment| matches!(*segment, "std" | "core" | "alloc"))
+    {
+        return None;
+    }
+
+    let source_prefix = crate_source_prefix(source_path);
+    if matches!(segments.first(), Some(&"crate")) {
+        segments.remove(0);
+    }
+
+    for length in (1..=segments.len()).rev() {
+        let module_path = segments[..length].join("/");
+        let direct_file = format!("{source_prefix}/{module_path}.rs");
+        let module_file = format!("{source_prefix}/{module_path}/mod.rs");
+
+        if file_paths.contains(&direct_file) {
+            return Some(direct_file);
+        }
+
+        if file_paths.contains(&module_file) {
+            return Some(module_file);
+        }
+    }
+
+    None
+}
+
+fn crate_source_prefix(source_path: &str) -> String {
+    if let Some(index) = source_path.rfind("/src/") {
+        return source_path[..index + "/src".len()].to_string();
+    }
+
+    "src".to_string()
+}
+
 fn find_line(source: &str, needle: &str) -> u32 {
     source
         .lines()
@@ -1002,11 +1088,19 @@ pub fn open_project() {}
             "modules-imports",
             r#"
 use std::{fs, path::PathBuf};
+use crate::nested::child;
 mod nested {
     pub fn child() {}
 }
 "#,
         );
+        fs::write(
+            repo.join("src/nested.rs"),
+            r#"
+pub fn child() {}
+"#,
+        )
+        .expect("write nested module");
 
         let snapshot = RustGraphExtractor
             .extract(&validated)
@@ -1020,6 +1114,11 @@ mod nested {
             .edges
             .iter()
             .any(|edge| edge.kind == GraphEdgeKind::Imports));
+        assert!(snapshot.edges.iter().any(|edge| {
+            edge.kind == GraphEdgeKind::Imports
+                && edge.source_id == "file:src/lib.rs"
+                && edge.target_id == "file:src/nested.rs"
+        }));
 
         fs::remove_dir_all(repo).expect("cleanup fixture repo");
     }

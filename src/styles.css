@@ -119,8 +119,36 @@ textarea {
 
 .graph-filters {
   display: grid;
-  grid-template-columns: minmax(220px, 360px) 180px;
+  grid-template-columns: auto minmax(220px, 360px) 180px;
   gap: 8px;
+}
+
+.graph-mode {
+  display: inline-grid;
+  grid-template-columns: repeat(2, auto);
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid #c3cad4;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.graph-mode button {
+  min-height: 34px;
+  border: 0;
+  border-right: 1px solid #c3cad4;
+  padding: 0 12px;
+  background: #ffffff;
+  color: #263340;
+}
+
+.graph-mode button:last-child {
+  border-right: 0;
+}
+
+.graph-mode button.active {
+  background: #1f6f8b;
+  color: #ffffff;
 }
 
 .graph-filters input,
@@ -147,7 +175,7 @@ textarea {
 .graph-canvas-frame {
   min-width: 0;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid #c3cad4;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.82);
@@ -155,6 +183,13 @@ textarea {
 
 .graph-canvas {
   display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.graph-viewport.panning,
+.graph-canvas:active {
+  cursor: grabbing;
 }
 
 .graph-canvas marker path {
@@ -177,41 +212,39 @@ textarea {
   stroke: #7a5c00;
 }
 
-.graph-edge text {
-  fill: #52606d;
-  paint-order: stroke;
-  stroke: #ffffff;
-  stroke-width: 4px;
-  text-anchor: middle;
-  font-size: 11px;
-}
-
 .graph-node {
   cursor: pointer;
   outline: none;
 }
 
-.graph-node rect {
+.graph-node circle {
   fill: #ffffff;
   stroke: #9ba7b5;
   stroke-width: 1.2;
 }
 
-.graph-node.selected rect,
-.graph-node:focus rect {
+.graph-node.selected circle,
+.graph-node:focus circle {
+  fill: #e9f6fb;
   stroke: #1f6f8b;
   stroke-width: 2.4;
 }
 
 .graph-node-label {
   fill: #17202a;
-  font-size: 13px;
+  text-anchor: middle;
+  font-size: 11px;
   font-weight: 650;
+  pointer-events: none;
+  user-select: none;
 }
 
 .graph-node-kind {
   fill: #5d6875;
-  font-size: 11px;
+  text-anchor: middle;
+  font-size: 9px;
+  pointer-events: none;
+  user-select: none;
 }
 
 .empty-graph {

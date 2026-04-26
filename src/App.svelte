@@ -8,6 +8,7 @@
     filterGraphNodes,
     graphLabel,
     graphNodeKinds,
+    projectGraph,
   } from './lib/services';
   import {
     analysisStatus,
@@ -28,18 +29,27 @@
   let analyzing = $state(false);
   let graphQuery = $state('');
   let selectedKind = $state('');
+  let graphMode = $state('architecture');
+  let graphPan = $state({ x: 0, y: 0 });
+  let graphZoom = $state(1);
+  let panStart = $state(null);
+  let displayGraph = $derived(
+    $graphSnapshot
+      ? projectGraph($graphSnapshot.nodes, $graphSnapshot.edges, graphMode)
+      : { nodes: [], edges: [] },
+  );
   let visibleNodes = $derived(
     $graphSnapshot
-      ? filterGraphNodes($graphSnapshot.nodes, {
+      ? filterGraphNodes(displayGraph.nodes, {
           query: graphQuery,
           kinds: selectedKind ? [selectedKind] : [],
-          limit: 96,
+          limit: graphMode === 'architecture' ? 1200 : 700,
         })
       : [],
   );
-  let visibleKinds = $derived($graphSnapshot ? graphNodeKinds($graphSnapshot.nodes) : []);
+  let visibleKinds = $derived($graphSnapshot ? graphNodeKinds(displayGraph.nodes) : []);
   let graphLayout = $derived(
-    $graphSnapshot ? buildGraphLayout(visibleNodes, $graphSnapshot.edges) : null,
+    $graphSnapshot ? buildGraphLayout(visibleNodes, displayGraph.edges) : null,
   );
 
   onMount(async () => {
@@ -76,6 +86,7 @@
       graphSnapshot.set(snapshot);
       selectedNodeId.set(null);
       sourceSnippet.set(null);
+      resetGraphView();
       analysisStatus.set(await architectureService.getAnalysisStatus());
     } catch (error) {
       graphError.set(commandErrorMessage(error));
@@ -93,6 +104,76 @@
       sourceSnippet.set(null);
       graphError.set(commandErrorMessage(error));
     }
+  }
+
+  function setGraphMode(mode) {
+    graphMode = mode;
+    selectedKind = '';
+    selectedNodeId.set(null);
+    sourceSnippet.set(null);
+    resetGraphView();
+  }
+
+  function resetGraphView() {
+    graphPan = { x: 0, y: 0 };
+    graphZoom = 1;
+    panStart = null;
+  }
+
+  function handleGraphWheel(event) {
+    event.preventDefault();
+    const element = event.currentTarget;
+    const rect = element.getBoundingClientRect();
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+    const nextZoom = clamp(graphZoom * (event.deltaY < 0 ? 1.12 : 0.88), 0.18, 3.5);
+    const worldX = (pointerX - graphPan.x) / graphZoom;
+    const worldY = (pointerY - graphPan.y) / graphZoom;
+
+    graphPan = {
+      x: pointerX - worldX * nextZoom,
+      y: pointerY - worldY * nextZoom,
+    };
+    graphZoom = nextZoom;
+  }
+
+  function startGraphPan(event) {
+    if (event.target.closest('.graph-node')) {
+      return;
+    }
+
+    const element = event.currentTarget;
+    element.setPointerCapture(event.pointerId);
+    panStart = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      originX: graphPan.x,
+      originY: graphPan.y,
+    };
+  }
+
+  function moveGraphPan(event) {
+    if (!panStart || panStart.pointerId !== event.pointerId) {
+      return;
+    }
+
+    graphPan = {
+      x: panStart.originX + event.clientX - panStart.x,
+      y: panStart.originY + event.clientY - panStart.y,
+    };
+  }
+
+  function endGraphPan(event) {
+    if (!panStart || panStart.pointerId !== event.pointerId) {
+      return;
+    }
+
+    panStart = null;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
   }
 </script>
 
@@ -123,9 +204,26 @@
         <div class="graph-summary" aria-label="Graph summary">
           <span>{$graphSnapshot.nodes.length} nodes</span>
           <span>{$graphSnapshot.edges.length} edges</span>
+          <span>{displayGraph.edges.length} graph edges</span>
           <span>{visibleNodes.length} visible</span>
         </div>
         <div class="graph-filters" aria-label="Graph filters">
+          <div class="graph-mode" aria-label="Graph mode">
+            <button
+              type="button"
+              class:active={graphMode === 'architecture'}
+              onclick={() => { setGraphMode('architecture'); }}
+            >
+              Architecture
+            </button>
+            <button
+              type="button"
+              class:active={graphMode === 'symbols'}
+              onclick={() => { setGraphMode('symbols'); }}
+            >
+              Symbols
+            </button>
+          </div>
           <input bind:value={graphQuery} placeholder="Search graph" />
           <select bind:value={selectedKind}>
             <option value="">All kinds</option>
@@ -142,6 +240,11 @@
               aria-label="Connected architecture graph"
               viewBox={`0 0 ${graphLayout.width} ${graphLayout.height}`}
               style={`width: ${Math.max(graphLayout.width, 1120)}px; height: ${Math.max(graphLayout.height, 560)}px;`}
+              onwheel={handleGraphWheel}
+              onpointerdown={startGraphPan}
+              onpointermove={moveGraphPan}
+              onpointerup={endGraphPan}
+              onpointercancel={endGraphPan}
             >
               <defs>
                 <marker
@@ -156,33 +259,38 @@
                   <path d="M 0 0 L 10 5 L 0 10 z" />
                 </marker>
               </defs>
-              {#each graphLayout.edges as edge (edge.id)}
-                <g class={`graph-edge graph-edge-${edge.kind}`}>
-                  <path d={edge.path} marker-end="url(#edge-arrow)" />
-                  <text x={edge.labelX} y={edge.labelY}>{edge.kind}</text>
-                </g>
-              {/each}
-              {#each graphLayout.nodes as node (node.id)}
-                <g
-                  class:selected={$selectedNodeId === node.id}
-                  class="graph-node"
-                  role="button"
-                  tabindex="0"
-                  aria-label={`${node.kind}: ${node.label}`}
-                  transform={`translate(${node.x}, ${node.y})`}
-                  onclick={() => { void selectNode(node.id); }}
-                  onkeydown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      void selectNode(node.id);
-                    }
-                  }}
-                >
-                  <rect width={node.width} height={node.height} rx="6" />
-                  <text class="graph-node-label" x="12" y="25">{graphLabel(node.label)}</text>
-                  <text class="graph-node-kind" x="12" y="46">{node.kind}</text>
-                </g>
-              {/each}
+              <g
+                class:panning={panStart !== null}
+                class="graph-viewport"
+                transform={`translate(${graphPan.x}, ${graphPan.y}) scale(${graphZoom})`}
+              >
+                {#each graphLayout.edges as edge (edge.id)}
+                  <g class={`graph-edge graph-edge-${edge.kind}`}>
+                    <path d={edge.path} marker-end="url(#edge-arrow)" />
+                  </g>
+                {/each}
+                {#each graphLayout.nodes as node (node.id)}
+                  <g
+                    class:selected={$selectedNodeId === node.id}
+                    class="graph-node"
+                    role="button"
+                    tabindex="0"
+                    aria-label={`${node.kind}: ${node.label}`}
+                    transform={`translate(${node.x}, ${node.y})`}
+                    onclick={() => { void selectNode(node.id); }}
+                    onkeydown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        void selectNode(node.id);
+                      }
+                    }}
+                  >
+                    <circle r={node.radius} />
+                    <text class="graph-node-label" y="-3">{graphLabel(node.label, 20)}</text>
+                    <text class="graph-node-kind" y="13">{node.kind}</text>
+                  </g>
+                {/each}
+              </g>
             </svg>
           </div>
         {:else}
