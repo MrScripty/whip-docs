@@ -57,12 +57,39 @@ textarea {
 }
 
 .toolbar button {
-  min-width: 120px;
+  min-width: 72px;
   min-height: 36px;
   border: 1px solid #c3cad4;
   border-radius: 6px;
+  background: #1f6f8b;
+  color: #ffffff;
+}
+
+.toolbar button:disabled {
   background: #eef1f5;
   color: #626d7a;
+}
+
+.source-form {
+  display: grid;
+  grid-template-columns: auto minmax(260px, 440px) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.source-form label {
+  font-size: 13px;
+  color: #465260;
+}
+
+.source-form input {
+  min-height: 36px;
+  min-width: 0;
+  border: 1px solid #c3cad4;
+  border-radius: 6px;
+  padding: 0 10px;
+  color: #17202a;
+  background: #ffffff;
 }
 
 .workspace {
@@ -86,3 +113,7 @@ textarea {
   background: #ffffff;
 }
 
+.error {
+  margin-top: 12px;
+  color: #b42318;
+}

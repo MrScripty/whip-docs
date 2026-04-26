@@ -1,2 +1,6 @@
-export type { AppStatusDto } from '../../backends/TauriArchitectureBackend';
-
+export type {
+  AppConfigDto,
+  AppStatusDto,
+  CommandErrorDto,
+  SourceRepoStatusDto,
+} from '../../backends/TauriArchitectureBackend';

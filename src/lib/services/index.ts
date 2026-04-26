@@ -1,2 +1,1 @@
-export {};
-
+export { ArchitectureService, commandErrorMessage } from './ArchitectureService';

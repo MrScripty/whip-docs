@@ -7,7 +7,7 @@ command contracts.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `index.ts` | Public export point for frontend API helper types. |
+| `index.ts` | Public export point for frontend API helper types mirrored from backend adapters. |
 
 ## Problem
 Frontend services need one place to import command DTO helpers without reaching
@@ -65,4 +65,3 @@ import type { AppStatusDto } from './api';
   maps them.
 - Compatibility: type changes must be coordinated with Rust DTO changes.
 - Regeneration or migration: generated bindings may replace these exports later.
-

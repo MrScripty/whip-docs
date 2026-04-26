@@ -7,7 +7,7 @@ method calls into Tauri command invocations.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `TauriArchitectureBackend.ts` | Initial Tauri adapter for app status and future analyzer commands. |
+| `TauriArchitectureBackend.ts` | Tauri adapter for app status, app config, and source repository path commands. |
 
 ## Problem
 Svelte components need backend data, but direct `invoke(...)` calls spread IPC
@@ -71,4 +71,3 @@ const status = await backend.getAppStatus();
 - Compatibility: DTO mirror changes must track Rust command changes.
 - Regeneration or migration: future generated bindings replace hand-written DTOs
   in one coordinated slice.
-

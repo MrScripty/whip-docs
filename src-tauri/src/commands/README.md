@@ -6,7 +6,7 @@ This directory contains Tauri command adapters and command-facing DTOs.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `mod.rs` | Initial app-state type and app status command. |
+| `mod.rs` | App state, app status, app config, source repo path commands, and command error DTO. |
 
 ## Problem
 Frontend IPC needs a stable Rust boundary while backend services retain

@@ -7,7 +7,7 @@ lookup by backend graph node ID.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `mod.rs` | Placeholder module for path validation and source lookup services. |
+| `mod.rs` | `ValidatedRepoPath` and source repository validation errors. |
 
 ## Problem
 The app must read a user-selected local Rust repository without allowing path
@@ -48,7 +48,8 @@ handlers and analyzer modules consume trusted types.
 
 ## Usage Examples
 ```rust
-// Future command handlers will parse raw path strings into ValidatedRepoPath.
+let repo = ValidatedRepoPath::parse_existing_cargo_repo(raw_path)?;
+let source_file = repo.resolve_existing_child("src/lib.rs")?;
 ```
 
 ## API Consumer Contract

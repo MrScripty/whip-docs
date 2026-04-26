@@ -7,7 +7,7 @@ source repository path and config schema migration.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `mod.rs` | Placeholder module for configuration contracts and persistence. |
+| `mod.rs` | Versioned app config DTOs, source repo status labels, and JSON config store. |
 
 ## Problem
 The app needs durable local configuration without letting the frontend persist
@@ -47,7 +47,8 @@ Centralize config DTOs, persistence, defaults, and migration in this module.
 
 ## Usage Examples
 ```rust
-// Future command handlers will load AppConfig through this module.
+let store = ConfigStore::new(app_data_dir);
+let config = store.load_or_default().await?;
 ```
 
 ## API Consumer Contract

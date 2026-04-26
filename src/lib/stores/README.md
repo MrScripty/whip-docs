@@ -6,7 +6,8 @@ This directory will contain Svelte stores for transient architecture-view state.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `index.ts` | Placeholder export point for future store modules. |
+| `configStore.ts` | Transient frontend projection of backend app config and source path errors. |
+| `index.ts` | Public store export point. |
 
 ## Problem
 The graph UI needs local selection, filter, layout, and panel state without
@@ -49,7 +50,7 @@ services/adapters.
 
 ## Usage Examples
 ```ts
-export {};
+import { appConfig } from './stores';
 ```
 
 ## API Consumer Contract
@@ -64,4 +65,3 @@ export {};
 - Stable fields: none currently produced from this directory.
 - Reason: store modules are not implemented yet.
 - Revisit trigger: a store exports serialized settings or fixtures.
-

@@ -425,7 +425,7 @@ into structured errors and diagnostics.
 - Source README presence check for `src` and `src-tauri/src`: passed.
 - `git status --short` checked before implementation continues.
 
-**Status:** Completed in commit pending.
+**Status:** Completed in commit `d01060c`.
 
 ### Milestone 2: Core Graph Contracts
 
@@ -459,7 +459,7 @@ them.
 - `cargo fmt --check --manifest-path src-tauri/Cargo.toml`: passed.
 - `git diff --check`: passed.
 
-**Status:** Completed in commit pending.
+**Status:** Completed in commit `e5d310d`.
 
 ### Milestone 3: Local Repository Configuration
 
@@ -467,22 +467,45 @@ them.
 configuration.
 
 **Tasks:**
-- [ ] Add backend configuration storage for source repository path.
-- [ ] Parse and canonicalize user-provided paths into `ValidatedRepoPath`.
-- [ ] Reject missing paths, non-directories, and paths without a Cargo
+- [x] Add backend configuration storage for source repository path.
+- [x] Parse and canonicalize user-provided paths into `ValidatedRepoPath`.
+- [x] Reject missing paths, non-directories, and paths without a Cargo
       manifest unless explicitly allowed by a future mode.
-- [ ] Reject traversal attempts and symlink escapes after canonicalization.
-- [ ] Add Tauri commands for reading/updating configuration.
-- [ ] Configure Tauri capabilities so the frontend cannot read arbitrary files,
+- [x] Reject traversal attempts and symlink escapes after canonicalization.
+- [x] Add Tauri commands for reading/updating configuration.
+- [x] Configure Tauri capabilities so the frontend cannot read arbitrary files,
       spawn shell commands, or fetch source from the network.
-- [ ] Add frontend controls for selecting or typing a local directory.
+- [x] Add frontend controls for selecting or typing a local directory.
+
+**Implementation Notes:**
+- Added backend-owned `ConfigStore` persistence under the Tauri app data
+  directory with schema-versioned JSON config loading and saving.
+- Expanded `AppState` so commands load, update, validate, persist, and expose
+  repository configuration through structured DTOs.
+- Added `ValidatedRepoPath::resolve_existing_child` so later snippet lookup can
+  reject absolute child paths, traversal, and symlink escapes after
+  canonicalization.
+- Added typed frontend backend/service/store layers for config reads and
+  updates. `App.svelte` now lets the user enter a local repository path and
+  displays backend validation errors without calling `invoke(...)` directly.
+- Added `package-lock.json` after dependency installation to pin the frontend
+  toolchain used by the new Tauri/Svelte app.
 
 **Verification:**
-- Unit tests for valid, invalid, symlink, relative, and missing paths.
-- Tauri command tests for config DTOs.
-- Frontend tests for display of backend confirmation and validation errors.
+- Unit tests for valid, invalid, symlink escape, relative, absolute child, and
+  missing paths: passed.
+- Tauri command tests for config DTOs and persisted source repo updates:
+  passed.
+- Frontend tests for backend validation error normalization: passed.
+- `cargo test --manifest-path src-tauri/Cargo.toml`: passed.
+- `cargo fmt --check --manifest-path src-tauri/Cargo.toml`: passed.
+- `npm run lint`: passed.
+- `npm run typecheck`: passed.
+- `npm run test:frontend`: passed.
+- `npm run check`: passed.
+- `git diff --check`: passed.
 
-**Status:** Not started.
+**Status:** Completed; commit pending.
 
 ### Milestone 4: rust-analyzer Service Boundary
 
@@ -723,6 +746,12 @@ Cleanup requirements:
   stop `generate_context!` from resolving the default icon path. Resolution: add
   a minimal placeholder icon for compile-time context generation and replace it
   with release-grade assets during release readiness.
+- 2026-04-26: `npm run test:frontend` failed during Milestone 3 because Node's
+  strip-only TypeScript runner does not support parameter properties, and
+  `npm run typecheck` rejected explicit `.ts` imports before
+  `allowImportingTsExtensions` was enabled. Resolution: use an explicit
+  constructor field assignment in `ArchitectureService` and configure the
+  no-emit TypeScript checker to accept explicit `.ts` test/runtime imports.
 
 ## Recommendations
 
@@ -747,6 +776,9 @@ Cleanup requirements:
   source-directory READMEs, root scripts, and Tauri entrypoint boundaries.
 - Milestone 2 completed: backend-owned config, command error, source path, and
   graph DTO contracts with unit coverage and ADR traceability.
+- Milestone 3 completed: backend-owned local repository config persistence,
+  validated canonical path handling, symlink-safe child resolution, Tauri config
+  commands, typed frontend service/store wiring, and pinned npm dependencies.
 
 ### Deviations
 
@@ -754,7 +786,6 @@ Cleanup requirements:
 
 ### Follow-Ups
 
-- Confirm whether old website assets should be moved to `archive/` or deleted.
 - Confirm the preferred graph rendering library before Milestone 7.
 - Confirm whether rust-analyzer is allowed as an external runtime prerequisite
   or must be bundled/discovered by the app.

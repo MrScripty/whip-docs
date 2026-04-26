@@ -1,2 +1,1 @@
-export {};
-
+export { appConfig, sourceRepoError } from './configStore';

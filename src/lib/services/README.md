@@ -7,11 +7,14 @@ backend adapters for the UI.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `index.ts` | Placeholder export point for future frontend services. |
+| `ArchitectureService.ts` | Frontend service facade for app config and source repository setup. |
+| `ArchitectureService.test.ts` | Unit coverage for command error message preservation. |
+| `index.ts` | Public service export point. |
 
 ## Problem
-Components need ergonomic operations such as analyze, load snapshot, and fetch
-snippet without knowing Tauri command names or backend DTO details.
+Components need ergonomic operations such as configure source repo, analyze,
+load snapshot, and fetch snippet without knowing Tauri command names or backend
+DTO details.
 
 ## Constraints
 - Services delegate transport to `src/backends`.
@@ -49,7 +52,8 @@ adapters.
 
 ## Usage Examples
 ```ts
-export {};
+const service = new ArchitectureService();
+const config = await service.getConfig();
 ```
 
 ## API Consumer Contract
@@ -64,4 +68,3 @@ export {};
 - Stable fields: none currently produced from this directory.
 - Reason: services are not yet serializing metadata or config.
 - Revisit trigger: services emit persisted view settings or cached snapshots.
-
