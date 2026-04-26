@@ -1,4 +1,5 @@
 //! rust-analyzer lifecycle and Rust extraction service boundary.
+#![allow(dead_code)]
 
 mod extraction;
 

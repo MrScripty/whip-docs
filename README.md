@@ -17,8 +17,8 @@ The active application is a Tauri desktop app with:
 ## Historical Website Boundary
 
 The old website files, generated Vulkan documentation, and GitHub-source viewer
-scripts are obsolete. They remain only until the refactor cleanup milestone
-removes or archives them in an auditable commit.
+scripts were removed from the active tree during the Tauri refactor. Git
+history is the archive for that static-site implementation.
 
 ## Development
 
@@ -26,6 +26,12 @@ Install frontend dependencies before running npm scripts:
 
 ```bash
 npm install
+```
+
+Install the rust-analyzer runtime if it is not already available:
+
+```bash
+rustup component add rust-analyzer
 ```
 
 Run the desktop app:
@@ -47,6 +53,10 @@ cargo test
 cargo fmt --check
 cargo clippy --workspace --all-targets
 ```
+
+Analyze a repository from the app by setting a local Cargo workspace or crate
+directory and selecting `Analyze`. Source snippets are loaded by backend graph
+node ID, not by frontend-provided file paths.
 
 ## Architecture
 

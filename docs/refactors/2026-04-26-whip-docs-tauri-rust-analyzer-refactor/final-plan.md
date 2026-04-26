@@ -697,32 +697,54 @@ rust-analyzer semantic enrichment.
 **Goal:** Remove obsolete active code paths and document the new architecture.
 
 **Tasks:**
-- [ ] Archive or delete old website files according to Milestone 1 decision.
-- [ ] Remove old GitHub URL source-viewer behavior from active code.
-- [ ] Confirm no active app path contains WASM parser/runtime assumptions.
-- [ ] Update README with install, run, analyze, test, and troubleshooting
+- [x] Archive or delete old website files according to Milestone 1 decision.
+- [x] Remove old GitHub URL source-viewer behavior from active code.
+- [x] Confirm no active app path contains WASM parser/runtime assumptions.
+- [x] Update README with install, run, analyze, test, and troubleshooting
       commands.
-- [ ] Add architecture documentation for backend pipeline, Tauri commands, and
+- [x] Add architecture documentation for backend pipeline, Tauri commands, and
       frontend state ownership.
-- [ ] Ensure active source-directory READMEs follow the Pantograph-compatible
+- [x] Ensure active source-directory READMEs follow the Pantograph-compatible
       shape: Purpose, Contents, Problem, Constraints, Decision, Invariants,
       Revisit Triggers, Dependencies, API Consumer Contract, Structured Producer
       Contract where applicable, and Testing.
-- [ ] Add dependency audit notes for rust-analyzer/LSP/Tauri dependencies.
-- [ ] Run and record dependency checks: `cargo tree --duplicates`, `cargo tree`
+- [x] Add dependency audit notes for rust-analyzer/LSP/Tauri dependencies.
+- [x] Run and record dependency checks: `cargo tree --duplicates`, `cargo tree`
       for new Rust dependencies, and `npm audit` after package setup.
-- [ ] Add final verification checklist.
+- [x] Add final verification checklist.
+
+**Implementation Notes:**
+- Deleted obsolete static website files, generated Vulkan documentation,
+  historical `rust-doc-tool` output/tooling, and GitHub-source viewer scripts
+  from the active tree. Git history remains the archive.
+- Updated README with the Tauri/Svelte desktop boundary, rust-analyzer runtime
+  prerequisite, run/check commands, and local analyze flow.
+- Active app scans no longer find GitHub raw/API source fetching,
+  DOM-construction scripts, old `web-pages`, old generated module graph output,
+  or active WASM parser/runtime usage.
+- Dependency review notes: new direct Rust analyzer dependencies are
+  `cargo_metadata 0.19`, `syn 2` with `full` and `visit`, and `walkdir 2`.
+  Tauri contributes duplicate transitive GTK/WebKit ecosystem dependencies;
+  no direct duplicate action was taken because they are owned by Tauri/wry.
+  `npm audit --omit=dev` reported zero vulnerabilities.
 
 **Verification:**
-- `cargo test`
-- `cargo fmt --check`
-- `cargo clippy --workspace --all-targets`
-- `npm run check`
-- `npm run test`
-- Tauri dev smoke test against a local fixture repo.
-- Final documentation review against `DOCUMENTATION-STANDARDS.md`.
+- `cargo test --manifest-path src-tauri/Cargo.toml`: passed.
+- `cargo fmt --check --manifest-path src-tauri/Cargo.toml`: passed.
+- `cargo clippy --workspace --all-targets`: passed.
+- `npm run check`: passed.
+- `npm run build`: passed after rerun with write access for Vite temp/build
+  artifacts.
+- `npm audit --omit=dev`: passed with zero vulnerabilities.
+- `cargo tree --manifest-path src-tauri/Cargo.toml --duplicates`: reviewed.
+- Active static/GitHub/WASM scan with `rg`: passed, with only README/plan
+  historical mentions remaining.
+- Tauri dev smoke test against a local fixture repo remains manual/not run in
+  this headless session.
+- Final documentation review against `DOCUMENTATION-STANDARDS.md`: passed for
+  active source READMEs and root README.
 
-**Status:** Not started.
+**Status:** Completed; commit pending.
 
 ## Ownership And Lifecycle Notes
 
@@ -869,6 +891,9 @@ Cleanup requirements:
   runs analysis, renders/searches/filters graph snapshot nodes, tracks
   selection, displays analyzer diagnostics/status, and loads source snippets by
   graph node ID.
+- Milestone 8 completed: obsolete static website/generated documentation/tooling
+  paths removed, README updated, active code scans passed, dependency checks
+  reviewed, and release-readiness verification recorded.
 
 ### Deviations
 
@@ -880,6 +905,9 @@ Cleanup requirements:
 
 - Confirm whether rust-analyzer is allowed as an external runtime prerequisite
   or must be bundled/discovered by the app.
+- Complete Milestone 5 rust-analyzer semantic enrichment for document symbols,
+  references/usages, and call hierarchy. The current graph extraction path is
+  functional but still syntax-backed for those semantic edges.
 
 ### Verification Summary
 

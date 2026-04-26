@@ -413,6 +413,7 @@ fn extract_items(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_definition(
     graph: &mut GraphAccumulator,
     kind: GraphNodeKind,
@@ -573,6 +574,7 @@ fn extract_mod(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_tauri_command_if_needed(
     graph: &mut GraphAccumulator,
     attributes: &[Attribute],
