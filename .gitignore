@@ -2,3 +2,12 @@
 /rust-doc-tool/user/*
 /rust-doc-tool/target
 /rust-doc-tool/Cargo.lock
+
+# Active desktop app build artifacts
+/node_modules/
+/dist/
+/src-tauri/target/
+
+# Local environment
+.env
+.env.*

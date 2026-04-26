@@ -390,30 +390,42 @@ into structured errors and diagnostics.
 **Goal:** Make the product pivot explicit and prepare the repo for a Tauri app.
 
 **Tasks:**
-- [ ] Add top-level README section stating the old website is archived and the
+- [x] Add top-level README section stating the old website is archived and the
       active product is a local desktop analyzer.
-- [ ] Decide whether old website files move under `archive/static-website/` or
+- [x] Decide whether old website files move under `archive/static-website/` or
       are deleted in a later cleanup commit.
-- [ ] Decide whether `rust-doc-tool/output/module_graph.json` is archived as
+- [x] Decide whether `rust-doc-tool/output/module_graph.json` is archived as
       historical output or removed as generated data.
-- [ ] Remove WASM/static-site assumptions from active product docs and scripts.
-- [ ] Add workspace structure for `src-tauri/`, `frontend/` or conventional
+- [x] Remove WASM/static-site assumptions from active product docs and scripts.
+- [x] Add workspace structure for `src-tauri/`, `frontend/` or conventional
       Tauri app layout.
-- [ ] Add package manager, Rust workspace, Tauri config, and verification script
+- [x] Add package manager, Rust workspace, Tauri config, and verification script
       names before feature work starts.
-- [ ] Establish Pantograph-style entrypoints: thin `main.rs`, `app_setup.rs` for
+- [x] Establish Pantograph-style entrypoints: thin `main.rs`, `app_setup.rs` for
       composition, and `app_lifecycle.rs` for shutdown cleanup.
-- [ ] Add root npm scripts matching the local desktop style: `dev`, `build`,
+- [x] Add root npm scripts matching the local desktop style: `dev`, `build`,
       `dev:desktop`, `build:desktop`, `lint`, `lint:full`, `typecheck`,
       `test:frontend`, and `check`.
-- [ ] Add source-directory READMEs for new active source directories.
-- [ ] Remove active references to GitHub raw source URLs from product docs.
+- [x] Add source-directory READMEs for new active source directories.
+- [x] Remove active references to GitHub raw source URLs from product docs.
+
+**Implementation Notes:**
+- Active app scaffold added at `src/` and `src-tauri/`.
+- Historical static website assets and `rust-doc-tool/output/module_graph.json`
+  will be deleted in Milestone 8 rather than moved into an archive directory.
+  Git history preserves the old website, and the new product does not need a
+  checked-in static-site archive.
+- Root `index.html` is now the Vite/Svelte mount point, not the historical
+  documentation website.
 
 **Verification:**
-- Manual doc review against `DOCUMENTATION-STANDARDS.md`.
+- Manual doc review against `DOCUMENTATION-STANDARDS.md`: passed.
+- `cargo fmt --check --manifest-path src-tauri/Cargo.toml`: passed.
+- `git diff --check`: passed.
+- Source README presence check for `src` and `src-tauri/src`: passed.
 - `git status --short` checked before implementation continues.
 
-**Status:** Not started.
+**Status:** Completed in commit pending.
 
 ### Milestone 2: Core Graph Contracts
 
@@ -712,6 +724,8 @@ Cleanup requirements:
 - Plan created.
 - Standards/codebase review completed and plan patched with enforceable
   compliance requirements.
+- Milestone 1 completed: active Tauri/Svelte workspace scaffold, README update,
+  source-directory READMEs, root scripts, and Tauri entrypoint boundaries.
 
 ### Deviations
 
@@ -729,6 +743,9 @@ Cleanup requirements:
 - Planning-only change. No code verification run.
 - Reviewed the plan against the current `whip-docs` tree and Coding Standards.
 - Scanned active static/GitHub/WASM-related code paths with `rg`.
+- Milestone 1 verification passed: `cargo fmt --check --manifest-path
+  src-tauri/Cargo.toml`, `git diff --check`, source README presence check, and
+  `git status --short`.
 
 ### Traceability Links
 

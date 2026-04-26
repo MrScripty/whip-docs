@@ -1,0 +1,25 @@
+[package]
+name = "whip-docs"
+version.workspace = true
+description = "Local Rust code architecture explorer"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+default-run = "whip-docs"
+
+[lints]
+workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+log.workspace = true
+tauri = { version = "2.9.0", features = [] }
+tauri-plugin-dialog = "2"
+
