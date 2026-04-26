@@ -2,6 +2,7 @@ import type {
   AppConfigDto,
   AnalysisStatusDto,
   CommandErrorDto,
+  GraphSnapshotDto,
 } from '../../backends/TauriArchitectureBackend';
 import { TauriArchitectureBackend } from '../../backends/TauriArchitectureBackend.ts';
 
@@ -18,6 +19,14 @@ export class ArchitectureService {
 
   getAnalysisStatus(): Promise<AnalysisStatusDto> {
     return this.backend.getAnalysisStatus();
+  }
+
+  analyzeSourceRepo(): Promise<GraphSnapshotDto> {
+    return this.backend.analyzeSourceRepo();
+  }
+
+  getGraphSnapshot(): Promise<GraphSnapshotDto | null> {
+    return this.backend.getGraphSnapshot();
   }
 
   setSourceRepoPath(path: string): Promise<AppConfigDto> {

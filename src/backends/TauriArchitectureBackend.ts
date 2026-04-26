@@ -42,6 +42,68 @@ export type AnalysisStatusDto = {
   diagnostics: AnalyzerDiagnosticDto[];
 };
 
+export type GraphNodeKind =
+  | 'workspace'
+  | 'crate'
+  | 'module'
+  | 'file'
+  | 'struct'
+  | 'enum'
+  | 'trait'
+  | 'impl'
+  | 'function'
+  | 'method'
+  | 'tauri_command';
+
+export type GraphEdgeKind =
+  | 'contains'
+  | 'defines'
+  | 'defines_method'
+  | 'imports'
+  | 'calls'
+  | 'implements'
+  | 'references'
+  | 'exposes_command';
+
+export type SourceRangeDto = {
+  path: string;
+  startLine: number;
+  startColumn: number;
+  endLine: number;
+  endColumn: number;
+};
+
+export type GraphNodeDto = {
+  id: string;
+  kind: GraphNodeKind;
+  label: string;
+  sourceRange: SourceRangeDto | null;
+};
+
+export type GraphEdgeDto = {
+  id: string;
+  kind: GraphEdgeKind;
+  sourceId: string;
+  targetId: string;
+  provenance: 'rust_analyzer' | 'syn' | 'normalized';
+  confidence: 'exact' | 'inferred' | 'partial';
+};
+
+export type GraphDiagnosticDto = {
+  code: string;
+  message: string;
+  sourcePath: string | null;
+};
+
+export type GraphSnapshotDto = {
+  schemaVersion: number;
+  sourceRoot: string;
+  generatedAt: string;
+  nodes: GraphNodeDto[];
+  edges: GraphEdgeDto[];
+  diagnostics: GraphDiagnosticDto[];
+};
+
 export type CommandErrorDto = {
   code: string;
   message: string;
@@ -59,6 +121,14 @@ export class TauriArchitectureBackend {
 
   async getAnalysisStatus(): Promise<AnalysisStatusDto> {
     return invoke<AnalysisStatusDto>('get_analysis_status');
+  }
+
+  async analyzeSourceRepo(): Promise<GraphSnapshotDto> {
+    return invoke<GraphSnapshotDto>('analyze_source_repo');
+  }
+
+  async getGraphSnapshot(): Promise<GraphSnapshotDto | null> {
+    return invoke<GraphSnapshotDto | null>('get_graph_snapshot');
   }
 
   async setSourceRepoPath(path: string): Promise<AppConfigDto> {

@@ -72,7 +72,7 @@ textarea {
 
 .source-form {
   display: grid;
-  grid-template-columns: auto minmax(260px, 440px) auto;
+  grid-template-columns: auto minmax(260px, 440px) auto auto;
   align-items: center;
   gap: 10px;
 }
@@ -99,12 +99,26 @@ textarea {
 }
 
 .graph-surface {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   min-height: 0;
+  padding: 18px;
   background:
     linear-gradient(#e2e6ec 1px, transparent 1px),
     linear-gradient(90deg, #e2e6ec 1px, transparent 1px),
     #f9fafb;
   background-size: 28px 28px;
+}
+
+.graph-surface span {
+  min-width: 88px;
+  border: 1px solid #c3cad4;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #263340;
+  font-size: 13px;
 }
 
 .inspector {

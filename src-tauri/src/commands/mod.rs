@@ -3,8 +3,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::analyzer::{AnalysisStatusDto, RustAnalyzerService};
+use crate::analyzer::{AnalysisStatusDto, RustAnalyzerService, RustGraphExtractor};
 use crate::config::{AppConfigDto, ConfigStore, SourceRepoStatusDto};
+use crate::graph::GraphSnapshotDto;
 use crate::source::ValidatedRepoPath;
 
 pub struct AppState {
@@ -12,6 +13,7 @@ pub struct AppState {
     config_store: ConfigStore,
     config: RwLock<AppConfigDto>,
     analyzer_service: RustAnalyzerService,
+    graph_snapshot: RwLock<Option<GraphSnapshotDto>>,
 }
 
 impl std::fmt::Debug for AppState {
@@ -40,6 +42,7 @@ impl AppState {
             config_store,
             config: RwLock::new(config),
             analyzer_service,
+            graph_snapshot: RwLock::new(None),
         }
     }
 
@@ -57,6 +60,34 @@ impl AppState {
 
     pub async fn analysis_status(&self) -> AnalysisStatusDto {
         self.analyzer_service.status().await
+    }
+
+    pub async fn graph_snapshot(&self) -> Option<GraphSnapshotDto> {
+        self.graph_snapshot.read().await.clone()
+    }
+
+    pub async fn analyze_source_repo(&self) -> Result<GraphSnapshotDto, CommandErrorDto> {
+        let config = self.app_config().await;
+        let source_repo_path = config
+            .source_repo_path
+            .ok_or_else(|| CommandErrorDto::validation("source repository is not configured"))?;
+        let source_repo = ValidatedRepoPath::parse_existing_cargo_repo(&source_repo_path)
+            .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
+        let job_id = "analyze-source-repo";
+
+        self.analyzer_service
+            .begin_analysis_job(job_id)
+            .await
+            .map_err(|error| CommandErrorDto::internal(error.to_string()))?;
+
+        let extraction_result = RustGraphExtractor.extract(&source_repo);
+        let _ = self.analyzer_service.complete_analysis_job(job_id).await;
+        let snapshot =
+            extraction_result.map_err(|error| CommandErrorDto::internal(error.to_string()))?;
+
+        let mut guard = self.graph_snapshot.write().await;
+        *guard = Some(snapshot.clone());
+        Ok(snapshot)
     }
 
     pub async fn shutdown_services(&self) -> Result<(), CommandErrorDto> {
@@ -145,6 +176,20 @@ pub async fn get_analysis_status(
     state: tauri::State<'_, std::sync::Arc<AppState>>,
 ) -> Result<AnalysisStatusDto, CommandErrorDto> {
     Ok(state.analysis_status().await)
+}
+
+#[tauri::command]
+pub async fn analyze_source_repo(
+    state: tauri::State<'_, std::sync::Arc<AppState>>,
+) -> Result<GraphSnapshotDto, CommandErrorDto> {
+    state.analyze_source_repo().await
+}
+
+#[tauri::command]
+pub async fn get_graph_snapshot(
+    state: tauri::State<'_, std::sync::Arc<AppState>>,
+) -> Result<Option<GraphSnapshotDto>, CommandErrorDto> {
+    Ok(state.graph_snapshot().await)
 }
 
 #[tauri::command]
@@ -248,5 +293,39 @@ mod tests {
 
         assert_eq!(status.phase, AnalyzerLifecyclePhase::Idle);
         assert_eq!(status.active_job_id, None);
+    }
+
+    #[tokio::test]
+    async fn app_state_analyzes_configured_source_repo_and_stores_snapshot() {
+        let app_dir = unique_temp_dir("analysis-app");
+        let repo_dir = unique_temp_dir("analysis-repo");
+        fs::create_dir_all(repo_dir.join("src")).expect("create repo src");
+        fs::write(
+            repo_dir.join("Cargo.toml"),
+            "[package]\nname = \"fixture\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+        )
+        .expect("write manifest");
+        fs::write(
+            repo_dir.join("src/lib.rs"),
+            "pub fn helper() {}\npub fn entry() { helper(); }\n",
+        )
+        .expect("write source");
+        let store = ConfigStore::new(&app_dir);
+        let state = AppState::new(store, AppConfigDto::default());
+        state
+            .set_source_repo_path(repo_dir.to_string_lossy().into_owned())
+            .await
+            .expect("set source repo");
+
+        let snapshot = state
+            .analyze_source_repo()
+            .await
+            .expect("analyze source repo");
+
+        assert!(snapshot.nodes.iter().any(|node| node.label == "entry"));
+        assert_eq!(state.graph_snapshot().await, Some(snapshot));
+
+        fs::remove_dir_all(app_dir).expect("cleanup app dir");
+        fs::remove_dir_all(repo_dir).expect("cleanup repo dir");
     }
 }

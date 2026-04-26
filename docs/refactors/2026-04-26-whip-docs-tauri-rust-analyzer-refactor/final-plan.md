@@ -607,26 +607,44 @@ rust-analyzer semantic enrichment.
 **Goal:** Wire backend analysis into a Tauri desktop application.
 
 **Tasks:**
-- [ ] Create Tauri app shell and command registration.
-- [ ] Put Tauri builder setup, managed state registration, startup resource
+- [x] Create Tauri app shell and command registration.
+- [x] Put Tauri builder setup, managed state registration, startup resource
       loading, and command registration in `app_setup.rs`.
-- [ ] Keep command handlers thin; delegate to backend services.
-- [ ] Add app state owner for config, analyzer service, and latest graph
+- [x] Keep command handlers thin; delegate to backend services.
+- [x] Add app state owner for config, analyzer service, and latest graph
       snapshot.
-- [ ] Add command-level input validation and structured error mapping.
-- [ ] Put shutdown behavior in `app_lifecycle.rs`; cancel active jobs, terminate
+- [x] Add command-level input validation and structured error mapping.
+- [x] Put shutdown behavior in `app_lifecycle.rs`; cancel active jobs, terminate
       rust-analyzer, and drain tracked background tasks there.
-- [ ] Add capability configuration review for filesystem, shell, network, and
+- [x] Add capability configuration review for filesystem, shell, network, and
       dialog permissions.
-- [ ] Add startup behavior that loads config but does not auto-run expensive
+- [x] Add startup behavior that loads config but does not auto-run expensive
       analysis unless explicitly enabled later.
 
-**Verification:**
-- Tauri command tests where feasible.
-- Manual smoke test: set local repo path, run analysis, retrieve snapshot.
-- `cargo clippy --workspace --all-targets`.
+**Implementation Notes:**
+- Added `analyze_source_repo` and `get_graph_snapshot` Tauri commands that keep
+  graph snapshots in backend app state and return structured command errors.
+- App state now owns config, analyzer lifecycle, and the latest graph snapshot.
+  The analyze command validates configured source roots before invoking the
+  backend extractor.
+- Frontend adapter, service, and transient graph stores now expose analysis and
+  latest snapshot access without direct component-level `invoke(...)` calls.
+- This composition slice moved ahead of rust-analyzer semantic enrichment so the
+  syntax-backed extraction foundation can be smoke-tested through the real Tauri
+  command boundary; Milestone 5 remains open for semantic enrichment.
 
-**Status:** Not started.
+**Verification:**
+- Tauri/app-state command tests for configuring a fixture repo, running
+  analysis, and retrieving the stored graph snapshot: passed.
+- `cargo test --manifest-path src-tauri/Cargo.toml`: passed.
+- `cargo fmt --check --manifest-path src-tauri/Cargo.toml`: passed.
+- `npm run check`: passed.
+- `git diff --check`: passed.
+- Manual desktop smoke test remains pending until the frontend graph view is
+  more useful than the current snapshot counters.
+- `cargo clippy --workspace --all-targets` remains pending for final readiness.
+
+**Status:** Completed; commit pending.
 
 ### Milestone 7: Svelte Frontend
 
@@ -792,6 +810,11 @@ Cleanup requirements:
   `allowImportingTsExtensions` was enabled. Resolution: use an explicit
   constructor field assignment in `ArchitectureService` and configure the
   no-emit TypeScript checker to accept explicit `.ts` test/runtime imports.
+- 2026-04-26: `rust-analyzer --version` failed during Milestone 5 because the
+  rustup component was not installed in the active toolchain. Attempted
+  `rustup component add rust-analyzer`; the download reported transient DNS and
+  timeout retries, then installed successfully. `rust-analyzer --version` now
+  reports `rust-analyzer 1.92.0 (ded5c06 2025-12-08)`.
 
 ## Recommendations
 
@@ -822,10 +845,18 @@ Cleanup requirements:
 - Milestone 4 completed: backend-owned rust-analyzer lifecycle service,
   analyzer status command, single-job concurrency guard, startup timeout,
   cancellation/restart/shutdown cleanup, and typed LSP request builders.
+- Milestone 5 in progress: syntax-backed graph extraction foundation committed
+  with Cargo metadata discovery, source walking, `syn` extraction, graph
+  normalization, diagnostics, and fixture coverage.
+- Milestone 6 completed: Tauri command/app-state composition now exposes
+  explicit analysis and latest graph snapshot retrieval over backend-owned
+  graph state.
 
 ### Deviations
 
-- None.
+- Milestone 6 command wiring moved ahead of the remaining rust-analyzer
+  semantic enrichment in Milestone 5 so the syntax-backed extraction foundation
+  can be exercised through the real app command boundary.
 
 ### Follow-Ups
 

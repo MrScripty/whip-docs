@@ -12,6 +12,7 @@ use tokio::sync::Mutex;
 use tokio::time;
 
 use crate::source::ValidatedRepoPath;
+pub use extraction::RustGraphExtractor;
 
 const DEFAULT_RUST_ANALYZER_BINARY: &str = "rust-analyzer";
 const DEFAULT_STARTUP_TIMEOUT: Duration = Duration::from_secs(10);

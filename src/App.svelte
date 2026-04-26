@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { TauriArchitectureBackend } from './backends/TauriArchitectureBackend';
   import { ArchitectureService, commandErrorMessage } from './lib/services';
-  import { analysisStatus, appConfig, sourceRepoError } from './lib/stores';
+  import { analysisStatus, appConfig, graphError, graphSnapshot, sourceRepoError } from './lib/stores';
 
   const backend = new TauriArchitectureBackend();
   const architectureService = new ArchitectureService(backend);
@@ -10,14 +10,17 @@
   let status = $state('Starting');
   let sourceRepoPath = $state('');
   let savingSourceRepo = $state(false);
+  let analyzing = $state(false);
 
   onMount(async () => {
     const appStatus = await backend.getAppStatus();
     const config = await architectureService.getConfig();
     const analyzer = await architectureService.getAnalysisStatus();
+    const snapshot = await architectureService.getGraphSnapshot();
     status = appStatus.activeProduct;
     appConfig.set(config);
     analysisStatus.set(analyzer);
+    graphSnapshot.set(snapshot);
     sourceRepoPath = config.sourceRepoPath ?? '';
   });
 
@@ -32,6 +35,20 @@
       sourceRepoError.set(commandErrorMessage(error));
     } finally {
       savingSourceRepo = false;
+    }
+  }
+
+  async function analyzeSourceRepo() {
+    analyzing = true;
+    graphError.set(null);
+    try {
+      const snapshot = await architectureService.analyzeSourceRepo();
+      graphSnapshot.set(snapshot);
+      analysisStatus.set(await architectureService.getAnalysisStatus());
+    } catch (error) {
+      graphError.set(commandErrorMessage(error));
+    } finally {
+      analyzing = false;
     }
   }
 </script>
@@ -51,11 +68,19 @@
         autocomplete="off"
       />
       <button type="submit" disabled={savingSourceRepo}>Set</button>
+      <button type="button" disabled={analyzing || !$appConfig.sourceRepoPath} onclick={() => { void analyzeSourceRepo(); }}>
+        Analyze
+      </button>
     </form>
   </section>
 
   <section class="workspace" aria-label="Architecture graph workspace">
-    <div class="graph-surface"></div>
+    <div class="graph-surface">
+      {#if $graphSnapshot}
+        <span>{$graphSnapshot.nodes.length} nodes</span>
+        <span>{$graphSnapshot.edges.length} edges</span>
+      {/if}
+    </div>
     <aside class="inspector">
       <h2>Snapshot</h2>
       {#if $appConfig.sourceRepoPath}
@@ -66,8 +91,16 @@
       {#if $sourceRepoError}
         <p class="error">{$sourceRepoError}</p>
       {/if}
+      {#if $graphError}
+        <p class="error">{$graphError}</p>
+      {/if}
       <h2>Analyzer</h2>
       <p>{$analysisStatus.phase}</p>
+      {#if $graphSnapshot}
+        <h2>Graph</h2>
+        <p>{$graphSnapshot.generatedAt}</p>
+        <p>{$graphSnapshot.diagnostics.length} diagnostics</p>
+      {/if}
     </aside>
   </section>
 </main>

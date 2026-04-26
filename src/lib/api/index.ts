@@ -5,5 +5,12 @@ export type {
   AnalyzerDiagnosticDto,
   AnalyzerLifecyclePhase,
   CommandErrorDto,
+  GraphDiagnosticDto,
+  GraphEdgeDto,
+  GraphEdgeKind,
+  GraphNodeDto,
+  GraphNodeKind,
+  GraphSnapshotDto,
+  SourceRangeDto,
   SourceRepoStatusDto,
 } from '../../backends/TauriArchitectureBackend';

@@ -7,7 +7,7 @@ backend adapters for the UI.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `ArchitectureService.ts` | Frontend service facade for app config, analyzer status, and source repository setup. |
+| `ArchitectureService.ts` | Frontend service facade for app config, analyzer status, graph analysis, graph snapshot access, and source repository setup. |
 | `ArchitectureService.test.ts` | Unit coverage for command error message preservation. |
 | `index.ts` | Public service export point. |
 
@@ -55,6 +55,7 @@ adapters.
 const service = new ArchitectureService();
 const config = await service.getConfig();
 const analyzer = await service.getAnalysisStatus();
+const snapshot = await service.analyzeSourceRepo();
 ```
 
 ## API Consumer Contract
