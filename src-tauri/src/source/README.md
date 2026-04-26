@@ -43,9 +43,8 @@ handlers and analyzer modules consume trusted types.
 **External:** standard filesystem APIs.
 
 ## Related ADRs
-- None identified as of 2026-04-26.
-- Reason: source validation contract is scheduled for Milestone 2/3.
-- Revisit trigger: `ValidatedRepoPath` is implemented.
+- `docs/adr/ADR-001-tauri-rust-analyzer-graph-contracts.md`: records
+  `ValidatedRepoPath` as a backend-owned boundary type.
 
 ## Usage Examples
 ```rust
@@ -67,4 +66,3 @@ handlers and analyzer modules consume trusted types.
 - Enum semantics: validation status labels are frontend-visible.
 - Compatibility: source DTO changes require frontend adapter updates.
 - Regeneration or migration: no generated artifacts are produced here.
-

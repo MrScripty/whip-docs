@@ -42,9 +42,8 @@ into `config`, `graph`, `source`, or `analyzer` modules.
 **External:** Tauri and serde.
 
 ## Related ADRs
-- None identified as of 2026-04-26.
-- Reason: command contract ADR is planned after core DTOs stabilize.
-- Revisit trigger: `GraphSnapshotDto` and `CommandErrorDto` are implemented.
+- `docs/adr/ADR-001-tauri-rust-analyzer-graph-contracts.md`: defines command
+  error DTO ownership and cross-boundary graph/config contracts.
 
 ## Usage Examples
 ```rust
@@ -75,4 +74,3 @@ pub fn get_app_status(state: tauri::State<'_, std::sync::Arc<AppState>>) -> AppS
   together.
 - Regeneration or migration: future schema generation must preserve existing
   command compatibility or document the break.
-

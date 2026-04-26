@@ -433,24 +433,33 @@ into structured errors and diagnostics.
 them.
 
 **Tasks:**
-- [ ] Create Rust domain module for validated paths, graph nodes, graph edges,
+- [x] Create Rust domain module for validated paths, graph nodes, graph edges,
       diagnostics, and snapshot metadata.
-- [ ] Add serde DTOs for Tauri IPC.
-- [ ] Add versioned `AppConfigDto`, `GraphSnapshotDto`, `CommandErrorDto`, and
+- [x] Add serde DTOs for Tauri IPC.
+- [x] Add versioned `AppConfigDto`, `GraphSnapshotDto`, `CommandErrorDto`, and
       migration/versioning notes.
-- [ ] Add stable ID strategy for workspace/crate/file/symbol nodes.
-- [ ] Add edge provenance/confidence fields.
-- [ ] Add executable schema/round-trip tests for graph and config DTOs.
-- [ ] Document graph contract lifecycle and compatibility expectations.
-- [ ] Add ADR for Tauri/rust-analyzer ownership and graph contract boundaries.
+- [x] Add stable ID strategy for workspace/crate/file/symbol nodes.
+- [x] Add edge provenance/confidence fields.
+- [x] Add executable schema/round-trip tests for graph and config DTOs.
+- [x] Document graph contract lifecycle and compatibility expectations.
+- [x] Add ADR for Tauri/rust-analyzer ownership and graph contract boundaries.
+
+**Implementation Notes:**
+- Added `AppConfigDto`, `SourceRepoStatusDto`, `CommandErrorDto`,
+  `ValidatedRepoPath`, graph snapshot/node/edge/source-range DTOs, analyzer
+  diagnostics, edge provenance/confidence enums, and deterministic ID helpers.
+- Added `docs/adr/ADR-001-tauri-rust-analyzer-graph-contracts.md`.
+- Added a placeholder Tauri icon because `generate_context!` requires an icon
+  path even before release packaging assets are finalized.
 
 **Verification:**
 - Unit tests for `ValidatedRepoPath`, stable ID generation, and DTO
-  serialization.
-- `cargo test` for the core crate.
-- `cargo fmt --check`.
+  serialization: passed.
+- `cargo test --manifest-path src-tauri/Cargo.toml`: passed.
+- `cargo fmt --check --manifest-path src-tauri/Cargo.toml`: passed.
+- `git diff --check`: passed.
 
-**Status:** Not started.
+**Status:** Completed in commit pending.
 
 ### Milestone 3: Local Repository Configuration
 
@@ -705,6 +714,16 @@ Cleanup requirements:
 - The implementation needs background watching or incremental analysis before
   the explicit analyze flow is complete.
 
+## Unexpected Issues During Execution
+
+- 2026-04-26: `cargo test --manifest-path src-tauri/Cargo.toml` failed during
+  Milestone 2 because Tauri's bundle configuration attempted to load the
+  default `src-tauri/icons/icon.png`, which does not exist in the new scaffold.
+  This is directly related to the Tauri app setup. Disabling bundling did not
+  stop `generate_context!` from resolving the default icon path. Resolution: add
+  a minimal placeholder icon for compile-time context generation and replace it
+  with release-grade assets during release readiness.
+
 ## Recommendations
 
 - Prefer `rust-analyzer` for semantic truth and `syn` for syntax-specific
@@ -726,6 +745,8 @@ Cleanup requirements:
   compliance requirements.
 - Milestone 1 completed: active Tauri/Svelte workspace scaffold, README update,
   source-directory READMEs, root scripts, and Tauri entrypoint boundaries.
+- Milestone 2 completed: backend-owned config, command error, source path, and
+  graph DTO contracts with unit coverage and ADR traceability.
 
 ### Deviations
 
@@ -746,10 +767,13 @@ Cleanup requirements:
 - Milestone 1 verification passed: `cargo fmt --check --manifest-path
   src-tauri/Cargo.toml`, `git diff --check`, source README presence check, and
   `git status --short`.
+- Milestone 2 verification passed: `cargo test --manifest-path
+  src-tauri/Cargo.toml`, `cargo fmt --check --manifest-path src-tauri/Cargo.toml`,
+  and `git diff --check`.
 
 ### Traceability Links
 
 - Module README updated: N/A for plan creation.
-- ADR added/updated: Future ADR recommended when Milestone 2 freezes graph
-  contracts and Tauri/rust-analyzer ownership.
+- ADR added/updated:
+  `docs/adr/ADR-001-tauri-rust-analyzer-graph-contracts.md`.
 - PR notes completed per `templates/PULL_REQUEST_TEMPLATE.md`: N/A.

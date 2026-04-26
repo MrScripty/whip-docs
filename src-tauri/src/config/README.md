@@ -42,9 +42,8 @@ Centralize config DTOs, persistence, defaults, and migration in this module.
 **External:** serde and platform config directories when persistence is added.
 
 ## Related ADRs
-- None identified as of 2026-04-26.
-- Reason: config persistence is not implemented yet.
-- Revisit trigger: `AppConfigDto` is frozen.
+- `docs/adr/ADR-001-tauri-rust-analyzer-graph-contracts.md`: defines the
+  backend-owned app config DTO and versioning stance.
 
 ## Usage Examples
 ```rust
@@ -65,4 +64,3 @@ Centralize config DTOs, persistence, defaults, and migration in this module.
 - Compatibility: schema changes require version bump and migration behavior.
 - Regeneration or migration: migrations run before commands expose config to the
   frontend.
-

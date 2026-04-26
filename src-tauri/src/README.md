@@ -51,9 +51,8 @@ logic.
 **External:** Tauri, Tokio, serde.
 
 ## Related ADRs
-- None identified as of 2026-04-26.
-- Reason: ownership ADR is scheduled after core contracts are frozen.
-- Revisit trigger: Milestone 2 freezes graph/config/error contracts.
+- `docs/adr/ADR-001-tauri-rust-analyzer-graph-contracts.md`: establishes
+  backend-owned config, error, source path, and graph DTO contracts.
 
 ## Usage Examples
 ```rust
@@ -77,4 +76,3 @@ tauri::Builder::default()
 - Compatibility: command response changes require frontend tests.
 - Regeneration or migration: generated schema adoption must replace manual DTOs
   in one coordinated slice.
-

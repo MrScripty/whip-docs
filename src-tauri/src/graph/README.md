@@ -43,9 +43,8 @@ depend on them.
 **External:** serde.
 
 ## Related ADRs
-- None identified as of 2026-04-26.
-- Reason: graph contract ADR is part of Milestone 2.
-- Revisit trigger: graph DTOs are frozen for frontend work.
+- `docs/adr/ADR-001-tauri-rust-analyzer-graph-contracts.md`: records the
+  backend-owned graph snapshot and DTO contract decision.
 
 ## Usage Examples
 ```rust
@@ -67,4 +66,3 @@ depend on them.
   updates.
 - Regeneration or migration: saved snapshots must include schema version before
   persistence is introduced.
-
