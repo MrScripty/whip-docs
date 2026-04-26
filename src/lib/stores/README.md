@@ -8,7 +8,7 @@ This directory will contain Svelte stores for transient architecture-view state.
 |-------------|-------------|
 | `analysisStore.ts` | Transient frontend projection of backend analyzer lifecycle status. |
 | `configStore.ts` | Transient frontend projection of backend app config and source path errors. |
-| `graphStore.ts` | Transient frontend projection of the latest backend graph snapshot and analysis errors. |
+| `graphStore.ts` | Transient frontend projection of the latest backend graph snapshot, selected node, source snippet, and analysis errors. |
 | `index.ts` | Public store export point. |
 
 ## Problem

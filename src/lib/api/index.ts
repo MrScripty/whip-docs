@@ -12,5 +12,6 @@ export type {
   GraphNodeKind,
   GraphSnapshotDto,
   SourceRangeDto,
+  SourceSnippetDto,
   SourceRepoStatusDto,
 } from '../../backends/TauriArchitectureBackend';

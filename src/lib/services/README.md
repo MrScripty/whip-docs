@@ -7,7 +7,7 @@ backend adapters for the UI.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `ArchitectureService.ts` | Frontend service facade for app config, analyzer status, graph analysis, graph snapshot access, and source repository setup. |
+| `ArchitectureService.ts` | Frontend service facade for app config, analyzer status, graph analysis, graph snapshot access, source snippets, and source repository setup. |
 | `ArchitectureService.test.ts` | Unit coverage for command error message preservation. |
 | `index.ts` | Public service export point. |
 

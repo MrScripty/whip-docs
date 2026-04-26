@@ -2,7 +2,15 @@
   import { onMount } from 'svelte';
   import { TauriArchitectureBackend } from './backends/TauriArchitectureBackend';
   import { ArchitectureService, commandErrorMessage } from './lib/services';
-  import { analysisStatus, appConfig, graphError, graphSnapshot, sourceRepoError } from './lib/stores';
+  import {
+    analysisStatus,
+    appConfig,
+    graphError,
+    graphSnapshot,
+    selectedNodeId,
+    sourceRepoError,
+    sourceSnippet,
+  } from './lib/stores';
 
   const backend = new TauriArchitectureBackend();
   const architectureService = new ArchitectureService(backend);
@@ -44,11 +52,24 @@
     try {
       const snapshot = await architectureService.analyzeSourceRepo();
       graphSnapshot.set(snapshot);
+      selectedNodeId.set(null);
+      sourceSnippet.set(null);
       analysisStatus.set(await architectureService.getAnalysisStatus());
     } catch (error) {
       graphError.set(commandErrorMessage(error));
     } finally {
       analyzing = false;
+    }
+  }
+
+  async function selectNode(nodeId) {
+    selectedNodeId.set(nodeId);
+    graphError.set(null);
+    try {
+      sourceSnippet.set(await architectureService.getSourceSnippet(nodeId));
+    } catch (error) {
+      sourceSnippet.set(null);
+      graphError.set(commandErrorMessage(error));
     }
   }
 </script>
@@ -79,6 +100,18 @@
       {#if $graphSnapshot}
         <span>{$graphSnapshot.nodes.length} nodes</span>
         <span>{$graphSnapshot.edges.length} edges</span>
+        <div class="node-list" aria-label="Graph nodes">
+          {#each $graphSnapshot.nodes.slice(0, 24) as node (node.id)}
+            <button
+              type="button"
+              class:selected={$selectedNodeId === node.id}
+              onclick={() => { void selectNode(node.id); }}
+            >
+              <strong>{node.label}</strong>
+              <small>{node.kind}</small>
+            </button>
+          {/each}
+        </div>
       {/if}
     </div>
     <aside class="inspector">
@@ -100,6 +133,11 @@
         <h2>Graph</h2>
         <p>{$graphSnapshot.generatedAt}</p>
         <p>{$graphSnapshot.diagnostics.length} diagnostics</p>
+      {/if}
+      {#if $sourceSnippet}
+        <h2>Source</h2>
+        <p>{$sourceSnippet.path}:{$sourceSnippet.startLine}</p>
+        <pre>{$sourceSnippet.text}</pre>
       {/if}
     </aside>
   </section>

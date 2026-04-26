@@ -66,6 +66,60 @@ impl AppState {
         self.graph_snapshot.read().await.clone()
     }
 
+    pub async fn source_snippet(
+        &self,
+        node_id: String,
+    ) -> Result<SourceSnippetDto, CommandErrorDto> {
+        let snapshot = self
+            .graph_snapshot()
+            .await
+            .ok_or_else(|| CommandErrorDto::validation("graph snapshot is not available"))?;
+        let node = snapshot
+            .nodes
+            .iter()
+            .find(|node| node.id == node_id)
+            .ok_or_else(|| CommandErrorDto::validation("graph node was not found"))?;
+        let source_range = node
+            .source_range
+            .as_ref()
+            .ok_or_else(|| CommandErrorDto::validation("graph node has no source range"))?;
+        let source_repo_path =
+            self.app_config().await.source_repo_path.ok_or_else(|| {
+                CommandErrorDto::validation("source repository is not configured")
+            })?;
+        let source_repo = ValidatedRepoPath::parse_existing_cargo_repo(&source_repo_path)
+            .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
+        let source_path = source_repo
+            .resolve_existing_child(&source_range.path)
+            .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
+        let source = tokio::fs::read_to_string(&source_path)
+            .await
+            .map_err(|error| CommandErrorDto::internal(error.to_string()))?;
+        let start_line = source_range.start_line.saturating_sub(3).max(1);
+        let end_line = source_range.end_line.saturating_add(3);
+        let text = source
+            .lines()
+            .enumerate()
+            .filter_map(|(index, line)| {
+                let line_number = index as u32 + 1;
+                if line_number >= start_line && line_number <= end_line {
+                    Some(line.to_string())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        Ok(SourceSnippetDto {
+            node_id,
+            path: source_range.path.clone(),
+            start_line,
+            end_line,
+            text,
+        })
+    }
+
     pub async fn analyze_source_repo(&self) -> Result<GraphSnapshotDto, CommandErrorDto> {
         let config = self.app_config().await;
         let source_repo_path = config
@@ -137,6 +191,16 @@ pub struct CommandErrorDto {
     pub recoverable: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SourceSnippetDto {
+    pub node_id: String,
+    pub path: String,
+    pub start_line: u32,
+    pub end_line: u32,
+    pub text: String,
+}
+
 impl CommandErrorDto {
     pub fn validation(message: impl Into<String>) -> Self {
         Self {
@@ -190,6 +254,14 @@ pub async fn get_graph_snapshot(
     state: tauri::State<'_, std::sync::Arc<AppState>>,
 ) -> Result<Option<GraphSnapshotDto>, CommandErrorDto> {
     Ok(state.graph_snapshot().await)
+}
+
+#[tauri::command]
+pub async fn get_source_snippet(
+    node_id: String,
+    state: tauri::State<'_, std::sync::Arc<AppState>>,
+) -> Result<SourceSnippetDto, CommandErrorDto> {
+    state.source_snippet(node_id).await
 }
 
 #[tauri::command]
@@ -324,6 +396,52 @@ mod tests {
 
         assert!(snapshot.nodes.iter().any(|node| node.label == "entry"));
         assert_eq!(state.graph_snapshot().await, Some(snapshot));
+
+        fs::remove_dir_all(app_dir).expect("cleanup app dir");
+        fs::remove_dir_all(repo_dir).expect("cleanup repo dir");
+    }
+
+    #[tokio::test]
+    async fn app_state_returns_source_snippet_by_graph_node_id() {
+        let app_dir = unique_temp_dir("snippet-app");
+        let repo_dir = unique_temp_dir("snippet-repo");
+        fs::create_dir_all(repo_dir.join("src")).expect("create repo src");
+        fs::write(
+            repo_dir.join("Cargo.toml"),
+            "[package]\nname = \"fixture\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+        )
+        .expect("write manifest");
+        fs::write(
+            repo_dir.join("src/lib.rs"),
+            "pub fn helper() {}\npub fn entry() { helper(); }\n",
+        )
+        .expect("write source");
+        let store = ConfigStore::new(&app_dir);
+        let state = AppState::new(store, AppConfigDto::default());
+        state
+            .set_source_repo_path(repo_dir.to_string_lossy().into_owned())
+            .await
+            .expect("set source repo");
+        let snapshot = state
+            .analyze_source_repo()
+            .await
+            .expect("analyze source repo");
+        let node_id = snapshot
+            .nodes
+            .iter()
+            .find(|node| node.label == "entry")
+            .expect("entry node")
+            .id
+            .clone();
+
+        let snippet = state
+            .source_snippet(node_id.clone())
+            .await
+            .expect("snippet");
+
+        assert_eq!(snippet.node_id, node_id);
+        assert_eq!(snippet.path, "src/lib.rs");
+        assert!(snippet.text.contains("pub fn entry()"));
 
         fs::remove_dir_all(app_dir).expect("cleanup app dir");
         fs::remove_dir_all(repo_dir).expect("cleanup repo dir");

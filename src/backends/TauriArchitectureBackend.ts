@@ -104,6 +104,14 @@ export type GraphSnapshotDto = {
   diagnostics: GraphDiagnosticDto[];
 };
 
+export type SourceSnippetDto = {
+  nodeId: string;
+  path: string;
+  startLine: number;
+  endLine: number;
+  text: string;
+};
+
 export type CommandErrorDto = {
   code: string;
   message: string;
@@ -129,6 +137,10 @@ export class TauriArchitectureBackend {
 
   async getGraphSnapshot(): Promise<GraphSnapshotDto | null> {
     return invoke<GraphSnapshotDto | null>('get_graph_snapshot');
+  }
+
+  async getSourceSnippet(nodeId: string): Promise<SourceSnippetDto> {
+    return invoke<SourceSnippetDto>('get_source_snippet', { nodeId });
   }
 
   async setSourceRepoPath(path: string): Promise<AppConfigDto> {

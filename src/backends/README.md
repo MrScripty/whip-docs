@@ -7,7 +7,7 @@ method calls into Tauri command invocations.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `TauriArchitectureBackend.ts` | Tauri adapter for app status, app config, analyzer status, graph snapshot, analysis, and source repository path commands. |
+| `TauriArchitectureBackend.ts` | Tauri adapter for app status, app config, analyzer status, graph snapshot, source snippet, analysis, and source repository path commands. |
 
 ## Problem
 Svelte components need backend data, but direct `invoke(...)` calls spread IPC

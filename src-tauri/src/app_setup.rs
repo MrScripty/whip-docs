@@ -28,6 +28,7 @@ pub fn run_app() -> AppStartupResult<()> {
             commands::get_analysis_status,
             commands::analyze_source_repo,
             commands::get_graph_snapshot,
+            commands::get_source_snippet,
             commands::set_source_repo_path
         ])
         .build(tauri::generate_context!())?

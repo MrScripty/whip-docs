@@ -572,7 +572,7 @@ configuration.
 - [ ] Extract call edges with rust-analyzer call hierarchy where available.
 - [ ] Extract references/usages where needed for graph search and diagnostics.
 - [x] Normalize syntax-discovered data into `GraphSnapshot`.
-- [ ] Use graph snapshot metadata for all later source snippet lookups; snippets
+- [x] Use graph snapshot metadata for all later source snippet lookups; snippets
       are addressed by node ID, not frontend-provided file paths.
 - [x] Add snapshot size checks and re-plan if direct IPC payloads are too large.
 - [x] Preserve diagnostics for skipped files, unresolved symbols, macro-heavy
@@ -591,6 +591,9 @@ configuration.
 - rust-analyzer semantic document-symbol, reference, and call-hierarchy
   enrichment remains open in this milestone and must complete before Milestone 5
   is marked done.
+- Added backend source snippet lookup by graph node ID. Snippet resolution uses
+  stored graph source ranges and `ValidatedRepoPath::resolve_existing_child`
+  rather than frontend-provided file paths.
 
 **Verification:**
 - Golden snapshot-style fixture tests for small Cargo crates: passed.
@@ -644,39 +647,50 @@ rust-analyzer semantic enrichment.
   more useful than the current snapshot counters.
 - `cargo clippy --workspace --all-targets` remains pending for final readiness.
 
-**Status:** Completed; commit pending.
+**Status:** Completed in `feat(app): wire graph analysis commands`.
 
 ### Milestone 7: Svelte Frontend
 
 **Goal:** Replace imperative static website scripts with a declarative app UI.
 
 **Tasks:**
-- [ ] Add Svelte + TypeScript app scaffold.
-- [ ] Add a typed frontend backend adapter such as
+- [x] Add Svelte + TypeScript app scaffold.
+- [x] Add a typed frontend backend adapter such as
       `src/backends/TauriArchitectureBackend.ts`; components and stores must not
       call `invoke(...)` directly.
-- [ ] Add frontend services over the backend adapter for analysis, config,
+- [x] Add frontend services over the backend adapter for analysis, config,
       graph snapshots, snippets, and diagnostics.
-- [ ] Add stores for transient UI state only.
-- [ ] Use event-driven command responses/status events for analysis progress. If
+- [x] Add stores for transient UI state only.
+- [x] Use event-driven command responses/status events for analysis progress. If
       polling is unavoidable, scope it to one owner and add cleanup tests.
 - [ ] Move graph interaction/filter/search helpers into pure TypeScript modules
       with colocated tests instead of burying behavior in large Svelte files.
 - [ ] Render graph snapshot with search/filter/selection.
-- [ ] Add source snippet panel backed by `get_source_snippet`.
-- [ ] Add diagnostics/progress panel for analyzer status.
+- [x] Add source snippet panel backed by `get_source_snippet`.
+- [x] Add diagnostics/progress panel for analyzer status.
 - [ ] Remove old DOM-script rendering from the active app path.
-- [ ] Do not use `innerHTML`/manual DOM tree construction for normal rendering;
+- [x] Do not use `innerHTML`/manual DOM tree construction for normal rendering;
       isolate any graph-canvas imperative integration behind a component with
       teardown tests.
 
+**Implementation Notes:**
+- Added graph snapshot DTO mirrors, source snippet DTO mirrors, analysis
+  commands, graph stores, selected-node state, and source snippet state to the
+  frontend.
+- `App.svelte` now provides local repo configuration, explicit analysis,
+  analyzer status, snapshot counters, a bounded node list with selection, and a
+  backend-backed source snippet panel.
+- Search/filter helpers remain open and should move to pure TypeScript modules
+  before Milestone 7 is marked complete.
+
 **Verification:**
-- `npm run check` or equivalent Svelte typecheck.
+- `npm run check`: passed.
 - Frontend unit/component tests for source path validation errors, analysis
   status display, graph rendering, filter behavior, and snippet loading.
 - Accessibility checks for controls and graph navigation where practical.
 
-**Status:** Not started.
+**Status:** In progress; functional graph snapshot and source snippet UI are
+present, search/filter helper extraction remains open.
 
 ### Milestone 8: Cleanup, Documentation, And Release Readiness
 
