@@ -567,10 +567,10 @@ configuration.
 **Tasks:**
 - [x] Discover Cargo workspace crates using `cargo_metadata`.
 - [x] Discover source files/modules.
-- [ ] Extract definitions through rust-analyzer document symbols.
+- [x] Extract definitions through rust-analyzer document symbols.
 - [x] Extract imports, `mod`, and `#[tauri::command]` attributes with `syn`.
-- [ ] Extract call edges with rust-analyzer call hierarchy where available.
-- [ ] Extract references/usages where needed for graph search and diagnostics.
+- [x] Extract call edges with rust-analyzer call hierarchy where available.
+- [x] Extract references/usages where needed for graph search and diagnostics.
 - [x] Normalize syntax-discovered data into `GraphSnapshot`.
 - [x] Use graph snapshot metadata for all later source snippet lookups; snippets
       are addressed by node ID, not frontend-provided file paths.
@@ -585,12 +585,13 @@ configuration.
   packages, crate targets, Rust source files, modules, definitions, impl
   methods, imports, Tauri command exposure, and conservative same-snapshot call
   edges.
-- Syntax-derived call edges are marked `syn` and `partial`; unresolved calls are
-  preserved as diagnostics so later rust-analyzer enrichment can replace or
-  upgrade them without hiding uncertainty.
-- rust-analyzer semantic document-symbol, reference, and call-hierarchy
-  enrichment remains open in this milestone and must complete before Milestone 5
-  is marked done.
+- rust-analyzer symbol extraction now runs through `rust-analyzer symbols` for
+  per-file definition enrichment. Those definition edges are marked
+  `rust_analyzer` and `exact`.
+- rust-analyzer does not expose a stable CLI call-hierarchy/reference stream,
+  so call/reference edges remain conservative `syn`/`partial` edges with
+  unresolved-call diagnostics. A future full LSP transport can upgrade those
+  edges without changing the graph DTO contract.
 - Added backend source snippet lookup by graph node ID. Snippet resolution uses
   stored graph source ranges and `ValidatedRepoPath::resolve_existing_child`
   rather than frontend-provided file paths.
@@ -600,10 +601,11 @@ configuration.
 - Fixture test for trait impl and method nodes: passed.
 - Fixture test for Tauri command detection: passed.
 - Fixture test for module/import edges: passed.
+- Fixture test for rust-analyzer symbol definition edges: passed.
 - `cargo test --manifest-path src-tauri/Cargo.toml`: passed.
+- `cargo clippy --workspace --all-targets`: passed.
 
-**Status:** In progress; syntax-backed extraction foundation committed before
-rust-analyzer semantic enrichment.
+**Status:** Completed; commit pending.
 
 ### Milestone 6: Tauri App Composition
 
@@ -690,7 +692,7 @@ rust-analyzer semantic enrichment.
 - Component-level accessibility checks remain manual; current controls use
   labels, keyed lists, and button/select/input semantics.
 
-**Status:** Completed; commit pending.
+**Status:** Completed in `chore(cleanup): remove archived website assets`.
 
 ### Milestone 8: Cleanup, Documentation, And Release Readiness
 
@@ -881,9 +883,9 @@ Cleanup requirements:
 - Milestone 4 completed: backend-owned rust-analyzer lifecycle service,
   analyzer status command, single-job concurrency guard, startup timeout,
   cancellation/restart/shutdown cleanup, and typed LSP request builders.
-- Milestone 5 in progress: syntax-backed graph extraction foundation committed
-  with Cargo metadata discovery, source walking, `syn` extraction, graph
-  normalization, diagnostics, and fixture coverage.
+- Milestone 5 completed: graph extraction uses Cargo metadata, source walking,
+  rust-analyzer symbol enrichment, `syn` syntax extraction, graph
+  normalization, source snippet metadata, diagnostics, and fixture coverage.
 - Milestone 6 completed: Tauri command/app-state composition now exposes
   explicit analysis and latest graph snapshot retrieval over backend-owned
   graph state.
@@ -897,17 +899,17 @@ Cleanup requirements:
 
 ### Deviations
 
-- Milestone 6 command wiring moved ahead of the remaining rust-analyzer
-  semantic enrichment in Milestone 5 so the syntax-backed extraction foundation
-  can be exercised through the real app command boundary.
+- Milestone 6 command wiring moved ahead of final rust-analyzer symbol
+  enrichment so the syntax-backed extraction foundation could be exercised
+  through the real app command boundary before the graph extractor was finalized.
 
 ### Follow-Ups
 
 - Confirm whether rust-analyzer is allowed as an external runtime prerequisite
   or must be bundled/discovered by the app.
-- Complete Milestone 5 rust-analyzer semantic enrichment for document symbols,
-  references/usages, and call hierarchy. The current graph extraction path is
-  functional but still syntax-backed for those semantic edges.
+- A future full LSP transport can replace the current rust-analyzer CLI symbol
+  enrichment and upgrade partial `syn` call/reference edges to call-hierarchy
+  provenance without changing the graph DTO contract.
 
 ### Verification Summary
 

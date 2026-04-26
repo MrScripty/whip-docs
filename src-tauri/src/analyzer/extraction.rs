@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use cargo_metadata::MetadataCommand;
@@ -196,6 +198,7 @@ impl RustGraphExtractor {
             &module_id,
             graph,
         );
+        extract_rust_analyzer_symbols(package_name, &relative_path, &source, &file_id, graph);
     }
 }
 
@@ -620,6 +623,122 @@ fn add_tauri_command_if_needed(
     );
 }
 
+fn extract_rust_analyzer_symbols(
+    package_name: &str,
+    relative_path: &str,
+    source: &str,
+    file_id: &str,
+    graph: &mut GraphAccumulator,
+) {
+    let mut child = match Command::new("rust-analyzer")
+        .arg("symbols")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+    {
+        Ok(child) => child,
+        Err(error) => {
+            graph.add_diagnostic(
+                "rust_analyzer_symbols_unavailable",
+                format!("failed to start rust-analyzer symbols: {error}"),
+                Some(relative_path.to_string()),
+            );
+            return;
+        }
+    };
+
+    if let Some(stdin) = child.stdin.as_mut() {
+        if let Err(error) = stdin.write_all(source.as_bytes()) {
+            graph.add_diagnostic(
+                "rust_analyzer_symbols_stdin_failed",
+                format!("failed to send source to rust-analyzer symbols: {error}"),
+                Some(relative_path.to_string()),
+            );
+            return;
+        }
+    }
+
+    let output = match child.wait_with_output() {
+        Ok(output) => output,
+        Err(error) => {
+            graph.add_diagnostic(
+                "rust_analyzer_symbols_failed",
+                format!("failed to read rust-analyzer symbols output: {error}"),
+                Some(relative_path.to_string()),
+            );
+            return;
+        }
+    };
+
+    if !output.status.success() {
+        graph.add_diagnostic(
+            "rust_analyzer_symbols_failed",
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+            Some(relative_path.to_string()),
+        );
+        return;
+    }
+
+    for line in String::from_utf8_lossy(&output.stdout).lines() {
+        let Some(label) = extract_quoted_field(line, "label") else {
+            continue;
+        };
+        let Some(kind) = extract_symbol_kind(line) else {
+            continue;
+        };
+        let Some(node_kind) = graph_node_kind_from_rust_analyzer(&kind) else {
+            continue;
+        };
+
+        let node_id = graph.add_node(
+            node_kind.clone(),
+            label.clone(),
+            &[package_name, relative_path, "rust-analyzer", label.as_str()],
+            Some(source_range(relative_path, find_line(source, &label))),
+        );
+        graph.add_edge(
+            GraphEdgeKind::Defines,
+            file_id,
+            &node_id,
+            EdgeProvenanceDto::RustAnalyzer,
+            EdgeConfidenceDto::Exact,
+        );
+
+        if matches!(node_kind, GraphNodeKind::Function | GraphNodeKind::Method) {
+            graph.functions_by_name.entry(label).or_insert(node_id);
+        }
+    }
+}
+
+fn extract_quoted_field(line: &str, field: &str) -> Option<String> {
+    let start_marker = format!("{field}: \"");
+    let start = line.find(&start_marker)? + start_marker.len();
+    let rest = &line[start..];
+    let end = rest.find('"')?;
+    Some(rest[..end].to_string())
+}
+
+fn extract_symbol_kind(line: &str) -> Option<String> {
+    let start_marker = "kind: SymbolKind(";
+    let start = line.find(start_marker)? + start_marker.len();
+    let rest = &line[start..];
+    let end = rest.find(')')?;
+    Some(rest[..end].to_string())
+}
+
+fn graph_node_kind_from_rust_analyzer(kind: &str) -> Option<GraphNodeKind> {
+    match kind {
+        "Struct" => Some(GraphNodeKind::Struct),
+        "Enum" => Some(GraphNodeKind::Enum),
+        "Trait" | "Interface" => Some(GraphNodeKind::Trait),
+        "Function" => Some(GraphNodeKind::Function),
+        "Method" => Some(GraphNodeKind::Method),
+        "Module" => Some(GraphNodeKind::Module),
+        _ => None,
+    }
+}
+
 fn collect_calls(
     source_id: &str,
     relative_path: &str,
@@ -758,7 +877,7 @@ fn generated_at_string() -> String {
 #[cfg(test)]
 mod tests {
     use super::{module_label_from_path, RustGraphExtractor};
-    use crate::graph::{GraphEdgeKind, GraphNodeKind};
+    use crate::graph::{EdgeProvenanceDto, GraphEdgeKind, GraphNodeKind};
     use crate::source::ValidatedRepoPath;
     use std::fs;
     use std::path::PathBuf;
@@ -830,6 +949,10 @@ pub fn entry() { helper(); }
             .edges
             .iter()
             .any(|edge| edge.kind == GraphEdgeKind::Calls));
+        assert!(snapshot.edges.iter().any(|edge| {
+            edge.kind == GraphEdgeKind::Defines
+                && edge.provenance == EdgeProvenanceDto::RustAnalyzer
+        }));
 
         fs::remove_dir_all(repo).expect("cleanup fixture repo");
     }
