@@ -565,27 +565,42 @@ configuration.
 **Goal:** Build a staged backend parser that emits the graph snapshot.
 
 **Tasks:**
-- [ ] Discover Cargo workspace crates using `cargo_metadata`.
-- [ ] Discover source files/modules.
+- [x] Discover Cargo workspace crates using `cargo_metadata`.
+- [x] Discover source files/modules.
 - [ ] Extract definitions through rust-analyzer document symbols.
-- [ ] Extract imports, `mod`, and `#[tauri::command]` attributes with `syn`.
+- [x] Extract imports, `mod`, and `#[tauri::command]` attributes with `syn`.
 - [ ] Extract call edges with rust-analyzer call hierarchy where available.
 - [ ] Extract references/usages where needed for graph search and diagnostics.
-- [ ] Normalize all data into `GraphSnapshot`.
+- [x] Normalize syntax-discovered data into `GraphSnapshot`.
 - [ ] Use graph snapshot metadata for all later source snippet lookups; snippets
       are addressed by node ID, not frontend-provided file paths.
-- [ ] Add snapshot size checks and re-plan if direct IPC payloads are too large.
-- [ ] Preserve diagnostics for skipped files, unresolved symbols, macro-heavy
+- [x] Add snapshot size checks and re-plan if direct IPC payloads are too large.
+- [x] Preserve diagnostics for skipped files, unresolved symbols, macro-heavy
       code, and low-confidence edges.
 
-**Verification:**
-- Golden snapshot tests for small fixture crates.
-- Fixture test for trait impl edges.
-- Fixture test for Tauri command detection.
-- Fixture test for module/import edges.
-- `cargo test`.
+**Implementation Notes:**
+- Added direct `cargo_metadata`, `syn`, and `walkdir` dependencies for the
+  backend extraction pipeline after the Milestone 4 dependency review.
+- Added `RustGraphExtractor` as a staged graph builder that discovers workspace
+  packages, crate targets, Rust source files, modules, definitions, impl
+  methods, imports, Tauri command exposure, and conservative same-snapshot call
+  edges.
+- Syntax-derived call edges are marked `syn` and `partial`; unresolved calls are
+  preserved as diagnostics so later rust-analyzer enrichment can replace or
+  upgrade them without hiding uncertainty.
+- rust-analyzer semantic document-symbol, reference, and call-hierarchy
+  enrichment remains open in this milestone and must complete before Milestone 5
+  is marked done.
 
-**Status:** Not started.
+**Verification:**
+- Golden snapshot-style fixture tests for small Cargo crates: passed.
+- Fixture test for trait impl and method nodes: passed.
+- Fixture test for Tauri command detection: passed.
+- Fixture test for module/import edges: passed.
+- `cargo test --manifest-path src-tauri/Cargo.toml`: passed.
+
+**Status:** In progress; syntax-backed extraction foundation committed before
+rust-analyzer semantic enrichment.
 
 ### Milestone 6: Tauri App Composition
 

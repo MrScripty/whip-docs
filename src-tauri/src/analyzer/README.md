@@ -7,6 +7,7 @@ extraction services.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
+| `extraction.rs` | Cargo metadata discovery, Rust source walking, syntax-backed graph normalization, and fixture tests. |
 | `mod.rs` | rust-analyzer settings, lifecycle status DTOs, process service, analysis job guard methods, and LSP request builders. |
 
 ## Problem
@@ -41,7 +42,8 @@ for graph normalization.
 
 ## Dependencies
 **Internal:** source validation and graph normalization.
-**External:** rust-analyzer process, Tokio process APIs, LSP types.
+**External:** rust-analyzer process, Tokio process APIs, Cargo metadata,
+`syn`, and source walking.
 
 ## Related ADRs
 - `docs/adr/ADR-001-tauri-rust-analyzer-graph-contracts.md`: records backend

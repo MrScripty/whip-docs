@@ -4350,14 +4350,17 @@ dependencies = [
 name = "whip-docs"
 version = "0.1.0"
 dependencies = [
+ "cargo_metadata",
  "log",
  "serde",
  "serde_json",
+ "syn 2.0.117",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
  "thiserror 1.0.69",
  "tokio",
+ "walkdir",
 ]
 
 [[package]]
