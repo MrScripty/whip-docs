@@ -77,6 +77,16 @@
 - Verified with `cargo fmt`, `cargo test`, `npm run lint`,
   `npm run typecheck`, and `npm run test:frontend`.
 
+### Scene Pan And Node Selection Controls
+
+- Added explicit mouse control mapping for the 3D scene.
+- Left click selects through the ID-map pass.
+- Left drag orbits around the current camera target.
+- Middle/right drag pans by moving both camera and target together.
+- Shift/Alt-left drag also pans for trackpads and mice without middle buttons.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |

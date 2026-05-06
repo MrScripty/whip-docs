@@ -38,6 +38,7 @@ import type {
   DirectoryGraphSceneOptions,
   DirectoryGraphSceneSelection,
   DirectoryGraphSceneTheme,
+  DirectoryGraphSceneControlMode,
   GraphNodeKind,
   LayoutNodePosition,
   RenderGraph,
@@ -47,8 +48,10 @@ type NodeMesh = Mesh<BufferGeometry, MeshLambertMaterial>;
 
 type PointerDragState = {
   readonly pointerId: number;
+  readonly mode: DirectoryGraphSceneControlMode;
   readonly origin: Vector2;
   readonly cameraPosition: Vector3;
+  readonly cameraTarget: Vector3;
   moved: boolean;
 };
 
@@ -76,6 +79,7 @@ export class DirectoryGraphScene {
   private readonly theme: DirectoryGraphSceneTheme;
   private readonly selectionTargetById = new Map<number, SelectionTarget>();
   private selectionCallback: ((selection: DirectoryGraphSceneSelection) => void) | null = null;
+  private cameraTarget = new Vector3(0, 0, 0);
   private renderWidth = 1;
   private renderHeight = 1;
   private animationFrame: number | null = null;
@@ -102,6 +106,7 @@ export class DirectoryGraphScene {
     this.renderer.domElement.addEventListener('pointermove', this.handlePointerMove);
     this.renderer.domElement.addEventListener('pointerup', this.handlePointerUp);
     this.renderer.domElement.addEventListener('pointercancel', this.handlePointerUp);
+    this.renderer.domElement.addEventListener('contextmenu', this.handleContextMenu);
     this.resize();
     this.animationFrame = window.requestAnimationFrame(this.render);
   }
@@ -180,6 +185,7 @@ export class DirectoryGraphScene {
     this.renderer.domElement.removeEventListener('pointermove', this.handlePointerMove);
     this.renderer.domElement.removeEventListener('pointerup', this.handlePointerUp);
     this.renderer.domElement.removeEventListener('pointercancel', this.handlePointerUp);
+    this.renderer.domElement.removeEventListener('contextmenu', this.handleContextMenu);
     this.clearGroup(this.edgeGroup);
     this.clearGroup(this.nodeGroup);
     this.clearGroup(this.labelGroup);
@@ -198,12 +204,13 @@ export class DirectoryGraphScene {
   }
 
   private resetCamera(): void {
+    this.cameraTarget.set(0, 0, 0);
     this.camera.position.set(
       GRAPH_V0_CAMERA_DEFAULTS.positionX,
       GRAPH_V0_CAMERA_DEFAULTS.positionY,
       GRAPH_V0_CAMERA_DEFAULTS.positionZ,
     );
-    this.camera.lookAt(0, 0, 0);
+    this.camera.lookAt(this.cameraTarget);
   }
 
   private resize(): void {
@@ -346,22 +353,26 @@ export class DirectoryGraphScene {
 
   private readonly handleWheel = (event: WheelEvent): void => {
     event.preventDefault();
-    const direction = this.camera.position.clone().normalize();
+    const offset = this.camera.position.clone().sub(this.cameraTarget);
+    const direction = offset.clone().normalize();
     const nextDistance = clamp(
-      this.camera.position.length() * (1 + event.deltaY * GRAPH_V0_INTERACTION_DEFAULTS.wheelZoomFactor),
+      offset.length() * (1 + event.deltaY * GRAPH_V0_INTERACTION_DEFAULTS.wheelZoomFactor),
       GRAPH_V0_INTERACTION_DEFAULTS.minCameraDistance,
       GRAPH_V0_INTERACTION_DEFAULTS.maxCameraDistance,
     );
-    this.camera.position.copy(direction.multiplyScalar(nextDistance));
-    this.camera.lookAt(0, 0, 0);
+    this.camera.position.copy(this.cameraTarget.clone().add(direction.multiplyScalar(nextDistance)));
+    this.camera.lookAt(this.cameraTarget);
   };
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
+    event.preventDefault();
     this.renderer.domElement.setPointerCapture(event.pointerId);
     this.dragState = {
       pointerId: event.pointerId,
+      mode: controlModeForPointer(event),
       origin: new Vector2(event.clientX, event.clientY),
       cameraPosition: this.camera.position.clone(),
+      cameraTarget: this.cameraTarget.clone(),
       moved: false,
     };
   };
@@ -375,40 +386,50 @@ export class DirectoryGraphScene {
     const deltaY = event.clientY - this.dragState.origin.y;
     this.dragState.moved ||= Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3;
 
-    if (event.shiftKey) {
-      this.camera.position.set(
-        this.dragState.cameraPosition.x - deltaX * GRAPH_V0_INTERACTION_DEFAULTS.panFactor,
-        this.dragState.cameraPosition.y + deltaY * GRAPH_V0_INTERACTION_DEFAULTS.panFactor,
-        this.dragState.cameraPosition.z,
+    if (this.dragState.mode === 'pan') {
+      const panOffset = panOffsetForCamera(
+        this.camera,
+        deltaX,
+        deltaY,
+        GRAPH_V0_INTERACTION_DEFAULTS.panFactor,
       );
+      this.cameraTarget.copy(this.dragState.cameraTarget.clone().add(panOffset));
+      this.camera.position.copy(this.dragState.cameraPosition.clone().add(panOffset));
     } else {
-      const spherical = this.dragState.cameraPosition.clone();
-      const radius = spherical.length();
-      const azimuth = Math.atan2(spherical.x, spherical.z) - deltaX * GRAPH_V0_INTERACTION_DEFAULTS.rotateFactor;
+      const offset = this.dragState.cameraPosition.clone().sub(this.dragState.cameraTarget);
+      const radius = offset.length();
+      const azimuth = Math.atan2(offset.x, offset.z) - deltaX * GRAPH_V0_INTERACTION_DEFAULTS.rotateFactor;
       const elevation = clamp(
-        Math.asin(spherical.y / radius) + deltaY * GRAPH_V0_INTERACTION_DEFAULTS.rotateFactor,
+        Math.asin(offset.y / radius) + deltaY * GRAPH_V0_INTERACTION_DEFAULTS.rotateFactor,
         -1.1,
         1.1,
       );
-      this.camera.position.set(
+      const nextOffset = new Vector3(
         Math.sin(azimuth) * Math.cos(elevation) * radius,
         Math.sin(elevation) * radius,
         Math.cos(azimuth) * Math.cos(elevation) * radius,
       );
+      this.cameraTarget.copy(this.dragState.cameraTarget);
+      this.camera.position.copy(this.cameraTarget.clone().add(nextOffset));
     }
 
-    this.camera.lookAt(0, 0, 0);
+    this.camera.lookAt(this.cameraTarget);
   };
 
   private readonly handlePointerUp = (event: PointerEvent): void => {
     if (this.dragState?.pointerId === event.pointerId) {
       const wasClick = !this.dragState.moved;
+      const wasSelectClick = this.dragState.mode === 'select';
       this.dragState = null;
 
-      if (wasClick) {
+      if (wasClick && wasSelectClick) {
         this.selectAtPointer(event);
       }
     }
+  };
+
+  private readonly handleContextMenu = (event: MouseEvent): void => {
+    event.preventDefault();
   };
 
   private selectAtPointer(event: PointerEvent): void {
@@ -512,6 +533,30 @@ function clamp(value: number, min: number, max: number): number {
 
 function clampInteger(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function controlModeForPointer(event: PointerEvent): DirectoryGraphSceneControlMode {
+  if (event.button === 1 || event.button === 2 || event.shiftKey || event.altKey) {
+    return 'pan';
+  }
+
+  return 'select';
+}
+
+function panOffsetForCamera(
+  camera: PerspectiveCamera,
+  deltaX: number,
+  deltaY: number,
+  panFactor: number,
+): Vector3 {
+  const forward = new Vector3();
+  camera.getWorldDirection(forward);
+  const right = new Vector3().crossVectors(forward, camera.up).normalize();
+  const up = new Vector3().crossVectors(right, forward).normalize();
+
+  return right
+    .multiplyScalar(-deltaX * panFactor)
+    .add(up.multiplyScalar(deltaY * panFactor));
 }
 
 function selectionIdToColor(selectionId: number): number {

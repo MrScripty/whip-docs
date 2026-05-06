@@ -19,6 +19,7 @@ export type {
   DirectoryGraphSceneOptions,
   DirectoryGraphSceneSelection,
   DirectoryGraphSceneTheme,
+  DirectoryGraphSceneControlMode,
   GraphEdgeKind,
   GraphNodeKind,
   LayoutAlgorithmId,

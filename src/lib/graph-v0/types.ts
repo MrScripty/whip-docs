@@ -56,6 +56,8 @@ export type DirectoryGraphSceneSelection = {
   readonly id: string;
 };
 
+export type DirectoryGraphSceneControlMode = 'select' | 'orbit' | 'pan';
+
 export type LayoutAlgorithmId = 'radial-tree' | 'layered-grid';
 
 export type LayoutOptions = Partial<{

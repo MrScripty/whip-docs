@@ -48,6 +48,8 @@ Three.js object lifecycle in a scene class that Svelte mounts and disposes.
   component code.
 - Scene labels are bounded to repo, nearby directories, highlighted nodes, and
   selected nodes.
+- Scene controls are centralized in the scene system: left click selects,
+  left drag orbits, middle/right drag pans, and Shift/Alt-left drag also pans.
 
 ## Revisit Triggers
 - Layout options become persisted user settings.
