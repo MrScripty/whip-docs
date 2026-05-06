@@ -150,6 +150,19 @@
 - Verified with `npm run lint`, `npm run typecheck`, and
   `npm run test:frontend`.
 
+### Scene-Level Incremental Selection Styling
+
+- Added scene-owned active selection state for highlighted nodes, highlighted
+  edges, labeled nodes, selected node, and selected edge.
+- Added a scene label index so selection updates can add, remove, or recreate
+  only changed labels.
+- Kept base repo and near-directory labels as structural scene state rebuilt
+  only when the graph or layout changes.
+- Changed selection-only scene updates to apply selection-state diffs plus
+  old/new selected IDs instead of iterating every scene node and edge.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |

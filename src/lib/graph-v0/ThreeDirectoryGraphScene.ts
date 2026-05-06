@@ -35,6 +35,8 @@ import {
 } from './constants';
 import { layoutLayeredGrid, layoutRadialTree } from './layouts';
 import { encodeSelectionId, selectFromIdMap } from './selection';
+import { diffSelectionState, emptySelectionState } from './selectionIndex';
+import type { GraphSelectionState } from './selectionIndex';
 import type {
   DirectoryGraphSceneOptions,
   DirectoryGraphSceneSelection,
@@ -96,7 +98,12 @@ export class DirectoryGraphScene {
   private readonly selectionTargetById = new Map<number, SelectionTarget>();
   private readonly nodeEntries = new Map<string, NodeSceneEntry>();
   private readonly edgeEntries = new Map<string, EdgeSceneEntry>();
+  private readonly labelEntries = new Map<string, Sprite>();
+  private readonly baseLabeledNodeIds = new Set<string>();
   private selectionCallback: ((selection: DirectoryGraphSceneSelection) => void) | null = null;
+  private activeSelectionState: GraphSelectionState = emptySelectionState();
+  private activeSelectedNodeId: string | null = null;
+  private activeSelectedEdgeId: string | null = null;
   private cameraTarget = new Vector3(0, 0, 0);
   private currentGraph: RenderGraph | null = null;
   private currentLayoutAlgorithm: string | null = null;
@@ -150,6 +157,11 @@ export class DirectoryGraphScene {
     this.selectionTargetById.clear();
     this.nodeEntries.clear();
     this.edgeEntries.clear();
+    this.labelEntries.clear();
+    this.baseLabeledNodeIds.clear();
+    this.activeSelectionState = emptySelectionState();
+    this.activeSelectedNodeId = null;
+    this.activeSelectedEdgeId = null;
 
     this.clearGroup(this.edgeGroup);
     this.clearGroup(this.nodeGroup);
@@ -198,6 +210,9 @@ export class DirectoryGraphScene {
         depth: position.depth,
         position,
       });
+      if (shouldBaseLabelNode(node.kind, position.depth)) {
+        this.baseLabeledNodeIds.add(node.id);
+      }
       const selectionId = encodeSelectionId('node', nodeIndex);
       this.selectionTargetById.set(selectionId, {
         kind: 'node',
@@ -209,27 +224,68 @@ export class DirectoryGraphScene {
   }
 
   private applySceneState(options: DirectoryGraphSceneOptions): void {
-    const highlightedNodeIds = new Set(options.highlightedNodeIds ?? []);
-    const highlightedEdgeIds = new Set(options.highlightedEdgeIds ?? []);
-    const labeledNodeIds = new Set(options.labeledNodeIds ?? []);
     const selectedNodeId = options.selectedNodeId ?? null;
     const selectedEdgeId = options.selectedEdgeId ?? null;
+    const nextSelectionState = this.selectionStateForOptions(options);
+    const selectionDiff = diffSelectionState(this.activeSelectionState, nextSelectionState);
+    const changedNodeIds = new Set([
+      ...selectionDiff.enteredHighlightedNodeIds,
+      ...selectionDiff.exitedHighlightedNodeIds,
+    ]);
+    const changedEdgeIds = new Set([
+      ...selectionDiff.enteredHighlightedEdgeIds,
+      ...selectionDiff.exitedHighlightedEdgeIds,
+    ]);
+    const changedLabelIds = new Set([
+      ...selectionDiff.enteredLabeledNodeIds,
+      ...selectionDiff.exitedLabeledNodeIds,
+    ]);
 
-    this.clearGroup(this.labelGroup);
+    addNullableId(changedNodeIds, this.activeSelectedNodeId);
+    addNullableId(changedNodeIds, selectedNodeId);
+    addNullableId(changedEdgeIds, this.activeSelectedEdgeId);
+    addNullableId(changedEdgeIds, selectedEdgeId);
+    addNullableId(changedLabelIds, this.activeSelectedNodeId);
+    addNullableId(changedLabelIds, selectedNodeId);
 
-    for (const [nodeId, entry] of this.nodeEntries.entries()) {
-      const selected = nodeId === selectedNodeId;
-      const highlighted = highlightedNodeIds.has(nodeId);
-      this.styleNode(entry.mesh, entry.kind, entry.depth, selected, highlighted);
+    for (const nodeId of changedNodeIds) {
+      const entry = this.nodeEntries.get(nodeId);
 
-      if (shouldLabelNode(entry.kind, entry.depth, selected, highlighted, labeledNodeIds.has(nodeId))) {
-        this.labelGroup.add(this.createLabel(entry.name, entry.position, selected));
+      if (entry) {
+        this.styleNode(
+          entry.mesh,
+          entry.kind,
+          entry.depth,
+          nodeId === selectedNodeId,
+          nextSelectionState.highlightedNodeIds.has(nodeId),
+        );
       }
     }
 
-    for (const [edgeId, entry] of this.edgeEntries.entries()) {
-      this.styleEdge(entry.line, entry.depth, edgeId === selectedEdgeId, highlightedEdgeIds.has(edgeId));
+    for (const edgeId of changedEdgeIds) {
+      const entry = this.edgeEntries.get(edgeId);
+
+      if (entry) {
+        this.styleEdge(
+          entry.line,
+          entry.depth,
+          edgeId === selectedEdgeId,
+          nextSelectionState.highlightedEdgeIds.has(edgeId),
+        );
+      }
     }
+
+    for (const nodeId of changedLabelIds) {
+      if (nextSelectionState.labeledNodeIds.has(nodeId)) {
+        this.replaceLabel(nodeId, nodeId === selectedNodeId);
+      } else {
+        this.removeLabel(nodeId);
+      }
+    }
+
+    this.activeSelectionState = nextSelectionState;
+    this.activeSelectedNodeId = selectedNodeId;
+    this.activeSelectedEdgeId = selectedEdgeId;
   }
 
   dispose(): void {
@@ -252,6 +308,8 @@ export class DirectoryGraphScene {
     this.clearGroup(this.selectionNodeGroup);
     this.nodeEntries.clear();
     this.edgeEntries.clear();
+    this.labelEntries.clear();
+    this.baseLabeledNodeIds.clear();
     this.selectionTargetById.clear();
     this.selectionTarget.dispose();
     this.renderer.dispose();
@@ -413,6 +471,59 @@ export class DirectoryGraphScene {
     );
     sprite.scale.set(7.4, 1.85, 1);
     return sprite;
+  }
+
+  private replaceLabel(nodeId: string, selected: boolean): void {
+    const entry = this.nodeEntries.get(nodeId);
+
+    if (!entry) {
+      this.removeLabel(nodeId);
+      return;
+    }
+
+    this.removeLabel(nodeId);
+    const label = this.createLabel(entry.name, entry.position, selected);
+    this.labelEntries.set(nodeId, label);
+    this.labelGroup.add(label);
+  }
+
+  private removeLabel(nodeId: string): void {
+    const label = this.labelEntries.get(nodeId);
+
+    if (!label) {
+      return;
+    }
+
+    this.labelGroup.remove(label);
+    disposeObject(label);
+    this.labelEntries.delete(nodeId);
+  }
+
+  private selectionStateForOptions(options: DirectoryGraphSceneOptions): GraphSelectionState {
+    const highlightedNodeIds = new Set(options.highlightedNodeIds ?? []);
+    const highlightedEdgeIds = new Set(options.highlightedEdgeIds ?? []);
+    const labeledNodeIds = new Set([
+      ...this.baseLabeledNodeIds,
+      ...highlightedNodeIds,
+      ...(options.labeledNodeIds ?? []),
+    ]);
+    const selectedNodeId = options.selectedNodeId ?? null;
+    const selectedEdgeId = options.selectedEdgeId ?? null;
+
+    if (selectedNodeId) {
+      highlightedNodeIds.add(selectedNodeId);
+      labeledNodeIds.add(selectedNodeId);
+    }
+
+    if (selectedEdgeId) {
+      highlightedEdgeIds.add(selectedEdgeId);
+    }
+
+    return {
+      highlightedNodeIds,
+      highlightedEdgeIds,
+      labeledNodeIds,
+    };
   }
 
   private colorForNodeKind(kind: GraphNodeKind, depth: number): number {
@@ -661,20 +772,14 @@ function selectionIdFromPixel(red: number, green: number, blue: number): number 
   return (red << 16) | (green << 8) | blue;
 }
 
-function shouldLabelNode(
-  kind: GraphNodeKind,
-  depth: number,
-  selected: boolean,
-  highlighted: boolean,
-  labeled: boolean,
-): boolean {
-  return (
-    selected ||
-    highlighted ||
-    labeled ||
-    kind === 'repo' ||
-    (kind === 'directory' && depth <= GRAPH_V0_DEPTH_STYLE_DEFAULTS.maxLabelDepth)
-  );
+function shouldBaseLabelNode(kind: GraphNodeKind, depth: number): boolean {
+  return kind === 'repo' || (kind === 'directory' && depth <= GRAPH_V0_DEPTH_STYLE_DEFAULTS.maxLabelDepth);
+}
+
+function addNullableId(ids: Set<string>, id: string | null): void {
+  if (id) {
+    ids.add(id);
+  }
 }
 
 function selectionIdForObject(object: Object3D | undefined): number | null {
