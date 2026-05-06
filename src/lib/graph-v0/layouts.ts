@@ -16,9 +16,14 @@ type LayoutContext = {
 };
 
 type ResolvedLayoutOptions = Required<LayoutOptions>;
-type TreeSector = {
-  readonly startAngle: number;
-  readonly endAngle: number;
+type LayeredFootprint = {
+  readonly width: number;
+  readonly zSpan: number;
+};
+type LayeredGridRow = {
+  readonly childIds: readonly string[];
+  readonly width: number;
+  readonly zSpan: number;
 };
 
 export function layoutRadialTree(
@@ -28,20 +33,14 @@ export function layoutRadialTree(
   const context = buildLayoutContext(graph);
   const resolvedOptions = resolveLayoutOptions(options);
   const positions = new Map<string, LayoutNodePosition>();
-  const subtreeWeightByNodeId = buildSubtreeWeightMap(context);
-  const fullCircle = GRAPH_V0_LAYOUT_GEOMETRY.fullCircleRadians;
-  const rootSector = {
-    startAngle: GRAPH_V0_LAYOUT_GEOMETRY.radialStartAngleRadians,
-    endAngle: GRAPH_V0_LAYOUT_GEOMETRY.radialStartAngleRadians + fullCircle,
-  };
 
   placeRadialNode(
     graph.rootNodeId,
     0,
     0,
-    rootSector,
+    { x: 0, y: 0, z: 0 },
+    GRAPH_V0_LAYOUT_GEOMETRY.radialStartAngleRadians,
     context,
-    subtreeWeightByNodeId,
     resolvedOptions,
     positions,
   );
@@ -56,26 +55,18 @@ export function layoutLayeredGrid(
   const context = buildLayoutContext(graph);
   const resolvedOptions = resolveLayoutOptions(options);
   const positions = new Map<string, LayoutNodePosition>();
-  const xByNodeId = buildLayeredTreeXMap(context);
-  const xOrigin = xByNodeId.get(graph.rootNodeId) ?? 0;
+  const footprintByNodeId = buildLayeredFootprintMap(context, resolvedOptions);
 
-  for (const nodeId of context.orderedNodeIds) {
-    const node = getKnownNode(context.nodeById, nodeId);
-    const depth = context.depthByNodeId.get(nodeId) ?? 0;
-    const localOrder = localOrderForNode(context, nodeId);
-
-    positions.set(nodeId, {
-      nodeId,
-      position: {
-        x: ((xByNodeId.get(nodeId) ?? 0) - xOrigin) * resolvedOptions.siblingSpacing,
-        y: negateOrZero(depth * resolvedOptions.layerSpacing),
-        z: 0,
-      },
-      radius: radiusForNodeKind(node.kind, resolvedOptions),
-      depth,
-      order: localOrder,
-    });
-  }
+  placeLayeredNode(
+    graph.rootNodeId,
+    0,
+    0,
+    { x: 0, y: 0, z: 0 },
+    context,
+    resolvedOptions,
+    footprintByNodeId,
+    positions,
+  );
 
   return { algorithm: 'layered-grid', positions };
 }
@@ -84,61 +75,102 @@ function placeRadialNode(
   nodeId: string,
   depth: number,
   order: number,
-  sector: TreeSector,
+  position: LayoutNodePosition['position'],
+  outwardAngle: number,
   context: LayoutContext,
-  subtreeWeightByNodeId: ReadonlyMap<string, number>,
   options: ResolvedLayoutOptions,
   positions: Map<string, LayoutNodePosition>,
 ): void {
   const node = getKnownNode(context.nodeById, nodeId);
-  const angle = (sector.startAngle + sector.endAngle) / 2;
-  const ringRadius = depth * options.depthSpacing;
 
   positions.set(nodeId, {
     nodeId,
-    position:
-      depth === 0
-        ? { x: 0, y: 0, z: 0 }
-        : {
-            x: Math.cos(angle) * ringRadius,
-            y: negateOrZero(depth * options.layerSpacing),
-            z: Math.sin(angle) * ringRadius,
-          },
+    position,
     radius: radiusForNodeKind(node.kind, options),
     depth,
     order,
   });
 
   const childIds = context.childIdsByNodeId.get(nodeId) ?? [];
-  const totalChildWeight = childIds.reduce(
-    (total, childId) => total + (subtreeWeightByNodeId.get(childId) ?? 1),
-    0,
-  );
-  let cursor = sector.startAngle;
+  const childRingRadius = branchRadiusForChildCount(childIds.length, options);
 
   childIds.forEach((childId, childOrder) => {
-    const childWeight = subtreeWeightByNodeId.get(childId) ?? 1;
-    const childSpan =
-      totalChildWeight > 0
-        ? ((sector.endAngle - sector.startAngle) * childWeight) / totalChildWeight
-        : 0;
-    const childSector = {
-      startAngle: cursor,
-      endAngle: cursor + childSpan,
+    const childAngle = childAngleForOrder(outwardAngle, childOrder, childIds.length);
+    const childPosition = {
+      x: position.x + Math.cos(childAngle) * childRingRadius,
+      y: negateOrZero((depth + 1) * options.layerSpacing),
+      z: position.z + Math.sin(childAngle) * childRingRadius,
     };
 
     placeRadialNode(
       childId,
       depth + 1,
       childOrder,
-      childSector,
+      childPosition,
+      childAngle,
       context,
-      subtreeWeightByNodeId,
       options,
       positions,
     );
-    cursor += childSpan;
   });
+}
+
+function placeLayeredNode(
+  nodeId: string,
+  depth: number,
+  order: number,
+  position: LayoutNodePosition['position'],
+  context: LayoutContext,
+  options: ResolvedLayoutOptions,
+  footprintByNodeId: ReadonlyMap<string, LayeredFootprint>,
+  positions: Map<string, LayoutNodePosition>,
+): void {
+  const node = getKnownNode(context.nodeById, nodeId);
+
+  positions.set(nodeId, {
+    nodeId,
+    position,
+    radius: radiusForNodeKind(node.kind, options),
+    depth,
+    order,
+  });
+
+  const childIds = context.childIdsByNodeId.get(nodeId) ?? [];
+  const rows = layeredRowsForChildren(childIds, footprintByNodeId, options);
+  const totalZSpan =
+    rows.reduce((total, row) => total + row.zSpan, 0) +
+    Math.max(0, rows.length - 1) * options.siblingSpacing;
+  let rowStartZ = position.z - totalZSpan / 2;
+  let childOrder = 0;
+
+  for (const row of rows) {
+    const rowCenterZ = rowStartZ + row.zSpan / 2;
+    let childStartX = position.x - row.width / 2;
+
+    for (const childId of row.childIds) {
+      const childFootprint = getKnownFootprint(footprintByNodeId, childId);
+      const childPosition = {
+        x: childStartX + childFootprint.width / 2,
+        y: negateOrZero((depth + 1) * options.layerSpacing),
+        z: rowCenterZ,
+      };
+
+      placeLayeredNode(
+        childId,
+        depth + 1,
+        childOrder,
+        childPosition,
+        context,
+        options,
+        footprintByNodeId,
+        positions,
+      );
+      childStartX += childFootprint.width + options.siblingSpacing;
+      childOrder += 1;
+    }
+
+    rowStartZ += row.zSpan + options.siblingSpacing;
+  }
 }
 
 function buildLayoutContext(graph: RenderGraph): LayoutContext {
@@ -183,60 +215,38 @@ function buildLayoutContext(graph: RenderGraph): LayoutContext {
   return { nodeById, childIdsByNodeId, depthByNodeId, orderedNodeIds };
 }
 
-function buildSubtreeWeightMap(context: LayoutContext): ReadonlyMap<string, number> {
-  const weightByNodeId = new Map<string, number>();
+function buildLayeredFootprintMap(
+  context: LayoutContext,
+  options: ResolvedLayoutOptions,
+): ReadonlyMap<string, LayeredFootprint> {
+  const footprintByNodeId = new Map<string, LayeredFootprint>();
 
-  function subtreeWeight(nodeId: string): number {
-    const cached = weightByNodeId.get(nodeId);
+  function footprint(nodeId: string): LayeredFootprint {
+    const cached = footprintByNodeId.get(nodeId);
 
-    if (cached !== undefined) {
+    if (cached) {
       return cached;
     }
 
     const childIds = context.childIdsByNodeId.get(nodeId) ?? [];
-    const weight =
-      childIds.length === 0
-        ? 1
-        : childIds.reduce((total, childId) => total + subtreeWeight(childId), 0);
+    const rows = layeredRowsForChildren(childIds, footprintByNodeId, options, footprint);
+    const rowGapTotal = Math.max(0, rows.length - 1) * options.siblingSpacing;
+    const childWidth = Math.max(0, ...rows.map((row) => row.width));
+    const childZSpan = rows.reduce((total, row) => total + row.zSpan, 0) + rowGapTotal;
+    const nodeFootprint = {
+      width: Math.max(options.siblingSpacing, childWidth),
+      zSpan: Math.max(options.siblingSpacing, childZSpan),
+    };
 
-    weightByNodeId.set(nodeId, weight);
-    return weight;
+    footprintByNodeId.set(nodeId, nodeFootprint);
+    return nodeFootprint;
   }
 
-  for (const nodeId of context.orderedNodeIds) {
-    subtreeWeight(nodeId);
+  for (const nodeId of [...context.orderedNodeIds].reverse()) {
+    footprint(nodeId);
   }
 
-  return weightByNodeId;
-}
-
-function buildLayeredTreeXMap(context: LayoutContext): ReadonlyMap<string, number> {
-  const xByNodeId = new Map<string, number>();
-  let leafCursor = 0;
-
-  function assignX(nodeId: string): number {
-    const cached = xByNodeId.get(nodeId);
-
-    if (cached !== undefined) {
-      return cached;
-    }
-
-    const childIds = context.childIdsByNodeId.get(nodeId) ?? [];
-    const x =
-      childIds.length === 0
-        ? leafCursor
-        : average(childIds.map((childId) => assignX(childId)));
-
-    if (childIds.length === 0) {
-      leafCursor += 1;
-    }
-
-    xByNodeId.set(nodeId, x);
-    return x;
-  }
-
-  assignX(context.orderedNodeIds[0]);
-  return xByNodeId;
+  return footprintByNodeId;
 }
 
 function resolveLayoutOptions(options: LayoutOptions): ResolvedLayoutOptions {
@@ -255,18 +265,74 @@ function compareNodes(left: RenderGraphNode, right: RenderGraphNode): number {
   );
 }
 
-function localOrderForNode(context: LayoutContext, nodeId: string): number {
-  const node = getKnownNode(context.nodeById, nodeId);
-
-  if (!node.parentId) {
-    return 0;
+function childAngleForOrder(outwardAngle: number, order: number, childCount: number): number {
+  if (childCount <= 1) {
+    return outwardAngle;
   }
 
-  return (context.childIdsByNodeId.get(node.parentId) ?? []).indexOf(nodeId);
+  return (
+    outwardAngle +
+    GRAPH_V0_LAYOUT_GEOMETRY.radialStartAngleRadians +
+    (GRAPH_V0_LAYOUT_GEOMETRY.fullCircleRadians * order) / childCount
+  );
 }
 
-function average(values: readonly number[]): number {
-  return values.reduce((total, value) => total + value, 0) / Math.max(1, values.length);
+function branchRadiusForChildCount(childCount: number, options: ResolvedLayoutOptions): number {
+  if (childCount <= 1) {
+    return options.depthSpacing;
+  }
+
+  const minRadiusForSiblingSpacing =
+    options.siblingSpacing /
+    (2 * Math.sin(Math.PI / Math.max(2, childCount)));
+
+  return Math.max(options.depthSpacing, minRadiusForSiblingSpacing);
+}
+
+function gridColumnCount(childCount: number, options: ResolvedLayoutOptions): number {
+  if (childCount <= 0) {
+    return 1;
+  }
+
+  return Math.min(Math.max(1, options.gridColumns), Math.ceil(Math.sqrt(childCount)));
+}
+
+function layeredRowsForChildren(
+  childIds: readonly string[],
+  footprintByNodeId: ReadonlyMap<string, LayeredFootprint>,
+  options: ResolvedLayoutOptions,
+  ensureFootprint?: (nodeId: string) => LayeredFootprint,
+): readonly LayeredGridRow[] {
+  const columns = gridColumnCount(childIds.length, options);
+  const rows: LayeredGridRow[] = [];
+
+  for (let start = 0; start < childIds.length; start += columns) {
+    const rowChildIds = childIds.slice(start, start + columns);
+    const footprints = rowChildIds.map((childId) =>
+      ensureFootprint ? ensureFootprint(childId) : getKnownFootprint(footprintByNodeId, childId),
+    );
+    const width =
+      footprints.reduce((total, footprint) => total + footprint.width, 0) +
+      Math.max(0, footprints.length - 1) * options.siblingSpacing;
+    const zSpan = Math.max(options.siblingSpacing, ...footprints.map((footprint) => footprint.zSpan));
+
+    rows.push({ childIds: rowChildIds, width, zSpan });
+  }
+
+  return rows;
+}
+
+function getKnownFootprint(
+  footprintByNodeId: ReadonlyMap<string, LayeredFootprint>,
+  nodeId: string,
+): LayeredFootprint {
+  const footprint = footprintByNodeId.get(nodeId);
+
+  if (!footprint) {
+    throw new Error(`Graph node layout footprint is missing: ${nodeId}`);
+  }
+
+  return footprint;
 }
 
 function compareGraphNodeKind(left: GraphNodeKind, right: GraphNodeKind): number {

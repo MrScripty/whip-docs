@@ -191,6 +191,21 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### Parent-Local Branch Geometry
+
+- Changed radial tree layout again so child groups are placed on local rings
+  centered on their parent rather than on root-centered depth rings.
+- Made each radial branch radius grow from sibling count and spacing so wide
+  local child groups get more room.
+- Changed layered-grid layout to place child groups in parent-local x/z grids
+  at each y layer instead of leaving all nodes on one flat x/y plane.
+- Added a subtree footprint pass for layered-grid placement so sibling branches
+  reserve enough x/z space for their descendants.
+- Added tests for local radial branch radii, wide radial branch radius growth,
+  and z-row use in layered-grid branch groups.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
@@ -200,4 +215,4 @@
 | 2026-05-06 | Renderer verification | Playwright is not installed in the repo, so automated desktop/mobile screenshot and canvas-pixel verification is not available yet. | Add a Playwright smoke test harness for the Three.js scene before expanding scene interaction and selection behavior. |
 | 2026-05-06 | Large repo loading | Pantograph contained a checked-out `.venv` with roughly 59k files; the first V0 renderer tried to load all emitted directory/file nodes and could lock the UI. | Continue expanding backend exclusion rules and add progressive/viewport-scoped rendering before attempting very large unfiltered graphs. |
 | 2026-05-06 | Selection scaling | Selection previously had optimized scene reuse, but the next scale target still needed a dedicated graph relationship index and selection-state diff so future symbol layers would not depend on repeated full graph scans. | V0 directory/file selection lookup is resolved by `selectionIndex.ts` and scene diff styling; revisit when function, struct, impl, or call/reference relationship layers are added. |
-| 2026-05-06 | Layout scaling | Branching layered-grid layout now preserves tree grouping, but very wide trees can sprawl horizontally because wrapping/culling is not yet solved for subtree-preserving layouts. | Add configurable branch compaction or viewport-aware level collapse before relying on layered-grid for very large graphs. |
+| 2026-05-06 | Layout scaling | Branching layouts now preserve local tree grouping, but very wide branches can sprawl or overlap nearby branch regions because viewport-aware compaction/collapse is not solved yet. | Add configurable branch compaction or viewport-aware level collapse before relying on branching layouts for very large semantic graphs. |

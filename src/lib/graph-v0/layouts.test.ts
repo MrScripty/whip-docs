@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
 import test from 'node:test';
-import type { LayoutResult, RenderGraph } from './types';
+import type { LayoutNodePosition, LayoutResult, RenderGraph } from './types';
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
@@ -93,15 +93,24 @@ test('layouts place root at the origin', () => {
   assert.deepEqual(layoutLayeredGrid(sampleGraph).positions.get('repo')?.position, { x: 0, y: 0, z: 0 });
 });
 
-test('radial layout keeps descendants inside their parent branch sector', () => {
-  const layout = layoutRadialTree(branchingGraph);
-  const srcAngle = angleForNode(layout, 'src');
-  const docsAngle = angleForNode(layout, 'docs');
-  const srcChildAngles = ['lib', 'main'].map((nodeId) => angleForNode(layout, nodeId));
-  const docsChildAngles = ['guide', 'api'].map((nodeId) => angleForNode(layout, nodeId));
+test('radial layout places child groups on local parent radii', () => {
+  const layout = layoutRadialTree(branchingGraph, { depthSpacing: 10 });
+  const repoToLib = horizontalDistanceBetween(layout, 'repo', 'lib');
+  const srcToLib = horizontalDistanceBetween(layout, 'src', 'lib');
+  const srcToMain = horizontalDistanceBetween(layout, 'src', 'main');
 
-  assert.ok(srcChildAngles.every((angle) => circularDistance(angle, srcAngle) < circularDistance(angle, docsAngle)));
-  assert.ok(docsChildAngles.every((angle) => circularDistance(angle, docsAngle) < circularDistance(angle, srcAngle)));
+  assert.equal(round(srcToLib), 10);
+  assert.equal(round(srcToMain), 10);
+  assert.notEqual(round(repoToLib), 20);
+});
+
+test('radial branch radius grows to fit wide local child groups', () => {
+  const layout = layoutRadialTree(wideBranchGraph);
+  const narrowRadius = horizontalDistanceBetween(layout, 'narrow', 'single');
+  const wideRadii = childIds('wide-child', 16).map((nodeId) => horizontalDistanceBetween(layout, 'wide', nodeId));
+
+  assert.ok(wideRadii.every((radius) => round(radius) === round(wideRadii[0])));
+  assert.ok(wideRadii[0] > narrowRadius);
 });
 
 test('layered grid centers parents over their descendant branch spans', () => {
@@ -114,6 +123,15 @@ test('layered grid centers parents over their descendant branch spans', () => {
   assert.equal(srcX, average(srcChildXs));
   assert.equal(docsX, average(docsChildXs));
   assert.ok(rangesDoNotOverlap(srcChildXs, docsChildXs));
+});
+
+test('layered grid uses z rows for local branch grids', () => {
+  const layout = layoutLayeredGrid(wideBranchGraph);
+  const zValues = childIds('wide-child', 16).map((nodeId) => zForNode(layout, nodeId));
+  const uniqueZValues = new Set(zValues.map(round));
+
+  assert.ok(uniqueZValues.size > 1);
+  assert.ok(zValues.some((z) => z !== 0));
 });
 
 function serializeLayout(layout: LayoutResult): readonly unknown[] {
@@ -195,19 +213,87 @@ const branchingGraph: RenderGraph = {
   ],
 };
 
-function angleForNode(layout: LayoutResult, nodeId: string): number {
+const wideBranchGraph: RenderGraph = {
+  rootNodeId: 'repo',
+  nodes: [
+    {
+      id: 'repo',
+      kind: 'repo',
+      name: 'repo',
+      path: '',
+      childIds: ['wide', 'narrow'],
+    },
+    {
+      id: 'wide',
+      kind: 'directory',
+      name: 'wide',
+      path: 'wide',
+      parentId: 'repo',
+      childIds: childIds('wide-child', 16),
+    },
+    {
+      id: 'narrow',
+      kind: 'directory',
+      name: 'narrow',
+      path: 'narrow',
+      parentId: 'repo',
+      childIds: ['single'],
+    },
+    {
+      id: 'single',
+      kind: 'file',
+      name: 'single',
+      path: 'narrow/single',
+      parentId: 'narrow',
+      childIds: [],
+    },
+    ...childIds('wide-child', 16).map((id) => ({
+      id,
+      kind: 'file' as const,
+      name: id,
+      path: `wide/${id}`,
+      parentId: 'wide',
+      childIds: [],
+    })),
+  ],
+  edges: [
+    { id: 'repo-wide', kind: 'tree', fromNodeId: 'repo', toNodeId: 'wide' },
+    { id: 'repo-narrow', kind: 'tree', fromNodeId: 'repo', toNodeId: 'narrow' },
+    { id: 'narrow-single', kind: 'tree', fromNodeId: 'narrow', toNodeId: 'single' },
+    ...childIds('wide-child', 16).map((id) => ({
+      id: `wide-${id}`,
+      kind: 'tree' as const,
+      fromNodeId: 'wide',
+      toNodeId: id,
+    })),
+  ],
+};
+
+function childIds(prefix: string, count: number): string[] {
+  return Array.from({ length: count }, (_, index) => `${prefix}-${index.toString().padStart(2, '0')}`);
+}
+
+function horizontalDistanceBetween(layout: LayoutResult, firstNodeId: string, secondNodeId: string): number {
+  const firstPosition = positionForNode(layout, firstNodeId);
+  const secondPosition = positionForNode(layout, secondNodeId);
+  const deltaX = firstPosition.x - secondPosition.x;
+  const deltaZ = firstPosition.z - secondPosition.z;
+
+  return Math.hypot(deltaX, deltaZ);
+}
+
+function positionForNode(layout: LayoutResult, nodeId: string): LayoutNodePosition['position'] {
   const position = layout.positions.get(nodeId)?.position;
 
   if (!position) {
     throw new Error(`Missing layout position for ${nodeId}`);
   }
 
-  return Math.atan2(position.z, position.x);
+  return position;
 }
 
-function circularDistance(left: number, right: number): number {
-  const distance = Math.abs(left - right) % (Math.PI * 2);
-  return Math.min(distance, Math.PI * 2 - distance);
+function round(value: number): number {
+  return Math.round(value * 1_000) / 1_000;
 }
 
 function xForNode(layout: LayoutResult, nodeId: string): number {
@@ -218,6 +304,10 @@ function xForNode(layout: LayoutResult, nodeId: string): number {
   }
 
   return position.x;
+}
+
+function zForNode(layout: LayoutResult, nodeId: string): number {
+  return positionForNode(layout, nodeId).z;
 }
 
 function average(values: readonly number[]): number {
