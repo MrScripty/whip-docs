@@ -14,6 +14,7 @@ import {
   MeshLambertMaterial,
   NoColorSpace,
   PerspectiveCamera,
+  Raycaster,
   Scene,
   SphereGeometry,
   Sprite,
@@ -76,6 +77,7 @@ export class DirectoryGraphScene {
   private readonly selectionEdgeGroup = new Group();
   private readonly selectionTarget = new WebGLRenderTarget(1, 1);
   private readonly resizeObserver: ResizeObserver;
+  private readonly raycaster = new Raycaster();
   private readonly theme: DirectoryGraphSceneTheme;
   private readonly selectionTargetById = new Map<number, SelectionTarget>();
   private selectionCallback: ((selection: DirectoryGraphSceneSelection) => void) | null = null;
@@ -117,6 +119,8 @@ export class DirectoryGraphScene {
         ? layoutLayeredGrid(graph)
         : layoutRadialTree(graph);
     const highlightedNodeIds = new Set(options.highlightedNodeIds ?? []);
+    const highlightedEdgeIds = new Set(options.highlightedEdgeIds ?? []);
+    const labeledNodeIds = new Set(options.labeledNodeIds ?? []);
     const selectedNodeId = options.selectedNodeId ?? null;
     const selectedEdgeId = options.selectedEdgeId ?? null;
     this.selectionCallback = options.onSelect ?? null;
@@ -137,7 +141,8 @@ export class DirectoryGraphScene {
       }
 
       const selected = edge.id === selectedEdgeId;
-      this.edgeGroup.add(this.createEdge(source, target, selected));
+      const highlighted = highlightedEdgeIds.has(edge.id);
+      this.edgeGroup.add(this.createEdge(source, target, selected, highlighted));
       const selectionId = encodeSelectionId('edge', edgeIndex);
       this.selectionTargetById.set(selectionId, {
         kind: 'edge',
@@ -160,7 +165,7 @@ export class DirectoryGraphScene {
       mesh.position.set(position.position.x, position.position.y, position.position.z);
       mesh.userData = { nodeId: node.id, nodePath: node.path };
       this.nodeGroup.add(mesh);
-      if (shouldLabelNode(node.kind, position.depth, selected, highlighted)) {
+      if (shouldLabelNode(node.kind, position.depth, selected, highlighted, labeledNodeIds.has(node.id))) {
         this.labelGroup.add(this.createLabel(node.name, position, selected));
       }
       const selectionId = encodeSelectionId('node', nodeIndex);
@@ -234,11 +239,18 @@ export class DirectoryGraphScene {
     this.animationFrame = window.requestAnimationFrame(this.render);
   };
 
-  private createEdge(source: LayoutNodePosition, target: LayoutNodePosition, selected: boolean): Line {
+  private createEdge(
+    source: LayoutNodePosition,
+    target: LayoutNodePosition,
+    selected: boolean,
+    highlighted: boolean,
+  ): Line {
     const depth = Math.max(source.depth, target.depth);
-    const opacity = selected ? 0.92 : opacityForDepth(depth) * 0.58;
+    const opacity = selected || highlighted ? 0.95 : opacityForDepth(depth) * 0.58;
     const color = selected
       ? this.theme.selected
+      : highlighted
+        ? this.theme.highlighted
       : new Color(this.theme.edge).lerp(new Color(this.theme.distantEdge), 1 - opacity).getHex();
     const geometry = new BufferGeometry().setFromPoints([
       new Vector3(source.position.x, source.position.y, source.position.z),
@@ -267,6 +279,7 @@ export class DirectoryGraphScene {
     const mesh = new Mesh(geometry, material);
     mesh.position.copy(sourcePosition.clone().add(targetPosition).multiplyScalar(0.5));
     mesh.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), direction.normalize());
+    mesh.userData = { selectionId };
     return mesh;
   }
 
@@ -305,6 +318,7 @@ export class DirectoryGraphScene {
         : new SphereGeometry(kind === 'repo' ? 1.8 : 1.36, 16, 12);
     const mesh = new Mesh(geometry, this.createSelectionMaterial(selectionId));
     mesh.position.set(position.position.x, position.position.y, position.position.z);
+    mesh.userData = { selectionId };
     return mesh;
   }
 
@@ -442,16 +456,29 @@ export class DirectoryGraphScene {
     const x = Math.floor((event.clientX - rect.left) * pixelRatio);
     const y = Math.floor((rect.bottom - event.clientY) * pixelRatio);
     const hit = this.readSelectionHit(x, y);
-
-    if (!hit) {
-      return;
-    }
-
-    const target = this.selectionTargetById.get(hit.selectionId);
+    const target = hit
+      ? this.selectionTargetById.get(hit.selectionId)
+      : this.raycastSelection(event);
 
     if (target) {
       this.selectionCallback({ kind: target.kind, id: target.id });
     }
+  }
+
+  private raycastSelection(event: PointerEvent): SelectionTarget | null {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const pointer = new Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    this.raycaster.setFromCamera(pointer, this.camera);
+
+    const nodeHit = this.raycaster.intersectObjects(this.selectionNodeGroup.children, true)[0];
+    const edgeHit = this.raycaster.intersectObjects(this.selectionEdgeGroup.children, true)[0];
+    const object = nodeHit?.object ?? edgeHit?.object;
+    const selectionId = selectionIdForObject(object);
+
+    return selectionId === null ? null : (this.selectionTargetById.get(selectionId) ?? null);
   }
 
   private readSelectionHit(x: number, y: number): ReturnType<typeof selectFromIdMap> {
@@ -572,13 +599,31 @@ function shouldLabelNode(
   depth: number,
   selected: boolean,
   highlighted: boolean,
+  labeled: boolean,
 ): boolean {
   return (
     selected ||
     highlighted ||
+    labeled ||
     kind === 'repo' ||
     (kind === 'directory' && depth <= GRAPH_V0_DEPTH_STYLE_DEFAULTS.maxLabelDepth)
   );
+}
+
+function selectionIdForObject(object: Object3D | undefined): number | null {
+  let current: Object3D | null | undefined = object;
+
+  while (current) {
+    const selectionId = current.userData.selectionId;
+
+    if (typeof selectionId === 'number') {
+      return selectionId;
+    }
+
+    current = current.parent;
+  }
+
+  return null;
 }
 
 function opacityForDepth(depth: number): number {

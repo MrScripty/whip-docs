@@ -13,6 +13,8 @@
   import {
     DirectoryGraphScene,
     directorySnapshotToRenderGraph,
+    emptyGraphNeighborhood,
+    graphNeighborhood,
   } from './lib/graph-v0';
   import {
     analysisStatus,
@@ -55,6 +57,11 @@
   let selectedDirectoryEdge = $derived(
     directoryRenderGraph?.edges.find((edge) => edge.id === $selectedEdgeId) ?? null,
   );
+  let selectedDirectoryNeighborhood = $derived(
+    directoryRenderGraph && $selectedNodeId
+      ? graphNeighborhood(directoryRenderGraph, $selectedNodeId)
+      : emptyGraphNeighborhood(),
+  );
   let displayGraph = $derived(
     $graphSnapshot
       ? projectGraph($graphSnapshot.nodes, $graphSnapshot.edges, graphMode)
@@ -85,6 +92,9 @@
 
     if (directoryRenderGraph) {
       directoryGraphScene.updateGraph(directoryRenderGraph, {
+        highlightedEdgeIds: selectedDirectoryNeighborhood.highlightedEdgeIds,
+        highlightedNodeIds: selectedDirectoryNeighborhood.highlightedNodeIds,
+        labeledNodeIds: selectedDirectoryNeighborhood.labeledNodeIds,
         layoutAlgorithm: directoryLayoutAlgorithm,
         selectedEdgeId: $selectedEdgeId,
         selectedNodeId: $selectedNodeId,

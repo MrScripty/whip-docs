@@ -48,6 +48,8 @@ export type DirectoryGraphSceneOptions = {
   readonly selectedNodeId?: string | null;
   readonly selectedEdgeId?: string | null;
   readonly highlightedNodeIds?: readonly string[];
+  readonly highlightedEdgeIds?: readonly string[];
+  readonly labeledNodeIds?: readonly string[];
   readonly onSelect?: (selection: DirectoryGraphSceneSelection) => void;
 };
 
@@ -57,6 +59,14 @@ export type DirectoryGraphSceneSelection = {
 };
 
 export type DirectoryGraphSceneControlMode = 'select' | 'orbit' | 'pan';
+
+export type DirectoryGraphNeighborhood = {
+  readonly highlightedNodeIds: readonly string[];
+  readonly highlightedEdgeIds: readonly string[];
+  readonly labeledNodeIds: readonly string[];
+  readonly firstLevelNodeIds: readonly string[];
+  readonly secondLevelNodeIds: readonly string[];
+};
 
 export type LayoutAlgorithmId = 'radial-tree' | 'layered-grid';
 

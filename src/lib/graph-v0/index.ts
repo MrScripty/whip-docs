@@ -12,6 +12,7 @@ export {
 } from './constants';
 export { directorySnapshotToRenderGraph } from './adapters';
 export { layoutLayeredGrid, layoutRadialTree } from './layouts';
+export { emptyGraphNeighborhood, graphNeighborhood } from './neighborhood';
 export { decodeSelectionId, encodeSelectionId, selectFromIdMap } from './selection';
 export { DirectoryGraphScene } from './ThreeDirectoryGraphScene';
 export type {
@@ -20,6 +21,7 @@ export type {
   DirectoryGraphSceneSelection,
   DirectoryGraphSceneTheme,
   DirectoryGraphSceneControlMode,
+  DirectoryGraphNeighborhood,
   GraphEdgeKind,
   GraphNodeKind,
   LayoutAlgorithmId,

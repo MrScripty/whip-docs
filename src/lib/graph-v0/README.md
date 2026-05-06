@@ -11,6 +11,7 @@ projection.
 | `constants.ts` | Centralized layout geometry, scene styling, camera, interaction, depth, and selection constants. |
 | `adapters.ts` | Directory graph DTO to render graph normalization. |
 | `layouts.ts` | Deterministic directory/file graph layout algorithms. |
+| `neighborhood.ts` | Selected-node first/second level neighborhood highlighting and labeling sets. |
 | `selection.ts` | ID-map selection encoding, decoding, and sampled hit testing. |
 | `ThreeDirectoryGraphScene.ts` | Direct Three.js scene system for the V0 directory/file graph. |
 | `*.test.ts` | Node test coverage for layout determinism and selection behavior. |
@@ -44,10 +45,14 @@ Three.js object lifecycle in a scene class that Svelte mounts and disposes.
 - Child ordering is deterministic and sorts directories before files.
 - ID-map selection gives visible nodes priority over visible edges, then uses
   depth and distance as tie breakers.
+- Scene click selection falls back to Three.js raycasting if the ID-map sample
+  misses.
 - Three.js renderer resources are disposed by the scene class, not Svelte
   component code.
 - Scene labels are bounded to repo, nearby directories, highlighted nodes, and
   selected nodes.
+- Selecting a node highlights the node, highlights its immediate edges, and
+  labels first- and second-level connected nodes.
 - Scene controls are centralized in the scene system: left click selects,
   left drag orbits, middle/right drag pans, and Shift/Alt-left drag also pans.
 

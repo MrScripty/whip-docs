@@ -87,6 +87,17 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### Node Neighborhood Highlighting
+
+- Added a graph-neighborhood helper for selected-node first and second level
+  connections.
+- Selecting a node now highlights the node and its immediate edges.
+- Selected, first-level, and second-level connected nodes are labeled.
+- Scene click selection now falls back to Three.js raycasting when the ID-map
+  sample misses.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
