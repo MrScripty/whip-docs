@@ -114,6 +114,15 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### Dedicated Selection Index Planning
+
+- Captured the current selection-scaling concern: selection should not require
+  repeated full graph scans or broad scene-map restyling.
+- Added `selection-index-plan.md` for a dedicated derived frontend selection
+  index, selection-state diffing, and scene-level incremental styling.
+- Checked the plan against the repository planning, frontend, architecture,
+  testing, documentation, and commit standards.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
@@ -122,3 +131,4 @@
 | 2026-05-06 | Frontend bundling | `npm run build` succeeds but Vite reports the main JavaScript chunk is above 500 kB after adding Three.js. | Add route-level or scene-level dynamic import/code splitting before expanding renderer dependencies further. |
 | 2026-05-06 | Renderer verification | Playwright is not installed in the repo, so automated desktop/mobile screenshot and canvas-pixel verification is not available yet. | Add a Playwright smoke test harness for the Three.js scene before expanding scene interaction and selection behavior. |
 | 2026-05-06 | Large repo loading | Pantograph contained a checked-out `.venv` with roughly 59k files; the first V0 renderer tried to load all emitted directory/file nodes and could lock the UI. | Continue expanding backend exclusion rules and add progressive/viewport-scoped rendering before attempting very large unfiltered graphs. |
+| 2026-05-06 | Selection scaling | Selection currently has optimized scene reuse, but the next scale target still needs a dedicated graph relationship index and selection-state diff so future symbol layers do not depend on repeated full graph scans. | Implement `selection-index-plan.md` before adding function, struct, impl, or call/reference relationship layers. |
