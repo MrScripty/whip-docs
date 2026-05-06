@@ -206,6 +206,21 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### Branch Footprint Spacing Controls
+
+- Added subtree footprint reservation to radial branch placement so sibling
+  branch centers are separated by descendant footprint, not only by child count.
+- Increased the V0 default branch/sibling spacing to reduce immediate overlap
+  in large directory graphs.
+- Added a 3D graph branch spacing slider to the directory graph summary
+  controls so spacing can be tuned live while comparing layouts.
+- Threaded layout options through `DirectoryGraphScene` so layout option changes
+  trigger deterministic structural rebuilds while selection updates stay
+  incremental.
+- Added focused layout tests proving the spacing option separates radial and
+  layered sibling branch footprints.
+- Verified with `npm run lint`, `npm run typecheck`, and focused layout tests.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
@@ -215,4 +230,4 @@
 | 2026-05-06 | Renderer verification | Playwright is not installed in the repo, so automated desktop/mobile screenshot and canvas-pixel verification is not available yet. | Add a Playwright smoke test harness for the Three.js scene before expanding scene interaction and selection behavior. |
 | 2026-05-06 | Large repo loading | Pantograph contained a checked-out `.venv` with roughly 59k files; the first V0 renderer tried to load all emitted directory/file nodes and could lock the UI. | Continue expanding backend exclusion rules and add progressive/viewport-scoped rendering before attempting very large unfiltered graphs. |
 | 2026-05-06 | Selection scaling | Selection previously had optimized scene reuse, but the next scale target still needed a dedicated graph relationship index and selection-state diff so future symbol layers would not depend on repeated full graph scans. | V0 directory/file selection lookup is resolved by `selectionIndex.ts` and scene diff styling; revisit when function, struct, impl, or call/reference relationship layers are added. |
-| 2026-05-06 | Layout scaling | Branching layouts now preserve local tree grouping, but very wide branches can sprawl or overlap nearby branch regions because viewport-aware compaction/collapse is not solved yet. | Add configurable branch compaction or viewport-aware level collapse before relying on branching layouts for very large semantic graphs. |
+| 2026-05-06 | Layout scaling | Branching layouts now reserve subtree footprints and expose a spacing control, but very wide branches can still sprawl because viewport-aware compaction/collapse is not solved yet. | Add configurable branch compaction or viewport-aware level collapse before relying on branching layouts for very large semantic graphs. |

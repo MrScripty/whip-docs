@@ -45,6 +45,7 @@ export type DirectoryGraphSceneTheme = {
 
 export type DirectoryGraphSceneOptions = {
   readonly layoutAlgorithm: LayoutAlgorithmId;
+  readonly layoutOptions?: LayoutOptions;
   readonly selectedNodeId?: string | null;
   readonly selectedEdgeId?: string | null;
   readonly highlightedNodeIds?: readonly string[];

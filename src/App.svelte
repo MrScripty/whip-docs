@@ -15,6 +15,7 @@
     DirectoryGraphScene,
     directorySnapshotToRenderGraph,
     emptyGraphNeighborhood,
+    GRAPH_V0_LAYOUT_DEFAULTS,
     selectionNeighborhood,
   } from './lib/graph-v0';
   import {
@@ -42,6 +43,7 @@
   let selectedKind = $state('');
   let graphMode = $state('architecture');
   let directoryLayoutAlgorithm = $state('radial-tree');
+  let directoryBranchSpacing = $state(GRAPH_V0_LAYOUT_DEFAULTS.siblingSpacing);
   let graphPan = $state({ x: 0, y: 0 });
   let graphZoom = $state(1);
   let panStart = $state(null);
@@ -100,6 +102,9 @@
         highlightedNodeIds: selectedDirectoryNeighborhood.highlightedNodeIds,
         labeledNodeIds: selectedDirectoryNeighborhood.labeledNodeIds,
         layoutAlgorithm: directoryLayoutAlgorithm,
+        layoutOptions: {
+          siblingSpacing: directoryBranchSpacing,
+        },
         selectedEdgeId: $selectedEdgeId,
         selectedNodeId: $selectedNodeId,
         onSelect: selectDirectoryEntity,
@@ -341,6 +346,20 @@
             <option value="radial-tree">Radial tree</option>
             <option value="layered-grid">Layered grid</option>
           </select>
+          <label class="range-control" for="directory-branch-spacing">
+            <span>Branch spacing</span>
+            <input
+              id="directory-branch-spacing"
+              type="range"
+              min="4"
+              max="32"
+              step="1"
+              value={directoryBranchSpacing}
+              oninput={(event) => { directoryBranchSpacing = Number(event.currentTarget.value); }}
+              aria-label="3D graph branch spacing"
+            />
+            <output for="directory-branch-spacing">{directoryBranchSpacing}</output>
+          </label>
         </div>
         <div
           class="directory-scene-frame"

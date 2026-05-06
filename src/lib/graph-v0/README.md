@@ -51,8 +51,8 @@ mounts and disposes.
   parent/child structure; they do not special-case directories or files when
   grouping descendants.
 - Radial branches use parent-local child rings whose radius grows with sibling
-  count. Layered-grid branches use parent-local x/z grids with subtree
-  footprints so branches can occupy actual 3D space.
+  subtree footprint and spacing. Layered-grid branches use parent-local x/z
+  grids with subtree footprints so branches can occupy actual 3D space.
 - ID-map selection gives visible nodes priority over visible edges, then uses
   depth and distance as tie breakers.
 - Scene click selection falls back to Three.js raycasting if the ID-map sample

@@ -6,7 +6,7 @@ export const GRAPH_V0_KIND_ORDER = {
 
 export const GRAPH_V0_LAYOUT_DEFAULTS = {
   depthSpacing: 8,
-  siblingSpacing: 4,
+  siblingSpacing: 8,
   layerSpacing: 7,
   gridColumns: 8,
   nodeRadius: 0.9,

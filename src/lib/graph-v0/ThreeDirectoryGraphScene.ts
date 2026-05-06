@@ -43,6 +43,7 @@ import type {
   DirectoryGraphSceneTheme,
   DirectoryGraphSceneControlMode,
   GraphNodeKind,
+  LayoutOptions,
   LayoutNodePosition,
   RenderGraph,
 } from './types';
@@ -107,6 +108,7 @@ export class DirectoryGraphScene {
   private cameraTarget = new Vector3(0, 0, 0);
   private currentGraph: RenderGraph | null = null;
   private currentLayoutAlgorithm: string | null = null;
+  private currentLayoutOptionsKey: string | null = null;
   private renderWidth = 1;
   private renderHeight = 1;
   private animationFrame: number | null = null;
@@ -140,18 +142,24 @@ export class DirectoryGraphScene {
 
   updateGraph(graph: RenderGraph, options: DirectoryGraphSceneOptions): void {
     this.selectionCallback = options.onSelect ?? null;
-    if (this.currentGraph !== graph || this.currentLayoutAlgorithm !== options.layoutAlgorithm) {
-      this.rebuildGraph(graph, options.layoutAlgorithm);
+    const layoutOptionsKey = stableLayoutOptionsKey(options.layoutOptions);
+    if (
+      this.currentGraph !== graph ||
+      this.currentLayoutAlgorithm !== options.layoutAlgorithm ||
+      this.currentLayoutOptionsKey !== layoutOptionsKey
+    ) {
+      this.rebuildGraph(graph, options.layoutAlgorithm, options.layoutOptions ?? {});
+      this.currentLayoutOptionsKey = layoutOptionsKey;
     }
 
     this.applySceneState(options);
   }
 
-  private rebuildGraph(graph: RenderGraph, layoutAlgorithm: string): void {
+  private rebuildGraph(graph: RenderGraph, layoutAlgorithm: string, layoutOptions: LayoutOptions): void {
     const layout =
       layoutAlgorithm === 'layered-grid'
-        ? layoutLayeredGrid(graph)
-        : layoutRadialTree(graph);
+        ? layoutLayeredGrid(graph, layoutOptions)
+        : layoutRadialTree(graph, layoutOptions);
     this.currentGraph = graph;
     this.currentLayoutAlgorithm = layoutAlgorithm;
     this.selectionTargetById.clear();
@@ -807,6 +815,18 @@ function opacityForDepth(depth: number): number {
     GRAPH_V0_DEPTH_STYLE_DEFAULTS.minOpacity +
     (1 - fade) * (1 - GRAPH_V0_DEPTH_STYLE_DEFAULTS.minOpacity)
   );
+}
+
+function stableLayoutOptionsKey(options: LayoutOptions | undefined): string {
+  if (!options) {
+    return '';
+  }
+
+  return Object.entries(options)
+    .filter(([, value]) => value !== undefined)
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    .map(([key, value]) => `${key}:${value}`)
+    .join('|');
 }
 
 function labelTexture(label: string, theme: DirectoryGraphSceneTheme): CanvasTexture {

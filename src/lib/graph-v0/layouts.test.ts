@@ -99,8 +99,8 @@ test('radial layout places child groups on local parent radii', () => {
   const srcToLib = horizontalDistanceBetween(layout, 'src', 'lib');
   const srcToMain = horizontalDistanceBetween(layout, 'src', 'main');
 
-  assert.equal(round(srcToLib), 10);
-  assert.equal(round(srcToMain), 10);
+  assert.equal(round(srcToLib), round(srcToMain));
+  assert.ok(srcToLib >= 10);
   assert.notEqual(round(repoToLib), 20);
 });
 
@@ -111,6 +111,16 @@ test('radial branch radius grows to fit wide local child groups', () => {
 
   assert.ok(wideRadii.every((radius) => round(radius) === round(wideRadii[0])));
   assert.ok(wideRadii[0] > narrowRadius);
+});
+
+test('radial branch spacing option separates sibling branch footprints', () => {
+  const compact = layoutRadialTree(wideBranchGraph, { siblingSpacing: 4 });
+  const expanded = layoutRadialTree(wideBranchGraph, { siblingSpacing: 20 });
+
+  assert.ok(
+    horizontalDistanceBetween(expanded, 'wide', 'narrow') >
+      horizontalDistanceBetween(compact, 'wide', 'narrow'),
+  );
 });
 
 test('layered grid centers parents over their descendant branch spans', () => {
@@ -132,6 +142,16 @@ test('layered grid uses z rows for local branch grids', () => {
 
   assert.ok(uniqueZValues.size > 1);
   assert.ok(zValues.some((z) => z !== 0));
+});
+
+test('layered grid branch spacing option separates sibling branch footprints', () => {
+  const compact = layoutLayeredGrid(wideBranchGraph, { siblingSpacing: 4 });
+  const expanded = layoutLayeredGrid(wideBranchGraph, { siblingSpacing: 20 });
+
+  assert.ok(
+    horizontalDistanceBetween(expanded, 'wide', 'narrow') >
+      horizontalDistanceBetween(compact, 'wide', 'narrow'),
+  );
 });
 
 function serializeLayout(layout: LayoutResult): readonly unknown[] {
