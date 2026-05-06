@@ -104,11 +104,11 @@ textarea {
   gap: 12px;
   min-height: 0;
   padding: 18px;
-  background:
-    linear-gradient(#e2e6ec 1px, transparent 1px),
-    linear-gradient(90deg, #e2e6ec 1px, transparent 1px),
-    #f9fafb;
-  background-size: 28px 28px;
+  background: #f6f7f9;
+}
+
+.graph-surface.directory-loaded {
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .graph-summary {
@@ -184,7 +184,7 @@ textarea {
 
 .directory-scene-frame {
   min-width: 0;
-  min-height: 420px;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid #c3cad4;
   border-radius: 6px;

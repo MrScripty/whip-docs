@@ -317,7 +317,7 @@
   </section>
 
   <section class="workspace" aria-label="Architecture graph workspace">
-    <div class="graph-surface">
+    <div class="graph-surface" class:directory-loaded={$directoryGraphSnapshot && directoryRenderGraph}>
       {#if $directoryGraphSnapshot && directoryRenderGraph}
         <div class="graph-summary" aria-label="Directory graph summary">
           <span>{$directoryGraphSnapshot.nodes.length} nodes</span>
@@ -334,8 +334,7 @@
           aria-label="3D directory and file graph"
           role="img"
         ></div>
-      {/if}
-      {#if $graphSnapshot}
+      {:else if $graphSnapshot}
         <div class="graph-summary" aria-label="Graph summary">
           <span>{$graphSnapshot.nodes.length} nodes</span>
           <span>{$graphSnapshot.edges.length} edges</span>
