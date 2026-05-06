@@ -221,6 +221,19 @@
   layered sibling branch footprints.
 - Verified with `npm run lint`, `npm run typecheck`, and focused layout tests.
 
+### Layout-Aware Camera Framing
+
+- Added layout bounds calculation after 3D graph structural rebuilds.
+- Changed the scene camera to target the layout center and back out far enough
+  to frame the full node bounds after graph, layout algorithm, or layout option
+  changes.
+- Increased the camera control maximum distance so large radial layouts do not
+  snap back to the old fixed near distance.
+- Updated camera far-plane handling from the framed bounds so distant nodes are
+  not clipped when the graph expands.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
@@ -231,3 +244,4 @@
 | 2026-05-06 | Large repo loading | Pantograph contained a checked-out `.venv` with roughly 59k files; the first V0 renderer tried to load all emitted directory/file nodes and could lock the UI. | Continue expanding backend exclusion rules and add progressive/viewport-scoped rendering before attempting very large unfiltered graphs. |
 | 2026-05-06 | Selection scaling | Selection previously had optimized scene reuse, but the next scale target still needed a dedicated graph relationship index and selection-state diff so future symbol layers would not depend on repeated full graph scans. | V0 directory/file selection lookup is resolved by `selectionIndex.ts` and scene diff styling; revisit when function, struct, impl, or call/reference relationship layers are added. |
 | 2026-05-06 | Layout scaling | Branching layouts now reserve subtree footprints and expose a spacing control, but very wide branches can still sprawl because viewport-aware compaction/collapse is not solved yet. | Add configurable branch compaction or viewport-aware level collapse before relying on branching layouts for very large semantic graphs. |
+| 2026-05-06 | Camera framing | The scene now frames the full graph after structural rebuilds, but very large graphs can become visually tiny when the full extents are shown at once. | Add selected-node/focus-node framing and level-of-detail collapse so users can inspect local regions without always fitting the full graph. |

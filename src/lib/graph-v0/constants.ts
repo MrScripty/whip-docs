@@ -55,6 +55,7 @@ export const GRAPH_V0_CAMERA_DEFAULTS = {
   fieldOfView: 45,
   near: 0.1,
   far: 2000,
+  framingPadding: 1.32,
   positionX: 0,
   positionY: 34,
   positionZ: 58,
@@ -62,7 +63,7 @@ export const GRAPH_V0_CAMERA_DEFAULTS = {
 
 export const GRAPH_V0_INTERACTION_DEFAULTS = {
   minCameraDistance: 14,
-  maxCameraDistance: 180,
+  maxCameraDistance: 5000,
   wheelZoomFactor: 0.0016,
   rotateFactor: 0.006,
   panFactor: 0.038,

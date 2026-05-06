@@ -77,6 +77,11 @@ type SelectionTarget = DirectoryGraphSceneSelection & {
   readonly selectionId: number;
 };
 
+type LayoutBounds = {
+  readonly center: Vector3;
+  readonly radius: number;
+};
+
 export class DirectoryGraphScene {
   private readonly scene = new Scene();
   private readonly camera = new PerspectiveCamera(
@@ -229,6 +234,8 @@ export class DirectoryGraphScene {
       });
       this.selectionNodeGroup.add(this.createSelectionNode(node.kind, position, selectionId));
     });
+
+    this.frameLayout(layout.positions);
   }
 
   private applySceneState(options: DirectoryGraphSceneOptions): void {
@@ -339,6 +346,36 @@ export class DirectoryGraphScene {
       GRAPH_V0_CAMERA_DEFAULTS.positionZ,
     );
     this.camera.lookAt(this.cameraTarget);
+  }
+
+  private frameLayout(positions: ReadonlyMap<string, LayoutNodePosition>): void {
+    const bounds = layoutBounds(positions);
+
+    if (!bounds) {
+      this.resetCamera();
+      return;
+    }
+
+    const verticalFieldOfView = (this.camera.fov * Math.PI) / 180;
+    const horizontalFieldOfView = 2 * Math.atan(Math.tan(verticalFieldOfView / 2) * this.camera.aspect);
+    const verticalDistance = bounds.radius / Math.tan(verticalFieldOfView / 2);
+    const horizontalDistance = bounds.radius / Math.tan(horizontalFieldOfView / 2);
+    const distance = clamp(
+      Math.max(verticalDistance, horizontalDistance) * GRAPH_V0_CAMERA_DEFAULTS.framingPadding,
+      GRAPH_V0_INTERACTION_DEFAULTS.minCameraDistance,
+      GRAPH_V0_INTERACTION_DEFAULTS.maxCameraDistance,
+    );
+    const cameraDirection = new Vector3(
+      GRAPH_V0_CAMERA_DEFAULTS.positionX,
+      GRAPH_V0_CAMERA_DEFAULTS.positionY,
+      GRAPH_V0_CAMERA_DEFAULTS.positionZ,
+    ).normalize();
+
+    this.cameraTarget.copy(bounds.center);
+    this.camera.position.copy(bounds.center.clone().add(cameraDirection.multiplyScalar(distance)));
+    this.camera.far = Math.max(GRAPH_V0_CAMERA_DEFAULTS.far, distance + bounds.radius * 3);
+    this.camera.lookAt(this.cameraTarget);
+    this.camera.updateProjectionMatrix();
   }
 
   private resize(): void {
@@ -827,6 +864,29 @@ function stableLayoutOptionsKey(options: LayoutOptions | undefined): string {
     .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
     .map(([key, value]) => `${key}:${value}`)
     .join('|');
+}
+
+function layoutBounds(positions: ReadonlyMap<string, LayoutNodePosition>): LayoutBounds | null {
+  if (positions.size === 0) {
+    return null;
+  }
+
+  const min = new Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
+  const max = new Vector3(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
+
+  for (const position of positions.values()) {
+    min.x = Math.min(min.x, position.position.x - position.radius);
+    min.y = Math.min(min.y, position.position.y - position.radius);
+    min.z = Math.min(min.z, position.position.z - position.radius);
+    max.x = Math.max(max.x, position.position.x + position.radius);
+    max.y = Math.max(max.y, position.position.y + position.radius);
+    max.z = Math.max(max.z, position.position.z + position.radius);
+  }
+
+  const center = min.clone().add(max).multiplyScalar(0.5);
+  const radius = Math.max(1, max.clone().sub(center).length());
+
+  return { center, radius };
 }
 
 function labelTexture(label: string, theme: DirectoryGraphSceneTheme): CanvasTexture {
