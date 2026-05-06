@@ -35,6 +35,17 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### ID-Map Scene Selection
+
+- Added an offscreen color-ID render pass for directory graph nodes and edges.
+- Added click selection through the 2D ID-map sampling helper so visible
+  camera-view occlusion determines the selected object.
+- Added thicker invisible edge selection meshes so tree edges are selectable.
+- Added selected node and selected edge state in the frontend graph store.
+- Added side-panel directory graph selection details and node list selection.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |

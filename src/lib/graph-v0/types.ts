@@ -43,7 +43,14 @@ export type DirectoryGraphSceneTheme = {
 export type DirectoryGraphSceneOptions = {
   readonly layoutAlgorithm: LayoutAlgorithmId;
   readonly selectedNodeId?: string | null;
+  readonly selectedEdgeId?: string | null;
   readonly highlightedNodeIds?: readonly string[];
+  readonly onSelect?: (selection: DirectoryGraphSceneSelection) => void;
+};
+
+export type DirectoryGraphSceneSelection = {
+  readonly kind: SelectionEntityKind;
+  readonly id: string;
 };
 
 export type LayoutAlgorithmId = 'radial-tree' | 'layered-grid';

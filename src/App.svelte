@@ -20,6 +20,7 @@
     directoryGraphSnapshot,
     graphError,
     graphSnapshot,
+    selectedEdgeId,
     selectedNodeId,
     sourceRepoError,
     sourceSnippet,
@@ -46,6 +47,12 @@
   let directoryGraphScene = null;
   let directoryRenderGraph = $derived(
     $directoryGraphSnapshot ? directorySnapshotToRenderGraph($directoryGraphSnapshot) : null,
+  );
+  let selectedDirectoryNode = $derived(
+    directoryRenderGraph?.nodes.find((node) => node.id === $selectedNodeId) ?? null,
+  );
+  let selectedDirectoryEdge = $derived(
+    directoryRenderGraph?.edges.find((edge) => edge.id === $selectedEdgeId) ?? null,
   );
   let displayGraph = $derived(
     $graphSnapshot
@@ -78,7 +85,9 @@
     if (directoryRenderGraph) {
       directoryGraphScene.updateGraph(directoryRenderGraph, {
         layoutAlgorithm: directoryLayoutAlgorithm,
+        selectedEdgeId: $selectedEdgeId,
         selectedNodeId: $selectedNodeId,
+        onSelect: selectDirectoryEntity,
       });
     }
   });
@@ -135,6 +144,7 @@
     try {
       const snapshot = await architectureService.loadDirectoryGraph(path);
       directoryGraphSnapshot.set(snapshot);
+      selectedEdgeId.set(null);
       selectedNodeId.set(null);
       sourceSnippet.set(null);
     } catch (error) {
@@ -151,6 +161,7 @@
     try {
       const snapshot = await architectureService.analyzeSourceRepo();
       graphSnapshot.set(snapshot);
+      selectedEdgeId.set(null);
       selectedNodeId.set(null);
       sourceSnippet.set(null);
       resetGraphView();
@@ -163,6 +174,7 @@
   }
 
   async function selectNode(nodeId) {
+    selectedEdgeId.set(null);
     selectedNodeId.set(nodeId);
     graphError.set(null);
     try {
@@ -176,6 +188,7 @@
   function setGraphMode(mode) {
     graphMode = mode;
     selectedKind = '';
+    selectedEdgeId.set(null);
     selectedNodeId.set(null);
     sourceSnippet.set(null);
     resetGraphView();
@@ -185,6 +198,20 @@
     graphPan = { x: 0, y: 0 };
     graphZoom = 1;
     panStart = null;
+  }
+
+  function selectDirectoryEntity(selection) {
+    sourceSnippet.set(null);
+    graphError.set(null);
+
+    if (selection.kind === 'node') {
+      selectedEdgeId.set(null);
+      selectedNodeId.set(selection.id);
+      return;
+    }
+
+    selectedNodeId.set(null);
+    selectedEdgeId.set(selection.id);
   }
 
   function handleGraphWheel(event) {
@@ -408,6 +435,28 @@
       {/if}
       <h2>Analyzer</h2>
       <p>{$analysisStatus.phase}</p>
+      {#if $directoryGraphSnapshot}
+        <h2>Directory Graph</h2>
+        <p>{$directoryGraphSnapshot.nodes.length} nodes / {$directoryGraphSnapshot.edges.length} edges</p>
+        {#if selectedDirectoryNode}
+          <p>{selectedDirectoryNode.kind}: {selectedDirectoryNode.path}</p>
+        {/if}
+        {#if selectedDirectoryEdge}
+          <p>edge: {selectedDirectoryEdge.fromNodeId} -> {selectedDirectoryEdge.toNodeId}</p>
+        {/if}
+        <div class="node-list" aria-label="Directory graph nodes">
+          {#each directoryRenderGraph.nodes.slice(0, 32) as node (node.id)}
+            <button
+              type="button"
+              class:selected={$selectedNodeId === node.id}
+              onclick={() => { selectDirectoryEntity({ kind: 'node', id: node.id }); }}
+            >
+              <strong>{node.name}</strong>
+              <small>{node.kind} / {node.path}</small>
+            </button>
+          {/each}
+        </div>
+      {/if}
       {#if $graphSnapshot}
         <h2>Graph</h2>
         <p>{$graphSnapshot.generatedAt}</p>

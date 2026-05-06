@@ -16,6 +16,7 @@ export { DirectoryGraphScene } from './ThreeDirectoryGraphScene';
 export type {
   DecodedSelectionId,
   DirectoryGraphSceneOptions,
+  DirectoryGraphSceneSelection,
   DirectoryGraphSceneTheme,
   GraphEdgeKind,
   GraphNodeKind,

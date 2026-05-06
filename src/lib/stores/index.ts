@@ -4,6 +4,7 @@ export {
   directoryGraphSnapshot,
   graphError,
   graphSnapshot,
+  selectedEdgeId,
   selectedNodeId,
   sourceSnippet,
 } from './graphStore';

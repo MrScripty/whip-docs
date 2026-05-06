@@ -22,15 +22,15 @@ export const GRAPH_V0_LAYOUT_GEOMETRY = {
 
 export const GRAPH_V0_SELECTION_ID = {
   none: 0,
-  kindShift: 24,
-  indexMask: 0x00ff_ffff,
+  kindShift: 20,
+  indexMask: 0x000f_ffff,
   nodeKind: 1,
   edgeKind: 2,
-  maxIndex: 0x00ff_ffff,
+  maxIndex: 0x000f_ffff,
 } as const;
 
 export const GRAPH_V0_SELECTION_DEFAULTS = {
-  radius: 2,
+  radius: 5,
   emptyDepth: Number.POSITIVE_INFINITY,
 } as const;
 
