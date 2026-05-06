@@ -17,6 +17,7 @@ type LayoutContext = {
 
 type ResolvedLayoutOptions = Required<LayoutOptions>;
 type RadialFootprint = {
+  readonly nodeRadius: number;
   readonly radius: number;
 };
 type LayeredFootprint = {
@@ -102,7 +103,7 @@ function placeRadialNode(
   const childRingRadius = radialRingRadiusForChildFootprints(childFootprints, options);
 
   childIds.forEach((childId, childOrder) => {
-    const childAngle = childAngleForOrder(outwardAngle, childOrder, childIds.length);
+    const childAngle = childAngleForOrder(outwardAngle, childOrder, childIds.length, depth);
     const childPosition = {
       x: position.x + Math.cos(childAngle) * childRingRadius,
       y: negateOrZero((depth + 1) * options.layerSpacing),
@@ -241,8 +242,10 @@ function buildRadialFootprintMap(
     const childFootprints = childIds.map((childId) => footprint(childId));
     const childRingRadius = radialRingRadiusForChildFootprints(childFootprints, options);
     const childRadius = Math.max(0, ...childFootprints.map((childFootprint) => childFootprint.radius));
+    const nodeRadius = radiusForNodeKind(node.kind, options);
     const nodeFootprint = {
-      radius: Math.max(radiusForNodeKind(node.kind, options), childRingRadius + childRadius),
+      nodeRadius,
+      radius: Math.max(nodeRadius, childRingRadius + childRadius),
     };
 
     footprintByNodeId.set(nodeId, nodeFootprint);
@@ -306,16 +309,27 @@ function compareNodes(left: RenderGraphNode, right: RenderGraphNode): number {
   );
 }
 
-function childAngleForOrder(outwardAngle: number, order: number, childCount: number): number {
+function childAngleForOrder(outwardAngle: number, order: number, childCount: number, depth: number): number {
   if (childCount <= 1) {
     return outwardAngle;
   }
 
-  return (
-    outwardAngle +
-    GRAPH_V0_LAYOUT_GEOMETRY.radialStartAngleRadians +
-    (GRAPH_V0_LAYOUT_GEOMETRY.fullCircleRadians * order) / childCount
+  if (depth === 0) {
+    return (
+      outwardAngle +
+      GRAPH_V0_LAYOUT_GEOMETRY.radialStartAngleRadians +
+      (GRAPH_V0_LAYOUT_GEOMETRY.fullCircleRadians * order) / childCount
+    );
+  }
+
+  const branchFanRadians = clampNumber(
+    childCount * GRAPH_V0_LAYOUT_GEOMETRY.radialFanRadiansPerChild,
+    GRAPH_V0_LAYOUT_GEOMETRY.radialMinFanRadians,
+    GRAPH_V0_LAYOUT_GEOMETRY.radialMaxFanRadians,
   );
+  const fanStep = childCount > 1 ? branchFanRadians / (childCount - 1) : 0;
+
+  return outwardAngle - branchFanRadians / 2 + fanStep * order;
 }
 
 function radialRingRadiusForChildFootprints(
@@ -330,17 +344,14 @@ function radialRingRadiusForChildFootprints(
     return options.depthSpacing;
   }
 
-  const largestAdjacentSubtreeSpan =
-    Math.max(...childFootprints.map((footprint) => footprint.radius)) * 2 +
+  const largestAdjacentNodeSpan =
+    Math.max(...childFootprints.map((footprint) => footprint.nodeRadius)) * 2 +
     options.siblingSpacing;
   const minRadiusForSiblingSpacing =
-    largestAdjacentSubtreeSpan /
+    largestAdjacentNodeSpan /
     (2 * Math.sin(Math.PI / childFootprints.length));
-  const minRadiusForBranchClearance =
-    Math.max(...childFootprints.map((footprint) => footprint.radius)) +
-    options.depthSpacing;
 
-  return Math.max(options.depthSpacing, minRadiusForSiblingSpacing, minRadiusForBranchClearance);
+  return Math.max(options.depthSpacing, minRadiusForSiblingSpacing);
 }
 
 function gridColumnCount(childCount: number, options: ResolvedLayoutOptions): number {
@@ -433,4 +444,8 @@ function getKnownNode(
 
 function negateOrZero(value: number): number {
   return value === 0 ? 0 : -value;
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }

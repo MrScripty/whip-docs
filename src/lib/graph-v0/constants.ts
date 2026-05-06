@@ -17,6 +17,9 @@ export const GRAPH_V0_LAYOUT_DEFAULTS = {
 export const GRAPH_V0_LAYOUT_GEOMETRY = {
   radialStartAngleRadians: -Math.PI / 2,
   fullCircleRadians: Math.PI * 2,
+  radialMinFanRadians: Math.PI / 2,
+  radialMaxFanRadians: Math.PI * 1.35,
+  radialFanRadiansPerChild: 0.16,
 } as const;
 
 export const GRAPH_V0_SELECTION_ID = {

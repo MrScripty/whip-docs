@@ -234,6 +234,21 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### Radial Focus Framing And Dot Hotkey
+
+- Changed structural rebuild framing from full-graph bounds to a local focus
+  around the selected node, or around the graph root when no node is selected.
+- Kept full-layout bounds for camera far-plane calculation so distant branches
+  are not clipped while the visible camera target remains useful.
+- Added a `.` keyboard shortcut to center the camera on the selected 3D node,
+  falling back to the root node when no node is selected.
+- Ignored the `.` shortcut while typing in editable controls.
+- Reduced radial top-level over-expansion by spacing sibling branch centers
+  from direct child node footprints while deeper children fan outward from
+  their parent branch direction.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |

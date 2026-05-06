@@ -114,6 +114,7 @@ export class DirectoryGraphScene {
   private currentGraph: RenderGraph | null = null;
   private currentLayoutAlgorithm: string | null = null;
   private currentLayoutOptionsKey: string | null = null;
+  private currentLayoutBounds: LayoutBounds | null = null;
   private renderWidth = 1;
   private renderHeight = 1;
   private animationFrame: number | null = null;
@@ -141,6 +142,7 @@ export class DirectoryGraphScene {
     this.renderer.domElement.addEventListener('pointerup', this.handlePointerUp);
     this.renderer.domElement.addEventListener('pointercancel', this.handlePointerUp);
     this.renderer.domElement.addEventListener('contextmenu', this.handleContextMenu);
+    window.addEventListener('keydown', this.handleKeyDown);
     this.resize();
     this.animationFrame = window.requestAnimationFrame(this.render);
   }
@@ -153,20 +155,31 @@ export class DirectoryGraphScene {
       this.currentLayoutAlgorithm !== options.layoutAlgorithm ||
       this.currentLayoutOptionsKey !== layoutOptionsKey
     ) {
-      this.rebuildGraph(graph, options.layoutAlgorithm, options.layoutOptions ?? {});
+      this.rebuildGraph(
+        graph,
+        options.layoutAlgorithm,
+        options.layoutOptions ?? {},
+        options.selectedNodeId ?? graph.rootNodeId,
+      );
       this.currentLayoutOptionsKey = layoutOptionsKey;
     }
 
     this.applySceneState(options);
   }
 
-  private rebuildGraph(graph: RenderGraph, layoutAlgorithm: string, layoutOptions: LayoutOptions): void {
+  private rebuildGraph(
+    graph: RenderGraph,
+    layoutAlgorithm: string,
+    layoutOptions: LayoutOptions,
+    focusNodeId: string | null,
+  ): void {
     const layout =
       layoutAlgorithm === 'layered-grid'
         ? layoutLayeredGrid(graph, layoutOptions)
         : layoutRadialTree(graph, layoutOptions);
     this.currentGraph = graph;
     this.currentLayoutAlgorithm = layoutAlgorithm;
+    this.currentLayoutBounds = layoutBounds(layout.positions);
     this.selectionTargetById.clear();
     this.nodeEntries.clear();
     this.edgeEntries.clear();
@@ -235,7 +248,7 @@ export class DirectoryGraphScene {
       this.selectionNodeGroup.add(this.createSelectionNode(node.kind, position, selectionId));
     });
 
-    this.frameLayout(layout.positions);
+    this.frameNode(focusNodeId ?? graph.rootNodeId);
   }
 
   private applySceneState(options: DirectoryGraphSceneOptions): void {
@@ -316,6 +329,7 @@ export class DirectoryGraphScene {
     this.renderer.domElement.removeEventListener('pointerup', this.handlePointerUp);
     this.renderer.domElement.removeEventListener('pointercancel', this.handlePointerUp);
     this.renderer.domElement.removeEventListener('contextmenu', this.handleContextMenu);
+    window.removeEventListener('keydown', this.handleKeyDown);
     this.clearGroup(this.edgeGroup);
     this.clearGroup(this.nodeGroup);
     this.clearGroup(this.labelGroup);
@@ -348,9 +362,7 @@ export class DirectoryGraphScene {
     this.camera.lookAt(this.cameraTarget);
   }
 
-  private frameLayout(positions: ReadonlyMap<string, LayoutNodePosition>): void {
-    const bounds = layoutBounds(positions);
-
+  private frameBounds(bounds: LayoutBounds | null): void {
     if (!bounds) {
       this.resetCamera();
       return;
@@ -373,9 +385,50 @@ export class DirectoryGraphScene {
 
     this.cameraTarget.copy(bounds.center);
     this.camera.position.copy(bounds.center.clone().add(cameraDirection.multiplyScalar(distance)));
-    this.camera.far = Math.max(GRAPH_V0_CAMERA_DEFAULTS.far, distance + bounds.radius * 3);
+    this.camera.far = this.cameraFarForBounds(bounds, distance);
     this.camera.lookAt(this.cameraTarget);
     this.camera.updateProjectionMatrix();
+  }
+
+  private frameNode(nodeId: string): void {
+    const bounds = this.focusBoundsForNode(nodeId);
+    this.frameBounds(bounds ?? this.currentLayoutBounds);
+  }
+
+  private focusBoundsForNode(nodeId: string): LayoutBounds | null {
+    const entry = this.nodeEntries.get(nodeId);
+
+    if (!entry) {
+      return null;
+    }
+
+    const focusNodeIds = new Set([nodeId]);
+    const graphNode = this.currentGraph?.nodes.find((node) => node.id === nodeId);
+
+    if (graphNode?.parentId) {
+      focusNodeIds.add(graphNode.parentId);
+    }
+
+    for (const childId of graphNode?.childIds ?? []) {
+      focusNodeIds.add(childId);
+    }
+
+    return layoutBoundsForEntries(
+      Array.from(focusNodeIds)
+        .map((focusNodeId) => this.nodeEntries.get(focusNodeId)?.position)
+        .filter((position): position is LayoutNodePosition => position !== undefined),
+    );
+  }
+
+  private cameraFarForBounds(focusBounds: LayoutBounds, focusDistance: number): number {
+    if (!this.currentLayoutBounds) {
+      return Math.max(GRAPH_V0_CAMERA_DEFAULTS.far, focusDistance + focusBounds.radius * 3);
+    }
+
+    const fullGraphDistance =
+      this.camera.position.distanceTo(this.currentLayoutBounds.center) + this.currentLayoutBounds.radius * 2;
+
+    return Math.max(GRAPH_V0_CAMERA_DEFAULTS.far, focusDistance + focusBounds.radius * 3, fullGraphDistance);
   }
 
   private resize(): void {
@@ -669,6 +722,21 @@ export class DirectoryGraphScene {
     event.preventDefault();
   };
 
+  private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    if (event.key !== '.' || isEditableShortcutTarget(event.target)) {
+      return;
+    }
+
+    const focusNodeId = this.activeSelectedNodeId ?? this.currentGraph?.rootNodeId ?? null;
+
+    if (!focusNodeId) {
+      return;
+    }
+
+    event.preventDefault();
+    this.frameNode(focusNodeId);
+  };
+
   private selectAtPointer(event: PointerEvent): void {
     if (!this.selectionCallback) {
       return;
@@ -867,14 +935,20 @@ function stableLayoutOptionsKey(options: LayoutOptions | undefined): string {
 }
 
 function layoutBounds(positions: ReadonlyMap<string, LayoutNodePosition>): LayoutBounds | null {
-  if (positions.size === 0) {
+  return layoutBoundsForEntries(positions.values());
+}
+
+function layoutBoundsForEntries(positions: Iterable<LayoutNodePosition>): LayoutBounds | null {
+  const positionList = Array.from(positions);
+
+  if (positionList.length === 0) {
     return null;
   }
 
   const min = new Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
   const max = new Vector3(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
 
-  for (const position of positions.values()) {
+  for (const position of positionList) {
     min.x = Math.min(min.x, position.position.x - position.radius);
     min.y = Math.min(min.y, position.position.y - position.radius);
     min.z = Math.min(min.z, position.position.z - position.radius);
@@ -887,6 +961,19 @@ function layoutBounds(positions: ReadonlyMap<string, LayoutNodePosition>): Layou
   const radius = Math.max(1, max.clone().sub(center).length());
 
   return { center, radius };
+}
+
+function isEditableShortcutTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    target.isContentEditable ||
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLSelectElement ||
+    target instanceof HTMLTextAreaElement
+  );
 }
 
 function labelTexture(label: string, theme: DirectoryGraphSceneTheme): CanvasTexture {

@@ -69,6 +69,8 @@ mounts and disposes.
   full geometry rebuilds are reserved for graph or layout algorithm changes.
 - Scene controls are centralized in the scene system: left click selects,
   left drag orbits, middle/right drag pans, and Shift/Alt-left drag also pans.
+- Pressing `.` centers the 3D camera on the selected node, or the graph root
+  when no node is selected.
 
 ## Revisit Triggers
 - Layout options become persisted user settings.
