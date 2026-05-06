@@ -30,6 +30,7 @@
   const architectureService = new ArchitectureService(backend);
 
   let status = $state('Starting');
+  let backendAvailable = $state(backend.isAvailable());
   let sourceRepoPath = $state('');
   let savingSourceRepo = $state(false);
   let analyzing = $state(false);
@@ -102,18 +103,34 @@
   });
 
   async function loadInitialState() {
-    const appStatus = await backend.getAppStatus();
-    const config = await architectureService.getConfig();
-    const analyzer = await architectureService.getAnalysisStatus();
-    const snapshot = await architectureService.getGraphSnapshot();
-    status = appStatus.activeProduct;
-    appConfig.set(config);
-    analysisStatus.set(analyzer);
-    graphSnapshot.set(snapshot);
-    sourceRepoPath = config.sourceRepoPath ?? '';
+    backendAvailable = backend.isAvailable();
+    if (!backendAvailable) {
+      status = 'Tauri desktop required';
+      graphError.set(commandErrorMessage({
+        code: 'tauri_unavailable',
+        message: 'Open Whip Docs with `npm run dev:desktop`; backend commands are unavailable in a plain browser tab.',
+        recoverable: true,
+      }));
+      return;
+    }
 
-    if (config.sourceRepoPath) {
-      await loadDirectoryGraph(config.sourceRepoPath);
+    try {
+      const appStatus = await backend.getAppStatus();
+      const config = await architectureService.getConfig();
+      const analyzer = await architectureService.getAnalysisStatus();
+      const snapshot = await architectureService.getGraphSnapshot();
+      status = appStatus.activeProduct;
+      appConfig.set(config);
+      analysisStatus.set(analyzer);
+      graphSnapshot.set(snapshot);
+      sourceRepoPath = config.sourceRepoPath ?? '';
+
+      if (config.sourceRepoPath) {
+        await loadDirectoryGraph(config.sourceRepoPath);
+      }
+    } catch (error) {
+      status = 'Backend unavailable';
+      graphError.set(commandErrorMessage(error));
     }
   }
 
@@ -125,7 +142,7 @@
       appConfig.set(config);
       sourceRepoPath = config.sourceRepoPath ?? sourceRepoPath;
       if (config.sourceRepoPath) {
-        await loadDirectoryGraph(config.sourceRepoPath);
+        void loadDirectoryGraph(config.sourceRepoPath);
       }
     } catch (error) {
       sourceRepoError.set(commandErrorMessage(error));
@@ -285,15 +302,15 @@
         placeholder="/path/to/rust/repo"
         autocomplete="off"
       />
-      <button type="submit" disabled={savingSourceRepo}>Set</button>
+      <button type="submit" disabled={savingSourceRepo || !backendAvailable}>Set</button>
       <button
         type="button"
-        disabled={loadingDirectoryGraph || !sourceRepoPath.trim()}
+        disabled={loadingDirectoryGraph || !sourceRepoPath.trim() || !backendAvailable}
         onclick={() => { void loadDirectoryGraph(); }}
       >
         Load 3D
       </button>
-      <button type="button" disabled={analyzing || !$appConfig.sourceRepoPath} onclick={() => { void analyzeSourceRepo(); }}>
+      <button type="button" disabled={analyzing || !$appConfig.sourceRepoPath || !backendAvailable} onclick={() => { void analyzeSourceRepo(); }}>
         Analyze
       </button>
     </form>

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, isTauri } from '@tauri-apps/api/core';
 
 export type AppStatusDto = {
   appName: string;
@@ -148,35 +148,51 @@ export type CommandErrorDto = {
 };
 
 export class TauriArchitectureBackend {
+  isAvailable(): boolean {
+    return isTauri();
+  }
+
   async getAppStatus(): Promise<AppStatusDto> {
-    return invoke<AppStatusDto>('get_app_status');
+    return invokeTauri<AppStatusDto>('get_app_status');
   }
 
   async getAppConfig(): Promise<AppConfigDto> {
-    return invoke<AppConfigDto>('get_app_config');
+    return invokeTauri<AppConfigDto>('get_app_config');
   }
 
   async getAnalysisStatus(): Promise<AnalysisStatusDto> {
-    return invoke<AnalysisStatusDto>('get_analysis_status');
+    return invokeTauri<AnalysisStatusDto>('get_analysis_status');
   }
 
   async analyzeSourceRepo(): Promise<GraphSnapshotDto> {
-    return invoke<GraphSnapshotDto>('analyze_source_repo');
+    return invokeTauri<GraphSnapshotDto>('analyze_source_repo');
   }
 
   async loadDirectoryGraph(path: string): Promise<DirectoryGraphSnapshotDto> {
-    return invoke<DirectoryGraphSnapshotDto>('load_directory_graph', { path });
+    return invokeTauri<DirectoryGraphSnapshotDto>('load_directory_graph', { path });
   }
 
   async getGraphSnapshot(): Promise<GraphSnapshotDto | null> {
-    return invoke<GraphSnapshotDto | null>('get_graph_snapshot');
+    return invokeTauri<GraphSnapshotDto | null>('get_graph_snapshot');
   }
 
   async getSourceSnippet(nodeId: string): Promise<SourceSnippetDto> {
-    return invoke<SourceSnippetDto>('get_source_snippet', { nodeId });
+    return invokeTauri<SourceSnippetDto>('get_source_snippet', { nodeId });
   }
 
   async setSourceRepoPath(path: string): Promise<AppConfigDto> {
-    return invoke<AppConfigDto>('set_source_repo_path', { path });
+    return invokeTauri<AppConfigDto>('set_source_repo_path', { path });
   }
+}
+
+function invokeTauri<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  if (!isTauri()) {
+    return Promise.reject({
+      code: 'tauri_unavailable',
+      message: 'Open Whip Docs with `npm run dev:desktop`; backend commands are unavailable in a plain browser tab.',
+      recoverable: true,
+    } satisfies CommandErrorDto);
+  }
+
+  return invoke<T>(command, args);
 }

@@ -38,6 +38,8 @@ facts from raw filesystem paths.
 - Graph IDs are deterministic for stable source facts.
 - Source ranges are relative to validated source roots.
 - Directory graph node paths are relative to the validated repository root.
+- Directory graph traversal excludes common dependency, build, cache, and
+  virtual-environment directories before emitting nodes.
 
 ## Revisit Triggers
 - Snapshots become too large for direct Tauri IPC.

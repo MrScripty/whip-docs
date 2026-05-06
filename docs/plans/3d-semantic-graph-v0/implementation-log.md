@@ -64,6 +64,19 @@
   so graph loading does not occupy the async command path.
 - Verified with `cargo fmt` and `cargo test`.
 
+### Source Repo Load Hang Fix
+
+- Added a Tauri runtime availability guard so plain browser tabs show a clear
+  desktop-runtime message instead of waiting on unavailable backend commands.
+- Added initial-load error handling so the title moves out of `Starting` when
+  backend commands cannot run.
+- Decoupled source repository save from the first 3D graph load so Set returns
+  promptly and graph loading owns its own state.
+- Added `.venv`, Python cache, Svelte build, and build-cache directory ignores
+  to prevent local dependency trees from flooding the V0 graph.
+- Verified with `cargo fmt`, `cargo test`, `npm run lint`,
+  `npm run typecheck`, and `npm run test:frontend`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
@@ -71,3 +84,4 @@
 | 2026-05-06 | Source validation | V0 directory graph loading currently reuses `ValidatedRepoPath::parse_existing_cargo_repo`, so non-Cargo and mixed-language repositories cannot be opened even though later V0 work should support them. | Add a validated local-repository root type that does not require `Cargo.toml`, then keep the Cargo-specific validator for Rust analyzer entry points. |
 | 2026-05-06 | Frontend bundling | `npm run build` succeeds but Vite reports the main JavaScript chunk is above 500 kB after adding Three.js. | Add route-level or scene-level dynamic import/code splitting before expanding renderer dependencies further. |
 | 2026-05-06 | Renderer verification | Playwright is not installed in the repo, so automated desktop/mobile screenshot and canvas-pixel verification is not available yet. | Add a Playwright smoke test harness for the Three.js scene before expanding scene interaction and selection behavior. |
+| 2026-05-06 | Large repo loading | Pantograph contained a checked-out `.venv` with roughly 59k files; the first V0 renderer tried to load all emitted directory/file nodes and could lock the UI. | Continue expanding backend exclusion rules and add progressive/viewport-scoped rendering before attempting very large unfiltered graphs. |

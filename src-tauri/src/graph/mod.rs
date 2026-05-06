@@ -11,7 +11,20 @@ pub const DIRECTORY_GRAPH_SCHEMA_VERSION: u32 = 1;
 
 const DIRECTORY_GRAPH_ROOT_ID: &str = "repo:.";
 const DIRECTORY_GRAPH_ROOT_PATH: &str = ".";
-const IGNORED_DIRECTORY_NAMES: &[&str] = &[".git", "target", "node_modules", "dist"];
+const IGNORED_DIRECTORY_NAMES: &[&str] = &[
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".svelte-kit",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "node_modules",
+    "target",
+    "venv",
+];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -440,6 +453,8 @@ mod tests {
         let repo = unique_temp_dir("directory-fixture");
         fs::create_dir_all(repo.join("src/nested")).expect("create source dirs");
         fs::create_dir_all(repo.join("target/debug")).expect("create ignored target dir");
+        fs::create_dir_all(repo.join(".venv/lib/site-packages"))
+            .expect("create ignored virtualenv dir");
         fs::write(
             repo.join("Cargo.toml"),
             "[package]\nname = \"fixture\"\nversion = \"0.1.0\"\n",
@@ -449,6 +464,8 @@ mod tests {
         fs::write(repo.join("src/lib.rs"), "pub fn fixture() {}\n").expect("write lib");
         fs::write(repo.join("src/nested/mod.rs"), "").expect("write nested mod");
         fs::write(repo.join("target/debug/output"), "").expect("write ignored output");
+        fs::write(repo.join(".venv/lib/site-packages/package.py"), "")
+            .expect("write ignored virtualenv output");
         repo
     }
 
@@ -529,7 +546,7 @@ mod tests {
         let snapshot = DirectoryGraphBuilder::build(&validated).expect("directory graph builds");
 
         assert_eq!(snapshot.root_node_id, DIRECTORY_GRAPH_ROOT_ID);
-        assert_eq!(snapshot.excluded_path_count, 1);
+        assert_eq!(snapshot.excluded_path_count, 2);
         assert!(snapshot
             .nodes
             .iter()
