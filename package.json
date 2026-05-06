@@ -2,6 +2,7 @@
   "name": "whip-docs",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "packageManager": "npm@11.6.2",
   "engines": {
