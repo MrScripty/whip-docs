@@ -98,6 +98,22 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### Selection Response Profiling And Optimization
+
+- Profiled a Pantograph-sized V0 render graph after ignore filtering: 2,071
+  nodes and 2,070 edges.
+- Measured pure graph work as low cost: radial layout averaged about 1.4 ms,
+  layered grid averaged about 0.8 ms, and selected-node neighborhood averaged
+  about 0.5 ms.
+- Identified the slow path as full Three.js object teardown/rebuild on every
+  selection state change.
+- Split scene updates into structural rebuilds for graph/layout changes and
+  in-place style updates for selection/highlight changes.
+- Selection now restyles existing node/edge materials and recreates only the
+  active label sprites.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |

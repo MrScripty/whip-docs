@@ -53,6 +53,8 @@ Three.js object lifecycle in a scene class that Svelte mounts and disposes.
   selected nodes.
 - Selecting a node highlights the node, highlights its immediate edges, and
   labels first- and second-level connected nodes.
+- Selection/highlight changes restyle existing Three.js objects in place;
+  full geometry rebuilds are reserved for graph or layout algorithm changes.
 - Scene controls are centralized in the scene system: left click selects,
   left drag orbits, middle/right drag pans, and Shift/Alt-left drag also pans.
 
