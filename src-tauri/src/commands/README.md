@@ -6,7 +6,7 @@ This directory contains Tauri command adapters and command-facing DTOs.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `mod.rs` | App state, app status, app config, analyzer status, graph analysis/snapshot commands, source snippet lookup, source repo path commands, and command error DTO. |
+| `mod.rs` | App state, app status, app config, analyzer status, V0 directory graph loading, graph analysis/snapshot commands, source snippet lookup, source repo path commands, and command error DTO. |
 
 ## Problem
 Frontend IPC needs a stable Rust boundary while backend services retain
@@ -20,6 +20,9 @@ ownership of repository configuration, graph snapshots, and analyzer lifecycle.
 ## Decision
 Keep command registration and DTO projection here, and move durable behavior
 into `config`, `graph`, `source`, or `analyzer` modules.
+
+Commands may expose a frontend-facing graph operation, but the graph facts still
+come from backend modules after source path validation.
 
 ## Alternatives Rejected
 - Let frontend services construct local source paths: rejected by path security
@@ -55,11 +58,20 @@ pub fn get_app_status(state: tauri::State<'_, std::sync::Arc<AppState>>) -> AppS
         shutdown_requested: state.shutdown_requested(),
     }
 }
+
+#[tauri::command]
+pub fn load_directory_graph(
+    path: String,
+    state: tauri::State<'_, std::sync::Arc<AppState>>,
+) -> Result<DirectoryGraphSnapshotDto, CommandErrorDto> {
+    state.load_directory_graph(path)
+}
 ```
 
 ## API Consumer Contract
 - Inputs: Tauri invoke payloads and managed app state.
-- Outputs: serde DTOs returned to the frontend adapter.
+- Outputs: serde DTOs returned to the frontend adapter, including V0 directory
+  graph snapshots.
 - Lifecycle: commands may request work but do not own app shutdown; app state
   delegates shutdown cleanup to backend services.
 - Errors: recoverable failures return structured command errors once error DTOs

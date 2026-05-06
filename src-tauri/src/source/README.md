@@ -1,8 +1,8 @@
 # src-tauri/src/source
 
 ## Purpose
-This directory will own validated local repository paths and source snippet
-lookup by backend graph node ID.
+This directory owns validated local repository paths and source snippet lookup
+by backend graph node ID.
 
 ## Contents
 | File/Folder | Description |
@@ -35,6 +35,7 @@ handlers and analyzer modules consume trusted types.
 
 ## Revisit Triggers
 - Non-Cargo roots are supported.
+- Directory graph V0 needs to open non-Rust or mixed-language repositories.
 - Multiple source roots are configured.
 - Snippet lookup needs cached file content.
 

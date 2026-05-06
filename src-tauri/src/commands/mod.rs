@@ -5,7 +5,7 @@ use tokio::sync::RwLock;
 
 use crate::analyzer::{AnalysisStatusDto, RustAnalyzerService, RustGraphExtractor};
 use crate::config::{AppConfigDto, ConfigStore, SourceRepoStatusDto};
-use crate::graph::GraphSnapshotDto;
+use crate::graph::{DirectoryGraphBuilder, DirectoryGraphSnapshotDto, GraphSnapshotDto};
 use crate::source::ValidatedRepoPath;
 
 pub struct AppState {
@@ -144,6 +144,17 @@ impl AppState {
         Ok(snapshot)
     }
 
+    pub fn load_directory_graph(
+        &self,
+        raw_path: String,
+    ) -> Result<DirectoryGraphSnapshotDto, CommandErrorDto> {
+        let source_repo = ValidatedRepoPath::parse_existing_cargo_repo(&raw_path)
+            .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
+
+        DirectoryGraphBuilder::build(&source_repo)
+            .map_err(|error| CommandErrorDto::internal(error.to_string()))
+    }
+
     pub async fn shutdown_services(&self) -> Result<(), CommandErrorDto> {
         self.analyzer_service
             .shutdown()
@@ -247,6 +258,14 @@ pub async fn analyze_source_repo(
     state: tauri::State<'_, std::sync::Arc<AppState>>,
 ) -> Result<GraphSnapshotDto, CommandErrorDto> {
     state.analyze_source_repo().await
+}
+
+#[tauri::command]
+pub fn load_directory_graph(
+    path: String,
+    state: tauri::State<'_, std::sync::Arc<AppState>>,
+) -> Result<DirectoryGraphSnapshotDto, CommandErrorDto> {
+    state.load_directory_graph(path)
 }
 
 #[tauri::command]
@@ -398,6 +417,34 @@ mod tests {
         assert_eq!(state.graph_snapshot().await, Some(snapshot));
 
         fs::remove_dir_all(app_dir).expect("cleanup app dir");
+        fs::remove_dir_all(repo_dir).expect("cleanup repo dir");
+    }
+
+    #[tokio::test]
+    async fn app_state_loads_directory_graph_without_running_analyzer() {
+        let app_dir = unique_temp_dir("directory-graph-app");
+        let repo_dir = unique_temp_dir("directory-graph-repo");
+        fs::create_dir_all(repo_dir.join("src")).expect("create repo src");
+        fs::write(
+            repo_dir.join("Cargo.toml"),
+            "[package]\nname = \"fixture\"\nversion = \"0.1.0\"\n",
+        )
+        .expect("write manifest");
+        fs::write(repo_dir.join("src/lib.rs"), "pub fn fixture() {}\n").expect("write source");
+        let store = ConfigStore::new(&app_dir);
+        let state = AppState::new(store, AppConfigDto::default());
+
+        let snapshot = state
+            .load_directory_graph(repo_dir.to_string_lossy().into_owned())
+            .expect("load directory graph");
+
+        assert!(snapshot.nodes.iter().any(|node| node.id == "dir:src"));
+        assert!(snapshot
+            .edges
+            .iter()
+            .any(|edge| edge.from_node_id == "repo:." && edge.to_node_id == "dir:src"));
+        assert_eq!(state.graph_snapshot().await, None);
+
         fs::remove_dir_all(repo_dir).expect("cleanup repo dir");
     }
 

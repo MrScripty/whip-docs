@@ -27,6 +27,7 @@ pub fn run_app() -> AppStartupResult<()> {
             commands::get_app_config,
             commands::get_analysis_status,
             commands::analyze_source_repo,
+            commands::load_directory_graph,
             commands::get_graph_snapshot,
             commands::get_source_snippet,
             commands::set_source_repo_path
