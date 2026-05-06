@@ -163,6 +163,21 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### Selection Index Performance Measurement
+
+- Ran a focused Node measurement against a deterministic 2,071-node /
+  2,070-edge graph shape matching the current filtered Pantograph V0 graph
+  scale.
+- Measured `buildSelectionIndex` at about 1.91 ms average over 500 iterations.
+- Measured indexed `selectionNeighborhood` at about 0.002 ms average over 500
+  iterations.
+- Measured `selectionStateForNode` plus `diffSelectionState` at about 0.008 ms
+  average over 500 iterations.
+- Confirmed selection lookup is now orders of magnitude below the previous
+  roughly 0.5 ms full-scan neighborhood measurement for the same graph scale.
+- Browser-level scene timing still needs Playwright or an in-app dev profiler;
+  the existing renderer verification issue remains open for that harness.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
@@ -171,4 +186,4 @@
 | 2026-05-06 | Frontend bundling | `npm run build` succeeds but Vite reports the main JavaScript chunk is above 500 kB after adding Three.js. | Add route-level or scene-level dynamic import/code splitting before expanding renderer dependencies further. |
 | 2026-05-06 | Renderer verification | Playwright is not installed in the repo, so automated desktop/mobile screenshot and canvas-pixel verification is not available yet. | Add a Playwright smoke test harness for the Three.js scene before expanding scene interaction and selection behavior. |
 | 2026-05-06 | Large repo loading | Pantograph contained a checked-out `.venv` with roughly 59k files; the first V0 renderer tried to load all emitted directory/file nodes and could lock the UI. | Continue expanding backend exclusion rules and add progressive/viewport-scoped rendering before attempting very large unfiltered graphs. |
-| 2026-05-06 | Selection scaling | Selection currently has optimized scene reuse, but the next scale target still needs a dedicated graph relationship index and selection-state diff so future symbol layers do not depend on repeated full graph scans. | Implement `selection-index-plan.md` before adding function, struct, impl, or call/reference relationship layers. |
+| 2026-05-06 | Selection scaling | Selection previously had optimized scene reuse, but the next scale target still needed a dedicated graph relationship index and selection-state diff so future symbol layers would not depend on repeated full graph scans. | V0 directory/file selection lookup is resolved by `selectionIndex.ts` and scene diff styling; revisit when function, struct, impl, or call/reference relationship layers are added. |

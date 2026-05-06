@@ -174,6 +174,18 @@ Verification:
 - Tests cover index construction, neighborhood lookup, and diff behavior.
 - The implementation log records verification and any new issues.
 
+## Implementation Status
+
+Completed on 2026-05-06 for the V0 directory/file graph:
+- `selectionIndex.ts` owns the derived graph relationship index.
+- `App.svelte` builds the selection index only when the render graph changes.
+- `ThreeDirectoryGraphScene` keeps scene-owned active selection state and
+  applies selection-state diffs for selection-only updates.
+- Frontend unit tests cover index construction, neighborhood lookup, and
+  selection-state diff behavior.
+- The implementation log records validation and focused selection performance
+  measurements.
+
 ## Standards Compliance Check
 
 | Standard | Requirement Applied | Plan Response |
