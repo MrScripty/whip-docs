@@ -1,0 +1,80 @@
+# src/lib/graph-v0
+
+## Purpose
+This directory owns pure frontend helpers for the V0 3D directory/file graph
+projection.
+
+## Contents
+| File/Folder | Description |
+|-------------|-------------|
+| `types.ts` | Render-facing graph, layout, vector, and ID-map selection types. |
+| `constants.ts` | Centralized layout geometry and selection constants. |
+| `layouts.ts` | Deterministic directory/file graph layout algorithms. |
+| `selection.ts` | ID-map selection encoding, decoding, and sampled hit testing. |
+| `*.test.ts` | Node test coverage for layout determinism and selection behavior. |
+| `index.ts` | Public exports for graph V0 helpers. |
+
+## Problem
+The Three.js scene needs deterministic layout and selection behavior without
+letting Svelte components or renderer code invent graph facts.
+
+## Constraints
+- Helpers are pure TypeScript and do not import Three.js or Svelte.
+- Backend graph snapshots remain the source of graph truth.
+- Layout algorithms must be deterministic for equivalent graph inputs.
+- Selection helpers operate on renderer-provided ID/depth buffers only.
+
+## Decision
+Keep layout and ID-map selection as tested pure helpers before wiring them into
+the Three.js scene system.
+
+## Alternatives Rejected
+- Put layout math inside Svelte components: rejected because component state and
+  graph projection math would become coupled.
+- Put layout math inside Three.js object classes: rejected because algorithms
+  must be testable without a WebGL renderer.
+
+## Invariants
+- Layout helpers return positions keyed by stable backend node IDs.
+- Child ordering is deterministic and sorts directories before files.
+- ID-map selection gives visible nodes priority over visible edges, then uses
+  depth and distance as tie breakers.
+
+## Revisit Triggers
+- Layout options become persisted user settings.
+- Directory/file graph rendering starts using semantic edges.
+- ID-map selection needs multi-hit inspection instead of a single best hit.
+
+## Dependencies
+**Internal:** backend directory graph DTO shape after frontend adapter
+normalization.
+**External:** TypeScript and Node test runner.
+
+## Related ADRs
+- None identified as of 2026-05-06.
+- Reason: this is V0 renderer support code under the existing Tauri/Svelte
+  architecture direction.
+- Revisit trigger: renderer abstraction or graph API contract is frozen.
+
+## Usage Examples
+```ts
+import { layoutRadialTree, selectFromIdMap } from './graph-v0';
+```
+
+## API Consumer Contract
+- Inputs: render graph snapshots normalized from backend-owned graph data.
+- Outputs: deterministic layout positions and selection hits.
+- Lifecycle: helpers have no subscriptions, timers, or renderer resources.
+- Errors: invalid graph roots or out-of-range selection IDs throw immediately.
+- Compatibility: exported type changes must update scene, store, and tests in
+  the same slice.
+
+## Structured Producer Contract
+- Stable fields: layout node positions include node ID, position, radius, depth,
+  and order.
+- Defaults: layout and selection defaults live in `constants.ts`.
+- Enum semantics: node and edge kind labels mirror the backend V0 graph
+  contract after adapter normalization.
+- Compatibility: add fields where possible; breaking return shape changes need
+  coordinated renderer updates.
+- Regeneration or migration: no generated artifacts are produced here.

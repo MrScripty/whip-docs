@@ -11,6 +11,7 @@ owning Tauri transport or backend analysis policy.
 | `stores/` | Svelte stores for transient view state. |
 | `components/` | Shared presentation components. |
 | `services/` | Frontend service facades over backend adapters. |
+| `graph-v0/` | Pure layout and ID-map selection helpers for the V0 3D directory/file graph. |
 
 ## Problem
 Frontend helpers need discoverable boundaries so parsing, transport, rendering,
@@ -33,6 +34,8 @@ as the analyzer UI grows.
 
 ## Invariants
 - `api/` contains contract helpers, not command execution.
+- `graph-v0/` contains pure projection helpers, not Three.js objects or Svelte
+  components.
 - `stores/` owns only transient UI state.
 - `services/` delegates backend communication to `backends/`.
 
@@ -67,4 +70,3 @@ export * from './api';
 - Stable fields: none currently produced from this directory.
 - Reason: current files are scaffold exports only.
 - Revisit trigger: saved view settings or graph layout metadata are introduced.
-

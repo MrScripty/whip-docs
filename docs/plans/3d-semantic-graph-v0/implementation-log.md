@@ -12,6 +12,17 @@
 - Updated backend module READMEs for the graph, command, and source boundaries.
 - Verified with `cargo fmt` and `cargo test`.
 
+### Frontend Graph Helper Foundation
+
+- Added pure TypeScript render graph, layout, vector, and ID-map selection
+  types.
+- Added deterministic radial tree and layered grid layout helpers.
+- Added selection ID encode/decode helpers and sampled ID-map hit testing with
+  node-over-edge, depth, and distance ordering.
+- Documented the `src/lib/graph-v0` boundary.
+- Verified with `npm run lint`, `npm run typecheck`, and
+  `npm run test:frontend`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
