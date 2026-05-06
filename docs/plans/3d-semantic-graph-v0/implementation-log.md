@@ -23,8 +23,22 @@
 - Verified with `npm run lint`, `npm run typecheck`, and
   `npm run test:frontend`.
 
+### First Visible 3D Directory Graph
+
+- Added the frontend `load_directory_graph` adapter and service method.
+- Added directory graph snapshot state separate from analyzer graph state.
+- Added a DTO adapter from backend directory graph snapshots to V0 render graph
+  data.
+- Added a direct Three.js scene system mounted by Svelte for V0 directory/file
+  graph rendering.
+- Added layout selection between radial tree and layered grid.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
 | ---- | ---- | ----- | --------- |
 | 2026-05-06 | Source validation | V0 directory graph loading currently reuses `ValidatedRepoPath::parse_existing_cargo_repo`, so non-Cargo and mixed-language repositories cannot be opened even though later V0 work should support them. | Add a validated local-repository root type that does not require `Cargo.toml`, then keep the Cargo-specific validator for Rust analyzer entry points. |
+| 2026-05-06 | Frontend bundling | `npm run build` succeeds but Vite reports the main JavaScript chunk is above 500 kB after adding Three.js. | Add route-level or scene-level dynamic import/code splitting before expanding renderer dependencies further. |
+| 2026-05-06 | Renderer verification | Playwright is not installed in the repo, so automated desktop/mobile screenshot and canvas-pixel verification is not available yet. | Add a Playwright smoke test harness for the Three.js scene before expanding scene interaction and selection behavior. |

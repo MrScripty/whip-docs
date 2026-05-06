@@ -104,6 +104,35 @@ export type GraphSnapshotDto = {
   diagnostics: GraphDiagnosticDto[];
 };
 
+export type DirectoryGraphNodeKind = 'repo' | 'directory' | 'file';
+
+export type DirectoryGraphEdgeKind = 'tree';
+
+export type DirectoryGraphNodeDto = {
+  id: string;
+  kind: DirectoryGraphNodeKind;
+  name: string;
+  path: string;
+  parentId: string | null;
+  childIds: string[];
+  expanded: boolean;
+};
+
+export type DirectoryGraphEdgeDto = {
+  id: string;
+  kind: DirectoryGraphEdgeKind;
+  fromNodeId: string;
+  toNodeId: string;
+};
+
+export type DirectoryGraphSnapshotDto = {
+  schemaVersion: number;
+  rootNodeId: string;
+  nodes: DirectoryGraphNodeDto[];
+  edges: DirectoryGraphEdgeDto[];
+  excludedPathCount: number;
+};
+
 export type SourceSnippetDto = {
   nodeId: string;
   path: string;
@@ -133,6 +162,10 @@ export class TauriArchitectureBackend {
 
   async analyzeSourceRepo(): Promise<GraphSnapshotDto> {
     return invoke<GraphSnapshotDto>('analyze_source_repo');
+  }
+
+  async loadDirectoryGraph(path: string): Promise<DirectoryGraphSnapshotDto> {
+    return invoke<DirectoryGraphSnapshotDto>('load_directory_graph', { path });
   }
 
   async getGraphSnapshot(): Promise<GraphSnapshotDto | null> {

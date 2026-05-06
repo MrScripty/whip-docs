@@ -8,7 +8,7 @@ This directory will contain Svelte stores for transient architecture-view state.
 |-------------|-------------|
 | `analysisStore.ts` | Transient frontend projection of backend analyzer lifecycle status. |
 | `configStore.ts` | Transient frontend projection of backend app config and source path errors. |
-| `graphStore.ts` | Transient frontend projection of the latest backend graph snapshot, selected node, source snippet, and analysis errors. |
+| `graphStore.ts` | Transient frontend projection of the latest V0 directory graph snapshot, analyzer graph snapshot, selected node, source snippet, and graph errors. |
 | `index.ts` | Public store export point. |
 
 ## Problem
@@ -52,7 +52,7 @@ services/adapters.
 
 ## Usage Examples
 ```ts
-import { appConfig, graphSnapshot } from './stores';
+import { appConfig, directoryGraphSnapshot, graphSnapshot } from './stores';
 ```
 
 ## API Consumer Contract
@@ -66,7 +66,8 @@ import { appConfig, graphSnapshot } from './stores';
 ## Structured Producer Contract
 - Stable fields: stores expose frontend projections of backend DTOs but do not
   persist them.
-- Defaults: graph snapshot defaults to `null` until backend analysis succeeds.
+- Defaults: graph snapshots default to `null` until backend graph loading or
+  analysis succeeds.
 - Enum semantics: analyzer and graph enum labels are backend-owned strings.
 - Compatibility: store export changes require dependent component updates.
 - Regeneration or migration: no generated store artifacts exist.

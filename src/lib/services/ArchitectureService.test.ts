@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { commandErrorMessage } from './ArchitectureService.ts';
+import type { DirectoryGraphSnapshotDto } from '../../backends/TauriArchitectureBackend.ts';
+import { ArchitectureService, commandErrorMessage } from './ArchitectureService.ts';
 
 test('commandErrorMessage preserves backend validation message', () => {
   const message = commandErrorMessage({
@@ -17,3 +18,25 @@ test('commandErrorMessage handles unknown transport failure', () => {
   assert.equal(commandErrorMessage({}), 'Request failed');
 });
 
+test('loadDirectoryGraph trims the path before delegating to backend', async () => {
+  const calls: string[] = [];
+  const snapshot: DirectoryGraphSnapshotDto = {
+    schemaVersion: 1,
+    rootNodeId: 'repo:.',
+    nodes: [],
+    edges: [],
+    excludedPathCount: 0,
+  };
+  const backend = {
+    loadDirectoryGraph(path: string): Promise<DirectoryGraphSnapshotDto> {
+      calls.push(path);
+      return Promise.resolve(snapshot);
+    },
+  };
+  const service = new ArchitectureService(backend as never);
+
+  const result = await service.loadDirectoryGraph('  /tmp/example  ');
+
+  assert.equal(result, snapshot);
+  assert.deepEqual(calls, ['/tmp/example']);
+});

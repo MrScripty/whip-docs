@@ -11,8 +11,13 @@
     projectGraph,
   } from './lib/services';
   import {
+    DirectoryGraphScene,
+    directorySnapshotToRenderGraph,
+  } from './lib/graph-v0';
+  import {
     analysisStatus,
     appConfig,
+    directoryGraphSnapshot,
     graphError,
     graphSnapshot,
     selectedNodeId,
@@ -27,12 +32,21 @@
   let sourceRepoPath = $state('');
   let savingSourceRepo = $state(false);
   let analyzing = $state(false);
+  let loadingDirectoryGraph = $state(false);
   let graphQuery = $state('');
   let selectedKind = $state('');
   let graphMode = $state('architecture');
+  let directoryLayoutAlgorithm = $state('radial-tree');
   let graphPan = $state({ x: 0, y: 0 });
   let graphZoom = $state(1);
   let panStart = $state(null);
+  /** @type {HTMLDivElement | null} */
+  let directoryGraphMount = $state(null);
+  /** @type {DirectoryGraphScene | null} */
+  let directoryGraphScene = null;
+  let directoryRenderGraph = $derived(
+    $directoryGraphSnapshot ? directorySnapshotToRenderGraph($directoryGraphSnapshot) : null,
+  );
   let displayGraph = $derived(
     $graphSnapshot
       ? projectGraph($graphSnapshot.nodes, $graphSnapshot.edges, graphMode)
@@ -52,7 +66,33 @@
     $graphSnapshot ? buildGraphLayout(visibleNodes, displayGraph.edges) : null,
   );
 
-  onMount(async () => {
+  $effect(() => {
+    if (!directoryGraphMount) {
+      directoryGraphScene?.dispose();
+      directoryGraphScene = null;
+      return;
+    }
+
+    directoryGraphScene ??= new DirectoryGraphScene(directoryGraphMount);
+
+    if (directoryRenderGraph) {
+      directoryGraphScene.updateGraph(directoryRenderGraph, {
+        layoutAlgorithm: directoryLayoutAlgorithm,
+        selectedNodeId: $selectedNodeId,
+      });
+    }
+  });
+
+  onMount(() => {
+    void loadInitialState();
+
+    return () => {
+      directoryGraphScene?.dispose();
+      directoryGraphScene = null;
+    };
+  });
+
+  async function loadInitialState() {
     const appStatus = await backend.getAppStatus();
     const config = await architectureService.getConfig();
     const analyzer = await architectureService.getAnalysisStatus();
@@ -62,7 +102,11 @@
     analysisStatus.set(analyzer);
     graphSnapshot.set(snapshot);
     sourceRepoPath = config.sourceRepoPath ?? '';
-  });
+
+    if (config.sourceRepoPath) {
+      await loadDirectoryGraph(config.sourceRepoPath);
+    }
+  }
 
   async function saveSourceRepoPath() {
     savingSourceRepo = true;
@@ -71,10 +115,33 @@
       const config = await architectureService.setSourceRepoPath(sourceRepoPath);
       appConfig.set(config);
       sourceRepoPath = config.sourceRepoPath ?? sourceRepoPath;
+      if (config.sourceRepoPath) {
+        await loadDirectoryGraph(config.sourceRepoPath);
+      }
     } catch (error) {
       sourceRepoError.set(commandErrorMessage(error));
     } finally {
       savingSourceRepo = false;
+    }
+  }
+
+  async function loadDirectoryGraph(path = sourceRepoPath) {
+    if (!path.trim()) {
+      return;
+    }
+
+    loadingDirectoryGraph = true;
+    graphError.set(null);
+    try {
+      const snapshot = await architectureService.loadDirectoryGraph(path);
+      directoryGraphSnapshot.set(snapshot);
+      selectedNodeId.set(null);
+      sourceSnippet.set(null);
+    } catch (error) {
+      directoryGraphSnapshot.set(null);
+      graphError.set(commandErrorMessage(error));
+    } finally {
+      loadingDirectoryGraph = false;
     }
   }
 
@@ -192,6 +259,13 @@
         autocomplete="off"
       />
       <button type="submit" disabled={savingSourceRepo}>Set</button>
+      <button
+        type="button"
+        disabled={loadingDirectoryGraph || !sourceRepoPath.trim()}
+        onclick={() => { void loadDirectoryGraph(); }}
+      >
+        Load 3D
+      </button>
       <button type="button" disabled={analyzing || !$appConfig.sourceRepoPath} onclick={() => { void analyzeSourceRepo(); }}>
         Analyze
       </button>
@@ -200,6 +274,23 @@
 
   <section class="workspace" aria-label="Architecture graph workspace">
     <div class="graph-surface">
+      {#if $directoryGraphSnapshot && directoryRenderGraph}
+        <div class="graph-summary" aria-label="Directory graph summary">
+          <span>{$directoryGraphSnapshot.nodes.length} nodes</span>
+          <span>{$directoryGraphSnapshot.edges.length} edges</span>
+          <span>{$directoryGraphSnapshot.excludedPathCount} excluded</span>
+          <select bind:value={directoryLayoutAlgorithm} aria-label="3D graph layout">
+            <option value="radial-tree">Radial tree</option>
+            <option value="layered-grid">Layered grid</option>
+          </select>
+        </div>
+        <div
+          class="directory-scene-frame"
+          bind:this={directoryGraphMount}
+          aria-label="3D directory and file graph"
+          role="img"
+        ></div>
+      {/if}
       {#if $graphSnapshot}
         <div class="graph-summary" aria-label="Graph summary">
           <span>{$graphSnapshot.nodes.length} nodes</span>
@@ -297,7 +388,9 @@
           <div class="empty-graph">No nodes match the current filters.</div>
         {/if}
       {:else}
-        <div class="empty-graph">Set a local Rust repository and run analysis.</div>
+        {#if !$directoryGraphSnapshot}
+          <div class="empty-graph">Set a local Rust repository and load the 3D graph.</div>
+        {/if}
       {/if}
     </div>
     <aside class="inspector">

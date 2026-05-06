@@ -2,6 +2,7 @@ import type {
   AppConfigDto,
   AnalysisStatusDto,
   CommandErrorDto,
+  DirectoryGraphSnapshotDto,
   GraphSnapshotDto,
   SourceSnippetDto,
 } from '../../backends/TauriArchitectureBackend';
@@ -24,6 +25,10 @@ export class ArchitectureService {
 
   analyzeSourceRepo(): Promise<GraphSnapshotDto> {
     return this.backend.analyzeSourceRepo();
+  }
+
+  loadDirectoryGraph(path: string): Promise<DirectoryGraphSnapshotDto> {
+    return this.backend.loadDirectoryGraph(path.trim());
   }
 
   getGraphSnapshot(): Promise<GraphSnapshotDto | null> {

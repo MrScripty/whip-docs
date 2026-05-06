@@ -7,7 +7,7 @@ method calls into Tauri command invocations.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `TauriArchitectureBackend.ts` | Tauri adapter for app status, app config, analyzer status, graph snapshot, source snippet, analysis, and source repository path commands. |
+| `TauriArchitectureBackend.ts` | Tauri adapter for app status, app config, analyzer status, V0 directory graph loading, graph snapshot, source snippet, analysis, and source repository path commands. |
 
 ## Problem
 Svelte components need backend data, but direct `invoke(...)` calls spread IPC
@@ -50,6 +50,7 @@ wire normalization here, then let services/components depend on typed methods.
 ```ts
 const backend = new TauriArchitectureBackend();
 const status = await backend.getAppStatus();
+const directoryGraph = await backend.loadDirectoryGraph('/path/to/repo');
 ```
 
 ## API Consumer Contract

@@ -9,8 +9,10 @@ projection.
 |-------------|-------------|
 | `types.ts` | Render-facing graph, layout, vector, and ID-map selection types. |
 | `constants.ts` | Centralized layout geometry and selection constants. |
+| `adapters.ts` | Directory graph DTO to render graph normalization. |
 | `layouts.ts` | Deterministic directory/file graph layout algorithms. |
 | `selection.ts` | ID-map selection encoding, decoding, and sampled hit testing. |
+| `ThreeDirectoryGraphScene.ts` | Direct Three.js scene system for the V0 directory/file graph. |
 | `*.test.ts` | Node test coverage for layout determinism and selection behavior. |
 | `index.ts` | Public exports for graph V0 helpers. |
 
@@ -19,14 +21,17 @@ The Three.js scene needs deterministic layout and selection behavior without
 letting Svelte components or renderer code invent graph facts.
 
 ## Constraints
-- Helpers are pure TypeScript and do not import Three.js or Svelte.
+- Layout, adapter, and selection helpers are pure TypeScript and do not import
+  Three.js or Svelte.
+- The scene system may import Three.js directly but must not depend on Svelte
+  components.
 - Backend graph snapshots remain the source of graph truth.
 - Layout algorithms must be deterministic for equivalent graph inputs.
 - Selection helpers operate on renderer-provided ID/depth buffers only.
 
 ## Decision
-Keep layout and ID-map selection as tested pure helpers before wiring them into
-the Three.js scene system.
+Keep layout, DTO adaptation, and ID-map selection as tested pure helpers. Keep
+Three.js object lifecycle in a scene class that Svelte mounts and disposes.
 
 ## Alternatives Rejected
 - Put layout math inside Svelte components: rejected because component state and
@@ -39,6 +44,8 @@ the Three.js scene system.
 - Child ordering is deterministic and sorts directories before files.
 - ID-map selection gives visible nodes priority over visible edges, then uses
   depth and distance as tie breakers.
+- Three.js renderer resources are disposed by the scene class, not Svelte
+  component code.
 
 ## Revisit Triggers
 - Layout options become persisted user settings.
@@ -58,7 +65,7 @@ normalization.
 
 ## Usage Examples
 ```ts
-import { layoutRadialTree, selectFromIdMap } from './graph-v0';
+import { DirectoryGraphScene, layoutRadialTree, selectFromIdMap } from './graph-v0';
 ```
 
 ## API Consumer Contract

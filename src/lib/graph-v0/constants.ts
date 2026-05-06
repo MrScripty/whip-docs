@@ -38,3 +38,30 @@ export const GRAPH_V0_SELECTION_PRIORITY = {
   node: 0,
   edge: 1,
 } as const;
+
+export const GRAPH_V0_SCENE_THEME = {
+  background: 0xf6f7f9,
+  edge: 0x8b96a5,
+  repo: 0x1f6f8b,
+  directory: 0x5b7f58,
+  file: 0xb66f2a,
+  selected: 0x113b5c,
+  highlighted: 0xf2c14e,
+} as const;
+
+export const GRAPH_V0_CAMERA_DEFAULTS = {
+  fieldOfView: 45,
+  near: 0.1,
+  far: 2000,
+  positionX: 0,
+  positionY: 34,
+  positionZ: 58,
+} as const;
+
+export const GRAPH_V0_INTERACTION_DEFAULTS = {
+  minCameraDistance: 14,
+  maxCameraDistance: 180,
+  wheelZoomFactor: 0.0016,
+  rotateFactor: 0.006,
+  panFactor: 0.038,
+} as const;

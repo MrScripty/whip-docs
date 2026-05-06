@@ -30,6 +30,22 @@ export type RenderGraph = {
   readonly edges: readonly RenderGraphEdge[];
 };
 
+export type DirectoryGraphSceneTheme = {
+  readonly background: number;
+  readonly edge: number;
+  readonly repo: number;
+  readonly directory: number;
+  readonly file: number;
+  readonly selected: number;
+  readonly highlighted: number;
+};
+
+export type DirectoryGraphSceneOptions = {
+  readonly layoutAlgorithm: LayoutAlgorithmId;
+  readonly selectedNodeId?: string | null;
+  readonly highlightedNodeIds?: readonly string[];
+};
+
 export type LayoutAlgorithmId = 'radial-tree' | 'layered-grid';
 
 export type LayoutOptions = Partial<{
