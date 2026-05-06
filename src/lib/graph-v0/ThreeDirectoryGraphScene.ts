@@ -2,6 +2,7 @@ import {
   AmbientLight,
   BoxGeometry,
   BufferGeometry,
+  CanvasTexture,
   Color,
   CylinderGeometry,
   DirectionalLight,
@@ -15,6 +16,9 @@ import {
   PerspectiveCamera,
   Scene,
   SphereGeometry,
+  Sprite,
+  SpriteMaterial,
+  type Texture,
   Vector2,
   Vector3,
   WebGLRenderTarget,
@@ -24,6 +28,7 @@ import {
 } from 'three';
 import {
   GRAPH_V0_CAMERA_DEFAULTS,
+  GRAPH_V0_DEPTH_STYLE_DEFAULTS,
   GRAPH_V0_INTERACTION_DEFAULTS,
   GRAPH_V0_SCENE_THEME,
 } from './constants';
@@ -62,6 +67,7 @@ export class DirectoryGraphScene {
   private readonly renderer = new WebGLRenderer({ antialias: true });
   private readonly nodeGroup = new Group();
   private readonly edgeGroup = new Group();
+  private readonly labelGroup = new Group();
   private readonly selectionScene = new Scene();
   private readonly selectionNodeGroup = new Group();
   private readonly selectionEdgeGroup = new Group();
@@ -83,7 +89,7 @@ export class DirectoryGraphScene {
     this.selectionTarget.texture.colorSpace = NoColorSpace;
     this.selectionScene.background = new Color(0x000000);
     this.container.append(this.renderer.domElement);
-    this.scene.add(this.edgeGroup, this.nodeGroup);
+    this.scene.add(this.edgeGroup, this.nodeGroup, this.labelGroup);
     this.selectionScene.add(this.selectionEdgeGroup, this.selectionNodeGroup);
     this.addLighting();
     this.resetCamera();
@@ -113,6 +119,7 @@ export class DirectoryGraphScene {
 
     this.clearGroup(this.edgeGroup);
     this.clearGroup(this.nodeGroup);
+    this.clearGroup(this.labelGroup);
     this.clearGroup(this.selectionEdgeGroup);
     this.clearGroup(this.selectionNodeGroup);
 
@@ -144,10 +151,13 @@ export class DirectoryGraphScene {
 
       const selected = node.id === selectedNodeId;
       const highlighted = highlightedNodeIds.has(node.id);
-      const mesh = this.createNode(node.kind, selected, highlighted);
+      const mesh = this.createNode(node.kind, position.depth, selected, highlighted);
       mesh.position.set(position.position.x, position.position.y, position.position.z);
       mesh.userData = { nodeId: node.id, nodePath: node.path };
       this.nodeGroup.add(mesh);
+      if (shouldLabelNode(node.kind, position.depth, selected, highlighted)) {
+        this.labelGroup.add(this.createLabel(node.name, position, selected));
+      }
       const selectionId = encodeSelectionId('node', nodeIndex);
       this.selectionTargetById.set(selectionId, {
         kind: 'node',
@@ -172,6 +182,7 @@ export class DirectoryGraphScene {
     this.renderer.domElement.removeEventListener('pointercancel', this.handlePointerUp);
     this.clearGroup(this.edgeGroup);
     this.clearGroup(this.nodeGroup);
+    this.clearGroup(this.labelGroup);
     this.clearGroup(this.selectionEdgeGroup);
     this.clearGroup(this.selectionNodeGroup);
     this.selectionTarget.dispose();
@@ -217,14 +228,19 @@ export class DirectoryGraphScene {
   };
 
   private createEdge(source: LayoutNodePosition, target: LayoutNodePosition, selected: boolean): Line {
+    const depth = Math.max(source.depth, target.depth);
+    const opacity = selected ? 0.92 : opacityForDepth(depth) * 0.58;
+    const color = selected
+      ? this.theme.selected
+      : new Color(this.theme.edge).lerp(new Color(this.theme.distantEdge), 1 - opacity).getHex();
     const geometry = new BufferGeometry().setFromPoints([
       new Vector3(source.position.x, source.position.y, source.position.z),
       new Vector3(target.position.x, target.position.y, target.position.z),
     ]);
     const material = new LineBasicMaterial({
-      color: selected ? this.theme.selected : this.theme.edge,
+      color,
       transparent: true,
-      opacity: selected ? 0.92 : 0.58,
+      opacity,
     });
 
     return new Line(geometry, material);
@@ -247,13 +263,22 @@ export class DirectoryGraphScene {
     return mesh;
   }
 
-  private createNode(kind: GraphNodeKind, selected: boolean, highlighted: boolean): NodeMesh {
+  private createNode(
+    kind: GraphNodeKind,
+    depth: number,
+    selected: boolean,
+    highlighted: boolean,
+  ): NodeMesh {
     const color = selected
       ? this.theme.selected
       : highlighted
         ? this.theme.highlighted
-        : this.colorForNodeKind(kind);
-    const material = new MeshLambertMaterial({ color });
+        : this.colorForNodeKind(kind, depth);
+    const material = new MeshLambertMaterial({
+      color,
+      opacity: selected || highlighted ? 1 : opacityForDepth(depth),
+      transparent: true,
+    });
     const geometry =
       kind === 'file'
         ? new BoxGeometry(1.15, 2.4, 0.42)
@@ -283,16 +308,40 @@ export class DirectoryGraphScene {
     });
   }
 
-  private colorForNodeKind(kind: GraphNodeKind): number {
-    if (kind === 'repo') {
-      return this.theme.repo;
-    }
+  private createLabel(label: string, position: LayoutNodePosition, selected: boolean): Sprite {
+    const texture = labelTexture(label, this.theme);
+    const material = new SpriteMaterial({
+      map: texture,
+      transparent: true,
+      opacity: selected ? 1 : Math.max(0.42, opacityForDepth(position.depth)),
+      depthTest: true,
+      depthWrite: false,
+    });
+    const sprite = new Sprite(material);
+    sprite.position.set(
+      position.position.x,
+      position.position.y + position.radius + 1.25,
+      position.position.z,
+    );
+    sprite.scale.set(7.4, 1.85, 1);
+    return sprite;
+  }
 
-    if (kind === 'directory') {
-      return this.theme.directory;
-    }
+  private colorForNodeKind(kind: GraphNodeKind, depth: number): number {
+    const distanceBlend = 1 - opacityForDepth(depth);
+    const baseColor = (() => {
+      if (kind === 'repo') {
+        return this.theme.repo;
+      }
 
-    return this.theme.file;
+      if (kind === 'directory') {
+        return this.theme.directory;
+      }
+
+      return this.theme.file;
+    })();
+
+    return new Color(baseColor).lerp(new Color(this.theme.distantEdge), distanceBlend).getHex();
   }
 
   private readonly handleWheel = (event: WheelEvent): void => {
@@ -442,8 +491,18 @@ function disposeMaterial(material: unknown): void {
     return;
   }
 
+  if (material && typeof material === 'object' && 'map' in material) {
+    disposeTexture(material.map);
+  }
+
   if (material && typeof material === 'object' && 'dispose' in material) {
     (material as Material).dispose();
+  }
+}
+
+function disposeTexture(texture: unknown): void {
+  if (texture && typeof texture === 'object' && 'dispose' in texture) {
+    (texture as Texture).dispose();
   }
 }
 
@@ -461,4 +520,79 @@ function selectionIdToColor(selectionId: number): number {
 
 function selectionIdFromPixel(red: number, green: number, blue: number): number {
   return (red << 16) | (green << 8) | blue;
+}
+
+function shouldLabelNode(
+  kind: GraphNodeKind,
+  depth: number,
+  selected: boolean,
+  highlighted: boolean,
+): boolean {
+  return (
+    selected ||
+    highlighted ||
+    kind === 'repo' ||
+    (kind === 'directory' && depth <= GRAPH_V0_DEPTH_STYLE_DEFAULTS.maxLabelDepth)
+  );
+}
+
+function opacityForDepth(depth: number): number {
+  const distance =
+    (depth - GRAPH_V0_DEPTH_STYLE_DEFAULTS.fadeStartDepth) /
+    GRAPH_V0_DEPTH_STYLE_DEFAULTS.fadeDepthSpan;
+  const fade = clamp(distance, 0, 1);
+  return (
+    GRAPH_V0_DEPTH_STYLE_DEFAULTS.minOpacity +
+    (1 - fade) * (1 - GRAPH_V0_DEPTH_STYLE_DEFAULTS.minOpacity)
+  );
+}
+
+function labelTexture(label: string, theme: DirectoryGraphSceneTheme): CanvasTexture {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    throw new Error('2D canvas context is required for graph labels');
+  }
+
+  const text = truncateLabel(label);
+  const width = 512;
+  const height = 128;
+  canvas.width = width;
+  canvas.height = height;
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = theme.labelBackground;
+  roundRect(context, 18, 28, width - 36, 68, 16);
+  context.fill();
+  context.fillStyle = theme.labelText;
+  context.font = '600 38px Inter, ui-sans-serif, system-ui, sans-serif';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(text, width / 2, height / 2 + 1, width - 64);
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = NoColorSpace;
+  return texture;
+}
+
+function truncateLabel(label: string): string {
+  const maxLength = 22;
+  return label.length <= maxLength ? label : `${label.slice(0, maxLength - 1)}...`;
+}
+
+function roundRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+): void {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.arcTo(x + width, y, x + width, y + height, radius);
+  context.arcTo(x + width, y + height, x, y + height, radius);
+  context.arcTo(x, y + height, x, y, radius);
+  context.arcTo(x, y, x + width, y, radius);
+  context.closePath();
 }

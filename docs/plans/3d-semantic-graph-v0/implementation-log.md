@@ -46,6 +46,16 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### Depth And Label Readability
+
+- Added centralized depth fade and scene label styling constants.
+- Added depth-based node/edge opacity and color desaturation.
+- Added bounded 3D sprite labels for the repo, nearby directories, highlighted
+  nodes, and selected nodes.
+- Ensured label textures are disposed with scene materials.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |

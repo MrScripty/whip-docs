@@ -42,11 +42,14 @@ export const GRAPH_V0_SELECTION_PRIORITY = {
 export const GRAPH_V0_SCENE_THEME = {
   background: 0xf6f7f9,
   edge: 0x8b96a5,
+  distantEdge: 0xd2d7de,
   repo: 0x1f6f8b,
   directory: 0x5b7f58,
   file: 0xb66f2a,
   selected: 0x113b5c,
   highlighted: 0xf2c14e,
+  labelText: '#17202a',
+  labelBackground: 'rgba(255, 255, 255, 0.82)',
 } as const;
 
 export const GRAPH_V0_CAMERA_DEFAULTS = {
@@ -64,4 +67,11 @@ export const GRAPH_V0_INTERACTION_DEFAULTS = {
   wheelZoomFactor: 0.0016,
   rotateFactor: 0.006,
   panFactor: 0.038,
+} as const;
+
+export const GRAPH_V0_DEPTH_STYLE_DEFAULTS = {
+  fadeStartDepth: 2,
+  fadeDepthSpan: 5,
+  minOpacity: 0.18,
+  maxLabelDepth: 2,
 } as const;

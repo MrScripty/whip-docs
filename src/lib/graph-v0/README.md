@@ -8,7 +8,7 @@ projection.
 | File/Folder | Description |
 |-------------|-------------|
 | `types.ts` | Render-facing graph, layout, vector, and ID-map selection types. |
-| `constants.ts` | Centralized layout geometry and selection constants. |
+| `constants.ts` | Centralized layout geometry, scene styling, camera, interaction, depth, and selection constants. |
 | `adapters.ts` | Directory graph DTO to render graph normalization. |
 | `layouts.ts` | Deterministic directory/file graph layout algorithms. |
 | `selection.ts` | ID-map selection encoding, decoding, and sampled hit testing. |
@@ -46,6 +46,8 @@ Three.js object lifecycle in a scene class that Svelte mounts and disposes.
   depth and distance as tie breakers.
 - Three.js renderer resources are disposed by the scene class, not Svelte
   component code.
+- Scene labels are bounded to repo, nearby directories, highlighted nodes, and
+  selected nodes.
 
 ## Revisit Triggers
 - Layout options become persisted user settings.

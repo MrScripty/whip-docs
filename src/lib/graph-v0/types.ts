@@ -33,11 +33,14 @@ export type RenderGraph = {
 export type DirectoryGraphSceneTheme = {
   readonly background: number;
   readonly edge: number;
+  readonly distantEdge: number;
   readonly repo: number;
   readonly directory: number;
   readonly file: number;
   readonly selected: number;
   readonly highlighted: number;
+  readonly labelText: string;
+  readonly labelBackground: string;
 };
 
 export type DirectoryGraphSceneOptions = {
