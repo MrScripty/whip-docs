@@ -13,8 +13,16 @@ export {
 export { directorySnapshotToRenderGraph } from './adapters';
 export { layoutLayeredGrid, layoutRadialTree } from './layouts';
 export { emptyGraphNeighborhood, graphNeighborhood } from './neighborhood';
+export {
+  buildSelectionIndex,
+  diffSelectionState,
+  emptySelectionState,
+  selectionNeighborhood,
+  selectionStateForNode,
+} from './selectionIndex';
 export { decodeSelectionId, encodeSelectionId, selectFromIdMap } from './selection';
 export { DirectoryGraphScene } from './ThreeDirectoryGraphScene';
+export type { GraphSelectionIndex, GraphSelectionState, GraphSelectionStateDiff } from './selectionIndex';
 export type {
   DecodedSelectionId,
   DirectoryGraphSceneOptions,

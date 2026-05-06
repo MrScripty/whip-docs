@@ -12,6 +12,7 @@ projection.
 | `adapters.ts` | Directory graph DTO to render graph normalization. |
 | `layouts.ts` | Deterministic directory/file graph layout algorithms. |
 | `neighborhood.ts` | Selected-node first/second level neighborhood highlighting and labeling sets. |
+| `selectionIndex.ts` | Derived graph selection indexes, indexed neighborhood lookup, and selection-state diff helpers. |
 | `selection.ts` | ID-map selection encoding, decoding, and sampled hit testing. |
 | `ThreeDirectoryGraphScene.ts` | Direct Three.js scene system for the V0 directory/file graph. |
 | `*.test.ts` | Node test coverage for layout determinism and selection behavior. |
@@ -27,12 +28,15 @@ letting Svelte components or renderer code invent graph facts.
 - The scene system may import Three.js directly but must not depend on Svelte
   components.
 - Backend graph snapshots remain the source of graph truth.
+- Selection indexes are derived frontend view state and can be rebuilt from the
+  render graph at any time.
 - Layout algorithms must be deterministic for equivalent graph inputs.
 - Selection helpers operate on renderer-provided ID/depth buffers only.
 
 ## Decision
-Keep layout, DTO adaptation, and ID-map selection as tested pure helpers. Keep
-Three.js object lifecycle in a scene class that Svelte mounts and disposes.
+Keep layout, DTO adaptation, selection indexing, and ID-map selection as tested
+pure helpers. Keep Three.js object lifecycle in a scene class that Svelte
+mounts and disposes.
 
 ## Alternatives Rejected
 - Put layout math inside Svelte components: rejected because component state and
@@ -53,6 +57,8 @@ Three.js object lifecycle in a scene class that Svelte mounts and disposes.
   selected nodes.
 - Selecting a node highlights the node, highlights its immediate edges, and
   labels first- and second-level connected nodes.
+- Indexed selection lookup must not rescan all graph edges for each selected
+  node.
 - Selection/highlight changes restyle existing Three.js objects in place;
   full geometry rebuilds are reserved for graph or layout algorithm changes.
 - Scene controls are centralized in the scene system: left click selects,

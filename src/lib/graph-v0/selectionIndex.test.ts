@@ -1,0 +1,113 @@
+import assert from 'node:assert/strict';
+import { registerHooks } from 'node:module';
+import test from 'node:test';
+import type { RenderGraph } from './types';
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier.startsWith('./') || specifier.startsWith('../')) {
+      return nextResolve(`${specifier}.ts`, context);
+    }
+
+    return nextResolve(specifier, context);
+  },
+});
+
+const {
+  buildSelectionIndex,
+  diffSelectionState,
+  emptySelectionState,
+  selectionNeighborhood,
+  selectionStateForNode,
+} = (await import(new URL('./selectionIndex.ts', import.meta.url).href)) as typeof import('./selectionIndex');
+
+const graph: RenderGraph = {
+  rootNodeId: 'repo',
+  nodes: [
+    { id: 'repo', kind: 'repo', name: 'repo', path: '.', childIds: ['src', 'docs'] },
+    { id: 'src', kind: 'directory', name: 'src', path: 'src', parentId: 'repo', childIds: ['lib', 'main'] },
+    { id: 'lib', kind: 'file', name: 'lib.rs', path: 'src/lib.rs', parentId: 'src', childIds: [] },
+    { id: 'main', kind: 'file', name: 'main.rs', path: 'src/main.rs', parentId: 'src', childIds: [] },
+    { id: 'docs', kind: 'directory', name: 'docs', path: 'docs', parentId: 'repo', childIds: [] },
+  ],
+  edges: [
+    { id: 'repo-src', kind: 'tree', fromNodeId: 'repo', toNodeId: 'src' },
+    { id: 'repo-docs', kind: 'tree', fromNodeId: 'repo', toNodeId: 'docs' },
+    { id: 'src-lib', kind: 'tree', fromNodeId: 'src', toNodeId: 'lib' },
+    { id: 'src-main', kind: 'tree', fromNodeId: 'src', toNodeId: 'main' },
+  ],
+};
+
+test('buildSelectionIndex indexes nodes, edges, incident edges, adjacency, and node pairs', () => {
+  const index = buildSelectionIndex(graph);
+
+  assert.equal(index.nodeById.get('src')?.path, 'src');
+  assert.equal(index.edgeById.get('src-lib')?.toNodeId, 'lib');
+  assert.deepEqual(index.incidentEdgeIdsByNodeId.get('src'), ['repo-src', 'src-lib', 'src-main']);
+  assert.deepEqual(index.adjacentNodeIdsByNodeId.get('src'), ['lib', 'main', 'repo']);
+  assert.deepEqual(index.edgeIdsByNodePair.get('lib\0src'), ['src-lib']);
+});
+
+test('selectionNeighborhood resolves bidirectional first and second level node sets', () => {
+  const index = buildSelectionIndex(graph);
+
+  assert.deepEqual(selectionNeighborhood(index, 'src'), {
+    highlightedNodeIds: ['src', 'lib', 'main', 'repo', 'docs'],
+    highlightedEdgeIds: ['repo-src', 'src-lib', 'src-main'],
+    labeledNodeIds: ['src', 'lib', 'main', 'repo', 'docs'],
+    firstLevelNodeIds: ['lib', 'main', 'repo'],
+    secondLevelNodeIds: ['docs'],
+  });
+});
+
+test('selectionNeighborhood returns empty sets for null or unknown nodes', () => {
+  const index = buildSelectionIndex(graph);
+  const emptyNeighborhood = {
+    highlightedNodeIds: [],
+    highlightedEdgeIds: [],
+    labeledNodeIds: [],
+    firstLevelNodeIds: [],
+    secondLevelNodeIds: [],
+  };
+
+  assert.deepEqual(selectionNeighborhood(index, null), emptyNeighborhood);
+  assert.deepEqual(selectionNeighborhood(index, 'missing'), emptyNeighborhood);
+});
+
+test('diffSelectionState reports only entered and exited selected graph IDs', () => {
+  const index = buildSelectionIndex(graph);
+  const previous = selectionStateForNode(index, 'src');
+  const next = selectionStateForNode(index, 'lib');
+
+  assert.deepEqual(diffSelectionState(previous, next), {
+    enteredHighlightedNodeIds: [],
+    exitedHighlightedNodeIds: ['docs'],
+    enteredHighlightedEdgeIds: [],
+    exitedHighlightedEdgeIds: ['repo-src', 'src-main'],
+    enteredLabeledNodeIds: [],
+    exitedLabeledNodeIds: ['docs'],
+  });
+});
+
+test('diffSelectionState reports none-to-node and unchanged state transitions', () => {
+  const index = buildSelectionIndex(graph);
+  const next = selectionStateForNode(index, 'docs');
+
+  assert.deepEqual(diffSelectionState(emptySelectionState(), next), {
+    enteredHighlightedNodeIds: ['docs', 'repo', 'src'],
+    exitedHighlightedNodeIds: [],
+    enteredHighlightedEdgeIds: ['repo-docs'],
+    exitedHighlightedEdgeIds: [],
+    enteredLabeledNodeIds: ['docs', 'repo', 'src'],
+    exitedLabeledNodeIds: [],
+  });
+
+  assert.deepEqual(diffSelectionState(next, next), {
+    enteredHighlightedNodeIds: [],
+    exitedHighlightedNodeIds: [],
+    enteredHighlightedEdgeIds: [],
+    exitedHighlightedEdgeIds: [],
+    enteredLabeledNodeIds: [],
+    exitedLabeledNodeIds: [],
+  });
+});

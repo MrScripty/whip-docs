@@ -123,6 +123,20 @@
 - Checked the plan against the repository planning, frontend, architecture,
   testing, documentation, and commit standards.
 
+### Pure Selection Index Contract
+
+- Added `selectionIndex.ts` as a pure frontend graph helper for derived
+  selection lookup state.
+- Indexed nodes, edges, incident edge IDs, adjacent node IDs, and edge IDs by
+  unordered node pair.
+- Added indexed first/second-level neighborhood lookup plus selection-state
+  diff helpers for future incremental scene styling.
+- Kept `graphNeighborhood` as a compatibility wrapper while moving relationship
+  lookup behind the selection index.
+- Updated graph-v0 documentation to capture the derived-index boundary.
+- Verified with `npm run lint`, `npm run typecheck`, and
+  `npm run test:frontend`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
