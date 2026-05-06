@@ -11,10 +11,11 @@
     projectGraph,
   } from './lib/services';
   import {
+    buildSelectionIndex,
     DirectoryGraphScene,
     directorySnapshotToRenderGraph,
     emptyGraphNeighborhood,
-    graphNeighborhood,
+    selectionNeighborhood,
   } from './lib/graph-v0';
   import {
     analysisStatus,
@@ -51,15 +52,18 @@
   let directoryRenderGraph = $derived(
     $directoryGraphSnapshot ? directorySnapshotToRenderGraph($directoryGraphSnapshot) : null,
   );
+  let directorySelectionIndex = $derived(
+    directoryRenderGraph ? buildSelectionIndex(directoryRenderGraph) : null,
+  );
   let selectedDirectoryNode = $derived(
-    directoryRenderGraph?.nodes.find((node) => node.id === $selectedNodeId) ?? null,
+    $selectedNodeId ? directorySelectionIndex?.nodeById.get($selectedNodeId) ?? null : null,
   );
   let selectedDirectoryEdge = $derived(
-    directoryRenderGraph?.edges.find((edge) => edge.id === $selectedEdgeId) ?? null,
+    $selectedEdgeId ? directorySelectionIndex?.edgeById.get($selectedEdgeId) ?? null : null,
   );
   let selectedDirectoryNeighborhood = $derived(
-    directoryRenderGraph && $selectedNodeId
-      ? graphNeighborhood(directoryRenderGraph, $selectedNodeId)
+    directorySelectionIndex && $selectedNodeId
+      ? selectionNeighborhood(directorySelectionIndex, $selectedNodeId)
       : emptyGraphNeighborhood(),
   );
   let displayGraph = $derived(

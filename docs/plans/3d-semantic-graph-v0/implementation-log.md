@@ -137,6 +137,19 @@
 - Verified with `npm run lint`, `npm run typecheck`, and
   `npm run test:frontend`.
 
+### App-Level Selection Index Integration
+
+- Built the directory graph selection index as derived app state only when the
+  V0 render graph changes.
+- Switched selected directory node and edge lookups from linear array searches
+  to index lookups.
+- Switched selected-node neighborhood derivation from raw graph scans to the
+  dedicated selection index.
+- Preserved transient selected node and edge Svelte stores and existing
+  side-panel display behavior.
+- Verified with `npm run lint`, `npm run typecheck`, and
+  `npm run test:frontend`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
