@@ -144,14 +144,16 @@ impl AppState {
         Ok(snapshot)
     }
 
-    pub fn load_directory_graph(
+    pub async fn load_directory_graph(
         &self,
         raw_path: String,
     ) -> Result<DirectoryGraphSnapshotDto, CommandErrorDto> {
         let source_repo = ValidatedRepoPath::parse_existing_cargo_repo(&raw_path)
             .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
 
-        DirectoryGraphBuilder::build(&source_repo)
+        tokio::task::spawn_blocking(move || DirectoryGraphBuilder::build(&source_repo))
+            .await
+            .map_err(|error| CommandErrorDto::internal(error.to_string()))?
             .map_err(|error| CommandErrorDto::internal(error.to_string()))
     }
 
@@ -261,11 +263,11 @@ pub async fn analyze_source_repo(
 }
 
 #[tauri::command]
-pub fn load_directory_graph(
+pub async fn load_directory_graph(
     path: String,
     state: tauri::State<'_, std::sync::Arc<AppState>>,
 ) -> Result<DirectoryGraphSnapshotDto, CommandErrorDto> {
-    state.load_directory_graph(path)
+    state.load_directory_graph(path).await
 }
 
 #[tauri::command]
@@ -436,6 +438,7 @@ mod tests {
 
         let snapshot = state
             .load_directory_graph(repo_dir.to_string_lossy().into_owned())
+            .await
             .expect("load directory graph");
 
         assert!(snapshot.nodes.iter().any(|node| node.id == "dir:src"));

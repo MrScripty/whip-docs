@@ -24,6 +24,9 @@ into `config`, `graph`, `source`, or `analyzer` modules.
 Commands may expose a frontend-facing graph operation, but the graph facts still
 come from backend modules after source path validation.
 
+Directory graph traversal is dispatched through blocking-task execution so
+filesystem walking does not occupy the async command path.
+
 ## Alternatives Rejected
 - Let frontend services construct local source paths: rejected by path security
   requirements.
@@ -73,7 +76,9 @@ pub fn load_directory_graph(
 - Outputs: serde DTOs returned to the frontend adapter, including V0 directory
   graph snapshots.
 - Lifecycle: commands may request work but do not own app shutdown; app state
-  delegates shutdown cleanup to backend services.
+  delegates shutdown cleanup to backend services. Directory graph loading
+  validates synchronously at the boundary, then performs filesystem traversal
+  in a blocking task.
 - Errors: recoverable failures return structured command errors once error DTOs
   are introduced.
 - Compatibility: command names and payload shapes are frontend-visible

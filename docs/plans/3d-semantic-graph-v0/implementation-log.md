@@ -56,6 +56,14 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### Non-Blocking Directory Graph Loading
+
+- Changed `load_directory_graph` to an async Tauri command.
+- Kept source path validation at the command boundary.
+- Moved directory graph filesystem traversal into `tokio::task::spawn_blocking`
+  so graph loading does not occupy the async command path.
+- Verified with `cargo fmt` and `cargo test`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
