@@ -17,7 +17,6 @@ export const GRAPH_V0_LAYOUT_DEFAULTS = {
 export const GRAPH_V0_LAYOUT_GEOMETRY = {
   radialStartAngleRadians: -Math.PI / 2,
   fullCircleRadians: Math.PI * 2,
-  gridOriginFactor: 0.5,
 } as const;
 
 export const GRAPH_V0_SELECTION_ID = {

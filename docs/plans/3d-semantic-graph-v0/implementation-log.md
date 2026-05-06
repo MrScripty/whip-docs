@@ -178,6 +178,19 @@
 - Browser-level scene timing still needs Playwright or an in-app dev profiler;
   the existing renderer verification issue remains open for that harness.
 
+### Branching Tree Layouts
+
+- Changed radial tree layout from one global ring per depth to subtree-owned
+  angular sectors based on render graph parent/child relationships.
+- Changed layered grid layout from one global grid per depth to a deterministic
+  layered tree layout where parents are centered over descendant branch spans.
+- Kept grouping generic to `childIds` rather than directory/file-specific
+  hierarchy so later symbol/consumer graphs can reuse the algorithms.
+- Added layout tests proving radial descendants stay in their parent branch
+  sector and layered branches do not overlap.
+- Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
+  and `npm run build`.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |
@@ -187,3 +200,4 @@
 | 2026-05-06 | Renderer verification | Playwright is not installed in the repo, so automated desktop/mobile screenshot and canvas-pixel verification is not available yet. | Add a Playwright smoke test harness for the Three.js scene before expanding scene interaction and selection behavior. |
 | 2026-05-06 | Large repo loading | Pantograph contained a checked-out `.venv` with roughly 59k files; the first V0 renderer tried to load all emitted directory/file nodes and could lock the UI. | Continue expanding backend exclusion rules and add progressive/viewport-scoped rendering before attempting very large unfiltered graphs. |
 | 2026-05-06 | Selection scaling | Selection previously had optimized scene reuse, but the next scale target still needed a dedicated graph relationship index and selection-state diff so future symbol layers would not depend on repeated full graph scans. | V0 directory/file selection lookup is resolved by `selectionIndex.ts` and scene diff styling; revisit when function, struct, impl, or call/reference relationship layers are added. |
+| 2026-05-06 | Layout scaling | Branching layered-grid layout now preserves tree grouping, but very wide trees can sprawl horizontally because wrapping/culling is not yet solved for subtree-preserving layouts. | Add configurable branch compaction or viewport-aware level collapse before relying on layered-grid for very large graphs. |

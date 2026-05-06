@@ -47,6 +47,9 @@ mounts and disposes.
 ## Invariants
 - Layout helpers return positions keyed by stable backend node IDs.
 - Child ordering is deterministic and sorts directories before files.
+- Radial and layered-grid layout helpers branch by the render graph's
+  parent/child structure; they do not special-case directories or files when
+  grouping descendants.
 - ID-map selection gives visible nodes priority over visible edges, then uses
   depth and distance as tie breakers.
 - Scene click selection falls back to Three.js raycasting if the ID-map sample
