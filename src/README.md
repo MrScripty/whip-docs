@@ -42,6 +42,8 @@ event wiring.
 - Durable graph snapshots are displayed only after backend confirmation.
 - Frontend code does not read local files or construct source paths for snippets.
 - Tauri transport details stay behind `backends/` or service modules.
+- The directory tree navigator is derived from the render graph and selected
+  node store; it does not own separate graph identity or hierarchy state.
 
 ## Revisit Triggers
 - The graph viewer becomes reusable outside this app.
@@ -77,4 +79,3 @@ import App from './App.svelte';
 - Reason: the frontend scaffold does not yet publish templates or metadata.
 - Revisit trigger: graph layout settings, saved filters, or templates become
   persisted artifacts.
-

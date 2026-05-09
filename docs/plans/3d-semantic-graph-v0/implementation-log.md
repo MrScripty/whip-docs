@@ -249,6 +249,40 @@
 - Verified with `npm run lint`, `npm run typecheck`, `npm run test:frontend`,
   and `npm run build`.
 
+### Directory File Focus View
+
+- Added a reversible `Tab` focus view for selected directories. The view hides
+  the directory selection sphere, arranges direct file children on a
+  camera-facing plane, and frames that plane so file nodes can be selected
+  without changing backend graph data or layout results.
+- Pressing `Tab` again restores file meshes, selection meshes, labels, and
+  hidden tree edges from the original layout-backed scene entries.
+- Added arrow-key directory navigation: up selects the parent directory, down
+  selects the first child directory, and left/right select sibling directories.
+- Added per-parent preferred child directory history so up/down navigation
+  returns to the last visited child directory before falling back to the first
+  child directory.
+- Changed arrow-key navigation framing to show a wider local context around the
+  previous directory, destination directory, parent, sibling directories, and
+  destination child directories.
+- Added fast animated camera framing transitions so navigation and focus
+  changes preserve spatial context instead of snapping instantly. Wheel, orbit,
+  and pan input cancel active camera transitions.
+- Added node and edge selection-mesh lookup maps so view-only scene changes can
+  hide or restore pick targets without rebuilding graph data.
+- Verified with `npm run typecheck`, `npm run test:frontend`,
+  `npm run lint`, and `npm run build`.
+
+### Directory Tree Navigator
+
+- Moved the directory graph node list out of the right inspector and into a
+  dedicated left navigator panel.
+- Replaced the flat node list with a render-graph-backed tree view that shows
+  repo, directory, and file nodes in parent/child order.
+- The tree highlights the selected 3D graph node and auto-expands the selected
+  node path while collapsing unrelated branches, so arrow-key navigation and
+  tree state stay synchronized through the shared selected node store.
+
 ## Discovered Issues
 
 | Date | Area | Issue | Follow-up |

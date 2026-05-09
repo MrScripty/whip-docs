@@ -16,6 +16,7 @@
     directorySnapshotToRenderGraph,
     emptyGraphNeighborhood,
     GRAPH_V0_LAYOUT_DEFAULTS,
+    selectionDistanceByNodeId,
     selectionNeighborhood,
   } from './lib/graph-v0';
   import {
@@ -68,6 +69,14 @@
       ? selectionNeighborhood(directorySelectionIndex, $selectedNodeId)
       : emptyGraphNeighborhood(),
   );
+  let selectedDirectoryDistanceByNodeId = $derived(
+    directorySelectionIndex && $selectedNodeId
+      ? selectionDistanceByNodeId(directorySelectionIndex, $selectedNodeId)
+      : null,
+  );
+  let directoryTreeRows = $derived(
+    directoryRenderGraph ? buildDirectoryTreeRows(directoryRenderGraph, $selectedNodeId) : [],
+  );
   let displayGraph = $derived(
     $graphSnapshot
       ? projectGraph($graphSnapshot.nodes, $graphSnapshot.edges, graphMode)
@@ -105,6 +114,7 @@
         layoutOptions: {
           siblingSpacing: directoryBranchSpacing,
         },
+        nodeDistanceById: selectedDirectoryDistanceByNodeId,
         selectedEdgeId: $selectedEdgeId,
         selectedNodeId: $selectedNodeId,
         onSelect: selectDirectoryEntity,
@@ -250,6 +260,71 @@
     selectedEdgeId.set(selection.id);
   }
 
+  function buildDirectoryTreeRows(graph, selectedId) {
+    const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
+    const expandedIds = expandedDirectoryIds(graph, nodeById, selectedId);
+    const rows = [];
+
+    appendDirectoryTreeRow(graph.rootNodeId, 0, nodeById, expandedIds, rows);
+    return rows;
+  }
+
+  function appendDirectoryTreeRow(
+    nodeId,
+    depth,
+    nodeById,
+    expandedIds,
+    rows,
+  ) {
+    const node = nodeById.get(nodeId);
+
+    if (!node) {
+      return;
+    }
+
+    const hasChildren = node.childIds.length > 0;
+    const expanded = hasChildren && expandedIds.includes(node.id);
+    rows.push({ node, depth, expanded, hasChildren });
+
+    if (!expanded) {
+      return;
+    }
+
+    for (const childId of node.childIds) {
+      appendDirectoryTreeRow(childId, depth + 1, nodeById, expandedIds, rows);
+    }
+  }
+
+  function expandedDirectoryIds(
+    graph,
+    nodeById,
+    selectedId,
+  ) {
+    const expandedIds = [graph.rootNodeId];
+    let current = selectedId ? nodeById.get(selectedId) : nodeById.get(graph.rootNodeId);
+
+    while (current) {
+      if (current.kind !== 'file') {
+        addUniqueId(expandedIds, current.id);
+      }
+
+      if (!current.parentId) {
+        break;
+      }
+
+      addUniqueId(expandedIds, current.parentId);
+      current = nodeById.get(current.parentId);
+    }
+
+    return expandedIds;
+  }
+
+  function addUniqueId(ids, id) {
+    if (!ids.includes(id)) {
+      ids.push(id);
+    }
+  }
+
   function handleGraphWheel(event) {
     event.preventDefault();
     const element = event.currentTarget;
@@ -336,6 +411,40 @@
   </section>
 
   <section class="workspace" aria-label="Architecture graph workspace">
+    <aside class="navigator" aria-label="Directory graph navigator">
+      <h2>Directory Tree</h2>
+      {#if $directoryGraphSnapshot && directoryRenderGraph}
+        <p>{$directoryGraphSnapshot.nodes.length} nodes / {$directoryGraphSnapshot.edges.length} edges</p>
+        <div class="directory-tree" role="tree" aria-label="Directory graph tree">
+          {#each directoryTreeRows as row (row.node.id)}
+            <button
+              type="button"
+              role="treeitem"
+              aria-level={row.depth + 1}
+              aria-selected={$selectedNodeId === row.node.id}
+              aria-expanded={row.hasChildren ? row.expanded : undefined}
+              class:selected={$selectedNodeId === row.node.id}
+              class:directory={row.node.kind !== 'file'}
+              class:file={row.node.kind === 'file'}
+              style={`--tree-depth: ${row.depth};`}
+              onclick={() => { selectDirectoryEntity({ kind: 'node', id: row.node.id }); }}
+            >
+              <span
+                class="tree-disclosure"
+                class:expanded={row.expanded}
+                class:hidden={!row.hasChildren}
+                aria-hidden="true"
+              ></span>
+              <span class={`tree-kind tree-kind-${row.node.kind}`} aria-hidden="true"></span>
+              <span class="tree-label">{row.node.name}</span>
+              <span class="tree-path">{row.node.path}</span>
+            </button>
+          {/each}
+        </div>
+      {:else}
+        <p>No directory graph loaded</p>
+      {/if}
+    </aside>
     <div class="graph-surface" class:directory-loaded={$directoryGraphSnapshot && directoryRenderGraph}>
       {#if $directoryGraphSnapshot && directoryRenderGraph}
         <div class="graph-summary" aria-label="Directory graph summary">
@@ -493,18 +602,6 @@
         {#if selectedDirectoryEdge}
           <p>edge: {selectedDirectoryEdge.fromNodeId} -> {selectedDirectoryEdge.toNodeId}</p>
         {/if}
-        <div class="node-list" aria-label="Directory graph nodes">
-          {#each directoryRenderGraph.nodes.slice(0, 32) as node (node.id)}
-            <button
-              type="button"
-              class:selected={$selectedNodeId === node.id}
-              onclick={() => { selectDirectoryEntity({ kind: 'node', id: node.id }); }}
-            >
-              <strong>{node.name}</strong>
-              <small>{node.kind} / {node.path}</small>
-            </button>
-          {/each}
-        </div>
       {/if}
       {#if $graphSnapshot}
         <h2>Graph</h2>
