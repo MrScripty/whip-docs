@@ -17,6 +17,7 @@ export {
   buildSelectionIndex,
   diffSelectionState,
   emptySelectionState,
+  selectionDistanceByNodeId,
   selectionNeighborhood,
   selectionStateForNode,
 } from './selectionIndex';

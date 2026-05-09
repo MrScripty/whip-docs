@@ -34,9 +34,9 @@ const graph: RenderGraph = {
   ],
 };
 
-test('graphNeighborhood highlights selected node immediate edges and two label levels', () => {
+test('graphNeighborhood highlights immediate nodes and labels two levels', () => {
   assert.deepEqual(graphNeighborhood(graph, 'src'), {
-    highlightedNodeIds: ['src', 'lib', 'main', 'repo', 'docs'],
+    highlightedNodeIds: ['src', 'lib', 'main', 'repo'],
     highlightedEdgeIds: ['repo-src', 'src-lib', 'src-main'],
     labeledNodeIds: ['src', 'lib', 'main', 'repo', 'docs'],
     firstLevelNodeIds: ['lib', 'main', 'repo'],

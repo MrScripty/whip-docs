@@ -17,6 +17,7 @@ const {
   buildSelectionIndex,
   diffSelectionState,
   emptySelectionState,
+  selectionDistanceByNodeId,
   selectionNeighborhood,
   selectionStateForNode,
 } = (await import(new URL('./selectionIndex.ts', import.meta.url).href)) as typeof import('./selectionIndex');
@@ -52,12 +53,31 @@ test('selectionNeighborhood resolves bidirectional first and second level node s
   const index = buildSelectionIndex(graph);
 
   assert.deepEqual(selectionNeighborhood(index, 'src'), {
-    highlightedNodeIds: ['src', 'lib', 'main', 'repo', 'docs'],
+    highlightedNodeIds: ['src', 'lib', 'main', 'repo'],
     highlightedEdgeIds: ['repo-src', 'src-lib', 'src-main'],
     labeledNodeIds: ['src', 'lib', 'main', 'repo', 'docs'],
     firstLevelNodeIds: ['lib', 'main', 'repo'],
     secondLevelNodeIds: ['docs'],
   });
+});
+
+test('selectionDistanceByNodeId resolves graph distance from the selected node', () => {
+  const index = buildSelectionIndex(graph);
+
+  assert.deepEqual([...selectionDistanceByNodeId(index, 'src').entries()].sort(), [
+    ['docs', 2],
+    ['lib', 1],
+    ['main', 1],
+    ['repo', 1],
+    ['src', 0],
+  ]);
+});
+
+test('selectionDistanceByNodeId returns an empty map for null or unknown nodes', () => {
+  const index = buildSelectionIndex(graph);
+
+  assert.deepEqual([...selectionDistanceByNodeId(index, null).entries()], []);
+  assert.deepEqual([...selectionDistanceByNodeId(index, 'missing').entries()], []);
 });
 
 test('selectionNeighborhood returns empty sets for null or unknown nodes', () => {
@@ -81,7 +101,7 @@ test('diffSelectionState reports only entered and exited selected graph IDs', ()
 
   assert.deepEqual(diffSelectionState(previous, next), {
     enteredHighlightedNodeIds: [],
-    exitedHighlightedNodeIds: ['docs'],
+    exitedHighlightedNodeIds: ['main', 'repo'],
     enteredHighlightedEdgeIds: [],
     exitedHighlightedEdgeIds: ['repo-src', 'src-main'],
     enteredLabeledNodeIds: [],
@@ -94,7 +114,7 @@ test('diffSelectionState reports none-to-node and unchanged state transitions', 
   const next = selectionStateForNode(index, 'docs');
 
   assert.deepEqual(diffSelectionState(emptySelectionState(), next), {
-    enteredHighlightedNodeIds: ['docs', 'repo', 'src'],
+    enteredHighlightedNodeIds: ['docs', 'repo'],
     exitedHighlightedNodeIds: [],
     enteredHighlightedEdgeIds: ['repo-docs'],
     exitedHighlightedEdgeIds: [],

@@ -17,9 +17,6 @@ export const GRAPH_V0_LAYOUT_DEFAULTS = {
 export const GRAPH_V0_LAYOUT_GEOMETRY = {
   radialStartAngleRadians: -Math.PI / 2,
   fullCircleRadians: Math.PI * 2,
-  radialMinFanRadians: Math.PI / 2,
-  radialMaxFanRadians: Math.PI * 1.35,
-  radialFanRadiansPerChild: 0.16,
 } as const;
 
 export const GRAPH_V0_SELECTION_ID = {
@@ -67,6 +64,7 @@ export const GRAPH_V0_CAMERA_DEFAULTS = {
 export const GRAPH_V0_INTERACTION_DEFAULTS = {
   minCameraDistance: 14,
   maxCameraDistance: 5000,
+  cameraTransitionMs: 260,
   wheelZoomFactor: 0.0016,
   rotateFactor: 0.006,
   panFactor: 0.038,

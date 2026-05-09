@@ -30,6 +30,8 @@ letting Svelte components or renderer code invent graph facts.
 - Backend graph snapshots remain the source of graph truth.
 - Selection indexes are derived frontend view state and can be rebuilt from the
   render graph at any time.
+- Directory focus mode is derived scene state only: it may hide and reposition
+  Three.js objects, but it must not mutate backend graph data or layout results.
 - Layout algorithms must be deterministic for equivalent graph inputs.
 - Selection helpers operate on renderer-provided ID/depth buffers only.
 
@@ -50,9 +52,11 @@ mounts and disposes.
 - Radial and layered-grid layout helpers branch by the render graph's
   parent/child structure; they do not special-case directories or files when
   grouping descendants.
-- Radial branches use parent-local child rings whose radius grows with sibling
-  subtree footprint and spacing. Layered-grid branches use parent-local x/z
-  grids with subtree footprints so branches can occupy actual 3D space.
+- Radial branches use parent-local child rings, wrapping large child sets onto
+  multiple local rings so high-count directories stay readable without
+  recursively pushing every ancestor ring outward. Layered-grid branches use
+  parent-local x/z grids with subtree footprints so branches can occupy actual
+  3D space.
 - ID-map selection gives visible nodes priority over visible edges, then uses
   depth and distance as tie breakers.
 - Scene click selection falls back to Three.js raycasting if the ID-map sample
@@ -61,8 +65,9 @@ mounts and disposes.
   component code.
 - Scene labels are bounded to repo, nearby directories, highlighted nodes, and
   selected nodes.
-- Selecting a node highlights the node, highlights its immediate edges, and
-  labels first- and second-level connected nodes.
+- Selecting a node highlights the selected node and immediate connected nodes,
+  highlights its immediate edges, labels first- and second-level connected
+  nodes, and fades the rest of the graph by distance from the selection.
 - Indexed selection lookup must not rescan all graph edges for each selected
   node.
 - Selection/highlight changes restyle existing Three.js objects in place;
@@ -71,6 +76,19 @@ mounts and disposes.
   left drag orbits, middle/right drag pans, and Shift/Alt-left drag also pans.
 - Pressing `.` centers the 3D camera on the selected node, or the graph root
   when no node is selected.
+- Arrow keys navigate directory nodes: up selects the parent directory, down
+  selects the first child directory, and left/right move between sibling
+  directories. Up/down navigation remembers the last visited child directory
+  for each parent, then uses that remembered child before falling back to the
+  first child directory. Arrow navigation frames a wider local context so the
+  previous directory, destination, parent, siblings, and destination child
+  directories remain visible during navigation.
+- Camera framing changes animate quickly so users can preserve spatial context
+  while moving between graph regions. Manual orbit, pan, or zoom cancels the
+  in-flight camera transition.
+- Pressing `Tab` on a directory enters a reversible file focus view that hides
+  the directory sphere, arranges direct file children on a camera-facing plane,
+  and frames that plane. Pressing `Tab` again restores the original scene view.
 
 ## Revisit Triggers
 - Layout options become persisted user settings.

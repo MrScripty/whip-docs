@@ -48,6 +48,7 @@ export type DirectoryGraphSceneOptions = {
   readonly layoutOptions?: LayoutOptions;
   readonly selectedNodeId?: string | null;
   readonly selectedEdgeId?: string | null;
+  readonly nodeDistanceById?: ReadonlyMap<string, number> | null;
   readonly highlightedNodeIds?: readonly string[];
   readonly highlightedEdgeIds?: readonly string[];
   readonly labeledNodeIds?: readonly string[];

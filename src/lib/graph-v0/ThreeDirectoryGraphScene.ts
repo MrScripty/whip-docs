@@ -6,6 +6,7 @@ import {
   Color,
   CylinderGeometry,
   DirectionalLight,
+  DoubleSide,
   Group,
   Line,
   LineBasicMaterial,
@@ -46,10 +47,12 @@ import type {
   LayoutOptions,
   LayoutNodePosition,
   RenderGraph,
+  RenderGraphNode,
 } from './types';
 
 type NodeMesh = Mesh<BufferGeometry, MeshLambertMaterial>;
 type EdgeLine = Line<BufferGeometry, LineBasicMaterial>;
+type SelectionMesh = Mesh<BufferGeometry, MeshBasicMaterial>;
 
 type NodeSceneEntry = {
   readonly mesh: NodeMesh;
@@ -61,7 +64,15 @@ type NodeSceneEntry = {
 
 type EdgeSceneEntry = {
   readonly line: EdgeLine;
+  readonly fromNodeId: string;
+  readonly toNodeId: string;
   readonly depth: number;
+};
+
+type FocusedDirectoryView = {
+  readonly directoryNodeId: string;
+  readonly hiddenEdgeIds: readonly string[];
+  readonly fileNodeIds: readonly string[];
 };
 
 type PointerDragState = {
@@ -80,6 +91,16 @@ type SelectionTarget = DirectoryGraphSceneSelection & {
 type LayoutBounds = {
   readonly center: Vector3;
   readonly radius: number;
+};
+
+type CameraTransition = {
+  readonly startedAtMs: number;
+  readonly durationMs: number;
+  readonly fromPosition: Vector3;
+  readonly toPosition: Vector3;
+  readonly fromTarget: Vector3;
+  readonly toTarget: Vector3;
+  readonly toFar: number;
 };
 
 export class DirectoryGraphScene {
@@ -102,19 +123,26 @@ export class DirectoryGraphScene {
   private readonly raycaster = new Raycaster();
   private readonly theme: DirectoryGraphSceneTheme;
   private readonly selectionTargetById = new Map<number, SelectionTarget>();
+  private readonly graphNodesById = new Map<string, RenderGraphNode>();
   private readonly nodeEntries = new Map<string, NodeSceneEntry>();
   private readonly edgeEntries = new Map<string, EdgeSceneEntry>();
+  private readonly selectionNodeMeshesByNodeId = new Map<string, SelectionMesh>();
+  private readonly selectionEdgeMeshesByEdgeId = new Map<string, SelectionMesh>();
   private readonly labelEntries = new Map<string, Sprite>();
   private readonly baseLabeledNodeIds = new Set<string>();
+  private readonly preferredChildDirectoryByParentId = new Map<string, string>();
   private selectionCallback: ((selection: DirectoryGraphSceneSelection) => void) | null = null;
   private activeSelectionState: GraphSelectionState = emptySelectionState();
   private activeSelectedNodeId: string | null = null;
   private activeSelectedEdgeId: string | null = null;
+  private activeNodeDistanceById: ReadonlyMap<string, number> | null = null;
   private cameraTarget = new Vector3(0, 0, 0);
   private currentGraph: RenderGraph | null = null;
   private currentLayoutAlgorithm: string | null = null;
   private currentLayoutOptionsKey: string | null = null;
   private currentLayoutBounds: LayoutBounds | null = null;
+  private focusedDirectoryView: FocusedDirectoryView | null = null;
+  private cameraTransition: CameraTransition | null = null;
   private renderWidth = 1;
   private renderHeight = 1;
   private animationFrame: number | null = null;
@@ -181,13 +209,23 @@ export class DirectoryGraphScene {
     this.currentLayoutAlgorithm = layoutAlgorithm;
     this.currentLayoutBounds = layoutBounds(layout.positions);
     this.selectionTargetById.clear();
+    this.graphNodesById.clear();
     this.nodeEntries.clear();
     this.edgeEntries.clear();
+    this.selectionNodeMeshesByNodeId.clear();
+    this.selectionEdgeMeshesByEdgeId.clear();
     this.labelEntries.clear();
     this.baseLabeledNodeIds.clear();
     this.activeSelectionState = emptySelectionState();
     this.activeSelectedNodeId = null;
     this.activeSelectedEdgeId = null;
+    this.activeNodeDistanceById = null;
+    this.focusedDirectoryView = null;
+    this.preferredChildDirectoryByParentId.clear();
+
+    for (const node of graph.nodes) {
+      this.graphNodesById.set(node.id, node);
+    }
 
     this.clearGroup(this.edgeGroup);
     this.clearGroup(this.nodeGroup);
@@ -207,6 +245,8 @@ export class DirectoryGraphScene {
       this.edgeGroup.add(line);
       this.edgeEntries.set(edge.id, {
         line,
+        fromNodeId: edge.fromNodeId,
+        toNodeId: edge.toNodeId,
         depth: Math.max(source.depth, target.depth),
       });
       const selectionId = encodeSelectionId('edge', edgeIndex);
@@ -215,7 +255,9 @@ export class DirectoryGraphScene {
         id: edge.id,
         selectionId,
       });
-      this.selectionEdgeGroup.add(this.createSelectionEdge(source, target, selectionId));
+      const selectionMesh = this.createSelectionEdge(source, target, selectionId);
+      this.selectionEdgeMeshesByEdgeId.set(edge.id, selectionMesh);
+      this.selectionEdgeGroup.add(selectionMesh);
     });
 
     graph.nodes.forEach((node, nodeIndex) => {
@@ -225,7 +267,7 @@ export class DirectoryGraphScene {
         return;
       }
 
-      const mesh = this.createNode(node.kind, position.depth);
+      const mesh = this.createNode(node.kind, position);
       mesh.position.set(position.position.x, position.position.y, position.position.z);
       mesh.userData = { nodeId: node.id, nodePath: node.path };
       this.nodeGroup.add(mesh);
@@ -245,7 +287,9 @@ export class DirectoryGraphScene {
         id: node.id,
         selectionId,
       });
-      this.selectionNodeGroup.add(this.createSelectionNode(node.kind, position, selectionId));
+      const selectionMesh = this.createSelectionNode(node.kind, position, selectionId);
+      this.selectionNodeMeshesByNodeId.set(node.id, selectionMesh);
+      this.selectionNodeGroup.add(selectionMesh);
     });
 
     this.frameNode(focusNodeId ?? graph.rootNodeId);
@@ -254,6 +298,8 @@ export class DirectoryGraphScene {
   private applySceneState(options: DirectoryGraphSceneOptions): void {
     const selectedNodeId = options.selectedNodeId ?? null;
     const selectedEdgeId = options.selectedEdgeId ?? null;
+    const nextNodeDistanceById = options.nodeDistanceById ?? null;
+    const nodeDistanceChanged = this.activeNodeDistanceById !== nextNodeDistanceById;
     const nextSelectionState = this.selectionStateForOptions(options);
     const selectionDiff = diffSelectionState(this.activeSelectionState, nextSelectionState);
     const changedNodeIds = new Set([
@@ -276,6 +322,13 @@ export class DirectoryGraphScene {
     addNullableId(changedLabelIds, this.activeSelectedNodeId);
     addNullableId(changedLabelIds, selectedNodeId);
 
+    if (nodeDistanceChanged) {
+      addMapKeys(changedNodeIds, this.nodeEntries);
+      addMapKeys(changedEdgeIds, this.edgeEntries);
+      addMapKeys(changedLabelIds, this.labelEntries);
+      addSetValues(changedLabelIds, nextSelectionState.labeledNodeIds);
+    }
+
     for (const nodeId of changedNodeIds) {
       const entry = this.nodeEntries.get(nodeId);
 
@@ -284,6 +337,7 @@ export class DirectoryGraphScene {
           entry.mesh,
           entry.kind,
           entry.depth,
+          nextNodeDistanceById?.get(nodeId) ?? null,
           nodeId === selectedNodeId,
           nextSelectionState.highlightedNodeIds.has(nodeId),
         );
@@ -297,6 +351,7 @@ export class DirectoryGraphScene {
         this.styleEdge(
           entry.line,
           entry.depth,
+          graphDistanceForEdge(entry, nextNodeDistanceById),
           edgeId === selectedEdgeId,
           nextSelectionState.highlightedEdgeIds.has(edgeId),
         );
@@ -305,7 +360,7 @@ export class DirectoryGraphScene {
 
     for (const nodeId of changedLabelIds) {
       if (nextSelectionState.labeledNodeIds.has(nodeId)) {
-        this.replaceLabel(nodeId, nodeId === selectedNodeId);
+        this.replaceLabel(nodeId, nodeId === selectedNodeId, nextNodeDistanceById?.get(nodeId) ?? null);
       } else {
         this.removeLabel(nodeId);
       }
@@ -314,6 +369,7 @@ export class DirectoryGraphScene {
     this.activeSelectionState = nextSelectionState;
     this.activeSelectedNodeId = selectedNodeId;
     this.activeSelectedEdgeId = selectedEdgeId;
+    this.activeNodeDistanceById = nextNodeDistanceById;
   }
 
   dispose(): void {
@@ -337,6 +393,9 @@ export class DirectoryGraphScene {
     this.clearGroup(this.selectionNodeGroup);
     this.nodeEntries.clear();
     this.edgeEntries.clear();
+    this.graphNodesById.clear();
+    this.selectionNodeMeshesByNodeId.clear();
+    this.selectionEdgeMeshesByEdgeId.clear();
     this.labelEntries.clear();
     this.baseLabeledNodeIds.clear();
     this.selectionTargetById.clear();
@@ -353,6 +412,7 @@ export class DirectoryGraphScene {
   }
 
   private resetCamera(): void {
+    this.cameraTransition = null;
     this.cameraTarget.set(0, 0, 0);
     this.camera.position.set(
       GRAPH_V0_CAMERA_DEFAULTS.positionX,
@@ -368,26 +428,73 @@ export class DirectoryGraphScene {
       return;
     }
 
-    const verticalFieldOfView = (this.camera.fov * Math.PI) / 180;
-    const horizontalFieldOfView = 2 * Math.atan(Math.tan(verticalFieldOfView / 2) * this.camera.aspect);
-    const verticalDistance = bounds.radius / Math.tan(verticalFieldOfView / 2);
-    const horizontalDistance = bounds.radius / Math.tan(horizontalFieldOfView / 2);
-    const distance = clamp(
-      Math.max(verticalDistance, horizontalDistance) * GRAPH_V0_CAMERA_DEFAULTS.framingPadding,
-      GRAPH_V0_INTERACTION_DEFAULTS.minCameraDistance,
-      GRAPH_V0_INTERACTION_DEFAULTS.maxCameraDistance,
-    );
     const cameraDirection = new Vector3(
       GRAPH_V0_CAMERA_DEFAULTS.positionX,
       GRAPH_V0_CAMERA_DEFAULTS.positionY,
       GRAPH_V0_CAMERA_DEFAULTS.positionZ,
     ).normalize();
 
-    this.cameraTarget.copy(bounds.center);
-    this.camera.position.copy(bounds.center.clone().add(cameraDirection.multiplyScalar(distance)));
-    this.camera.far = this.cameraFarForBounds(bounds, distance);
-    this.camera.lookAt(this.cameraTarget);
+    this.frameBoundsFromCameraOffset(bounds, cameraDirection);
+  }
+
+  private frameBoundsFromCameraOffset(bounds: LayoutBounds, cameraOffsetDirection: Vector3): void {
+    const distance = this.cameraDistanceForBounds(bounds);
+    const cameraDirection = cameraOffsetDirection.clone().normalize();
+    const targetPosition = bounds.center.clone().add(cameraDirection.multiplyScalar(distance));
+    const targetFar = this.cameraFarForBounds(bounds, distance);
+
+    this.animateCameraTo(bounds.center, targetPosition, targetFar);
+  }
+
+  private animateCameraTo(target: Vector3, position: Vector3, far: number): void {
+    this.cameraTransition = {
+      startedAtMs: performance.now(),
+      durationMs: GRAPH_V0_INTERACTION_DEFAULTS.cameraTransitionMs,
+      fromPosition: this.camera.position.clone(),
+      toPosition: position.clone(),
+      fromTarget: this.cameraTarget.clone(),
+      toTarget: target.clone(),
+      toFar: far,
+    };
+    this.camera.far = Math.max(this.camera.far, far);
     this.camera.updateProjectionMatrix();
+  }
+
+  private updateCameraTransition(nowMs: number): void {
+    const transition = this.cameraTransition;
+
+    if (!transition) {
+      return;
+    }
+
+    const progress = clamp((nowMs - transition.startedAtMs) / transition.durationMs, 0, 1);
+    const easedProgress = easeOutCubic(progress);
+
+    this.cameraTarget.copy(transition.fromTarget).lerp(transition.toTarget, easedProgress);
+    this.camera.position.copy(transition.fromPosition).lerp(transition.toPosition, easedProgress);
+
+    if (progress >= 1) {
+      this.cameraTransition = null;
+      this.cameraTarget.copy(transition.toTarget);
+      this.camera.position.copy(transition.toPosition);
+      this.camera.far = transition.toFar;
+      this.camera.updateProjectionMatrix();
+    }
+
+    this.camera.lookAt(this.cameraTarget);
+  }
+
+  private cameraDistanceForBounds(bounds: LayoutBounds): number {
+    const verticalFieldOfView = (this.camera.fov * Math.PI) / 180;
+    const horizontalFieldOfView = 2 * Math.atan(Math.tan(verticalFieldOfView / 2) * this.camera.aspect);
+    const verticalDistance = bounds.radius / Math.tan(verticalFieldOfView / 2);
+    const horizontalDistance = bounds.radius / Math.tan(horizontalFieldOfView / 2);
+
+    return clamp(
+      Math.max(verticalDistance, horizontalDistance) * GRAPH_V0_CAMERA_DEFAULTS.framingPadding,
+      GRAPH_V0_INTERACTION_DEFAULTS.minCameraDistance,
+      GRAPH_V0_INTERACTION_DEFAULTS.maxCameraDistance,
+    );
   }
 
   private frameNode(nodeId: string): void {
@@ -403,7 +510,7 @@ export class DirectoryGraphScene {
     }
 
     const focusNodeIds = new Set([nodeId]);
-    const graphNode = this.currentGraph?.nodes.find((node) => node.id === nodeId);
+    const graphNode = this.graphNodeById(nodeId);
 
     if (graphNode?.parentId) {
       focusNodeIds.add(graphNode.parentId);
@@ -418,6 +525,368 @@ export class DirectoryGraphScene {
         .map((focusNodeId) => this.nodeEntries.get(focusNodeId)?.position)
         .filter((position): position is LayoutNodePosition => position !== undefined),
     );
+  }
+
+  private navigationBoundsForNode(nodeId: string, previousNodeId: string): LayoutBounds | null {
+    const navigationNodeIds = new Set([nodeId, previousNodeId]);
+    const node = this.graphNodeById(nodeId);
+    const previousNode = this.graphNodeById(previousNodeId);
+    const parentNode = this.graphNodeById(node?.parentId ?? previousNode?.parentId ?? '');
+
+    if (node?.parentId) {
+      navigationNodeIds.add(node.parentId);
+    }
+
+    if (previousNode?.parentId) {
+      navigationNodeIds.add(previousNode.parentId);
+    }
+
+    if (parentNode) {
+      navigationNodeIds.add(parentNode.id);
+      for (const childId of parentNode.childIds) {
+        const child = this.graphNodeById(childId);
+        if (child?.kind === 'directory') {
+          navigationNodeIds.add(childId);
+        }
+      }
+    }
+
+    for (const childId of node?.childIds ?? []) {
+      const child = this.graphNodeById(childId);
+      if (child?.kind === 'directory') {
+        navigationNodeIds.add(childId);
+      }
+    }
+
+    return layoutBoundsForEntries(
+      Array.from(navigationNodeIds)
+        .map((navigationNodeId) => this.nodeEntries.get(navigationNodeId)?.position)
+        .filter((position): position is LayoutNodePosition => position !== undefined),
+    );
+  }
+
+  private toggleFocusedDirectoryView(): void {
+    if (this.focusedDirectoryView) {
+      const directoryNodeId = this.focusedDirectoryView.directoryNodeId;
+      this.exitFocusedDirectoryView();
+      this.frameNode(directoryNodeId);
+      return;
+    }
+
+    const directoryNodeId = this.focusDirectoryNodeId();
+
+    if (directoryNodeId) {
+      this.enterFocusedDirectoryView(directoryNodeId);
+    }
+  }
+
+  private enterFocusedDirectoryView(directoryNodeId: string): void {
+    const directoryNode = this.graphNodeById(directoryNodeId);
+    const directoryEntry = this.nodeEntries.get(directoryNodeId);
+
+    if (!directoryNode || directoryNode.kind === 'file' || !directoryEntry) {
+      return;
+    }
+
+    const fileNodeIds = directoryNode.childIds.filter((childId) => {
+      const childNode = this.graphNodeById(childId);
+      return childNode?.kind === 'file' && this.nodeEntries.has(childId);
+    });
+
+    if (fileNodeIds.length === 0) {
+      return;
+    }
+
+    this.exitFocusedDirectoryView();
+
+    const fileNodeIdSet = new Set(fileNodeIds);
+    const hiddenEdgeIds = Array.from(this.edgeEntries.entries())
+      .filter(([, edge]) => edgeConnectsNodeSet(edge, directoryNodeId, fileNodeIdSet))
+      .map(([edgeId]) => edgeId);
+
+    directoryEntry.mesh.visible = false;
+    const directorySelectionMesh = this.selectionNodeMeshesByNodeId.get(directoryNodeId);
+    if (directorySelectionMesh) {
+      directorySelectionMesh.visible = false;
+    }
+    const directoryLabel = this.labelEntries.get(directoryNodeId);
+    if (directoryLabel) {
+      directoryLabel.visible = false;
+    }
+
+    for (const edgeId of hiddenEdgeIds) {
+      const edgeEntry = this.edgeEntries.get(edgeId);
+      const selectionEdge = this.selectionEdgeMeshesByEdgeId.get(edgeId);
+      if (edgeEntry) {
+        edgeEntry.line.visible = false;
+      }
+      if (selectionEdge) {
+        selectionEdge.visible = false;
+      }
+    }
+
+    const forward = new Vector3();
+    this.camera.getWorldDirection(forward);
+    forward.normalize();
+    const right = new Vector3().crossVectors(forward, this.camera.up).normalize();
+    const up = new Vector3().crossVectors(right, forward).normalize();
+    const center = vectorFromPosition(directoryEntry.position);
+    const spacing = Math.max(3.4, GRAPH_V0_INTERACTION_DEFAULTS.minCameraDistance * 0.18);
+    const columns = Math.max(1, Math.ceil(Math.sqrt(fileNodeIds.length)));
+    const rows = Math.max(1, Math.ceil(fileNodeIds.length / columns));
+    const halfWidth = ((columns - 1) * spacing) / 2;
+    const halfHeight = ((rows - 1) * spacing) / 2;
+
+    fileNodeIds.forEach((fileNodeId, index) => {
+      const fileEntry = this.nodeEntries.get(fileNodeId);
+
+      if (!fileEntry) {
+        return;
+      }
+
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      const offset = right
+        .clone()
+        .multiplyScalar(column * spacing - halfWidth)
+        .add(up.clone().multiplyScalar(halfHeight - row * spacing));
+      const filePosition = center.clone().add(offset);
+
+      fileEntry.mesh.position.copy(filePosition);
+      fileEntry.mesh.quaternion.copy(this.camera.quaternion);
+
+      const selectionMesh = this.selectionNodeMeshesByNodeId.get(fileNodeId);
+      if (selectionMesh) {
+        selectionMesh.position.copy(filePosition);
+        selectionMesh.quaternion.copy(this.camera.quaternion);
+      }
+
+      this.syncLabelPosition(fileNodeId);
+    });
+
+    const radius = Math.max(4, Math.hypot(halfWidth, halfHeight) + spacing);
+    this.focusedDirectoryView = {
+      directoryNodeId,
+      hiddenEdgeIds,
+      fileNodeIds,
+    };
+    this.frameBoundsFromCameraOffset(
+      { center, radius },
+      forward.multiplyScalar(-1),
+    );
+  }
+
+  private exitFocusedDirectoryView(): void {
+    const focusedView = this.focusedDirectoryView;
+
+    if (!focusedView) {
+      return;
+    }
+
+    const directoryEntry = this.nodeEntries.get(focusedView.directoryNodeId);
+    if (directoryEntry) {
+      directoryEntry.mesh.visible = true;
+      this.syncNodeSelectionMeshPosition(focusedView.directoryNodeId);
+      const directorySelectionMesh = this.selectionNodeMeshesByNodeId.get(focusedView.directoryNodeId);
+      if (directorySelectionMesh) {
+        directorySelectionMesh.visible = true;
+      }
+      const directoryLabel = this.labelEntries.get(focusedView.directoryNodeId);
+      if (directoryLabel) {
+        directoryLabel.visible = true;
+      }
+      this.syncLabelPosition(focusedView.directoryNodeId);
+    }
+
+    for (const edgeId of focusedView.hiddenEdgeIds) {
+      const edgeEntry = this.edgeEntries.get(edgeId);
+      const selectionEdge = this.selectionEdgeMeshesByEdgeId.get(edgeId);
+      if (edgeEntry) {
+        edgeEntry.line.visible = true;
+      }
+      if (selectionEdge) {
+        selectionEdge.visible = true;
+      }
+    }
+
+    for (const fileNodeId of focusedView.fileNodeIds) {
+      const fileEntry = this.nodeEntries.get(fileNodeId);
+
+      if (!fileEntry) {
+        continue;
+      }
+
+      fileEntry.mesh.position.copy(vectorFromPosition(fileEntry.position));
+      fileEntry.mesh.quaternion.identity();
+      this.syncNodeSelectionMeshPosition(fileNodeId);
+      this.syncLabelPosition(fileNodeId);
+    }
+
+    this.focusedDirectoryView = null;
+  }
+
+  private syncNodeSelectionMeshPosition(nodeId: string): void {
+    const entry = this.nodeEntries.get(nodeId);
+    const selectionMesh = this.selectionNodeMeshesByNodeId.get(nodeId);
+
+    if (!entry || !selectionMesh) {
+      return;
+    }
+
+    selectionMesh.position.copy(entry.mesh.position);
+    selectionMesh.quaternion.copy(entry.mesh.quaternion);
+  }
+
+  private syncLabelPosition(nodeId: string): void {
+    const entry = this.nodeEntries.get(nodeId);
+    const label = this.labelEntries.get(nodeId);
+
+    if (!entry || !label) {
+      return;
+    }
+
+    const up = new Vector3(0, entry.position.radius + 1.25, 0).applyQuaternion(entry.mesh.quaternion);
+    label.position.copy(entry.mesh.position.clone().add(up));
+  }
+
+  private focusDirectoryNodeId(): string | null {
+    const activeNode = this.activeSelectedNodeId ? this.graphNodeById(this.activeSelectedNodeId) : null;
+
+    if (activeNode?.kind === 'directory' || activeNode?.kind === 'repo') {
+      return activeNode.id;
+    }
+
+    if (activeNode?.parentId) {
+      const parentNode = this.graphNodeById(activeNode.parentId);
+      return parentNode && parentNode.kind !== 'file' ? parentNode.id : null;
+    }
+
+    return this.currentGraph?.rootNodeId ?? null;
+  }
+
+  private navigateDirectorySelection(key: KeyboardEvent['key']): void {
+    const currentDirectory = this.focusDirectoryNodeId();
+
+    if (!currentDirectory) {
+      return;
+    }
+
+    const nextNodeId = (() => {
+      if (key === 'ArrowUp') {
+        this.recordPreferredChildDirectory(currentDirectory);
+        return this.parentDirectoryId(currentDirectory);
+      }
+
+      if (key === 'ArrowDown') {
+        return this.preferredChildDirectoryId(currentDirectory) ?? this.firstChildDirectoryId(currentDirectory);
+      }
+
+      if (key === 'ArrowLeft') {
+        return this.siblingDirectoryId(currentDirectory, -1);
+      }
+
+      if (key === 'ArrowRight') {
+        return this.siblingDirectoryId(currentDirectory, 1);
+      }
+
+      return null;
+    })();
+
+    if (nextNodeId) {
+      this.recordPreferredChildDirectory(nextNodeId);
+      this.selectGraphNode(nextNodeId, this.navigationBoundsForNode(nextNodeId, currentDirectory));
+    }
+  }
+
+  private recordPreferredChildDirectory(nodeId: string): void {
+    const node = this.graphNodeById(nodeId);
+
+    if (node?.kind !== 'directory' || !node.parentId) {
+      return;
+    }
+
+    this.preferredChildDirectoryByParentId.set(node.parentId, node.id);
+  }
+
+  private preferredChildDirectoryId(nodeId: string): string | null {
+    const node = this.graphNodeById(nodeId);
+    const preferredChildId = this.preferredChildDirectoryByParentId.get(nodeId);
+
+    if (!node || !preferredChildId) {
+      return null;
+    }
+
+    const preferredChild = preferredChildId ? this.graphNodeById(preferredChildId) : null;
+
+    if (
+      preferredChild?.kind === 'directory' &&
+      preferredChild.parentId === nodeId &&
+      node.childIds.includes(preferredChildId)
+    ) {
+      return preferredChildId;
+    }
+
+    this.preferredChildDirectoryByParentId.delete(nodeId);
+    return null;
+  }
+
+  private parentDirectoryId(nodeId: string): string | null {
+    const node = this.graphNodeById(nodeId);
+
+    if (!node?.parentId) {
+      return null;
+    }
+
+    const parent = this.graphNodeById(node.parentId);
+    return parent && parent.kind !== 'file' ? parent.id : null;
+  }
+
+  private firstChildDirectoryId(nodeId: string): string | null {
+    const node = this.graphNodeById(nodeId);
+
+    if (!node) {
+      return null;
+    }
+
+    return node.childIds.find((childId) => {
+      const child = this.graphNodeById(childId);
+      return child?.kind === 'directory';
+    }) ?? null;
+  }
+
+  private siblingDirectoryId(nodeId: string, direction: -1 | 1): string | null {
+    const node = this.graphNodeById(nodeId);
+
+    if (!node?.parentId) {
+      return null;
+    }
+
+    const parent = this.graphNodeById(node.parentId);
+    const siblingIds = parent?.childIds.filter((childId) => {
+      const child = this.graphNodeById(childId);
+      return child?.kind === 'directory';
+    }) ?? [];
+    const currentIndex = siblingIds.indexOf(nodeId);
+
+    if (currentIndex === -1 || siblingIds.length < 2) {
+      return null;
+    }
+
+    return siblingIds[(currentIndex + direction + siblingIds.length) % siblingIds.length] ?? null;
+  }
+
+  private selectGraphNode(nodeId: string, bounds: LayoutBounds | null = null): void {
+    if (!this.selectionCallback) {
+      return;
+    }
+
+    this.exitFocusedDirectoryView();
+    this.selectionCallback({ kind: 'node', id: nodeId });
+    this.frameBounds(bounds ?? this.focusBoundsForNode(nodeId) ?? this.currentLayoutBounds);
+  }
+
+  private graphNodeById(nodeId: string): RenderGraphNode | null {
+    return this.graphNodesById.get(nodeId) ?? null;
   }
 
   private cameraFarForBounds(focusBounds: LayoutBounds, focusDistance: number): number {
@@ -448,6 +917,7 @@ export class DirectoryGraphScene {
       return;
     }
 
+    this.updateCameraTransition(performance.now());
     this.renderer.render(this.scene, this.camera);
     this.animationFrame = window.requestAnimationFrame(this.render);
   };
@@ -466,13 +936,21 @@ export class DirectoryGraphScene {
     return new Line(geometry, material);
   }
 
-  private styleEdge(line: EdgeLine, depth: number, selected: boolean, highlighted: boolean): void {
-    const opacity = selected || highlighted ? 0.95 : opacityForDepth(depth) * 0.58;
+  private styleEdge(
+    line: EdgeLine,
+    depth: number,
+    graphDistance: number | null,
+    selected: boolean,
+    highlighted: boolean,
+  ): void {
+    const opacity = selected || highlighted ? 0.95 : styleOpacity(depth, graphDistance) * 0.58;
     const color = selected
       ? this.theme.selected
       : highlighted
         ? this.theme.highlighted
-        : new Color(this.theme.edge).lerp(new Color(this.theme.distantEdge), 1 - opacity).getHex();
+        : new Color(this.theme.edge)
+            .lerp(new Color(this.theme.distantEdge), styleFadeBlend(depth, graphDistance))
+            .getHex();
 
     line.material.color.setHex(color);
     line.material.opacity = opacity;
@@ -498,25 +976,34 @@ export class DirectoryGraphScene {
 
   private createNode(
     kind: GraphNodeKind,
-    depth: number,
+    position: LayoutNodePosition,
   ): NodeMesh {
+    const isContainerNode = kind !== 'file';
     const material = new MeshLambertMaterial({
-      color: this.colorForNodeKind(kind, depth),
-      opacity: opacityForDepth(depth),
+      color: this.colorForNodeKind(kind, position.depth, null),
+      opacity: baseNodeOpacity(kind, position.depth, null),
+      depthWrite: !isContainerNode,
+      side: isContainerNode ? DoubleSide : undefined,
       transparent: true,
     });
     const geometry =
       kind === 'file'
         ? new BoxGeometry(1.15, 2.4, 0.42)
-        : new SphereGeometry(kind === 'repo' ? 1.5 : 1.08, 24, 16);
+        : new SphereGeometry(1, 32, 20);
+    const mesh = new Mesh(geometry, material);
 
-    return new Mesh(geometry, material);
+    if (isContainerNode) {
+      mesh.scale.setScalar(position.radius);
+    }
+
+    return mesh;
   }
 
   private styleNode(
     mesh: NodeMesh,
     kind: GraphNodeKind,
     depth: number,
+    graphDistance: number | null,
     selected: boolean,
     highlighted: boolean,
   ): void {
@@ -524,10 +1011,12 @@ export class DirectoryGraphScene {
       ? this.theme.selected
       : highlighted
         ? this.theme.highlighted
-        : this.colorForNodeKind(kind, depth);
+        : this.colorForNodeKind(kind, depth, graphDistance);
 
     mesh.material.color.setHex(color);
-    mesh.material.opacity = selected || highlighted ? 1 : opacityForDepth(depth);
+    mesh.material.opacity = selected || highlighted
+      ? activeNodeOpacity(kind)
+      : baseNodeOpacity(kind, depth, graphDistance);
   }
 
   private createSelectionNode(
@@ -538,9 +1027,12 @@ export class DirectoryGraphScene {
     const geometry =
       kind === 'file'
         ? new BoxGeometry(1.55, 2.85, 0.72)
-        : new SphereGeometry(kind === 'repo' ? 1.8 : 1.36, 16, 12);
+        : new SphereGeometry(1, 16, 12);
     const mesh = new Mesh(geometry, this.createSelectionMaterial(selectionId));
     mesh.position.set(position.position.x, position.position.y, position.position.z);
+    if (kind !== 'file') {
+      mesh.scale.setScalar(position.radius);
+    }
     mesh.userData = { selectionId };
     return mesh;
   }
@@ -552,12 +1044,17 @@ export class DirectoryGraphScene {
     });
   }
 
-  private createLabel(label: string, position: LayoutNodePosition, selected: boolean): Sprite {
+  private createLabel(
+    label: string,
+    position: LayoutNodePosition,
+    selected: boolean,
+    graphDistance: number | null,
+  ): Sprite {
     const texture = labelTexture(label, this.theme);
     const material = new SpriteMaterial({
       map: texture,
       transparent: true,
-      opacity: selected ? 1 : Math.max(0.42, opacityForDepth(position.depth)),
+      opacity: selected ? 1 : Math.max(0.42, styleOpacity(position.depth, graphDistance)),
       depthTest: true,
       depthWrite: false,
     });
@@ -571,7 +1068,7 @@ export class DirectoryGraphScene {
     return sprite;
   }
 
-  private replaceLabel(nodeId: string, selected: boolean): void {
+  private replaceLabel(nodeId: string, selected: boolean, graphDistance: number | null): void {
     const entry = this.nodeEntries.get(nodeId);
 
     if (!entry) {
@@ -580,9 +1077,10 @@ export class DirectoryGraphScene {
     }
 
     this.removeLabel(nodeId);
-    const label = this.createLabel(entry.name, entry.position, selected);
+    const label = this.createLabel(entry.name, entry.position, selected, graphDistance);
     this.labelEntries.set(nodeId, label);
     this.labelGroup.add(label);
+    this.syncLabelPosition(nodeId);
   }
 
   private removeLabel(nodeId: string): void {
@@ -624,8 +1122,8 @@ export class DirectoryGraphScene {
     };
   }
 
-  private colorForNodeKind(kind: GraphNodeKind, depth: number): number {
-    const distanceBlend = 1 - opacityForDepth(depth);
+  private colorForNodeKind(kind: GraphNodeKind, depth: number, graphDistance: number | null): number {
+    const distanceBlend = styleFadeBlend(depth, graphDistance);
     const baseColor = (() => {
       if (kind === 'repo') {
         return this.theme.repo;
@@ -643,6 +1141,7 @@ export class DirectoryGraphScene {
 
   private readonly handleWheel = (event: WheelEvent): void => {
     event.preventDefault();
+    this.cameraTransition = null;
     const offset = this.camera.position.clone().sub(this.cameraTarget);
     const direction = offset.clone().normalize();
     const nextDistance = clamp(
@@ -656,6 +1155,7 @@ export class DirectoryGraphScene {
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
     event.preventDefault();
+    this.cameraTransition = null;
     this.renderer.domElement.setPointerCapture(event.pointerId);
     this.dragState = {
       pointerId: event.pointerId,
@@ -723,18 +1223,32 @@ export class DirectoryGraphScene {
   };
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
-    if (event.key !== '.' || isEditableShortcutTarget(event.target)) {
+    if (isEditableShortcutTarget(event.target)) {
       return;
     }
 
-    const focusNodeId = this.activeSelectedNodeId ?? this.currentGraph?.rootNodeId ?? null;
+    if (event.key === '.') {
+      const focusNodeId = this.activeSelectedNodeId ?? this.currentGraph?.rootNodeId ?? null;
 
-    if (!focusNodeId) {
+      if (!focusNodeId) {
+        return;
+      }
+
+      event.preventDefault();
+      this.frameNode(focusNodeId);
       return;
     }
 
-    event.preventDefault();
-    this.frameNode(focusNodeId);
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      this.toggleFocusedDirectoryView();
+      return;
+    }
+
+    if (isDirectoryNavigationKey(event.key)) {
+      event.preventDefault();
+      this.navigateDirectorySelection(event.key);
+    }
   };
 
   private selectAtPointer(event: PointerEvent): void {
@@ -764,10 +1278,14 @@ export class DirectoryGraphScene {
     );
     this.raycaster.setFromCamera(pointer, this.camera);
 
-    const nodeHit = this.raycaster.intersectObjects(this.selectionNodeGroup.children, true)[0];
-    const edgeHit = this.raycaster.intersectObjects(this.selectionEdgeGroup.children, true)[0];
+    const nodeHit = this.raycaster
+      .intersectObjects(this.selectionNodeGroup.children, true)
+      .find((hit) => visibleSelectionIdForObject(hit.object) !== null);
+    const edgeHit = this.raycaster
+      .intersectObjects(this.selectionEdgeGroup.children, true)
+      .find((hit) => visibleSelectionIdForObject(hit.object) !== null);
     const object = nodeHit?.object ?? edgeHit?.object;
-    const selectionId = selectionIdForObject(object);
+    const selectionId = visibleSelectionIdForObject(object);
 
     return selectionId === null ? null : (this.selectionTargetById.get(selectionId) ?? null);
   }
@@ -849,6 +1367,10 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+function easeOutCubic(value: number): number {
+  return 1 - (1 - value) ** 3;
+}
+
 function clampInteger(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(value)));
 }
@@ -895,10 +1417,59 @@ function addNullableId(ids: Set<string>, id: string | null): void {
   }
 }
 
-function selectionIdForObject(object: Object3D | undefined): number | null {
+function addMapKeys(ids: Set<string>, map: ReadonlyMap<string, unknown>): void {
+  for (const id of map.keys()) {
+    ids.add(id);
+  }
+}
+
+function addSetValues(ids: Set<string>, values: ReadonlySet<string>): void {
+  for (const id of values) {
+    ids.add(id);
+  }
+}
+
+function graphDistanceForEdge(
+  edge: EdgeSceneEntry,
+  nodeDistanceById: ReadonlyMap<string, number> | null,
+): number | null {
+  if (!nodeDistanceById) {
+    return null;
+  }
+
+  const sourceDistance = nodeDistanceById.get(edge.fromNodeId);
+  const targetDistance = nodeDistanceById.get(edge.toNodeId);
+
+  if (sourceDistance === undefined && targetDistance === undefined) {
+    return null;
+  }
+
+  return Math.max(sourceDistance ?? targetDistance ?? 0, targetDistance ?? sourceDistance ?? 0);
+}
+
+function edgeConnectsNodeSet(edge: EdgeSceneEntry, nodeId: string, connectedNodeIds: ReadonlySet<string>): boolean {
+  return (
+    (edge.fromNodeId === nodeId && connectedNodeIds.has(edge.toNodeId)) ||
+    (edge.toNodeId === nodeId && connectedNodeIds.has(edge.fromNodeId))
+  );
+}
+
+function vectorFromPosition(position: LayoutNodePosition): Vector3 {
+  return new Vector3(position.position.x, position.position.y, position.position.z);
+}
+
+function isDirectoryNavigationKey(key: string): key is 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight' {
+  return key === 'ArrowUp' || key === 'ArrowDown' || key === 'ArrowLeft' || key === 'ArrowRight';
+}
+
+function visibleSelectionIdForObject(object: Object3D | undefined): number | null {
   let current: Object3D | null | undefined = object;
 
   while (current) {
+    if (!current.visible) {
+      return null;
+    }
+
     const selectionId = current.userData.selectionId;
 
     if (typeof selectionId === 'number') {
@@ -920,6 +1491,40 @@ function opacityForDepth(depth: number): number {
     GRAPH_V0_DEPTH_STYLE_DEFAULTS.minOpacity +
     (1 - fade) * (1 - GRAPH_V0_DEPTH_STYLE_DEFAULTS.minOpacity)
   );
+}
+
+function opacityForGraphDistance(distance: number): number {
+  const fade = clamp(
+    (distance - 1) / GRAPH_V0_DEPTH_STYLE_DEFAULTS.fadeDepthSpan,
+    0,
+    1,
+  );
+  return (
+    GRAPH_V0_DEPTH_STYLE_DEFAULTS.minOpacity +
+    (1 - fade) * (1 - GRAPH_V0_DEPTH_STYLE_DEFAULTS.minOpacity)
+  );
+}
+
+function styleOpacity(depth: number, graphDistance: number | null): number {
+  return graphDistance === null ? opacityForDepth(depth) : opacityForGraphDistance(graphDistance);
+}
+
+function baseNodeOpacity(kind: GraphNodeKind, depth: number, graphDistance: number | null): number {
+  const opacity = styleOpacity(depth, graphDistance);
+
+  if (kind === 'file') {
+    return opacity;
+  }
+
+  return Math.max(0.08, opacity * 0.2);
+}
+
+function activeNodeOpacity(kind: GraphNodeKind): number {
+  return kind === 'file' ? 1 : 0.38;
+}
+
+function styleFadeBlend(depth: number, graphDistance: number | null): number {
+  return 1 - styleOpacity(depth, graphDistance);
 }
 
 function stableLayoutOptionsKey(options: LayoutOptions | undefined): string {

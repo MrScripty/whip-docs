@@ -78,15 +78,43 @@ export function selectionNeighborhood(
   }
 
   const sortedSecondLevelNodeIds = Array.from(secondLevelNodeIds).sort();
-  const highlightedNodeIds = [selectedNodeId, ...firstLevelNodeIds, ...sortedSecondLevelNodeIds];
+  const highlightedNodeIds = [selectedNodeId, ...firstLevelNodeIds];
+  const labeledNodeIds = [...highlightedNodeIds, ...sortedSecondLevelNodeIds];
 
   return {
     highlightedNodeIds,
     highlightedEdgeIds,
-    labeledNodeIds: highlightedNodeIds,
+    labeledNodeIds,
     firstLevelNodeIds,
     secondLevelNodeIds: sortedSecondLevelNodeIds,
   };
+}
+
+export function selectionDistanceByNodeId(
+  index: GraphSelectionIndex,
+  selectedNodeId: string | null | undefined,
+): ReadonlyMap<string, number> {
+  if (!selectedNodeId || !index.nodeById.has(selectedNodeId)) {
+    return new Map();
+  }
+
+  const distanceByNodeId = new Map([[selectedNodeId, 0]]);
+  const queue = [selectedNodeId];
+
+  for (let queueIndex = 0; queueIndex < queue.length; queueIndex += 1) {
+    const nodeId = queue[queueIndex];
+    const nextDistance = (distanceByNodeId.get(nodeId) ?? 0) + 1;
+    const adjacentNodeIds = index.adjacentNodeIdsByNodeId.get(nodeId) ?? [];
+
+    for (const adjacentNodeId of adjacentNodeIds) {
+      if (!distanceByNodeId.has(adjacentNodeId)) {
+        distanceByNodeId.set(adjacentNodeId, nextDistance);
+        queue.push(adjacentNodeId);
+      }
+    }
+  }
+
+  return distanceByNodeId;
 }
 
 export function selectionStateForNode(
