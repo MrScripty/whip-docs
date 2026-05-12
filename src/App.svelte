@@ -34,7 +34,6 @@
   const backend = new TauriArchitectureBackend();
   const architectureService = new ArchitectureService(backend);
 
-  let status = $state('Starting');
   let backendAvailable = $state(backend.isAvailable());
   let sourceRepoPath = $state('');
   let savingSourceRepo = $state(false);
@@ -43,8 +42,14 @@
   let graphQuery = $state('');
   let selectedKind = $state('');
   let graphMode = $state('architecture');
+  let directoryPanelMode = $state('tree');
   let directoryLayoutAlgorithm = $state('radial-tree');
+  let directoryEdgeStyle = $state('c-curve');
+  let directoryRootEdgeStyle = $state('elbow');
+  let directoryLeafEdgeStyle = $state('straight');
   let directoryBranchSpacing = $state(GRAPH_V0_LAYOUT_DEFAULTS.siblingSpacing);
+  let directoryLevelSpacing = $state(GRAPH_V0_LAYOUT_DEFAULTS.layerSpacing);
+  let directoryRootLevelSpacing = $state(GRAPH_V0_LAYOUT_DEFAULTS.rootLayerSpacing);
   let graphPan = $state({ x: 0, y: 0 });
   let graphZoom = $state(1);
   let panStart = $state(null);
@@ -60,6 +65,9 @@
   );
   let selectedDirectoryNode = $derived(
     $selectedNodeId ? directorySelectionIndex?.nodeById.get($selectedNodeId) ?? null : null,
+  );
+  let directoryTreeAnchorPath = $derived(
+    directoryRenderGraph ? directoryTreePathLabel(directoryRenderGraph, selectedDirectoryNode) : '',
   );
   let selectedDirectoryEdge = $derived(
     $selectedEdgeId ? directorySelectionIndex?.edgeById.get($selectedEdgeId) ?? null : null,
@@ -111,7 +119,12 @@
         highlightedNodeIds: selectedDirectoryNeighborhood.highlightedNodeIds,
         labeledNodeIds: selectedDirectoryNeighborhood.labeledNodeIds,
         layoutAlgorithm: directoryLayoutAlgorithm,
+        edgeStyle: graphEdgeStyleValue(directoryEdgeStyle),
+        rootEdgeStyle: graphEdgeStyleValue(directoryRootEdgeStyle),
+        leafDirectoryEdgeStyle: graphLeafDirectoryEdgeStyleValue(directoryLeafEdgeStyle),
         layoutOptions: {
+          layerSpacing: directoryLevelSpacing,
+          rootLayerSpacing: directoryRootLevelSpacing,
           siblingSpacing: directoryBranchSpacing,
         },
         nodeDistanceById: selectedDirectoryDistanceByNodeId,
@@ -134,7 +147,6 @@
   async function loadInitialState() {
     backendAvailable = backend.isAvailable();
     if (!backendAvailable) {
-      status = 'Tauri desktop required';
       graphError.set(commandErrorMessage({
         code: 'tauri_unavailable',
         message: 'Open Whip Docs with `npm run dev:desktop`; backend commands are unavailable in a plain browser tab.',
@@ -144,11 +156,10 @@
     }
 
     try {
-      const appStatus = await backend.getAppStatus();
+      await backend.getAppStatus();
       const config = await architectureService.getConfig();
       const analyzer = await architectureService.getAnalysisStatus();
       const snapshot = await architectureService.getGraphSnapshot();
-      status = appStatus.activeProduct;
       appConfig.set(config);
       analysisStatus.set(analyzer);
       graphSnapshot.set(snapshot);
@@ -158,7 +169,6 @@
         await loadDirectoryGraph(config.sourceRepoPath);
       }
     } catch (error) {
-      status = 'Backend unavailable';
       graphError.set(commandErrorMessage(error));
     }
   }
@@ -325,6 +335,30 @@
     }
   }
 
+  function directoryTreePathLabel(graph, selectedNode) {
+    const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
+    const rootNode = nodeById.get(graph.rootNodeId);
+    const contextNode = selectedNode ?? rootNode;
+    const rootName = rootNode?.name || 'Repository';
+
+    if (!contextNode || contextNode.id === graph.rootNodeId) {
+      return `${rootName}/`;
+    }
+
+    const path = contextNode.kind === 'file'
+      ? parentPath(contextNode.path)
+      : contextNode.path;
+    const normalizedPath = path.replace(/^\/+|\/+$/g, '');
+
+    return normalizedPath ? `${rootName}/${normalizedPath}/` : `${rootName}/`;
+  }
+
+  function parentPath(path) {
+    const parts = path.split('/').filter(Boolean);
+    parts.pop();
+    return parts.join('/');
+  }
+
   function handleGraphWheel(event) {
     event.preventDefault();
     const element = event.currentTarget;
@@ -380,14 +414,43 @@
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
   }
+
+  function graphEdgeStyleValue(value) {
+    if (value === 'bezier' || value === 'c-curve' || value === 'elbow') {
+      return value;
+    }
+
+    return 'straight';
+  }
+
+  function graphLeafDirectoryEdgeStyleValue(value) {
+    if (value === 'global') {
+      return 'global';
+    }
+
+    return graphEdgeStyleValue(value);
+  }
+
+  function toggleDirectorySettings() {
+    directoryPanelMode = directoryPanelMode === 'settings' ? 'tree' : 'settings';
+  }
 </script>
 
 <main class="app-shell">
   <section class="toolbar" aria-label="Source repository">
-    <div>
-      <h1>Whip Docs</h1>
-      <p>{status}</p>
-    </div>
+    <button
+      type="button"
+      class="settings-toggle"
+      class:active={directoryPanelMode === 'settings'}
+      aria-label={directoryPanelMode === 'settings' ? 'Close settings' : 'Open settings'}
+      aria-pressed={directoryPanelMode === 'settings'}
+      onclick={toggleDirectorySettings}
+    >
+      <svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
+        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 0 1-4 0v-.08a1.7 1.7 0 0 0-1.04-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 0 1 0-4h.08A1.7 1.7 0 0 0 4.64 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.54a1.7 1.7 0 0 0 1-1.56V3a2 2 0 0 1 4 0v.08a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87 1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 0 1 0 4h-.08A1.7 1.7 0 0 0 19.4 15Z" />
+      </svg>
+    </button>
     <form class="source-form" onsubmit={(event) => { event.preventDefault(); void saveSourceRepoPath(); }}>
       <label for="source-repo-path">Source repo</label>
       <input
@@ -412,34 +475,119 @@
 
   <section class="workspace" aria-label="Architecture graph workspace">
     <aside class="navigator" aria-label="Directory graph navigator">
-      <h2>Directory Tree</h2>
-      {#if $directoryGraphSnapshot && directoryRenderGraph}
-        <p>{$directoryGraphSnapshot.nodes.length} nodes / {$directoryGraphSnapshot.edges.length} edges</p>
-        <div class="directory-tree" role="tree" aria-label="Directory graph tree">
-          {#each directoryTreeRows as row (row.node.id)}
-            <button
-              type="button"
-              role="treeitem"
-              aria-level={row.depth + 1}
-              aria-selected={$selectedNodeId === row.node.id}
-              aria-expanded={row.hasChildren ? row.expanded : undefined}
-              class:selected={$selectedNodeId === row.node.id}
-              class:directory={row.node.kind !== 'file'}
-              class:file={row.node.kind === 'file'}
-              style={`--tree-depth: ${row.depth};`}
-              onclick={() => { selectDirectoryEntity({ kind: 'node', id: row.node.id }); }}
-            >
-              <span
-                class="tree-disclosure"
-                class:expanded={row.expanded}
-                class:hidden={!row.hasChildren}
-                aria-hidden="true"
-              ></span>
-              <span class={`tree-kind tree-kind-${row.node.kind}`} aria-hidden="true"></span>
-              <span class="tree-label">{row.node.name}</span>
-              <span class="tree-path">{row.node.path}</span>
-            </button>
-          {/each}
+      {#if directoryPanelMode === 'settings'}
+        <div class="navigator-settings" aria-label="3D graph settings">
+          {#if $directoryGraphSnapshot && directoryRenderGraph}
+            <div class="settings-metric">{$directoryGraphSnapshot.excludedPathCount} excluded</div>
+            <label class="settings-field" for="directory-layout-algorithm">
+              <span>Layout</span>
+              <select id="directory-layout-algorithm" bind:value={directoryLayoutAlgorithm} aria-label="3D graph layout">
+                <option value="radial-tree">Radial tree</option>
+                <option value="layered-grid">Layered grid</option>
+              </select>
+            </label>
+            <label class="settings-field" for="directory-edge-style">
+              <span>Edges</span>
+              <select id="directory-edge-style" bind:value={directoryEdgeStyle} aria-label="3D graph edge style">
+                <option value="straight">Straight edges</option>
+                <option value="bezier">Bezier edges</option>
+                <option value="c-curve">C curve edges</option>
+                <option value="elbow">90 degree edges</option>
+              </select>
+            </label>
+            <label class="settings-field" for="directory-root-edge-style">
+              <span>Root edges</span>
+              <select id="directory-root-edge-style" bind:value={directoryRootEdgeStyle} aria-label="3D graph root edge style">
+                <option value="straight">Root straight</option>
+                <option value="bezier">Root Bezier</option>
+                <option value="c-curve">Root C curve</option>
+                <option value="elbow">Root 90 degree</option>
+              </select>
+            </label>
+            <label class="settings-field" for="directory-leaf-edge-style">
+              <span>Leaf dirs</span>
+              <select id="directory-leaf-edge-style" bind:value={directoryLeafEdgeStyle} aria-label="3D graph leaf directory edge style">
+                <option value="global">Leaf dirs global</option>
+                <option value="straight">Leaf dirs straight</option>
+                <option value="bezier">Leaf dirs Bezier</option>
+                <option value="c-curve">Leaf dirs C curve</option>
+                <option value="elbow">Leaf dirs 90 degree</option>
+              </select>
+            </label>
+            <label class="range-control" for="directory-branch-spacing">
+              <span>Branch spacing</span>
+              <input
+                id="directory-branch-spacing"
+                type="range"
+                min="4"
+                max="32"
+                step="1"
+                value={directoryBranchSpacing}
+                oninput={(event) => { directoryBranchSpacing = Number(event.currentTarget.value); }}
+                aria-label="3D graph branch spacing"
+              />
+              <output for="directory-branch-spacing">{directoryBranchSpacing}</output>
+            </label>
+            <label class="range-control" for="directory-level-spacing">
+              <span>Level spacing</span>
+              <input
+                id="directory-level-spacing"
+                type="range"
+                min="4"
+                max="32"
+                step="1"
+                value={directoryLevelSpacing}
+                oninput={(event) => { directoryLevelSpacing = Number(event.currentTarget.value); }}
+                aria-label="3D graph level spacing"
+              />
+              <output for="directory-level-spacing">{directoryLevelSpacing}</output>
+            </label>
+            <label class="range-control" for="directory-root-level-spacing">
+              <span>Root level spacing</span>
+              <input
+                id="directory-root-level-spacing"
+                type="range"
+                min="4"
+                max="80"
+                step="1"
+                value={directoryRootLevelSpacing}
+                oninput={(event) => { directoryRootLevelSpacing = Number(event.currentTarget.value); }}
+                aria-label="3D graph root level spacing"
+              />
+              <output for="directory-root-level-spacing">{directoryRootLevelSpacing}</output>
+            </label>
+          {:else}
+            <p>Load a 3D graph to edit graph settings.</p>
+          {/if}
+        </div>
+      {:else if $directoryGraphSnapshot && directoryRenderGraph}
+        <div class="directory-tree-scroll">
+          <div class="directory-tree-anchor" aria-label="Current directory path">{directoryTreeAnchorPath}</div>
+          <div class="directory-tree" role="tree" aria-label="Directory graph tree">
+            {#each directoryTreeRows as row (row.node.id)}
+              <button
+                type="button"
+                role="treeitem"
+                aria-level={row.depth + 1}
+                aria-selected={$selectedNodeId === row.node.id}
+                aria-expanded={row.hasChildren ? row.expanded : undefined}
+                class:selected={$selectedNodeId === row.node.id}
+                class:directory={row.node.kind !== 'file'}
+                class:file={row.node.kind === 'file'}
+                style={`--tree-depth: ${row.depth};`}
+                onclick={() => { selectDirectoryEntity({ kind: 'node', id: row.node.id }); }}
+              >
+                <span
+                  class="tree-disclosure"
+                  class:expanded={row.expanded}
+                  class:hidden={!row.hasChildren}
+                  aria-hidden="true"
+                ></span>
+                <span class={`tree-kind tree-kind-${row.node.kind}`} aria-hidden="true"></span>
+                <span class="tree-label">{row.node.name}</span>
+              </button>
+            {/each}
+          </div>
         </div>
       {:else}
         <p>No directory graph loaded</p>
@@ -447,35 +595,16 @@
     </aside>
     <div class="graph-surface" class:directory-loaded={$directoryGraphSnapshot && directoryRenderGraph}>
       {#if $directoryGraphSnapshot && directoryRenderGraph}
-        <div class="graph-summary" aria-label="Directory graph summary">
-          <span>{$directoryGraphSnapshot.nodes.length} nodes</span>
-          <span>{$directoryGraphSnapshot.edges.length} edges</span>
-          <span>{$directoryGraphSnapshot.excludedPathCount} excluded</span>
-          <select bind:value={directoryLayoutAlgorithm} aria-label="3D graph layout">
-            <option value="radial-tree">Radial tree</option>
-            <option value="layered-grid">Layered grid</option>
-          </select>
-          <label class="range-control" for="directory-branch-spacing">
-            <span>Branch spacing</span>
-            <input
-              id="directory-branch-spacing"
-              type="range"
-              min="4"
-              max="32"
-              step="1"
-              value={directoryBranchSpacing}
-              oninput={(event) => { directoryBranchSpacing = Number(event.currentTarget.value); }}
-              aria-label="3D graph branch spacing"
-            />
-            <output for="directory-branch-spacing">{directoryBranchSpacing}</output>
-          </label>
-        </div>
         <div
           class="directory-scene-frame"
           bind:this={directoryGraphMount}
           aria-label="3D directory and file graph"
           role="img"
-        ></div>
+        >
+          <div class="directory-scene-count" aria-label="Directory graph count">
+            {$directoryGraphSnapshot.nodes.length} nodes / {$directoryGraphSnapshot.edges.length} edges
+          </div>
+        </div>
       {:else if $graphSnapshot}
         <div class="graph-summary" aria-label="Graph summary">
           <span>{$graphSnapshot.nodes.length} nodes</span>
