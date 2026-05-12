@@ -133,7 +133,7 @@ function placeRadialNode(
   branchPlacements.forEach((childPlacement, childOrder) => {
     const childPosition = {
       x: position.x + Math.cos(childPlacement.angle) * childPlacement.radius,
-      y: negateOrZero((depth + 1) * options.layerSpacing),
+      y: zeroIfNegativeZero(position.y - childLayerSpacing(depth, options)),
       z: position.z + Math.sin(childPlacement.angle) * childPlacement.radius,
     };
 
@@ -187,7 +187,7 @@ function placeLayeredNode(
       const childFootprint = getKnownFootprint(footprintByNodeId, childId);
       const childPosition = {
         x: childStartX + childFootprint.width / 2,
-        y: negateOrZero((depth + 1) * options.layerSpacing),
+        y: zeroIfNegativeZero(position.y - childLayerSpacing(depth, options)),
         z: rowCenterZ,
       };
 
@@ -328,10 +328,18 @@ function buildLayeredFootprintMap(
 }
 
 function resolveLayoutOptions(options: LayoutOptions): ResolvedLayoutOptions {
+  const layerSpacing = options.layerSpacing ?? GRAPH_V0_LAYOUT_DEFAULTS.layerSpacing;
+
   return {
     ...GRAPH_V0_LAYOUT_DEFAULTS,
     ...options,
+    layerSpacing,
+    rootLayerSpacing: options.rootLayerSpacing ?? layerSpacing,
   };
+}
+
+function childLayerSpacing(parentDepth: number, options: ResolvedLayoutOptions): number {
+  return parentDepth === 0 ? options.rootLayerSpacing : options.layerSpacing;
 }
 
 function compareNodes(left: RenderGraphNode, right: RenderGraphNode): number {
@@ -362,6 +370,10 @@ function radialChildPlacements(
   outwardAngle: number,
   options: ResolvedLayoutOptions,
 ): readonly RadialChildPlacement[] {
+  if (childIds.length === 1) {
+    return [{ childId: childIds[0], radius: 0, angle: outwardAngle }];
+  }
+
   const placements: RadialChildPlacement[] = [];
   let previousRingOuterRadius = parentRadius;
   let start = 0;
@@ -397,6 +409,10 @@ function radialPlacementRadiusForBranches(
   parentRadius: number,
   options: ResolvedLayoutOptions,
 ): number {
+  if (childFootprints.length === 1) {
+    return Math.max(parentRadius, childFootprints[0].placementRadius);
+  }
+
   let previousRingOuterRadius = parentRadius;
   let start = 0;
 
@@ -833,6 +849,6 @@ function getKnownNode(
   return node;
 }
 
-function negateOrZero(value: number): number {
-  return value === 0 ? 0 : -value;
+function zeroIfNegativeZero(value: number): number {
+  return Object.is(value, -0) ? 0 : value;
 }

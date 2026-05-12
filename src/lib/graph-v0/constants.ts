@@ -6,8 +6,9 @@ export const GRAPH_V0_KIND_ORDER = {
 
 export const GRAPH_V0_LAYOUT_DEFAULTS = {
   depthSpacing: 8,
-  siblingSpacing: 8,
-  layerSpacing: 7,
+  siblingSpacing: 7,
+  layerSpacing: 23,
+  rootLayerSpacing: 40,
   gridColumns: 8,
   nodeRadius: 0.9,
   directoryRadius: 1.35,
@@ -36,19 +37,6 @@ export const GRAPH_V0_SELECTION_DEFAULTS = {
 export const GRAPH_V0_SELECTION_PRIORITY = {
   node: 0,
   edge: 1,
-} as const;
-
-export const GRAPH_V0_SCENE_THEME = {
-  background: 0xf6f7f9,
-  edge: 0x8b96a5,
-  distantEdge: 0xd2d7de,
-  repo: 0x1f6f8b,
-  directory: 0x5b7f58,
-  file: 0xb66f2a,
-  selected: 0x113b5c,
-  highlighted: 0xf2c14e,
-  labelText: '#17202a',
-  labelBackground: 'rgba(255, 255, 255, 0.82)',
 } as const;
 
 export const GRAPH_V0_CAMERA_DEFAULTS = {

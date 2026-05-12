@@ -8,7 +8,6 @@ export {
   GRAPH_V0_SELECTION_DEFAULTS,
   GRAPH_V0_SELECTION_ID,
   GRAPH_V0_SELECTION_PRIORITY,
-  GRAPH_V0_SCENE_THEME,
 } from './constants';
 export { directorySnapshotToRenderGraph } from './adapters';
 export { layoutLayeredGrid, layoutRadialTree } from './layouts';
@@ -26,6 +25,8 @@ export { DirectoryGraphScene } from './ThreeDirectoryGraphScene';
 export type { GraphSelectionIndex, GraphSelectionState, GraphSelectionStateDiff } from './selectionIndex';
 export type {
   DecodedSelectionId,
+  DirectoryGraphEdgeStyle,
+  DirectoryGraphLeafEdgeStyle,
   DirectoryGraphSceneOptions,
   DirectoryGraphSceneSelection,
   DirectoryGraphSceneTheme,

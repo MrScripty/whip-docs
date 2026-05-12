@@ -21,6 +21,7 @@ import {
   Sprite,
   SpriteMaterial,
   type Texture,
+  TubeGeometry,
   Vector2,
   Vector3,
   WebGLRenderTarget,
@@ -32,8 +33,8 @@ import {
   GRAPH_V0_CAMERA_DEFAULTS,
   GRAPH_V0_DEPTH_STYLE_DEFAULTS,
   GRAPH_V0_INTERACTION_DEFAULTS,
-  GRAPH_V0_SCENE_THEME,
 } from './constants';
+import { directoryEdgeCurve, directoryEdgeElbowPoints, directoryEdgePathPoints } from './edgeGeometry';
 import { layoutLayeredGrid, layoutRadialTree } from './layouts';
 import { encodeSelectionId, selectFromIdMap } from './selection';
 import { diffSelectionState, emptySelectionState } from './selectionIndex';
@@ -43,6 +44,8 @@ import type {
   DirectoryGraphSceneSelection,
   DirectoryGraphSceneTheme,
   DirectoryGraphSceneControlMode,
+  DirectoryGraphEdgeStyle,
+  DirectoryGraphLeafEdgeStyle,
   GraphNodeKind,
   LayoutOptions,
   LayoutNodePosition,
@@ -52,7 +55,7 @@ import type {
 
 type NodeMesh = Mesh<BufferGeometry, MeshLambertMaterial>;
 type EdgeLine = Line<BufferGeometry, LineBasicMaterial>;
-type SelectionMesh = Mesh<BufferGeometry, MeshBasicMaterial>;
+type SelectionMesh = Mesh<BufferGeometry, MeshBasicMaterial> | Group;
 
 type NodeSceneEntry = {
   readonly mesh: NodeMesh;
@@ -140,6 +143,9 @@ export class DirectoryGraphScene {
   private currentGraph: RenderGraph | null = null;
   private currentLayoutAlgorithm: string | null = null;
   private currentLayoutOptionsKey: string | null = null;
+  private currentEdgeStyle: DirectoryGraphEdgeStyle | null = null;
+  private currentRootEdgeStyle: DirectoryGraphEdgeStyle | null = null;
+  private currentLeafDirectoryEdgeStyle: DirectoryGraphLeafEdgeStyle | null = null;
   private currentLayoutBounds: LayoutBounds | null = null;
   private focusedDirectoryView: FocusedDirectoryView | null = null;
   private cameraTransition: CameraTransition | null = null;
@@ -149,12 +155,12 @@ export class DirectoryGraphScene {
   private dragState: PointerDragState | null = null;
   private disposed = false;
 
-  constructor(private readonly container: HTMLElement, theme = GRAPH_V0_SCENE_THEME) {
-    this.theme = theme;
+  constructor(private readonly container: HTMLElement, theme?: DirectoryGraphSceneTheme) {
+    this.theme = theme ?? directoryGraphSceneThemeFromCss(container);
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setClearColor(new Color(theme.background), 1);
+    this.renderer.setClearColor(new Color(this.theme.background), 1);
     this.selectionTarget.texture.colorSpace = NoColorSpace;
-    this.selectionScene.background = new Color(0x000000);
+    this.selectionScene.background = new Color(cssColorHex(this.container, '--scene-selection-background'));
     this.container.append(this.renderer.domElement);
     this.scene.add(this.edgeGroup, this.nodeGroup, this.labelGroup);
     this.selectionScene.add(this.selectionEdgeGroup, this.selectionNodeGroup);
@@ -178,18 +184,30 @@ export class DirectoryGraphScene {
   updateGraph(graph: RenderGraph, options: DirectoryGraphSceneOptions): void {
     this.selectionCallback = options.onSelect ?? null;
     const layoutOptionsKey = stableLayoutOptionsKey(options.layoutOptions);
+    const edgeStyle = options.edgeStyle ?? 'straight';
+    const rootEdgeStyle = options.rootEdgeStyle ?? edgeStyle;
+    const leafDirectoryEdgeStyle = options.leafDirectoryEdgeStyle ?? 'global';
     if (
       this.currentGraph !== graph ||
       this.currentLayoutAlgorithm !== options.layoutAlgorithm ||
-      this.currentLayoutOptionsKey !== layoutOptionsKey
+      this.currentLayoutOptionsKey !== layoutOptionsKey ||
+      this.currentEdgeStyle !== edgeStyle ||
+      this.currentRootEdgeStyle !== rootEdgeStyle ||
+      this.currentLeafDirectoryEdgeStyle !== leafDirectoryEdgeStyle
     ) {
       this.rebuildGraph(
         graph,
         options.layoutAlgorithm,
         options.layoutOptions ?? {},
+        edgeStyle,
+        rootEdgeStyle,
+        leafDirectoryEdgeStyle,
         options.selectedNodeId ?? graph.rootNodeId,
       );
       this.currentLayoutOptionsKey = layoutOptionsKey;
+      this.currentEdgeStyle = edgeStyle;
+      this.currentRootEdgeStyle = rootEdgeStyle;
+      this.currentLeafDirectoryEdgeStyle = leafDirectoryEdgeStyle;
     }
 
     this.applySceneState(options);
@@ -199,6 +217,9 @@ export class DirectoryGraphScene {
     graph: RenderGraph,
     layoutAlgorithm: string,
     layoutOptions: LayoutOptions,
+    edgeStyle: DirectoryGraphEdgeStyle,
+    rootEdgeStyle: DirectoryGraphEdgeStyle,
+    leafDirectoryEdgeStyle: DirectoryGraphLeafEdgeStyle,
     focusNodeId: string | null,
   ): void {
     const layout =
@@ -241,7 +262,14 @@ export class DirectoryGraphScene {
         return;
       }
 
-      const line = this.createEdge(source, target);
+      const effectiveEdgeStyle = this.edgeStyleForEdge(
+        edge.fromNodeId,
+        edge.toNodeId,
+        edgeStyle,
+        rootEdgeStyle,
+        leafDirectoryEdgeStyle,
+      );
+      const line = this.createEdge(source, target, effectiveEdgeStyle);
       this.edgeGroup.add(line);
       this.edgeEntries.set(edge.id, {
         line,
@@ -255,7 +283,7 @@ export class DirectoryGraphScene {
         id: edge.id,
         selectionId,
       });
-      const selectionMesh = this.createSelectionEdge(source, target, selectionId);
+      const selectionMesh = this.createSelectionEdge(source, target, effectiveEdgeStyle, selectionId);
       this.selectionEdgeMeshesByEdgeId.set(edge.id, selectionMesh);
       this.selectionEdgeGroup.add(selectionMesh);
     });
@@ -405,8 +433,9 @@ export class DirectoryGraphScene {
   }
 
   private addLighting(): void {
-    const ambient = new AmbientLight(0xffffff, 0.72);
-    const directional = new DirectionalLight(0xffffff, 0.76);
+    const lightColor = cssColorHex(this.container, '--scene-light');
+    const ambient = new AmbientLight(lightColor, 0.72);
+    const directional = new DirectionalLight(lightColor, 0.76);
     directional.position.set(16, 30, 22);
     this.scene.add(ambient, directional);
   }
@@ -922,11 +951,12 @@ export class DirectoryGraphScene {
     this.animationFrame = window.requestAnimationFrame(this.render);
   };
 
-  private createEdge(source: LayoutNodePosition, target: LayoutNodePosition): EdgeLine {
-    const geometry = new BufferGeometry().setFromPoints([
-      new Vector3(source.position.x, source.position.y, source.position.z),
-      new Vector3(target.position.x, target.position.y, target.position.z),
-    ]);
+  private createEdge(
+    source: LayoutNodePosition,
+    target: LayoutNodePosition,
+    edgeStyle: DirectoryGraphEdgeStyle,
+  ): EdgeLine {
+    const geometry = new BufferGeometry().setFromPoints(directoryEdgePathPoints(source, target, edgeStyle));
     const material = new LineBasicMaterial({
       color: this.theme.edge,
       transparent: true,
@@ -934,6 +964,60 @@ export class DirectoryGraphScene {
     });
 
     return new Line(geometry, material);
+  }
+
+  private edgeStyleForEdge(
+    fromNodeId: string,
+    toNodeId: string,
+    preferredEdgeStyle: DirectoryGraphEdgeStyle,
+    preferredRootEdgeStyle: DirectoryGraphEdgeStyle,
+    preferredLeafDirectoryEdgeStyle: DirectoryGraphLeafEdgeStyle,
+  ): DirectoryGraphEdgeStyle {
+    if (this.isOnlySubdirectoryEdge(fromNodeId, toNodeId)) {
+      return 'straight';
+    }
+
+    if (
+      preferredLeafDirectoryEdgeStyle !== 'global' &&
+      this.isDirectoryWithoutSubdirectories(toNodeId)
+    ) {
+      return preferredLeafDirectoryEdgeStyle;
+    }
+
+    if (fromNodeId === this.currentGraph?.rootNodeId) {
+      return preferredRootEdgeStyle;
+    }
+
+    return preferredEdgeStyle;
+  }
+
+  private isOnlySubdirectoryEdge(fromNodeId: string, toNodeId: string): boolean {
+    const sourceNode = this.graphNodesById.get(fromNodeId);
+    const targetNode = this.graphNodesById.get(toNodeId);
+
+    if (!sourceNode || !targetNode || sourceNode.kind === 'file' || targetNode.kind === 'file') {
+      return false;
+    }
+
+    const subdirectoryChildIds = sourceNode.childIds.filter((childId) => {
+      const childNode = this.graphNodesById.get(childId);
+      return childNode && childNode.kind !== 'file';
+    });
+
+    return subdirectoryChildIds.length === 1 && subdirectoryChildIds[0] === toNodeId;
+  }
+
+  private isDirectoryWithoutSubdirectories(nodeId: string): boolean {
+    const node = this.graphNodesById.get(nodeId);
+
+    if (!node || node.kind === 'file') {
+      return false;
+    }
+
+    return !node.childIds.some((childId) => {
+      const childNode = this.graphNodesById.get(childId);
+      return childNode && childNode.kind !== 'file';
+    });
   }
 
   private styleEdge(
@@ -959,10 +1043,36 @@ export class DirectoryGraphScene {
   private createSelectionEdge(
     source: LayoutNodePosition,
     target: LayoutNodePosition,
+    edgeStyle: DirectoryGraphEdgeStyle,
+    selectionId: number,
+  ): SelectionMesh {
+    if (edgeStyle === 'elbow') {
+      const group = new Group();
+      const [sourcePosition, cornerPosition, targetPosition] = directoryEdgeElbowPoints(source, target);
+      group.add(
+        this.createSelectionEdgeSegment(sourcePosition, cornerPosition, selectionId),
+        this.createSelectionEdgeSegment(cornerPosition, targetPosition, selectionId),
+      );
+      group.userData = { selectionId };
+      return group;
+    }
+
+    if (edgeStyle !== 'straight') {
+      const geometry = new TubeGeometry(directoryEdgeCurve(source, target, edgeStyle), 28, 0.22, 8, false);
+      const mesh = new Mesh(geometry, this.createSelectionMaterial(selectionId));
+      mesh.userData = { selectionId };
+      return mesh;
+    }
+
+    const [sourcePosition, targetPosition] = directoryEdgePathPoints(source, target, 'straight');
+    return this.createSelectionEdgeSegment(sourcePosition, targetPosition, selectionId);
+  }
+
+  private createSelectionEdgeSegment(
+    sourcePosition: Vector3,
+    targetPosition: Vector3,
     selectionId: number,
   ): Mesh<BufferGeometry, MeshBasicMaterial> {
-    const sourcePosition = new Vector3(source.position.x, source.position.y, source.position.z);
-    const targetPosition = new Vector3(target.position.x, target.position.y, target.position.z);
     const direction = targetPosition.clone().sub(sourcePosition);
     const length = Math.max(0.001, direction.length());
     const geometry = new CylinderGeometry(0.22, 0.22, length, 8);
@@ -1521,6 +1631,35 @@ function baseNodeOpacity(kind: GraphNodeKind, depth: number, graphDistance: numb
 
 function activeNodeOpacity(kind: GraphNodeKind): number {
   return kind === 'file' ? 1 : 0.38;
+}
+
+function directoryGraphSceneThemeFromCss(element: HTMLElement): DirectoryGraphSceneTheme {
+  return {
+    background: cssColorHex(element, '--scene-background'),
+    edge: cssColorHex(element, '--scene-edge'),
+    distantEdge: cssColorHex(element, '--scene-distant-edge'),
+    repo: cssColorHex(element, '--node-repo'),
+    directory: cssColorHex(element, '--node-directory'),
+    file: cssColorHex(element, '--node-file'),
+    selected: cssColorHex(element, '--scene-selected'),
+    highlighted: cssColorHex(element, '--scene-highlighted'),
+    labelText: cssCustomProperty(element, '--color-text'),
+    labelBackground: cssCustomProperty(element, '--scene-label-background'),
+  };
+}
+
+function cssColorHex(element: HTMLElement, propertyName: string): number {
+  return new Color(cssCustomProperty(element, propertyName)).getHex();
+}
+
+function cssCustomProperty(element: HTMLElement, propertyName: string): string {
+  const elementValue = getComputedStyle(element).getPropertyValue(propertyName).trim();
+
+  if (elementValue) {
+    return elementValue;
+  }
+
+  return getComputedStyle(element.ownerDocument.documentElement).getPropertyValue(propertyName).trim();
 }
 
 function styleFadeBlend(depth: number, graphDistance: number | null): number {

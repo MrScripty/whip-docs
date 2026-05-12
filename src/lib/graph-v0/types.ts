@@ -46,6 +46,9 @@ export type DirectoryGraphSceneTheme = {
 export type DirectoryGraphSceneOptions = {
   readonly layoutAlgorithm: LayoutAlgorithmId;
   readonly layoutOptions?: LayoutOptions;
+  readonly edgeStyle?: DirectoryGraphEdgeStyle;
+  readonly rootEdgeStyle?: DirectoryGraphEdgeStyle;
+  readonly leafDirectoryEdgeStyle?: DirectoryGraphLeafEdgeStyle;
   readonly selectedNodeId?: string | null;
   readonly selectedEdgeId?: string | null;
   readonly nodeDistanceById?: ReadonlyMap<string, number> | null;
@@ -62,6 +65,10 @@ export type DirectoryGraphSceneSelection = {
 
 export type DirectoryGraphSceneControlMode = 'select' | 'orbit' | 'pan';
 
+export type DirectoryGraphEdgeStyle = 'straight' | 'bezier' | 'c-curve' | 'elbow';
+
+export type DirectoryGraphLeafEdgeStyle = DirectoryGraphEdgeStyle | 'global';
+
 export type DirectoryGraphNeighborhood = {
   readonly highlightedNodeIds: readonly string[];
   readonly highlightedEdgeIds: readonly string[];
@@ -76,6 +83,7 @@ export type LayoutOptions = Partial<{
   readonly depthSpacing: number;
   readonly siblingSpacing: number;
   readonly layerSpacing: number;
+  readonly rootLayerSpacing: number;
   readonly gridColumns: number;
   readonly nodeRadius: number;
   readonly directoryRadius: number;

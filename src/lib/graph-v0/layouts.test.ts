@@ -132,6 +132,43 @@ test('radial branch spacing option separates sibling branch footprints', () => {
   );
 });
 
+test('radial level spacing option separates parent and child levels vertically', () => {
+  const compact = layoutRadialTree(sampleGraph, { layerSpacing: 4 });
+  const expanded = layoutRadialTree(sampleGraph, { layerSpacing: 20 });
+
+  assert.ok(verticalDistanceBetween(expanded, 'repo', 'src') > verticalDistanceBetween(compact, 'repo', 'src'));
+  assert.ok(verticalDistanceBetween(expanded, 'repo', 'lib') > verticalDistanceBetween(expanded, 'repo', 'src'));
+});
+
+test('radial root level spacing separates root children from deeper levels', () => {
+  const layout = layoutRadialTree(sampleGraph, { layerSpacing: 20, rootLayerSpacing: 50 });
+
+  assert.equal(verticalDistanceBetween(layout, 'repo', 'src'), 50);
+  assert.equal(verticalDistanceBetween(layout, 'src', 'lib'), 20);
+});
+
+test('radial layout stacks a single subdirectory directly under its parent', () => {
+  const layout = layoutRadialTree(sampleGraph, { layerSpacing: 20 });
+  const repo = positionForNode(layout, 'repo');
+  const src = positionForNode(layout, 'src');
+
+  assert.equal(src.x, repo.x);
+  assert.equal(src.z, repo.z);
+  assert.equal(src.y, repo.y - 20);
+});
+
+test('radial layout still places multiple subdirectories around the parent', () => {
+  const layout = layoutRadialTree(branchingGraph, { layerSpacing: 20 });
+  const repo = positionForNode(layout, 'repo');
+  const src = positionForNode(layout, 'src');
+  const docs = positionForNode(layout, 'docs');
+
+  assert.notEqual(src.x, repo.x);
+  assert.notEqual(docs.x, repo.x);
+  assert.equal(src.y, repo.y - 20);
+  assert.equal(docs.y, repo.y - 20);
+});
+
 test('radial layout separates adjacent sibling branch descendant footprints', () => {
   const layout = layoutRadialTree(adjacentWideBranchGraph, { siblingSpacing: 10 });
   const leftBranchRadius = maxHorizontalDistanceFrom(layout, 'alpha', childIds('alpha-child', 18));
@@ -177,6 +214,21 @@ test('layered grid branch spacing option separates sibling branch footprints', (
     horizontalDistanceBetween(expanded, 'wide', 'narrow') >
       horizontalDistanceBetween(compact, 'wide', 'narrow'),
   );
+});
+
+test('layered grid level spacing option separates parent and child levels vertically', () => {
+  const compact = layoutLayeredGrid(sampleGraph, { layerSpacing: 4 });
+  const expanded = layoutLayeredGrid(sampleGraph, { layerSpacing: 20 });
+
+  assert.ok(verticalDistanceBetween(expanded, 'repo', 'src') > verticalDistanceBetween(compact, 'repo', 'src'));
+  assert.ok(verticalDistanceBetween(expanded, 'repo', 'lib') > verticalDistanceBetween(expanded, 'repo', 'src'));
+});
+
+test('layered grid root level spacing separates root children from deeper levels', () => {
+  const layout = layoutLayeredGrid(sampleGraph, { layerSpacing: 20, rootLayerSpacing: 50 });
+
+  assert.equal(verticalDistanceBetween(layout, 'repo', 'src'), 50);
+  assert.equal(verticalDistanceBetween(layout, 'src', 'lib'), 20);
 });
 
 function serializeLayout(layout: LayoutResult): readonly unknown[] {
@@ -496,6 +548,10 @@ function horizontalDistanceBetween(layout: LayoutResult, firstNodeId: string, se
   const deltaZ = firstPosition.z - secondPosition.z;
 
   return Math.hypot(deltaX, deltaZ);
+}
+
+function verticalDistanceBetween(layout: LayoutResult, firstNodeId: string, secondNodeId: string): number {
+  return Math.abs(yForNode(layout, firstNodeId) - yForNode(layout, secondNodeId));
 }
 
 function maxHorizontalDistanceFrom(
