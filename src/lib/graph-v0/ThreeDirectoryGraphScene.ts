@@ -35,7 +35,12 @@ import {
   GRAPH_V0_INTERACTION_DEFAULTS,
 } from './constants';
 import { directoryEdgeCurve, directoryEdgeElbowPoints, directoryEdgePathPoints } from './edgeGeometry';
-import { layoutLayeredGrid, layoutRadialTree } from './layouts';
+import {
+  layoutLayeredGrid,
+  layoutRadialTree,
+  layoutSafeRadialTree,
+  layoutWeightedSafeRadialTree,
+} from './layouts';
 import { encodeSelectionId, selectFromIdMap } from './selection';
 import { diffSelectionState, emptySelectionState } from './selectionIndex';
 import type { GraphSelectionState } from './selectionIndex';
@@ -49,6 +54,7 @@ import type {
   GraphNodeKind,
   LayoutOptions,
   LayoutNodePosition,
+  LayoutResult,
   RenderGraph,
   RenderGraphNode,
 } from './types';
@@ -222,10 +228,7 @@ export class DirectoryGraphScene {
     leafDirectoryEdgeStyle: DirectoryGraphLeafEdgeStyle,
     focusNodeId: string | null,
   ): void {
-    const layout =
-      layoutAlgorithm === 'layered-grid'
-        ? layoutLayeredGrid(graph, layoutOptions)
-        : layoutRadialTree(graph, layoutOptions);
+    const layout = layoutForAlgorithm(graph, layoutAlgorithm, layoutOptions);
     this.currentGraph = graph;
     this.currentLayoutAlgorithm = layoutAlgorithm;
     this.currentLayoutBounds = layoutBounds(layout.positions);
@@ -1676,6 +1679,26 @@ function stableLayoutOptionsKey(options: LayoutOptions | undefined): string {
     .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
     .map(([key, value]) => `${key}:${value}`)
     .join('|');
+}
+
+function layoutForAlgorithm(
+  graph: RenderGraph,
+  layoutAlgorithm: string,
+  layoutOptions: LayoutOptions,
+): LayoutResult {
+  if (layoutAlgorithm === 'layered-grid') {
+    return layoutLayeredGrid(graph, layoutOptions);
+  }
+
+  if (layoutAlgorithm === 'safe-radial-tree') {
+    return layoutSafeRadialTree(graph, layoutOptions);
+  }
+
+  if (layoutAlgorithm === 'weighted-safe-radial-tree') {
+    return layoutWeightedSafeRadialTree(graph, layoutOptions);
+  }
+
+  return layoutRadialTree(graph, layoutOptions);
 }
 
 function layoutBounds(positions: ReadonlyMap<string, LayoutNodePosition>): LayoutBounds | null {

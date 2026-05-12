@@ -13,7 +13,12 @@ registerHooks({
   },
 });
 
-const { layoutLayeredGrid, layoutRadialTree } = (await import(
+const {
+  layoutLayeredGrid,
+  layoutRadialTree,
+  layoutSafeRadialTree,
+  layoutWeightedSafeRadialTree,
+} = (await import(
   new URL('./layouts.ts', import.meta.url).href
 )) as typeof import('./layouts');
 
@@ -72,6 +77,20 @@ test('radial layout is deterministic for the same graph and options', () => {
   assert.deepEqual(serializeLayout(layoutRadialTree(sampleGraph)), serializeLayout(layoutRadialTree(sampleGraph)));
 });
 
+test('safe radial layout is deterministic for the same graph and options', () => {
+  assert.deepEqual(
+    serializeLayout(layoutSafeRadialTree(sampleGraph)),
+    serializeLayout(layoutSafeRadialTree(sampleGraph)),
+  );
+});
+
+test('weighted safe radial layout is deterministic for the same graph and options', () => {
+  assert.deepEqual(
+    serializeLayout(layoutWeightedSafeRadialTree(sampleGraph)),
+    serializeLayout(layoutWeightedSafeRadialTree(sampleGraph)),
+  );
+});
+
 test('layered grid layout is deterministic for the same graph and options', () => {
   assert.deepEqual(
     serializeLayout(layoutLayeredGrid(sampleGraph, { gridColumns: 2 })),
@@ -90,6 +109,8 @@ test('layouts sort directories before files at the same depth', () => {
 
 test('layouts place root at the origin', () => {
   assert.deepEqual(layoutRadialTree(sampleGraph).positions.get('repo')?.position, { x: 0, y: 0, z: 0 });
+  assert.deepEqual(layoutSafeRadialTree(sampleGraph).positions.get('repo')?.position, { x: 0, y: 0, z: 0 });
+  assert.deepEqual(layoutWeightedSafeRadialTree(sampleGraph).positions.get('repo')?.position, { x: 0, y: 0, z: 0 });
   assert.deepEqual(layoutLayeredGrid(sampleGraph).positions.get('repo')?.position, { x: 0, y: 0, z: 0 });
 });
 
@@ -183,6 +204,54 @@ test('radial layout does not propagate nested branch footprint into every ancest
   const nestedBranchDistance = horizontalDistanceBetween(layout, 'alpha', 'beta');
 
   assert.ok(nestedBranchDistance < 120);
+});
+
+test('safe radial layout propagates nested branch footprints to prevent sibling subtree overlap', () => {
+  const layout = layoutSafeRadialTree(deepWideBranchGraph, { siblingSpacing: 10 });
+
+  assert.ok(subtreesDoNotOverlap(layout, deepWideBranchGraph, 'alpha', 'beta', 10));
+});
+
+test('safe radial layout uses actual subtree shape instead of circular padding', () => {
+  const layout = layoutSafeRadialTree(lopsidedNestedBranchGraph, { siblingSpacing: 10 });
+  const alphaFootprint = subtreeHorizontalFootprint(layout, lopsidedNestedBranchGraph, 'alpha');
+  const betaFootprint = subtreeHorizontalFootprint(layout, lopsidedNestedBranchGraph, 'beta');
+  const branchOriginDistance = horizontalDistanceBetween(layout, 'alpha', 'beta');
+
+  assert.ok(subtreesDoNotOverlap(layout, lopsidedNestedBranchGraph, 'alpha', 'beta', 10));
+  assert.ok(branchOriginDistance < (alphaFootprint + betaFootprint + 10) * 0.7);
+});
+
+test('safe radial layout keeps the single subdirectory vertical stacking rule', () => {
+  const layout = layoutSafeRadialTree(sampleGraph, { layerSpacing: 20 });
+  const repo = positionForNode(layout, 'repo');
+  const src = positionForNode(layout, 'src');
+
+  assert.equal(src.x, repo.x);
+  assert.equal(src.z, repo.z);
+  assert.equal(src.y, repo.y - 20);
+});
+
+test('weighted safe radial layout places smaller sibling branches closer to their parent', () => {
+  const layout = layoutWeightedSafeRadialTree(lopsidedNestedBranchGraph, { siblingSpacing: 10 });
+  const alphaHeavyDistance = horizontalDistanceBetween(layout, 'alpha', 'alpha-heavy');
+  const alphaLightDistance = horizontalDistanceBetween(layout, 'alpha', 'alpha-light');
+  const betaHeavyDistance = horizontalDistanceBetween(layout, 'beta', 'beta-heavy');
+  const betaLightDistance = horizontalDistanceBetween(layout, 'beta', 'beta-light');
+
+  assert.ok(alphaHeavyDistance > alphaLightDistance);
+  assert.ok(betaHeavyDistance > betaLightDistance);
+  assert.ok(subtreesDoNotOverlap(layout, lopsidedNestedBranchGraph, 'alpha', 'beta', 10));
+});
+
+test('weighted safe radial layout keeps the single subdirectory vertical stacking rule', () => {
+  const layout = layoutWeightedSafeRadialTree(sampleGraph, { layerSpacing: 20 });
+  const repo = positionForNode(layout, 'repo');
+  const src = positionForNode(layout, 'src');
+
+  assert.equal(src.x, repo.x);
+  assert.equal(src.z, repo.z);
+  assert.equal(src.y, repo.y - 20);
 });
 
 test('layered grid centers parents over their descendant branch spans', () => {
@@ -491,8 +560,106 @@ const deepWideBranchGraph: RenderGraph = {
   ],
 };
 
+const lopsidedNestedBranchGraph: RenderGraph = {
+  rootNodeId: 'repo',
+  nodes: [
+    {
+      id: 'repo',
+      kind: 'repo',
+      name: 'repo',
+      path: '',
+      childIds: ['alpha', 'beta'],
+    },
+    {
+      id: 'alpha',
+      kind: 'directory',
+      name: 'alpha',
+      path: 'alpha',
+      parentId: 'repo',
+      childIds: ['alpha-heavy', 'alpha-light'],
+    },
+    {
+      id: 'beta',
+      kind: 'directory',
+      name: 'beta',
+      path: 'beta',
+      parentId: 'repo',
+      childIds: ['beta-heavy', 'beta-light'],
+    },
+    {
+      id: 'alpha-heavy',
+      kind: 'directory',
+      name: 'alpha-heavy',
+      path: 'alpha/heavy',
+      parentId: 'alpha',
+      childIds: childIds('alpha-file', 20),
+    },
+    {
+      id: 'alpha-light',
+      kind: 'directory',
+      name: 'alpha-light',
+      path: 'alpha/light',
+      parentId: 'alpha',
+      childIds: [],
+    },
+    {
+      id: 'beta-heavy',
+      kind: 'directory',
+      name: 'beta-heavy',
+      path: 'beta/heavy',
+      parentId: 'beta',
+      childIds: childIds('beta-file', 20),
+    },
+    {
+      id: 'beta-light',
+      kind: 'directory',
+      name: 'beta-light',
+      path: 'beta/light',
+      parentId: 'beta',
+      childIds: [],
+    },
+    ...fileNodes('alpha-file', 'alpha-heavy', 'alpha/heavy', 20),
+    ...fileNodes('beta-file', 'beta-heavy', 'beta/heavy', 20),
+  ],
+  edges: [
+    { id: 'repo-alpha', kind: 'tree', fromNodeId: 'repo', toNodeId: 'alpha' },
+    { id: 'repo-beta', kind: 'tree', fromNodeId: 'repo', toNodeId: 'beta' },
+    { id: 'alpha-heavy', kind: 'tree', fromNodeId: 'alpha', toNodeId: 'alpha-heavy' },
+    { id: 'alpha-light', kind: 'tree', fromNodeId: 'alpha', toNodeId: 'alpha-light' },
+    { id: 'beta-heavy', kind: 'tree', fromNodeId: 'beta', toNodeId: 'beta-heavy' },
+    { id: 'beta-light', kind: 'tree', fromNodeId: 'beta', toNodeId: 'beta-light' },
+    ...fileEdges('alpha-file', 'alpha-heavy', 20),
+    ...fileEdges('beta-file', 'beta-heavy', 20),
+  ],
+};
+
 function childIds(prefix: string, count: number): string[] {
   return Array.from({ length: count }, (_, index) => `${prefix}-${index.toString().padStart(2, '0')}`);
+}
+
+function fileNodes(
+  prefix: string,
+  parentId: string,
+  parentPath: string,
+  count: number,
+): RenderGraph['nodes'] {
+  return childIds(prefix, count).map((fileId) => ({
+    id: fileId,
+    kind: 'file' as const,
+    name: fileId,
+    path: `${parentPath}/${fileId}`,
+    parentId,
+    childIds: [],
+  }));
+}
+
+function fileEdges(prefix: string, parentId: string, count: number): RenderGraph['edges'] {
+  return childIds(prefix, count).map((fileId) => ({
+    id: `${parentId}-${fileId}`,
+    kind: 'tree' as const,
+    fromNodeId: parentId,
+    toNodeId: fileId,
+  }));
 }
 
 function nestedDirectoryNodes(
@@ -562,6 +729,59 @@ function maxHorizontalDistanceFrom(
   return Math.max(
     ...targetNodeIds.map((targetNodeId) => horizontalDistanceBetween(layout, originNodeId, targetNodeId)),
   );
+}
+
+function subtreeHorizontalFootprint(layout: LayoutResult, graph: RenderGraph, rootNodeId: string): number {
+  return Math.max(
+    ...subtreeNodeIds(graph, rootNodeId).map((nodeId) =>
+      horizontalDistanceBetween(layout, rootNodeId, nodeId) + radiusForNode(layout, nodeId),
+    ),
+  );
+}
+
+function subtreeNodeIds(graph: RenderGraph, rootNodeId: string): readonly string[] {
+  const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
+  const nodeIds: string[] = [];
+
+  function append(nodeId: string): void {
+    const node = nodeById.get(nodeId);
+
+    if (!node) {
+      return;
+    }
+
+    nodeIds.push(node.id);
+
+    for (const childId of node.childIds) {
+      append(childId);
+    }
+  }
+
+  append(rootNodeId);
+  return nodeIds;
+}
+
+function subtreesDoNotOverlap(
+  layout: LayoutResult,
+  graph: RenderGraph,
+  leftRootNodeId: string,
+  rightRootNodeId: string,
+  spacing: number,
+): boolean {
+  const leftNodeIds = subtreeNodeIds(graph, leftRootNodeId);
+  const rightNodeIds = subtreeNodeIds(graph, rightRootNodeId);
+
+  for (const leftNodeId of leftNodeIds) {
+    for (const rightNodeId of rightNodeIds) {
+      const distance = horizontalDistanceBetween(layout, leftNodeId, rightNodeId);
+
+      if (distance < radiusForNode(layout, leftNodeId) + radiusForNode(layout, rightNodeId) + spacing - 0.001) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 function positionForNode(layout: LayoutResult, nodeId: string): LayoutNodePosition['position'] {

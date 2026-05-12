@@ -19,6 +19,17 @@ type RadialFootprint = {
   readonly nodeRadius: number;
   readonly placementRadius: number;
 };
+type SafeRadialSample = {
+  readonly x: number;
+  readonly z: number;
+  readonly radius: number;
+};
+type SafeRadialShape = {
+  readonly nodeRadius: number;
+  readonly samples: readonly SafeRadialSample[];
+  readonly childPlacements: readonly RadialChildPlacement[];
+};
+type SafeRadialDistribution = 'equal-ring' | 'weighted';
 type RadialChildPlacement = {
   readonly childId: string;
   readonly radius: number;
@@ -61,6 +72,111 @@ export function layoutRadialTree(
   );
 
   return { algorithm: 'radial-tree', positions };
+}
+
+export function layoutSafeRadialTree(
+  graph: RenderGraph,
+  options: LayoutOptions = {},
+): LayoutResult {
+  const context = buildLayoutContext(graph);
+  const resolvedOptions = resolveLayoutOptions(options);
+  const positions = new Map<string, LayoutNodePosition>();
+  const shapeByNodeId = buildSafeRadialShapeMap(context, resolvedOptions, 'equal-ring');
+
+  placeSafeRadialNode(
+    graph.rootNodeId,
+    0,
+    0,
+    { x: 0, y: 0, z: 0 },
+    GRAPH_V0_LAYOUT_GEOMETRY.radialStartAngleRadians,
+    context,
+    resolvedOptions,
+    shapeByNodeId,
+    positions,
+  );
+
+  return { algorithm: 'safe-radial-tree', positions };
+}
+
+export function layoutWeightedSafeRadialTree(
+  graph: RenderGraph,
+  options: LayoutOptions = {},
+): LayoutResult {
+  const context = buildLayoutContext(graph);
+  const resolvedOptions = resolveLayoutOptions(options);
+  const positions = new Map<string, LayoutNodePosition>();
+  const shapeByNodeId = buildSafeRadialShapeMap(context, resolvedOptions, 'weighted');
+
+  placeSafeRadialNode(
+    graph.rootNodeId,
+    0,
+    0,
+    { x: 0, y: 0, z: 0 },
+    GRAPH_V0_LAYOUT_GEOMETRY.radialStartAngleRadians,
+    context,
+    resolvedOptions,
+    shapeByNodeId,
+    positions,
+  );
+
+  return { algorithm: 'weighted-safe-radial-tree', positions };
+}
+
+function placeSafeRadialNode(
+  nodeId: string,
+  depth: number,
+  order: number,
+  position: LayoutNodePosition['position'],
+  outwardAngle: number,
+  context: LayoutContext,
+  options: ResolvedLayoutOptions,
+  shapeByNodeId: ReadonlyMap<string, SafeRadialShape>,
+  positions: Map<string, LayoutNodePosition>,
+): void {
+  const shape = getKnownSafeRadialShape(shapeByNodeId, nodeId);
+
+  positions.set(nodeId, {
+    nodeId,
+    position,
+    radius: shape.nodeRadius,
+    depth,
+    order,
+  });
+
+  const childIds = context.childIdsByNodeId.get(nodeId) ?? [];
+  const fileChildIds = childIds.filter((childId) => getKnownNode(context.nodeById, childId).kind === 'file');
+  const fileChildPositions = containedFileChildPositions(fileChildIds, shape.nodeRadius, position, options);
+
+  fileChildPositions.forEach((fileChildPosition, childOrder) => {
+    positions.set(fileChildPosition.childId, {
+      nodeId: fileChildPosition.childId,
+      position: fileChildPosition.position,
+      radius: options.nodeRadius,
+      depth: depth + 1,
+      order: childOrder,
+    });
+  });
+
+  shape.childPlacements.forEach((childPlacement, childOrder) => {
+    const childAngle = childPlacement.angle + outwardAngle;
+    const childPosition = {
+      x: position.x + Math.cos(childAngle) * childPlacement.radius,
+      y: zeroIfNegativeZero(position.y - childLayerSpacing(depth, options)),
+      z: position.z + Math.sin(childAngle) * childPlacement.radius,
+    };
+
+    placeSafeRadialNode(
+      childPlacement.childId,
+      depth + 1,
+      fileChildPositions.length + childOrder,
+      childPosition,
+      childAngle,
+      context,
+      options,
+      shapeByNodeId,
+      positions,
+    );
+  });
 }
 
 export function layoutLayeredGrid(
@@ -291,6 +407,322 @@ function buildRadialFootprintMap(
   }
 
   return footprintByNodeId;
+}
+
+function buildSafeRadialShapeMap(
+  context: LayoutContext,
+  options: ResolvedLayoutOptions,
+  distribution: SafeRadialDistribution,
+): ReadonlyMap<string, SafeRadialShape> {
+  const shapeByNodeId = new Map<string, SafeRadialShape>();
+
+  function shape(nodeId: string): SafeRadialShape {
+    const cached = shapeByNodeId.get(nodeId);
+
+    if (cached) {
+      return cached;
+    }
+
+    const node = getKnownNode(context.nodeById, nodeId);
+    const childIds = context.childIdsByNodeId.get(nodeId) ?? [];
+    const childShapes = childIds.map((childId) => [getKnownNode(context.nodeById, childId), shape(childId)] as const);
+    const fileChildShapes = childShapes
+      .filter(([child]) => child.kind === 'file')
+      .map(([, childShape]) => childShape);
+    const branchChildren = childShapes
+      .filter(([child]) => child.kind !== 'file')
+      .map(([child, childShape]) => ({ childId: child.id, shape: childShape }));
+    const nodeRadius = radialNodeRadiusForContainedFiles(node.kind, fileChildShapes.length, options);
+    const childPlacements = safeRadialChildPlacements(
+      branchChildren,
+      nodeRadius,
+      options,
+      distribution,
+    );
+    const samples = [
+      { x: 0, z: 0, radius: nodeRadius },
+      ...childPlacements.flatMap((placement) =>
+        transformSafeRadialSamples(
+          getKnownSafeRadialShape(shapeByNodeId, placement.childId).samples,
+          placement.angle,
+          placement.radius,
+        ),
+      ),
+    ];
+    const nodeShape = {
+      nodeRadius,
+      samples,
+      childPlacements,
+    };
+
+    shapeByNodeId.set(nodeId, nodeShape);
+    return nodeShape;
+  }
+
+  for (const nodeId of [...context.orderedNodeIds].reverse()) {
+    shape(nodeId);
+  }
+
+  return shapeByNodeId;
+}
+
+function safeRadialChildPlacements(
+  branchChildren: ReadonlyArray<{ readonly childId: string; readonly shape: SafeRadialShape }>,
+  parentRadius: number,
+  options: ResolvedLayoutOptions,
+  distribution: SafeRadialDistribution,
+): readonly RadialChildPlacement[] {
+  if (branchChildren.length === 0) {
+    return [];
+  }
+
+  if (branchChildren.length === 1) {
+    return [{ childId: branchChildren[0].childId, radius: 0, angle: 0 }];
+  }
+
+  const placements: RadialChildPlacement[] = [];
+  const fixedSamples: SafeRadialSample[] = [{ x: 0, z: 0, radius: parentRadius }];
+  let start = 0;
+
+  for (const ringSize of radialRingSizes(branchChildren.length)) {
+    const ringChildren = branchChildren.slice(start, start + ringSize);
+    const angles = ringChildren.map((_, ringOrder) => childAngleForOrder(0, ringOrder, ringChildren.length));
+    const ringPlacements =
+      distribution === 'weighted'
+        ? weightedSafeRadialRingPlacements(ringChildren, angles, fixedSamples, parentRadius, options)
+        : equalSafeRadialRingPlacements(ringChildren, angles, fixedSamples, parentRadius, options);
+
+    placements.push(...ringPlacements);
+    fixedSamples.push(
+      ...ringPlacements.flatMap((placement, placementIndex) =>
+        transformSafeRadialSamples(
+          ringChildren[placementIndex].shape.samples,
+          placement.angle,
+          placement.radius,
+        ),
+      ),
+    );
+    start += ringSize;
+  }
+
+  return placements;
+}
+
+function equalSafeRadialRingPlacements(
+  ringChildren: ReadonlyArray<{ readonly childId: string; readonly shape: SafeRadialShape }>,
+  angles: readonly number[],
+  fixedSamples: readonly SafeRadialSample[],
+  parentRadius: number,
+  options: ResolvedLayoutOptions,
+): readonly RadialChildPlacement[] {
+  const ringNodeRadii = ringChildren.map(({ shape }) => shape.nodeRadius);
+  const minimumRadius = Math.max(
+    radialRingRadiusForChildRadii(ringNodeRadii, options),
+    parentRadius + Math.max(0, ...ringNodeRadii) + options.siblingSpacing,
+  );
+  const ringRadius = minimumSafeRadialRingRadius(
+    ringChildren.map(({ shape: childShape }) => childShape),
+    angles,
+    fixedSamples,
+    minimumRadius,
+    options,
+  );
+
+  return ringChildren.map(({ childId }, ringOrder) => ({
+    childId,
+    radius: ringRadius,
+    angle: angles[ringOrder],
+  }));
+}
+
+function weightedSafeRadialRingPlacements(
+  ringChildren: ReadonlyArray<{ readonly childId: string; readonly shape: SafeRadialShape }>,
+  angles: readonly number[],
+  fixedSamples: readonly SafeRadialSample[],
+  parentRadius: number,
+  options: ResolvedLayoutOptions,
+): readonly RadialChildPlacement[] {
+  const placements: RadialChildPlacement[] = [];
+  const placedSamples: SafeRadialSample[] = [...fixedSamples];
+  const shapeRadii = ringChildren.map(({ shape }) => safeRadialShapeOuterRadius(shape));
+  const minShapeRadius = Math.min(...shapeRadii);
+
+  ringChildren.forEach(({ childId, shape }, ringOrder) => {
+    const angle = angles[ringOrder];
+    const minimumRadius = Math.max(
+      options.depthSpacing,
+      parentRadius + shape.nodeRadius + options.siblingSpacing,
+    );
+    const preferredRadius =
+      minimumRadius + Math.max(0, shapeRadii[ringOrder] - minShapeRadius) * 0.55;
+    const radius = minimumSafeRadialChildRadius(
+      shape,
+      angle,
+      placedSamples,
+      preferredRadius,
+      options,
+    );
+    const placement = { childId, radius, angle };
+
+    placements.push(placement);
+    placedSamples.push(...transformSafeRadialSamples(shape.samples, angle, radius));
+  });
+
+  return placements;
+}
+
+function safeRadialShapeOuterRadius(shape: SafeRadialShape): number {
+  return Math.max(...shape.samples.map((sample) => Math.hypot(sample.x, sample.z) + sample.radius));
+}
+
+function minimumSafeRadialChildRadius(
+  childShape: SafeRadialShape,
+  angle: number,
+  fixedSamples: readonly SafeRadialSample[],
+  minimumRadius: number,
+  options: ResolvedLayoutOptions,
+): number {
+  let low = minimumRadius;
+  let high = minimumRadius;
+
+  if (safeRadialChildFits(childShape, angle, fixedSamples, high, options)) {
+    return high;
+  }
+
+  for (let attempt = 0; attempt < 64; attempt += 1) {
+    low = high;
+    high = high * 1.35 + options.siblingSpacing;
+
+    if (safeRadialChildFits(childShape, angle, fixedSamples, high, options)) {
+      break;
+    }
+  }
+
+  for (let step = 0; step < 32; step += 1) {
+    const midpoint = (low + high) / 2;
+
+    if (safeRadialChildFits(childShape, angle, fixedSamples, midpoint, options)) {
+      high = midpoint;
+    } else {
+      low = midpoint;
+    }
+  }
+
+  return high;
+}
+
+function safeRadialChildFits(
+  childShape: SafeRadialShape,
+  angle: number,
+  fixedSamples: readonly SafeRadialSample[],
+  radius: number,
+  options: ResolvedLayoutOptions,
+): boolean {
+  return !samplesOverlap(
+    transformSafeRadialSamples(childShape.samples, angle, radius),
+    fixedSamples,
+    options.siblingSpacing,
+  );
+}
+
+function minimumSafeRadialRingRadius(
+  childShapes: readonly SafeRadialShape[],
+  angles: readonly number[],
+  fixedSamples: readonly SafeRadialSample[],
+  minimumRadius: number,
+  options: ResolvedLayoutOptions,
+): number {
+  let low = minimumRadius;
+  let high = minimumRadius;
+
+  if (safeRadialRingFits(childShapes, angles, fixedSamples, high, options)) {
+    return high;
+  }
+
+  for (let attempt = 0; attempt < 64; attempt += 1) {
+    high = high * 1.35 + options.siblingSpacing;
+
+    if (safeRadialRingFits(childShapes, angles, fixedSamples, high, options)) {
+      break;
+    }
+
+    low = high;
+  }
+
+  for (let step = 0; step < 32; step += 1) {
+    const midpoint = (low + high) / 2;
+
+    if (safeRadialRingFits(childShapes, angles, fixedSamples, midpoint, options)) {
+      high = midpoint;
+    } else {
+      low = midpoint;
+    }
+  }
+
+  return high;
+}
+
+function safeRadialRingFits(
+  childShapes: readonly SafeRadialShape[],
+  angles: readonly number[],
+  fixedSamples: readonly SafeRadialSample[],
+  ringRadius: number,
+  options: ResolvedLayoutOptions,
+): boolean {
+  const groups = childShapes.map((shape, index) =>
+    transformSafeRadialSamples(shape.samples, angles[index], ringRadius),
+  );
+
+  for (const group of groups) {
+    if (samplesOverlap(group, fixedSamples, options.siblingSpacing)) {
+      return false;
+    }
+  }
+
+  for (let leftIndex = 0; leftIndex < groups.length - 1; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < groups.length; rightIndex += 1) {
+      if (samplesOverlap(groups[leftIndex], groups[rightIndex], options.siblingSpacing)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+function samplesOverlap(
+  leftSamples: readonly SafeRadialSample[],
+  rightSamples: readonly SafeRadialSample[],
+  spacing: number,
+): boolean {
+  for (const left of leftSamples) {
+    for (const right of rightSamples) {
+      const distance = Math.hypot(left.x - right.x, left.z - right.z);
+
+      if (distance < left.radius + right.radius + spacing - 0.001) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function transformSafeRadialSamples(
+  samples: readonly SafeRadialSample[],
+  angle: number,
+  radius: number,
+): readonly SafeRadialSample[] {
+  const angleCos = Math.cos(angle);
+  const angleSin = Math.sin(angle);
+  const originX = angleCos * radius;
+  const originZ = angleSin * radius;
+
+  return samples.map((sample) => ({
+    x: originX + sample.x * angleCos - sample.z * angleSin,
+    z: originZ + sample.x * angleSin + sample.z * angleCos,
+    radius: sample.radius,
+  }));
 }
 
 function buildLayeredFootprintMap(
@@ -818,6 +1250,19 @@ function getKnownRadialFootprint(
   }
 
   return footprint;
+}
+
+function getKnownSafeRadialShape(
+  shapeByNodeId: ReadonlyMap<string, SafeRadialShape>,
+  nodeId: string,
+): SafeRadialShape {
+  const shape = shapeByNodeId.get(nodeId);
+
+  if (!shape) {
+    throw new Error(`Graph node safe radial layout shape is missing: ${nodeId}`);
+  }
+
+  return shape;
 }
 
 function compareGraphNodeKind(left: GraphNodeKind, right: GraphNodeKind): number {

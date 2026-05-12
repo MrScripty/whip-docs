@@ -77,7 +77,11 @@ export type DirectoryGraphNeighborhood = {
   readonly secondLevelNodeIds: readonly string[];
 };
 
-export type LayoutAlgorithmId = 'radial-tree' | 'layered-grid';
+export type LayoutAlgorithmId =
+  | 'radial-tree'
+  | 'safe-radial-tree'
+  | 'weighted-safe-radial-tree'
+  | 'layered-grid';
 
 export type LayoutOptions = Partial<{
   readonly depthSpacing: number;

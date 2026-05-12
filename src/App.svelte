@@ -43,7 +43,7 @@
   let selectedKind = $state('');
   let graphMode = $state('architecture');
   let directoryPanelMode = $state('tree');
-  let directoryLayoutAlgorithm = $state('radial-tree');
+  let directoryLayoutAlgorithm = $state('weighted-safe-radial-tree');
   let directoryEdgeStyle = $state('c-curve');
   let directoryRootEdgeStyle = $state('elbow');
   let directoryLeafEdgeStyle = $state('straight');
@@ -483,6 +483,8 @@
               <span>Layout</span>
               <select id="directory-layout-algorithm" bind:value={directoryLayoutAlgorithm} aria-label="3D graph layout">
                 <option value="radial-tree">Radial tree</option>
+                <option value="safe-radial-tree">Safe radial tree</option>
+                <option value="weighted-safe-radial-tree">Weighted safe radial tree</option>
                 <option value="layered-grid">Layered grid</option>
               </select>
             </label>
