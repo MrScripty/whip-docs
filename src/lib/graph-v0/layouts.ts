@@ -27,7 +27,13 @@ type SafeRadialSample = {
 type SafeRadialShape = {
   readonly nodeRadius: number;
   readonly samples: readonly SafeRadialSample[];
+};
+type SafeRadialNodePlan = {
+  readonly nodeRadius: number;
   readonly childPlacements: readonly RadialChildPlacement[];
+};
+type SafeRadialLayoutPlan = {
+  readonly nodePlanByNodeId: ReadonlyMap<string, SafeRadialNodePlan>;
 };
 type SafeRadialDistribution = 'equal-ring' | 'weighted';
 type RadialChildPlacement = {
@@ -81,7 +87,12 @@ export function layoutSafeRadialTree(
   const context = buildLayoutContext(graph);
   const resolvedOptions = resolveLayoutOptions(options);
   const positions = new Map<string, LayoutNodePosition>();
-  const shapeByNodeId = buildSafeRadialShapeMap(context, resolvedOptions, 'equal-ring');
+  const layoutPlan = buildSafeRadialLayoutPlan(
+    graph.rootNodeId,
+    context,
+    resolvedOptions,
+    'equal-ring',
+  );
 
   placeSafeRadialNode(
     graph.rootNodeId,
@@ -91,7 +102,7 @@ export function layoutSafeRadialTree(
     GRAPH_V0_LAYOUT_GEOMETRY.radialStartAngleRadians,
     context,
     resolvedOptions,
-    shapeByNodeId,
+    layoutPlan.nodePlanByNodeId,
     positions,
   );
 
@@ -105,7 +116,12 @@ export function layoutWeightedSafeRadialTree(
   const context = buildLayoutContext(graph);
   const resolvedOptions = resolveLayoutOptions(options);
   const positions = new Map<string, LayoutNodePosition>();
-  const shapeByNodeId = buildSafeRadialShapeMap(context, resolvedOptions, 'weighted');
+  const layoutPlan = buildSafeRadialLayoutPlan(
+    graph.rootNodeId,
+    context,
+    resolvedOptions,
+    'weighted',
+  );
 
   placeSafeRadialNode(
     graph.rootNodeId,
@@ -115,7 +131,7 @@ export function layoutWeightedSafeRadialTree(
     GRAPH_V0_LAYOUT_GEOMETRY.radialStartAngleRadians,
     context,
     resolvedOptions,
-    shapeByNodeId,
+    layoutPlan.nodePlanByNodeId,
     positions,
   );
 
@@ -130,53 +146,66 @@ function placeSafeRadialNode(
   outwardAngle: number,
   context: LayoutContext,
   options: ResolvedLayoutOptions,
-  shapeByNodeId: ReadonlyMap<string, SafeRadialShape>,
+  nodePlanByNodeId: ReadonlyMap<string, SafeRadialNodePlan>,
   positions: Map<string, LayoutNodePosition>,
 ): void {
-  const shape = getKnownSafeRadialShape(shapeByNodeId, nodeId);
+  const stack: Array<{
+    readonly nodeId: string;
+    readonly depth: number;
+    readonly order: number;
+    readonly position: LayoutNodePosition['position'];
+    readonly outwardAngle: number;
+  }> = [{ nodeId, depth, order, position, outwardAngle }];
 
-  positions.set(nodeId, {
-    nodeId,
-    position,
-    radius: shape.nodeRadius,
-    depth,
-    order,
-  });
+  while (stack.length > 0) {
+    const current = stack.pop();
 
-  const childIds = context.childIdsByNodeId.get(nodeId) ?? [];
-  const fileChildIds = childIds.filter((childId) => getKnownNode(context.nodeById, childId).kind === 'file');
-  const fileChildPositions = containedFileChildPositions(fileChildIds, shape.nodeRadius, position, options);
+    if (!current) {
+      continue;
+    }
 
-  fileChildPositions.forEach((fileChildPosition, childOrder) => {
-    positions.set(fileChildPosition.childId, {
-      nodeId: fileChildPosition.childId,
-      position: fileChildPosition.position,
-      radius: options.nodeRadius,
-      depth: depth + 1,
-      order: childOrder,
+    const plan = getKnownSafeRadialNodePlan(nodePlanByNodeId, current.nodeId);
+
+    positions.set(current.nodeId, {
+      nodeId: current.nodeId,
+      position: current.position,
+      radius: plan.nodeRadius,
+      depth: current.depth,
+      order: current.order,
     });
-  });
 
-  shape.childPlacements.forEach((childPlacement, childOrder) => {
-    const childAngle = childPlacement.angle + outwardAngle;
-    const childPosition = {
-      x: position.x + Math.cos(childAngle) * childPlacement.radius,
-      y: zeroIfNegativeZero(position.y - childLayerSpacing(depth, options)),
-      z: position.z + Math.sin(childAngle) * childPlacement.radius,
-    };
+    const childIds = context.childIdsByNodeId.get(current.nodeId) ?? [];
+    const fileChildIds = childIds.filter((childId) => getKnownNode(context.nodeById, childId).kind === 'file');
+    const fileChildPositions = containedFileChildPositions(fileChildIds, plan.nodeRadius, current.position, options);
 
-    placeSafeRadialNode(
-      childPlacement.childId,
-      depth + 1,
-      fileChildPositions.length + childOrder,
-      childPosition,
-      childAngle,
-      context,
-      options,
-      shapeByNodeId,
-      positions,
-    );
-  });
+    fileChildPositions.forEach((fileChildPosition, childOrder) => {
+      positions.set(fileChildPosition.childId, {
+        nodeId: fileChildPosition.childId,
+        position: fileChildPosition.position,
+        radius: options.nodeRadius,
+        depth: current.depth + 1,
+        order: childOrder,
+      });
+    });
+
+    for (let childOrder = plan.childPlacements.length - 1; childOrder >= 0; childOrder -= 1) {
+      const childPlacement = plan.childPlacements[childOrder];
+      const childAngle = childPlacement.angle + current.outwardAngle;
+      const childPosition = {
+        x: current.position.x + Math.cos(childAngle) * childPlacement.radius,
+        y: zeroIfNegativeZero(current.position.y - childLayerSpacing(current.depth, options)),
+        z: current.position.z + Math.sin(childAngle) * childPlacement.radius,
+      };
+
+      stack.push({
+        nodeId: childPlacement.childId,
+        depth: current.depth + 1,
+        order: fileChildPositions.length + childOrder,
+        position: childPosition,
+        outwardAngle: childAngle,
+      });
+    }
+  }
 }
 
 export function layoutLayeredGrid(
@@ -409,61 +438,79 @@ function buildRadialFootprintMap(
   return footprintByNodeId;
 }
 
-function buildSafeRadialShapeMap(
+function buildSafeRadialLayoutPlan(
+  rootNodeId: string,
   context: LayoutContext,
   options: ResolvedLayoutOptions,
   distribution: SafeRadialDistribution,
-): ReadonlyMap<string, SafeRadialShape> {
+): SafeRadialLayoutPlan {
+  const nodePlanByNodeId = new Map<string, SafeRadialNodePlan>();
   const shapeByNodeId = new Map<string, SafeRadialShape>();
+  const remainingParentCountByNodeId = childParentCounts(context);
 
-  function shape(nodeId: string): SafeRadialShape {
-    const cached = shapeByNodeId.get(nodeId);
-
-    if (cached) {
-      return cached;
-    }
-
+  for (const nodeId of [...context.orderedNodeIds].reverse()) {
     const node = getKnownNode(context.nodeById, nodeId);
     const childIds = context.childIdsByNodeId.get(nodeId) ?? [];
-    const childShapes = childIds.map((childId) => [getKnownNode(context.nodeById, childId), shape(childId)] as const);
-    const fileChildShapes = childShapes
-      .filter(([child]) => child.kind === 'file')
-      .map(([, childShape]) => childShape);
-    const branchChildren = childShapes
-      .filter(([child]) => child.kind !== 'file')
-      .map(([child, childShape]) => ({ childId: child.id, shape: childShape }));
-    const nodeRadius = radialNodeRadiusForContainedFiles(node.kind, fileChildShapes.length, options);
+    const childNodes = childIds.map((childId) => getKnownNode(context.nodeById, childId));
+    const fileChildCount = childNodes.filter((child) => child.kind === 'file').length;
+    const branchChildren = childNodes
+      .filter((child) => child.kind !== 'file')
+      .map((child) => ({
+        childId: child.id,
+        shape: getKnownSafeRadialBranchShape(shapeByNodeId, child.id),
+      }));
+    const nodeRadius = radialNodeRadiusForContainedFiles(node.kind, fileChildCount, options);
     const childPlacements = safeRadialChildPlacements(
       branchChildren,
       nodeRadius,
       options,
       distribution,
     );
+    const branchShapeByChildId = new Map(branchChildren.map((child) => [child.childId, child.shape]));
     const samples = [
       { x: 0, z: 0, radius: nodeRadius },
       ...childPlacements.flatMap((placement) =>
         transformSafeRadialSamples(
-          getKnownSafeRadialShape(shapeByNodeId, placement.childId).samples,
+          getKnownSafeRadialBranchShape(branchShapeByChildId, placement.childId).samples,
           placement.angle,
           placement.radius,
         ),
       ),
     ];
-    const nodeShape = {
+
+    nodePlanByNodeId.set(nodeId, {
       nodeRadius,
-      samples,
       childPlacements,
-    };
+    });
 
-    shapeByNodeId.set(nodeId, nodeShape);
-    return nodeShape;
+    if (node.kind !== 'file' || node.id === rootNodeId) {
+      shapeByNodeId.set(node.id, { nodeRadius, samples });
+    }
+
+    for (const { childId } of branchChildren) {
+      const remainingParentCount = (remainingParentCountByNodeId.get(childId) ?? 0) - 1;
+
+      remainingParentCountByNodeId.set(childId, remainingParentCount);
+
+      if (remainingParentCount <= 0) {
+        shapeByNodeId.delete(childId);
+      }
+    }
   }
 
-  for (const nodeId of [...context.orderedNodeIds].reverse()) {
-    shape(nodeId);
+  return { nodePlanByNodeId };
+}
+
+function childParentCounts(context: LayoutContext): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const childIds of context.childIdsByNodeId.values()) {
+    for (const childId of childIds) {
+      counts.set(childId, (counts.get(childId) ?? 0) + 1);
+    }
   }
 
-  return shapeByNodeId;
+  return counts;
 }
 
 function safeRadialChildPlacements(
@@ -1252,14 +1299,27 @@ function getKnownRadialFootprint(
   return footprint;
 }
 
-function getKnownSafeRadialShape(
-  shapeByNodeId: ReadonlyMap<string, SafeRadialShape>,
+function getKnownSafeRadialNodePlan(
+  nodePlanByNodeId: ReadonlyMap<string, SafeRadialNodePlan>,
   nodeId: string,
+): SafeRadialNodePlan {
+  const plan = nodePlanByNodeId.get(nodeId);
+
+  if (!plan) {
+    throw new Error(`Graph node safe radial layout plan is missing: ${nodeId}`);
+  }
+
+  return plan;
+}
+
+function getKnownSafeRadialBranchShape(
+  shapeByChildId: ReadonlyMap<string, SafeRadialShape>,
+  childId: string,
 ): SafeRadialShape {
-  const shape = shapeByNodeId.get(nodeId);
+  const shape = shapeByChildId.get(childId);
 
   if (!shape) {
-    throw new Error(`Graph node safe radial layout shape is missing: ${nodeId}`);
+    throw new Error(`Graph node safe radial branch shape is missing: ${childId}`);
   }
 
   return shape;
