@@ -3,10 +3,12 @@ import {
   BoxGeometry,
   BufferGeometry,
   CanvasTexture,
+  ClampToEdgeWrapping,
   Color,
   CylinderGeometry,
   DirectionalLight,
   DoubleSide,
+  Float32BufferAttribute,
   Group,
   Line,
   LineBasicMaterial,
@@ -18,9 +20,11 @@ import {
   Raycaster,
   Scene,
   SphereGeometry,
+  SRGBColorSpace,
   Sprite,
   SpriteMaterial,
   type Texture,
+  TextureLoader,
   TubeGeometry,
   Vector2,
   Vector3,
@@ -29,6 +33,22 @@ import {
   type Material,
   type Object3D,
 } from 'three';
+import fileModelObj from './assets/3dmodels/file.obj?raw';
+import bashIconUrl from './assets/icons/bash-icon.svg?url';
+import csharpIconUrl from './assets/icons/c-sharp-icon.svg?url';
+import cfgIconUrl from './assets/icons/cfg-icon.svg?url';
+import cssIconUrl from './assets/icons/css-3-icon.svg?url';
+import gitIconUrl from './assets/icons/git-icon.svg?url';
+import htmlIconUrl from './assets/icons/html-5-icon.svg?url';
+import javascriptIconUrl from './assets/icons/javascript-icon.svg?url';
+import jsonIconUrl from './assets/icons/json-icon.svg?url';
+import markdownIconUrl from './assets/icons/markdown-icon.svg?url';
+import pythonIconUrl from './assets/icons/pytho-icon.svg?url';
+import rustIconUrl from './assets/icons/rust-icon.svg?url';
+import sqlIconUrl from './assets/icons/sql-icon.svg?url';
+import svelteIconUrl from './assets/icons/svelte-icon.svg?url';
+import tomlIconUrl from './assets/icons/toml-icom.svg?url';
+import typescriptIconUrl from './assets/icons/typescript-icon.svg?url';
 import {
   GRAPH_V0_CAMERA_DEFAULTS,
   GRAPH_V0_DEPTH_STYLE_DEFAULTS,
@@ -57,9 +77,10 @@ import type {
   LayoutResult,
   RenderGraph,
   RenderGraphNode,
+  Vec3,
 } from './types';
 
-type NodeMesh = Mesh<BufferGeometry, MeshLambertMaterial>;
+type NodeMesh = Mesh<BufferGeometry, MeshLambertMaterial> | Group;
 type EdgeLine = Line<BufferGeometry, LineBasicMaterial>;
 type SelectionMesh = Mesh<BufferGeometry, MeshBasicMaterial> | Group;
 
@@ -112,6 +133,38 @@ type CameraTransition = {
   readonly toFar: number;
 };
 
+const FILE_NODE_GEOMETRY = fileNodeGeometryFromObj(fileModelObj);
+FILE_NODE_GEOMETRY.userData = { sharedFileNodeGeometry: true };
+const FILE_ICON_BY_EXTENSION = new Map<string, string>([
+  ['bash', bashIconUrl],
+  ['cfg', cfgIconUrl],
+  ['conf', cfgIconUrl],
+  ['cs', csharpIconUrl],
+  ['css', cssIconUrl],
+  ['gitconfig', gitIconUrl],
+  ['gitignore', gitIconUrl],
+  ['htm', htmlIconUrl],
+  ['html', htmlIconUrl],
+  ['cjs', javascriptIconUrl],
+  ['js', javascriptIconUrl],
+  ['jsx', javascriptIconUrl],
+  ['json', jsonIconUrl],
+  ['markdown', markdownIconUrl],
+  ['md', markdownIconUrl],
+  ['mdx', markdownIconUrl],
+  ['mjs', javascriptIconUrl],
+  ['py', pythonIconUrl],
+  ['rs', rustIconUrl],
+  ['sh', bashIconUrl],
+  ['sql', sqlIconUrl],
+  ['svelte', svelteIconUrl],
+  ['tml', tomlIconUrl],
+  ['toml', tomlIconUrl],
+  ['ts', typescriptIconUrl],
+  ['tsx', typescriptIconUrl],
+  ['zsh', bashIconUrl],
+]);
+
 export class DirectoryGraphScene {
   private readonly scene = new Scene();
   private readonly camera = new PerspectiveCamera(
@@ -132,6 +185,8 @@ export class DirectoryGraphScene {
   private readonly raycaster = new Raycaster();
   private readonly theme: DirectoryGraphSceneTheme;
   private readonly selectionTargetById = new Map<number, SelectionTarget>();
+  private readonly textureLoader = new TextureLoader();
+  private readonly fileIconTextureByUrl = new Map<string, Texture>();
   private readonly graphNodesById = new Map<string, RenderGraphNode>();
   private readonly nodeEntries = new Map<string, NodeSceneEntry>();
   private readonly edgeEntries = new Map<string, EdgeSceneEntry>();
@@ -298,7 +353,7 @@ export class DirectoryGraphScene {
         return;
       }
 
-      const mesh = this.createNode(node.kind, position);
+      const mesh = this.createNode(node, position);
       mesh.position.set(position.position.x, position.position.y, position.position.z);
       mesh.userData = { nodeId: node.id, nodePath: node.path };
       this.nodeGroup.add(mesh);
@@ -430,6 +485,7 @@ export class DirectoryGraphScene {
     this.labelEntries.clear();
     this.baseLabeledNodeIds.clear();
     this.selectionTargetById.clear();
+    this.disposeFileIconTextures();
     this.selectionTarget.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
@@ -1088,28 +1144,61 @@ export class DirectoryGraphScene {
   }
 
   private createNode(
-    kind: GraphNodeKind,
+    node: RenderGraphNode,
     position: LayoutNodePosition,
   ): NodeMesh {
-    const isContainerNode = kind !== 'file';
+    const kind = node.kind;
+    if (kind === 'file') {
+      return this.createFileNode(node, position);
+    }
+
     const material = new MeshLambertMaterial({
       color: this.colorForNodeKind(kind, position.depth, null),
       opacity: baseNodeOpacity(kind, position.depth, null),
-      depthWrite: !isContainerNode,
-      side: isContainerNode ? DoubleSide : undefined,
+      depthWrite: false,
+      side: DoubleSide,
       transparent: true,
     });
-    const geometry =
-      kind === 'file'
-        ? new BoxGeometry(1.15, 2.4, 0.42)
-        : new SphereGeometry(1, 32, 20);
+    const geometry = new SphereGeometry(1, 32, 20);
     const mesh = new Mesh(geometry, material);
 
-    if (isContainerNode) {
-      mesh.scale.setScalar(position.radius);
-    }
+    mesh.scale.setScalar(position.radius);
 
     return mesh;
+  }
+
+  private createFileNode(node: RenderGraphNode, position: LayoutNodePosition): Group {
+    const group = new Group();
+    const baseMaterial = new MeshLambertMaterial({
+      color: this.colorForNodeKind('file', position.depth, null),
+      opacity: baseNodeOpacity('file', position.depth, null),
+      transparent: true,
+    });
+    const baseMesh = new Mesh(FILE_NODE_GEOMETRY, baseMaterial);
+    const iconTexture = this.fileIconTextureForNode(node);
+
+    group.add(baseMesh);
+
+    if (iconTexture) {
+      const decalMaterial = new MeshLambertMaterial({
+        color: 0xffffff,
+        map: iconTexture,
+        opacity: baseNodeOpacity('file', position.depth, null),
+        transparent: true,
+        alphaTest: 0.05,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+      });
+      decalMaterial.userData = { sharedMap: true, fileIconDecal: true };
+      applyUvBoundedDecalShader(decalMaterial);
+      const decalMesh = new Mesh(FILE_NODE_GEOMETRY, decalMaterial);
+      decalMesh.renderOrder = 1;
+      group.add(decalMesh);
+    }
+
+    return group;
   }
 
   private styleNode(
@@ -1125,11 +1214,41 @@ export class DirectoryGraphScene {
       : highlighted
         ? this.theme.highlighted
         : this.colorForNodeKind(kind, depth, graphDistance);
-
-    mesh.material.color.setHex(color);
-    mesh.material.opacity = selected || highlighted
+    const opacity = selected || highlighted
       ? activeNodeOpacity(kind)
       : baseNodeOpacity(kind, depth, graphDistance);
+
+    setNodeMaterialStyle(mesh, color, opacity);
+  }
+
+  private fileIconTextureForNode(node: RenderGraphNode): Texture | null {
+    const url = FILE_ICON_BY_EXTENSION.get(fileExtension(node.path || node.name));
+
+    if (!url) {
+      return null;
+    }
+
+    const cached = this.fileIconTextureByUrl.get(url);
+
+    if (cached) {
+      return cached;
+    }
+
+    const texture = this.textureLoader.load(url);
+    texture.colorSpace = SRGBColorSpace;
+    texture.wrapS = ClampToEdgeWrapping;
+    texture.wrapT = ClampToEdgeWrapping;
+    texture.anisotropy = Math.max(1, this.renderer.capabilities.getMaxAnisotropy());
+    this.fileIconTextureByUrl.set(url, texture);
+    return texture;
+  }
+
+  private disposeFileIconTextures(): void {
+    for (const texture of this.fileIconTextureByUrl.values()) {
+      texture.dispose();
+    }
+
+    this.fileIconTextureByUrl.clear();
   }
 
   private createSelectionNode(
@@ -1446,7 +1565,15 @@ export class DirectoryGraphScene {
 }
 
 function disposeObject(object: Object3D): void {
-  if ('geometry' in object && object.geometry instanceof BufferGeometry) {
+  for (const child of [...object.children]) {
+    disposeObject(child);
+  }
+
+  if (
+    'geometry' in object &&
+    object.geometry instanceof BufferGeometry &&
+    !object.geometry.userData.sharedFileNodeGeometry
+  ) {
     object.geometry.dispose();
   }
 
@@ -1461,7 +1588,12 @@ function disposeMaterial(material: unknown): void {
     return;
   }
 
-  if (material && typeof material === 'object' && 'map' in material) {
+  if (
+    material &&
+    typeof material === 'object' &&
+    'map' in material &&
+    !('userData' in material && (material.userData as { sharedMap?: boolean }).sharedMap)
+  ) {
     disposeTexture(material.map);
   }
 
@@ -1474,6 +1606,165 @@ function disposeTexture(texture: unknown): void {
   if (texture && typeof texture === 'object' && 'dispose' in texture) {
     (texture as Texture).dispose();
   }
+}
+
+function setNodeMaterialStyle(object: Object3D, color: number, opacity: number): void {
+  object.traverse((child) => {
+    if (!(child instanceof Mesh)) {
+      return;
+    }
+
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+
+    materials.forEach((material) => {
+      if (!(material instanceof MeshLambertMaterial)) {
+        return;
+      }
+
+      material.opacity = opacity;
+
+      if (!material.userData.fileIconDecal) {
+        material.color.setHex(color);
+      }
+    });
+  });
+}
+
+function applyUvBoundedDecalShader(material: MeshLambertMaterial): void {
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <map_fragment>',
+      `
+#ifdef USE_MAP
+  if (vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0) {
+    discard;
+  }
+#endif
+#include <map_fragment>
+      `,
+    );
+  };
+  material.customProgramCacheKey = () => 'uv-bounded-file-icon-decal';
+}
+
+function fileNodeGeometryFromObj(objSource: string): BufferGeometry {
+  const vertices: Vec3[] = [];
+  const normals: Vec3[] = [];
+  const uvs: Vector2[] = [];
+  const positions: number[] = [];
+  const geometryNormals: number[] = [];
+  const geometryUvs: number[] = [];
+
+  objSource.split(/\r?\n/).forEach((line) => {
+    const trimmed = line.trim();
+
+    if (!trimmed || trimmed.startsWith('#')) {
+      return;
+    }
+
+    const parts = trimmed.split(/\s+/);
+    const kind = parts[0];
+
+    if (kind === 'v') {
+      vertices.push({
+        x: Number(parts[1]),
+        y: Number(parts[2]),
+        z: Number(parts[3]),
+      });
+      return;
+    }
+
+    if (kind === 'vn') {
+      normals.push({
+        x: Number(parts[1]),
+        y: Number(parts[2]),
+        z: Number(parts[3]),
+      });
+      return;
+    }
+
+    if (kind === 'vt') {
+      uvs.push(new Vector2(Number(parts[1]), Number(parts[2])));
+      return;
+    }
+
+    if (kind !== 'f' || parts.length < 4) {
+      return;
+    }
+
+    const faceVertices = parts.slice(1);
+
+    for (let index = 1; index < faceVertices.length - 1; index += 1) {
+      appendObjFaceVertex(faceVertices[0], vertices, normals, uvs, positions, geometryNormals, geometryUvs);
+      appendObjFaceVertex(faceVertices[index], vertices, normals, uvs, positions, geometryNormals, geometryUvs);
+      appendObjFaceVertex(faceVertices[index + 1], vertices, normals, uvs, positions, geometryNormals, geometryUvs);
+    }
+  });
+
+  if (positions.length === 0) {
+    return new BoxGeometry(1.15, 2.4, 0.42);
+  }
+
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+
+  if (geometryNormals.length === positions.length) {
+    geometry.setAttribute('normal', new Float32BufferAttribute(geometryNormals, 3));
+  } else {
+    geometry.computeVertexNormals();
+  }
+
+  if (geometryUvs.length === (positions.length / 3) * 2) {
+    geometry.setAttribute('uv', new Float32BufferAttribute(geometryUvs, 2));
+  }
+
+  geometry.rotateY(Math.PI / 2);
+  geometry.scale(0.9, 0.9, 0.9);
+  geometry.center();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
+function appendObjFaceVertex(
+  token: string,
+  vertices: readonly Vec3[],
+  normals: readonly Vec3[],
+  uvs: readonly Vector2[],
+  positions: number[],
+  geometryNormals: number[],
+  geometryUvs: number[],
+): void {
+  const [vertexIndex, uvIndex, normalIndex] = token.split('/');
+  const vertex = vertices[objIndex(vertexIndex, vertices.length)];
+
+  if (!vertex) {
+    return;
+  }
+
+  positions.push(vertex.x, vertex.y, vertex.z);
+
+  const uv = uvIndex ? uvs[objIndex(uvIndex, uvs.length)] : null;
+  if (uv) {
+    geometryUvs.push(uv.x, uv.y);
+  }
+
+  const normal = normalIndex ? normals[objIndex(normalIndex, normals.length)] : null;
+  if (normal) {
+    geometryNormals.push(normal.x, normal.y, normal.z);
+  }
+}
+
+function objIndex(value: string, length: number): number {
+  const index = Number.parseInt(value, 10);
+  return index < 0 ? length + index : index - 1;
+}
+
+function fileExtension(path: string): string {
+  const fileName = path.split('/').pop() ?? path;
+  const dotIndex = fileName.lastIndexOf('.');
+
+  return dotIndex >= 0 ? fileName.slice(dotIndex + 1).toLowerCase() : '';
 }
 
 function clamp(value: number, min: number, max: number): number {
