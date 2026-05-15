@@ -26,7 +26,6 @@ export {
   selectionStateForNode,
 } from './selectionIndex';
 export { decodeSelectionId, encodeSelectionId, selectFromIdMap } from './selection';
-export { DirectoryGraphScene } from './ThreeDirectoryGraphScene';
 export type { GraphSelectionIndex, GraphSelectionState, GraphSelectionStateDiff } from './selectionIndex';
 export type {
   DecodedSelectionId,

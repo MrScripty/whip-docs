@@ -12,7 +12,6 @@
   } from './lib/services';
   import {
     buildSelectionIndex,
-    DirectoryGraphScene,
     directorySnapshotToRenderGraph,
     emptyGraphNeighborhood,
     GRAPH_V0_LAYOUT_DEFAULTS,
@@ -43,6 +42,7 @@
   let selectedKind = $state('');
   let graphMode = $state('architecture');
   let directoryPanelMode = $state('tree');
+  let directorySceneModuleReady = $state(false);
   let directoryLayoutAlgorithm = $state('weighted-safe-radial-tree');
   let directoryEdgeStyle = $state('c-curve');
   let directoryRootEdgeStyle = $state('elbow');
@@ -53,10 +53,10 @@
   let graphPan = $state({ x: 0, y: 0 });
   let graphZoom = $state(1);
   let panStart = $state(null);
-  /** @type {HTMLDivElement | null} */
-  let directoryGraphMount = $state(null);
-  /** @type {DirectoryGraphScene | null} */
+  let directoryGraphMount = $state<HTMLDivElement | null>(null);
   let directoryGraphScene = null;
+  let directoryGraphSceneConstructor = $state(null);
+  let loadingDirectorySceneModule = $state(false);
   let directoryRenderGraph = $derived(
     $directoryGraphSnapshot ? directorySnapshotToRenderGraph($directoryGraphSnapshot) : null,
   );
@@ -111,7 +111,16 @@
       return;
     }
 
-    directoryGraphScene ??= new DirectoryGraphScene(directoryGraphMount);
+    const sceneModuleReady = directorySceneModuleReady;
+
+    if (!directoryGraphSceneConstructor) {
+      if (!sceneModuleReady) {
+        void loadDirectorySceneModule();
+      }
+      return;
+    }
+
+    directoryGraphScene ??= new directoryGraphSceneConstructor(directoryGraphMount);
 
     if (directoryRenderGraph) {
       directoryGraphScene.updateGraph(directoryRenderGraph, {
@@ -164,12 +173,25 @@
       analysisStatus.set(analyzer);
       graphSnapshot.set(snapshot);
       sourceRepoPath = config.sourceRepoPath ?? '';
-
-      if (config.sourceRepoPath) {
-        await loadDirectoryGraph(config.sourceRepoPath);
-      }
     } catch (error) {
       graphError.set(commandErrorMessage(error));
+    }
+  }
+
+  async function loadDirectorySceneModule() {
+    if (directoryGraphSceneConstructor || loadingDirectorySceneModule) {
+      return;
+    }
+
+    loadingDirectorySceneModule = true;
+    try {
+      const sceneModule = await import('./lib/graph-v0/ThreeDirectoryGraphScene');
+      directoryGraphSceneConstructor = sceneModule.DirectoryGraphScene;
+      directorySceneModuleReady = true;
+    } catch (error) {
+      graphError.set(commandErrorMessage(error));
+    } finally {
+      loadingDirectorySceneModule = false;
     }
   }
 
@@ -198,7 +220,9 @@
     loadingDirectoryGraph = true;
     graphError.set(null);
     try {
+      const sceneModulePromise = loadDirectorySceneModule();
       const snapshot = await architectureService.loadDirectoryGraph(path);
+      await sceneModulePromise;
       directoryGraphSnapshot.set(snapshot);
       selectedEdgeId.set(null);
       selectedNodeId.set(null);
@@ -603,6 +627,9 @@
           aria-label="3D directory and file graph"
           role="img"
         >
+          {#if loadingDirectorySceneModule || !directoryGraphSceneConstructor}
+            <div class="directory-scene-loading">Loading 3D renderer</div>
+          {/if}
           <div class="directory-scene-count" aria-label="Directory graph count">
             {$directoryGraphSnapshot.nodes.length} nodes / {$directoryGraphSnapshot.edges.length} edges
           </div>
