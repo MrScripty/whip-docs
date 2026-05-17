@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 
 mod extraction;
+pub mod rust_relations;
 
 use std::path::PathBuf;
 use std::process::Stdio;

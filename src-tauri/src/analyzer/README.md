@@ -9,6 +9,7 @@ extraction services.
 |-------------|-------------|
 | `extraction.rs` | Cargo metadata discovery, Rust source walking, syntax-backed graph normalization, and fixture tests. |
 | `mod.rs` | rust-analyzer settings, lifecycle status DTOs, process service, analysis job guard methods, and LSP request builders. |
+| `rust_relations.rs` | Rust import relation extraction facts for file-to-file relation graph normalization. |
 
 ## Problem
 Whip Docs needs semantic Rust facts that `syn` alone cannot provide, while the
@@ -34,6 +35,8 @@ for graph normalization.
 - Child processes are terminated during shutdown and tests.
 - LSP failures produce diagnostics instead of panics.
 - Analyzer state is never exposed directly to the frontend.
+- Cross-file relation extractors emit file-scoped facts and diagnostics; they
+  do not expose symbol nodes to the global 3D graph.
 
 ## Revisit Triggers
 - rust-analyzer cannot provide stable call hierarchy for target fixtures.
@@ -58,6 +61,9 @@ let status = service.start_for_workspace(&repo).await?;
 ## API Consumer Contract
 - Inputs: validated Cargo workspace roots and explicit analyze requests.
 - Outputs: analyzer facts, progress status, lifecycle state, and diagnostics.
+- Outputs for relation extraction are normalized analyzer facts with source
+  file, optional target file, evidence range, and diagnostics for unresolved
+  local imports.
 - Lifecycle: service starts rust-analyzer on demand and stops it during
   cancellation or app shutdown.
 - Errors: missing binary, timeout, and partial data are structured diagnostics.

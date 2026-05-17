@@ -982,6 +982,29 @@ Validation:
 - `npm run typecheck`
 - `npm run test:frontend`
 
+### 2026-05-17 Slice 4: Rust Import Relation Facts
+
+Status: completed.
+
+Implemented:
+- Added a Rust import relation extractor that walks Rust source files, parses
+  `use` items with existing `syn` support, and emits file-scoped import facts.
+- Resolved local `crate::`, `self::`, `super::`, and simple module imports to
+  target Rust files where possible.
+- Kept unresolved explicit local imports as facts plus diagnostics, while
+  excluding standard library imports from local relation output.
+
+Discovered issues:
+- Import extraction facts are intentionally not yet folded into
+  `FileRelationGraphSnapshotDto`; that remains the next integration slice so
+  extraction and graph normalization stay separately reviewable.
+
+Validation:
+- `cargo fmt --manifest-path src-tauri/Cargo.toml`
+- `cargo test --manifest-path src-tauri/Cargo.toml analyzer::rust_relations`
+- `cargo test --manifest-path src-tauri/Cargo.toml`
+- `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings`
+
 ## Re-Plan Triggers
 
 - `GraphSnapshotDto`, `DirectoryGraphSnapshotDto`, and
