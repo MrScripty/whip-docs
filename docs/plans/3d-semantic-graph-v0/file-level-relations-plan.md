@@ -1124,6 +1124,13 @@ Validation:
 | Selection neighborhoods include hidden facts | Medium | Build selection index from the stable graph plus visible edge ID sets. |
 | IPC payloads become too large | Medium | Collapse facts into weighted file edges and keep evidence cap/streaming as revisit trigger. |
 
+## Discovered Follow-Up Issues
+
+- `npm run build` reports the dynamically imported
+  `ThreeDirectoryGraphScene` chunk at about 600 kB after minification. This
+  does not fail the build, but it should be tracked before adding heavier
+  relation edge routing or analyzer UI code to the scene chunk.
+
 ## Final Standards Gate
 
 Before treating the feature as complete:
