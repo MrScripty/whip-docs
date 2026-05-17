@@ -63,6 +63,7 @@ import {
 } from './layouts';
 import { encodeSelectionId, selectFromIdMap } from './selection';
 import { diffSelectionState, emptySelectionState } from './selectionIndex';
+import { shouldRenderSceneEdge } from './sceneVisibility';
 import type { GraphSelectionState } from './selectionIndex';
 import type {
   DirectoryGraphSceneOptions,
@@ -313,6 +314,10 @@ export class DirectoryGraphScene {
     this.clearGroup(this.selectionNodeGroup);
 
     graph.edges.forEach((edge, edgeIndex) => {
+      if (!shouldRenderSceneEdge(edge, this.graphNodesById)) {
+        return;
+      }
+
       const source = layout.positions.get(edge.fromNodeId);
       const target = layout.positions.get(edge.toNodeId);
 

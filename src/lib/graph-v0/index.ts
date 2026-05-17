@@ -27,6 +27,7 @@ export {
 } from './selectionIndex';
 export { decodeSelectionId, encodeSelectionId, selectFromIdMap } from './selection';
 export { isEdgeVisibleAtRelationDetails, visibleEdgeIdsForRelationDetails } from './relationVisibility';
+export { shouldRenderSceneEdge } from './sceneVisibility';
 export type {
   GraphSelectionIndex,
   GraphSelectionIndexOptions,

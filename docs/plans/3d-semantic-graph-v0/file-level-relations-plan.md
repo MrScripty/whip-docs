@@ -967,6 +967,21 @@ Validation:
 - `npm run typecheck`
 - `npm run test:frontend`
 
+### 2026-05-17 Slice 3: Scene File Containment Edge Visibility
+
+Status: completed.
+
+Implemented:
+- Added a pure scene visibility helper that keeps directory containment and
+  file-to-file relation edges renderable while hiding file containment edges.
+- Updated the Three.js scene rebuild path to skip hidden file containment edge
+  geometry and selection meshes without mutating the stable render graph.
+
+Validation:
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test:frontend`
+
 ## Re-Plan Triggers
 
 - `GraphSnapshotDto`, `DirectoryGraphSnapshotDto`, and

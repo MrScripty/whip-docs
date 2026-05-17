@@ -15,6 +15,7 @@ projection.
 | `selectionIndex.ts` | Derived graph selection indexes, indexed neighborhood lookup, and selection-state diff helpers. |
 | `selection.ts` | ID-map selection encoding, decoding, and sampled hit testing. |
 | `relationVisibility.ts` | Pure relation detail filtering helpers for visible edge ID sets. |
+| `sceneVisibility.ts` | Pure scene-edge visibility helper that hides file containment edges while keeping relation edges renderable. |
 | `ThreeDirectoryGraphScene.ts` | Direct Three.js scene system for the V0 directory/file graph. |
 | `*.test.ts` | Node test coverage for layout determinism and selection behavior. |
 | `index.ts` | Public exports for graph V0 helpers. |
@@ -35,6 +36,9 @@ letting Svelte components or renderer code invent graph facts.
   render graph at any time.
 - Relation detail changes derive visible edge ID sets and filtered selection
   indexes; they must not require changing the stable render graph object.
+- File containment edges remain available as graph facts for layout and
+  selection derivation, but the scene does not render them because file nodes
+  already sit inside directory containers.
 - Directory focus mode is derived scene state only: it may hide and reposition
   Three.js objects, but it must not mutate backend graph data or layout results.
 - Layout algorithms must be deterministic for equivalent graph inputs.
