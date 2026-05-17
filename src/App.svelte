@@ -18,6 +18,7 @@
     GRAPH_V0_LAYOUT_DEFAULTS,
     selectionDistanceByNodeId,
     selectionNeighborhood,
+    visibleEdgeIdsForRelationDetails,
   } from './lib/graph-v0';
   import {
     analysisStatus,
@@ -49,6 +50,7 @@
   let directoryEdgeStyle = $state('c-curve');
   let directoryRootEdgeStyle = $state('elbow');
   let directoryLeafEdgeStyle = $state('straight');
+  let relationDetail = $state('imports');
   let directoryBranchSpacing = $state(GRAPH_V0_LAYOUT_DEFAULTS.siblingSpacing);
   let directoryLevelSpacing = $state(GRAPH_V0_LAYOUT_DEFAULTS.layerSpacing);
   let directoryRootLevelSpacing = $state(GRAPH_V0_LAYOUT_DEFAULTS.rootLayerSpacing);
@@ -66,8 +68,15 @@
         ? directorySnapshotToRenderGraph($directoryGraphSnapshot)
         : null,
   );
+  let directoryVisibleEdgeIds = $derived(
+    directoryRenderGraph
+      ? visibleEdgeIdsForRelationDetails(directoryRenderGraph, relationDetailsForLevel(relationDetail))
+      : null,
+  );
   let directorySelectionIndex = $derived(
-    directoryRenderGraph ? buildSelectionIndex(directoryRenderGraph) : null,
+    directoryRenderGraph
+      ? buildSelectionIndex(directoryRenderGraph, { visibleEdgeIds: directoryVisibleEdgeIds })
+      : null,
   );
   let selectedDirectoryNode = $derived(
     $selectedNodeId ? directorySelectionIndex?.nodeById.get($selectedNodeId) ?? null : null,
@@ -145,6 +154,7 @@
         nodeDistanceById: selectedDirectoryDistanceByNodeId,
         selectedEdgeId: $selectedEdgeId,
         selectedNodeId: $selectedNodeId,
+        visibleEdgeIds: directoryVisibleEdgeIds ?? undefined,
         onSelect: selectDirectoryEntity,
       });
     }
@@ -463,6 +473,34 @@
     return graphEdgeStyleValue(value);
   }
 
+  function relationDetailsForLevel(level) {
+    if (level === 'structure') {
+      return ['structure'];
+    }
+
+    if (level === 'calls') {
+      return ['structure', 'imports', 'calls'];
+    }
+
+    if (level === 'data') {
+      return ['structure', 'imports', 'calls', 'data'];
+    }
+
+    if (level === 'tests') {
+      return ['structure', 'imports', 'calls', 'data', 'tests'];
+    }
+
+    if (level === 'configuration') {
+      return ['structure', 'imports', 'calls', 'data', 'tests', 'configuration'];
+    }
+
+    if (level === 'contracts') {
+      return ['structure', 'imports', 'calls', 'data', 'tests', 'configuration', 'contracts'];
+    }
+
+    return ['structure', 'imports'];
+  }
+
   function toggleDirectorySettings() {
     directoryPanelMode = directoryPanelMode === 'settings' ? 'tree' : 'settings';
   }
@@ -515,6 +553,18 @@
             {:else if $directoryGraphSnapshot}
               <div class="settings-metric">{$directoryGraphSnapshot.excludedPathCount} excluded</div>
             {/if}
+            <label class="settings-field" for="relation-detail">
+              <span>Detail</span>
+              <select id="relation-detail" bind:value={relationDetail} aria-label="3D graph relation detail">
+                <option value="structure">Structure</option>
+                <option value="imports">Imports</option>
+                <option value="calls">Calls</option>
+                <option value="data">Data</option>
+                <option value="tests">Tests</option>
+                <option value="configuration">Configuration</option>
+                <option value="contracts">Contracts</option>
+              </select>
+            </label>
             <label class="settings-field" for="directory-layout-algorithm">
               <span>Layout</span>
               <select id="directory-layout-algorithm" bind:value={directoryLayoutAlgorithm} aria-label="3D graph layout">

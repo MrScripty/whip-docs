@@ -967,6 +967,23 @@ Validation:
 - `npm run typecheck`
 - `npm run test:frontend`
 
+### 2026-05-17 Slice 7: Relation Detail Control
+
+Status: completed.
+
+Implemented:
+- Added a relation detail selector to the existing 3D graph settings surface.
+- Passed visible edge ID sets through selection indexing and the Three.js scene
+  update API so hidden relation edges do not affect selection neighborhoods or
+  remain visible/hit-testable.
+- Kept detail changes as view state so toggling between structure/import/call
+  detail levels does not rebuild the stable render graph object.
+
+Validation:
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test:frontend`
+
 ### 2026-05-17 Slice 3: Scene File Containment Edge Visibility
 
 Status: completed.

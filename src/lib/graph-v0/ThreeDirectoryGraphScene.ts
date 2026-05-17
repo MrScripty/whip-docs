@@ -201,6 +201,7 @@ export class DirectoryGraphScene {
   private activeSelectedNodeId: string | null = null;
   private activeSelectedEdgeId: string | null = null;
   private activeNodeDistanceById: ReadonlyMap<string, number> | null = null;
+  private activeVisibleEdgeIds: ReadonlySet<string> | null = null;
   private cameraTarget = new Vector3(0, 0, 0);
   private currentGraph: RenderGraph | null = null;
   private currentLayoutAlgorithm: string | null = null;
@@ -300,6 +301,7 @@ export class DirectoryGraphScene {
     this.activeSelectedNodeId = null;
     this.activeSelectedEdgeId = null;
     this.activeNodeDistanceById = null;
+    this.activeVisibleEdgeIds = null;
     this.focusedDirectoryView = null;
     this.preferredChildDirectoryByParentId.clear();
 
@@ -390,7 +392,9 @@ export class DirectoryGraphScene {
     const selectedNodeId = options.selectedNodeId ?? null;
     const selectedEdgeId = options.selectedEdgeId ?? null;
     const nextNodeDistanceById = options.nodeDistanceById ?? null;
+    const nextVisibleEdgeIds = normalizeVisibleEdgeIds(options.visibleEdgeIds);
     const nodeDistanceChanged = this.activeNodeDistanceById !== nextNodeDistanceById;
+    const visibleEdgesChanged = this.activeVisibleEdgeIds !== nextVisibleEdgeIds;
     const nextSelectionState = this.selectionStateForOptions(options);
     const selectionDiff = diffSelectionState(this.activeSelectionState, nextSelectionState);
     const changedNodeIds = new Set([
@@ -412,6 +416,10 @@ export class DirectoryGraphScene {
     addNullableId(changedEdgeIds, selectedEdgeId);
     addNullableId(changedLabelIds, this.activeSelectedNodeId);
     addNullableId(changedLabelIds, selectedNodeId);
+
+    if (visibleEdgesChanged) {
+      addMapKeys(changedEdgeIds, this.edgeEntries);
+    }
 
     if (nodeDistanceChanged) {
       addMapKeys(changedNodeIds, this.nodeEntries);
@@ -439,6 +447,12 @@ export class DirectoryGraphScene {
       const entry = this.edgeEntries.get(edgeId);
 
       if (entry) {
+        const visible = !nextVisibleEdgeIds || nextVisibleEdgeIds.has(edgeId);
+        entry.line.visible = visible;
+        const selectionMesh = this.selectionEdgeMeshesByEdgeId.get(edgeId);
+        if (selectionMesh) {
+          selectionMesh.visible = visible;
+        }
         this.styleEdge(
           entry.line,
           entry.depth,
@@ -461,6 +475,7 @@ export class DirectoryGraphScene {
     this.activeSelectedNodeId = selectedNodeId;
     this.activeSelectedEdgeId = selectedEdgeId;
     this.activeNodeDistanceById = nextNodeDistanceById;
+    this.activeVisibleEdgeIds = nextVisibleEdgeIds;
   }
 
   dispose(): void {
@@ -1824,6 +1839,16 @@ function addNullableId(ids: Set<string>, id: string | null): void {
   if (id) {
     ids.add(id);
   }
+}
+
+function normalizeVisibleEdgeIds(
+  visibleEdgeIds: ReadonlySet<string> | readonly string[] | undefined,
+): ReadonlySet<string> | null {
+  if (!visibleEdgeIds) {
+    return null;
+  }
+
+  return visibleEdgeIds instanceof Set ? visibleEdgeIds : new Set(visibleEdgeIds);
 }
 
 function addMapKeys(ids: Set<string>, map: ReadonlyMap<string, unknown>): void {

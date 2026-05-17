@@ -36,6 +36,8 @@ letting Svelte components or renderer code invent graph facts.
   render graph at any time.
 - Relation detail changes derive visible edge ID sets and filtered selection
   indexes; they must not require changing the stable render graph object.
+- The scene accepts visible edge ID sets as view state and toggles edge/selection
+  mesh visibility in place instead of rebuilding node geometry or layout.
 - File containment edges remain available as graph facts for layout and
   selection derivation, but the scene does not render them because file nodes
   already sit inside directory containers.

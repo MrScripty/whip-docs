@@ -92,6 +92,7 @@ export type DirectoryGraphSceneOptions = {
   readonly highlightedNodeIds?: readonly string[];
   readonly highlightedEdgeIds?: readonly string[];
   readonly labeledNodeIds?: readonly string[];
+  readonly visibleEdgeIds?: ReadonlySet<string> | readonly string[];
   readonly onSelect?: (selection: DirectoryGraphSceneSelection) => void;
 };
 
