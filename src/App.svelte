@@ -14,6 +14,7 @@
     buildSelectionIndex,
     directorySnapshotToRenderGraph,
     emptyGraphNeighborhood,
+    fileRelationSnapshotToRenderGraph,
     GRAPH_V0_LAYOUT_DEFAULTS,
     selectionDistanceByNodeId,
     selectionNeighborhood,
@@ -22,6 +23,7 @@
     analysisStatus,
     appConfig,
     directoryGraphSnapshot,
+    fileRelationGraphSnapshot,
     graphError,
     graphSnapshot,
     selectedEdgeId,
@@ -58,7 +60,11 @@
   let directoryGraphSceneConstructor = $state(null);
   let loadingDirectorySceneModule = $state(false);
   let directoryRenderGraph = $derived(
-    $directoryGraphSnapshot ? directorySnapshotToRenderGraph($directoryGraphSnapshot) : null,
+    $fileRelationGraphSnapshot
+      ? fileRelationSnapshotToRenderGraph($fileRelationGraphSnapshot)
+      : $directoryGraphSnapshot
+        ? directorySnapshotToRenderGraph($directoryGraphSnapshot)
+        : null,
   );
   let directorySelectionIndex = $derived(
     directoryRenderGraph ? buildSelectionIndex(directoryRenderGraph) : null,
@@ -221,14 +227,16 @@
     graphError.set(null);
     try {
       const sceneModulePromise = loadDirectorySceneModule();
-      const snapshot = await architectureService.loadDirectoryGraph(path);
+      const snapshot = await architectureService.loadFileRelationGraph(path);
       await sceneModulePromise;
-      directoryGraphSnapshot.set(snapshot);
+      fileRelationGraphSnapshot.set(snapshot);
+      directoryGraphSnapshot.set(null);
       selectedEdgeId.set(null);
       selectedNodeId.set(null);
       sourceSnippet.set(null);
     } catch (error) {
       directoryGraphSnapshot.set(null);
+      fileRelationGraphSnapshot.set(null);
       graphError.set(commandErrorMessage(error));
     } finally {
       loadingDirectoryGraph = false;
@@ -501,8 +509,12 @@
     <aside class="navigator" aria-label="Directory graph navigator">
       {#if directoryPanelMode === 'settings'}
         <div class="navigator-settings" aria-label="3D graph settings">
-          {#if $directoryGraphSnapshot && directoryRenderGraph}
-            <div class="settings-metric">{$directoryGraphSnapshot.excludedPathCount} excluded</div>
+          {#if directoryRenderGraph}
+            {#if $fileRelationGraphSnapshot}
+              <div class="settings-metric">{$fileRelationGraphSnapshot.analyzers.length} analyzers / {$fileRelationGraphSnapshot.diagnostics.length} diagnostics</div>
+            {:else if $directoryGraphSnapshot}
+              <div class="settings-metric">{$directoryGraphSnapshot.excludedPathCount} excluded</div>
+            {/if}
             <label class="settings-field" for="directory-layout-algorithm">
               <span>Layout</span>
               <select id="directory-layout-algorithm" bind:value={directoryLayoutAlgorithm} aria-label="3D graph layout">
@@ -586,7 +598,7 @@
             <p>Load a 3D graph to edit graph settings.</p>
           {/if}
         </div>
-      {:else if $directoryGraphSnapshot && directoryRenderGraph}
+      {:else if directoryRenderGraph}
         <div class="directory-tree-scroll">
           <div class="directory-tree-anchor" aria-label="Current directory path">{directoryTreeAnchorPath}</div>
           <div class="directory-tree" role="tree" aria-label="Directory graph tree">
@@ -619,8 +631,8 @@
         <p>No directory graph loaded</p>
       {/if}
     </aside>
-    <div class="graph-surface" class:directory-loaded={$directoryGraphSnapshot && directoryRenderGraph}>
-      {#if $directoryGraphSnapshot && directoryRenderGraph}
+    <div class="graph-surface" class:directory-loaded={directoryRenderGraph}>
+      {#if directoryRenderGraph}
         <div
           class="directory-scene-frame"
           bind:this={directoryGraphMount}
@@ -631,7 +643,7 @@
             <div class="directory-scene-loading">Loading 3D renderer</div>
           {/if}
           <div class="directory-scene-count" aria-label="Directory graph count">
-            {$directoryGraphSnapshot.nodes.length} nodes / {$directoryGraphSnapshot.edges.length} edges
+            {directoryRenderGraph.nodes.length} nodes / {directoryRenderGraph.edges.length} edges
           </div>
         </div>
       {:else if $graphSnapshot}
@@ -731,7 +743,7 @@
           <div class="empty-graph">No nodes match the current filters.</div>
         {/if}
       {:else}
-        {#if !$directoryGraphSnapshot}
+        {#if !directoryRenderGraph}
           <div class="empty-graph">Set a local Rust repository and load the 3D graph.</div>
         {/if}
       {/if}
@@ -751,14 +763,20 @@
       {/if}
       <h2>Analyzer</h2>
       <p>{$analysisStatus.phase}</p>
-      {#if $directoryGraphSnapshot}
-        <h2>Directory Graph</h2>
-        <p>{$directoryGraphSnapshot.nodes.length} nodes / {$directoryGraphSnapshot.edges.length} edges</p>
+      {#if directoryRenderGraph}
+        <h2>3D Graph</h2>
+        <p>{directoryRenderGraph.nodes.length} nodes / {directoryRenderGraph.edges.length} edges</p>
+        {#if $fileRelationGraphSnapshot}
+          <p>{$fileRelationGraphSnapshot.analyzers.length} analyzers / {$fileRelationGraphSnapshot.diagnostics.length} diagnostics</p>
+        {/if}
         {#if selectedDirectoryNode}
           <p>{selectedDirectoryNode.kind}: {selectedDirectoryNode.path}</p>
         {/if}
         {#if selectedDirectoryEdge}
-          <p>edge: {selectedDirectoryEdge.fromNodeId} -> {selectedDirectoryEdge.toNodeId}</p>
+          <p>{selectedDirectoryEdge.kind}: {selectedDirectoryEdge.fromNodeId} -> {selectedDirectoryEdge.toNodeId}</p>
+          {#if selectedDirectoryEdge.evidenceCount}
+            <p>{selectedDirectoryEdge.evidenceCount} evidence records</p>
+          {/if}
         {/if}
       {/if}
       {#if $graphSnapshot}

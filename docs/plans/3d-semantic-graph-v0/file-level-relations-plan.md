@@ -1023,6 +1023,23 @@ Validation:
 - `npm run typecheck`
 - `npm run test:frontend`
 
+### 2026-05-17 Slice 6: Frontend Relation Graph Consumption
+
+Status: completed.
+
+Implemented:
+- Added transient frontend store state for `FileRelationGraphSnapshotDto`.
+- Changed the 3D graph load path to call `load_file_relation_graph` and adapt
+  relation snapshots into the existing render graph.
+- Updated the inspector/counts so loaded relation graphs show analyzer,
+  diagnostic, edge kind, and evidence-count context without requiring the old
+  directory snapshot shape.
+
+Validation:
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test:frontend`
+
 ## Re-Plan Triggers
 
 - `GraphSnapshotDto`, `DirectoryGraphSnapshotDto`, and

@@ -1,12 +1,14 @@
 import { writable } from 'svelte/store';
 import type {
   DirectoryGraphSnapshotDto,
+  FileRelationGraphSnapshotDto,
   GraphSnapshotDto,
   SourceSnippetDto,
 } from '../../backends/TauriArchitectureBackend';
 
 export const graphSnapshot = writable<GraphSnapshotDto | null>(null);
 export const directoryGraphSnapshot = writable<DirectoryGraphSnapshotDto | null>(null);
+export const fileRelationGraphSnapshot = writable<FileRelationGraphSnapshotDto | null>(null);
 export const graphError = writable<string | null>(null);
 export const selectedNodeId = writable<string | null>(null);
 export const selectedEdgeId = writable<string | null>(null);
