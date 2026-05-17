@@ -984,6 +984,26 @@ Validation:
 - `npm run typecheck`
 - `npm run test:frontend`
 
+### 2026-05-17 Slice 8: Rust Call Relation Graph Integration
+
+Status: completed.
+
+Implemented:
+- Folded existing Rust graph call edges into file-to-file `calls` relation
+  edges by resolving function/method nodes back to their defining files.
+- Added call evidence with source and target ranges, function labels,
+  analyzer provenance, and confidence from the source call edge.
+- Extended `load_file_relation_graph` to include Rust call relations when the
+  source root has a Cargo manifest, while preserving import extraction for
+  generic source roots.
+
+Validation:
+- `cargo fmt --manifest-path src-tauri/Cargo.toml`
+- `cargo test --manifest-path src-tauri/Cargo.toml`
+- `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings`
+- `npm run typecheck`
+- `npm run test:frontend`
+
 ### 2026-05-17 Slice 3: Scene File Containment Edge Visibility
 
 Status: completed.

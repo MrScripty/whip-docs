@@ -3,7 +3,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::{
     stable_id, AnalyzerDiagnosticDto, DirectoryGraphBuilder, DirectoryGraphError,
-    DirectoryGraphNodeKind, EdgeConfidenceDto, EdgeProvenanceDto, SourceRangeDto,
+    DirectoryGraphNodeKind, EdgeConfidenceDto, EdgeProvenanceDto, GraphEdgeKind, GraphNodeKind,
+    GraphSnapshotDto, SourceRangeDto,
 };
 use crate::analyzer::rust_relations::{
     RustImportRelationSnapshotDto, RustImportResolutionStatusDto,
@@ -296,6 +297,110 @@ impl FileRelationGraphBuilder {
             );
         }
     }
+
+    pub fn add_rust_call_relations(
+        snapshot: &mut FileRelationGraphSnapshotDto,
+        graph_snapshot: GraphSnapshotDto,
+    ) {
+        snapshot.analyzers.push(AnalyzerRunDto {
+            analyzer: "syn-rust-call-relations".to_string(),
+            language: SourceLanguageDto::Rust,
+            version: None,
+        });
+        snapshot.diagnostics.extend(graph_snapshot.diagnostics);
+
+        let node_by_id = graph_snapshot
+            .nodes
+            .iter()
+            .map(|node| (node.id.as_str(), node))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let mut owner_file_id_by_symbol_id = graph_snapshot
+            .nodes
+            .iter()
+            .filter(|node| node.kind == GraphNodeKind::File)
+            .map(|node| (node.id.clone(), node.id.clone()))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let mut changed = true;
+
+        while changed {
+            changed = false;
+
+            for edge in &graph_snapshot.edges {
+                if !matches!(
+                    edge.kind,
+                    GraphEdgeKind::Contains | GraphEdgeKind::Defines | GraphEdgeKind::DefinesMethod
+                ) {
+                    continue;
+                }
+
+                let Some(owner_file_id) = owner_file_id_by_symbol_id.get(&edge.source_id).cloned()
+                else {
+                    continue;
+                };
+
+                if owner_file_id_by_symbol_id
+                    .insert(edge.target_id.clone(), owner_file_id)
+                    .is_none()
+                {
+                    changed = true;
+                }
+            }
+        }
+
+        for edge in &graph_snapshot.edges {
+            if edge.kind != GraphEdgeKind::Calls {
+                continue;
+            }
+
+            let Some(from_node_id) = owner_file_id_by_symbol_id.get(&edge.source_id) else {
+                continue;
+            };
+            let Some(to_node_id) = owner_file_id_by_symbol_id.get(&edge.target_id) else {
+                continue;
+            };
+
+            if from_node_id == to_node_id {
+                continue;
+            }
+
+            let Some(source_node) = node_by_id.get(edge.source_id.as_str()) else {
+                continue;
+            };
+            let Some(target_node) = node_by_id.get(edge.target_id.as_str()) else {
+                continue;
+            };
+            let Some(source_range) = source_node.source_range.clone() else {
+                continue;
+            };
+
+            let edge_id =
+                stable_file_relation_edge_id(FileRelationEdgeKind::Calls, from_node_id, to_node_id);
+
+            upsert_relation_edge(
+                &mut snapshot.edges,
+                FileRelationEdgeDto {
+                    id: edge_id,
+                    kind: FileRelationEdgeKind::Calls,
+                    from_node_id: from_node_id.clone(),
+                    to_node_id: to_node_id.clone(),
+                    weight: 1,
+                    direction: FileRelationDirectionDto::Directed,
+                    confidence: edge.confidence.clone(),
+                    provenance: edge.provenance.clone(),
+                    evidence_count: 1,
+                    evidence_sample: vec![FileRelationEvidenceDto {
+                        kind: FileRelationEvidenceKind::FunctionCall,
+                        source_range,
+                        target_range: target_node.source_range.clone(),
+                        source_label: Some(source_node.label.clone()),
+                        target_label: Some(target_node.label.clone()),
+                        access: None,
+                        analyzer: "syn-rust-call-relations".to_string(),
+                    }],
+                },
+            );
+        }
+    }
 }
 
 fn upsert_relation_edge(edges: &mut Vec<FileRelationEdgeDto>, new_edge: FileRelationEdgeDto) {
@@ -368,7 +473,8 @@ mod tests {
         RustImportRelationFactDto, RustImportRelationSnapshotDto, RustImportResolutionStatusDto,
     };
     use crate::graph::{
-        AnalyzerDiagnosticDto, EdgeConfidenceDto, EdgeProvenanceDto, SourceRangeDto,
+        AnalyzerDiagnosticDto, EdgeConfidenceDto, EdgeProvenanceDto, GraphEdgeDto, GraphEdgeKind,
+        GraphNodeDto, GraphNodeKind, GraphSnapshotDto, SourceRangeDto,
     };
     use crate::source::ValidatedRepoPath;
     use std::fs;
@@ -590,6 +696,106 @@ mod tests {
             .edges
             .iter()
             .any(|edge| edge.id.contains("missing")));
+
+        fs::remove_dir_all(repo).expect("cleanup temp repo");
+    }
+
+    #[test]
+    fn rust_call_graph_edges_merge_into_weighted_file_relation_edges() {
+        let repo = unique_temp_dir("rust-call-merge");
+        fs::create_dir_all(repo.join("src")).expect("create src");
+        fs::write(repo.join("src/main.rs"), "pub fn entry() { run(); }\n")
+            .expect("write main source");
+        fs::write(repo.join("src/lib.rs"), "pub fn run() {}\n").expect("write lib source");
+        let source_root =
+            ValidatedRepoPath::parse_existing_source_root(&repo).expect("valid source root");
+        let mut snapshot =
+            FileRelationGraphBuilder::build_structure(&source_root).expect("relation graph");
+
+        FileRelationGraphBuilder::add_rust_call_relations(
+            &mut snapshot,
+            GraphSnapshotDto {
+                schema_version: 1,
+                source_root: source_root.display_path(),
+                generated_at: "unix:1".to_string(),
+                nodes: vec![
+                    GraphNodeDto {
+                        id: "file:src/main.rs".to_string(),
+                        kind: GraphNodeKind::File,
+                        label: "main.rs".to_string(),
+                        source_range: Some(test_source_range("src/main.rs", 1)),
+                    },
+                    GraphNodeDto {
+                        id: "file:src/lib.rs".to_string(),
+                        kind: GraphNodeKind::File,
+                        label: "lib.rs".to_string(),
+                        source_range: Some(test_source_range("src/lib.rs", 1)),
+                    },
+                    GraphNodeDto {
+                        id: "function:entry".to_string(),
+                        kind: GraphNodeKind::Function,
+                        label: "entry".to_string(),
+                        source_range: Some(test_source_range("src/main.rs", 1)),
+                    },
+                    GraphNodeDto {
+                        id: "function:run".to_string(),
+                        kind: GraphNodeKind::Function,
+                        label: "run".to_string(),
+                        source_range: Some(test_source_range("src/lib.rs", 1)),
+                    },
+                ],
+                edges: vec![
+                    GraphEdgeDto {
+                        id: "defines:file:src/main.rs:function:entry".to_string(),
+                        kind: GraphEdgeKind::Defines,
+                        source_id: "file:src/main.rs".to_string(),
+                        target_id: "function:entry".to_string(),
+                        provenance: EdgeProvenanceDto::Syn,
+                        confidence: EdgeConfidenceDto::Exact,
+                    },
+                    GraphEdgeDto {
+                        id: "defines:file:src/lib.rs:function:run".to_string(),
+                        kind: GraphEdgeKind::Defines,
+                        source_id: "file:src/lib.rs".to_string(),
+                        target_id: "function:run".to_string(),
+                        provenance: EdgeProvenanceDto::Syn,
+                        confidence: EdgeConfidenceDto::Exact,
+                    },
+                    GraphEdgeDto {
+                        id: "calls:function:entry:function:run".to_string(),
+                        kind: GraphEdgeKind::Calls,
+                        source_id: "function:entry".to_string(),
+                        target_id: "function:run".to_string(),
+                        provenance: EdgeProvenanceDto::Syn,
+                        confidence: EdgeConfidenceDto::Partial,
+                    },
+                ],
+                diagnostics: Vec::new(),
+            },
+        );
+
+        let call_edge = snapshot
+            .edges
+            .iter()
+            .find(|edge| edge.id == "calls:file:src/main.rs:file:src/lib.rs")
+            .expect("call relation edge");
+
+        assert_eq!(call_edge.kind, FileRelationEdgeKind::Calls);
+        assert_eq!(call_edge.weight, 1);
+        assert_eq!(call_edge.evidence_count, 1);
+        assert_eq!(call_edge.confidence, EdgeConfidenceDto::Partial);
+        assert_eq!(
+            call_edge.evidence_sample[0].kind,
+            FileRelationEvidenceKind::FunctionCall
+        );
+        assert_eq!(
+            call_edge.evidence_sample[0].target_range.as_ref(),
+            Some(&test_source_range("src/lib.rs", 1))
+        );
+        assert!(snapshot.analyzers.iter().any(|analyzer| {
+            analyzer.analyzer == "syn-rust-call-relations"
+                && analyzer.language == SourceLanguageDto::Rust
+        }));
 
         fs::remove_dir_all(repo).expect("cleanup temp repo");
     }

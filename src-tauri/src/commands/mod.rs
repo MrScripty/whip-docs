@@ -174,6 +174,25 @@ impl AppState {
                 .map_err(|error| error.to_string())?;
 
             FileRelationGraphBuilder::add_rust_import_relations(&mut snapshot, import_snapshot);
+            if source_root.as_path().join("Cargo.toml").is_file() {
+                match RustGraphExtractor.extract(&source_root) {
+                    Ok(graph_snapshot) => {
+                        FileRelationGraphBuilder::add_rust_call_relations(
+                            &mut snapshot,
+                            graph_snapshot,
+                        );
+                    }
+                    Err(error) => {
+                        snapshot
+                            .diagnostics
+                            .push(crate::graph::AnalyzerDiagnosticDto {
+                                code: "rust_call_extraction_failed".to_string(),
+                                message: error.to_string(),
+                                source_path: None,
+                            });
+                    }
+                }
+            }
             Ok::<_, String>(snapshot)
         })
         .await
@@ -514,6 +533,43 @@ mod tests {
             .iter()
             .any(|analyzer| analyzer.analyzer == "syn-rust-import-relations"));
         assert_eq!(state.graph_snapshot().await, None);
+
+        fs::remove_dir_all(repo_dir).expect("cleanup repo dir");
+    }
+
+    #[tokio::test]
+    async fn app_state_loads_file_relation_graph_with_rust_call_relations() {
+        let app_dir = unique_temp_dir("file-relation-call-app");
+        let repo_dir = unique_temp_dir("file-relation-call-repo");
+        fs::create_dir_all(repo_dir.join("src")).expect("create repo src");
+        fs::write(
+            repo_dir.join("Cargo.toml"),
+            "[package]\nname = \"fixture\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+        )
+        .expect("write manifest");
+        fs::write(
+            repo_dir.join("src/lib.rs"),
+            "mod worker;\npub fn entry() { worker::run(); }\n",
+        )
+        .expect("write lib source");
+        fs::write(repo_dir.join("src/worker.rs"), "pub fn run() {}\n")
+            .expect("write worker source");
+        let store = ConfigStore::new(&app_dir);
+        let state = AppState::new(store, AppConfigDto::default());
+
+        let snapshot = state
+            .load_file_relation_graph(repo_dir.to_string_lossy().into_owned())
+            .await
+            .expect("load file relation graph");
+
+        assert!(snapshot
+            .edges
+            .iter()
+            .any(|edge| edge.id == "calls:file:src/lib.rs:file:src/worker.rs"));
+        assert!(snapshot
+            .analyzers
+            .iter()
+            .any(|analyzer| analyzer.analyzer == "syn-rust-call-relations"));
 
         fs::remove_dir_all(repo_dir).expect("cleanup repo dir");
     }
