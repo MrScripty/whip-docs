@@ -8,7 +8,7 @@ pub struct ValidatedRepoPath {
 }
 
 impl ValidatedRepoPath {
-    pub fn parse_existing_cargo_repo(raw_path: impl AsRef<Path>) -> Result<Self, SourcePathError> {
+    pub fn parse_existing_source_root(raw_path: impl AsRef<Path>) -> Result<Self, SourcePathError> {
         let raw_path = raw_path.as_ref();
         if raw_path.as_os_str().is_empty() {
             return Err(SourcePathError::Empty);
@@ -33,12 +33,24 @@ impl ValidatedRepoPath {
             return Err(SourcePathError::NotDirectory(canonical_path));
         }
 
-        let manifest_path = canonical_path.join("Cargo.toml");
+        Ok(Self { canonical_path })
+    }
+
+    pub fn parse_existing_cargo_repo(raw_path: impl AsRef<Path>) -> Result<Self, SourcePathError> {
+        let source_root = Self::parse_existing_source_root(raw_path)?;
+        source_root.require_cargo_manifest()?;
+        Ok(source_root)
+    }
+
+    pub fn require_cargo_manifest(&self) -> Result<(), SourcePathError> {
+        let manifest_path = self.canonical_path.join("Cargo.toml");
         if !manifest_path.is_file() {
-            return Err(SourcePathError::MissingCargoManifest(canonical_path));
+            return Err(SourcePathError::MissingCargoManifest(
+                self.canonical_path.clone(),
+            ));
         }
 
-        Ok(Self { canonical_path })
+        Ok(())
     }
 
     pub fn as_path(&self) -> &Path {
@@ -150,6 +162,20 @@ mod tests {
     }
 
     #[test]
+    fn source_root_accepts_directory_without_cargo_manifest() {
+        let repo = unique_temp_dir("generic-source-root");
+        fs::create_dir_all(&repo).expect("create temp repo");
+
+        let validated =
+            ValidatedRepoPath::parse_existing_source_root(&repo).expect("valid source root");
+
+        assert!(validated.as_path().is_absolute());
+        assert_eq!(validated.as_path().file_name(), repo.file_name());
+
+        fs::remove_dir_all(repo).expect("cleanup temp repo");
+    }
+
+    #[test]
     fn repo_path_rejects_parent_traversal() {
         let error = ValidatedRepoPath::parse_existing_cargo_repo("../outside")
             .expect_err("must reject traversal");
@@ -214,6 +240,22 @@ mod tests {
             validated.as_path(),
             repo.canonicalize().expect("canonical repo")
         );
+
+        fs::remove_dir_all(repo).expect("cleanup temp repo");
+    }
+
+    #[test]
+    fn cargo_manifest_requirement_can_be_checked_after_source_root_parsing() {
+        let repo = unique_temp_dir("deferred-cargo-check");
+        fs::create_dir_all(&repo).expect("create temp repo");
+        let validated =
+            ValidatedRepoPath::parse_existing_source_root(&repo).expect("valid source root");
+
+        let error = validated
+            .require_cargo_manifest()
+            .expect_err("must reject missing manifest");
+
+        assert!(matches!(error, SourcePathError::MissingCargoManifest(_)));
 
         fs::remove_dir_all(repo).expect("cleanup temp repo");
     }

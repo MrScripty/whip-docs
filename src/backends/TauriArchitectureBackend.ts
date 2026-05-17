@@ -133,6 +133,99 @@ export type DirectoryGraphSnapshotDto = {
   excludedPathCount: number;
 };
 
+export type SourceLanguageDto =
+  | 'rust'
+  | 'typescript'
+  | 'javascript'
+  | 'python'
+  | 'csharp'
+  | 'unknown';
+
+export type FileRelationNodeKind = 'repo' | 'directory' | 'file';
+
+export type FileRelationEdgeKind =
+  | 'contains'
+  | 'imports'
+  | 'calls'
+  | 'references_type'
+  | 'passes_data'
+  | 'reads_data'
+  | 'writes_data'
+  | 'borrows_data'
+  | 'mutably_borrows_data'
+  | 'copies_data'
+  | 'tests'
+  | 'configures'
+  | 'implements_contract';
+
+export type FileRelationDirectionDto = 'directed' | 'undirected';
+
+export type FileRelationEvidenceKind =
+  | 'import'
+  | 'function_call'
+  | 'type_reference'
+  | 'data_pass'
+  | 'value_read'
+  | 'value_write'
+  | 'borrow'
+  | 'mutable_borrow'
+  | 'copy'
+  | 'test_coverage'
+  | 'configuration'
+  | 'contract_implementation';
+
+export type FileRelationAccessDto = 'read' | 'write' | 'borrow' | 'mutable_borrow' | 'copy';
+
+export type FileRelationNodeDto = {
+  id: string;
+  kind: FileRelationNodeKind;
+  name: string;
+  path: string;
+  parentId: string | null;
+  childIds: string[];
+  language: SourceLanguageDto | null;
+};
+
+export type FileRelationEvidenceDto = {
+  kind: FileRelationEvidenceKind;
+  sourceRange: SourceRangeDto;
+  targetRange: SourceRangeDto | null;
+  sourceLabel: string | null;
+  targetLabel: string | null;
+  access: FileRelationAccessDto | null;
+  analyzer: string;
+};
+
+export type FileRelationEdgeDto = {
+  id: string;
+  kind: FileRelationEdgeKind;
+  fromNodeId: string;
+  toNodeId: string;
+  weight: number;
+  direction: FileRelationDirectionDto;
+  confidence: GraphEdgeDto['confidence'];
+  provenance: GraphEdgeDto['provenance'];
+  evidenceCount: number;
+  evidenceSample: FileRelationEvidenceDto[];
+};
+
+export type AnalyzerRunDto = {
+  analyzer: string;
+  language: SourceLanguageDto;
+  version: string | null;
+};
+
+export type FileRelationGraphSnapshotDto = {
+  schemaVersion: number;
+  sourceRoot: string;
+  generatedAt: string;
+  rootNodeId: string;
+  nodes: FileRelationNodeDto[];
+  edges: FileRelationEdgeDto[];
+  analyzers: AnalyzerRunDto[];
+  diagnostics: AnalyzerDiagnosticDto[];
+};
+
 export type SourceSnippetDto = {
   nodeId: string;
   path: string;
@@ -170,6 +263,10 @@ export class TauriArchitectureBackend {
 
   async loadDirectoryGraph(path: string): Promise<DirectoryGraphSnapshotDto> {
     return invokeTauri<DirectoryGraphSnapshotDto>('load_directory_graph', { path });
+  }
+
+  async loadFileRelationGraph(path: string): Promise<FileRelationGraphSnapshotDto> {
+    return invokeTauri<FileRelationGraphSnapshotDto>('load_file_relation_graph', { path });
   }
 
   async getGraphSnapshot(): Promise<GraphSnapshotDto | null> {

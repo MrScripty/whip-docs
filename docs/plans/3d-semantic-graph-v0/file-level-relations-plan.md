@@ -80,14 +80,17 @@ Affected persisted artifacts:
   become mandatory before persistence ships.
 
 Concurrent worker plan:
-- No parallel implementation is planned for the first pass. The contract and
-  adapter slices touch shared DTOs and must be integrated serially.
+- Exploratory sub-agents are useful for backend/frontend blast-radius review.
+  Contract and adapter edits remain integrated serially because they touch
+  shared DTO boundaries.
 
 ## Current State
 
 - The 3D graph consumes `RenderGraph` from `src/lib/graph-v0/types.ts`.
 - `RenderGraph` currently supports only `repo`, `directory`, and `file` nodes.
-- `RenderGraphEdge.kind` is currently only `tree`.
+- `RenderGraphEdge.kind` has been widened to `contains` plus relation edge
+  kinds. The legacy directory DTO still uses `tree` on the wire, and the
+  frontend adapter normalizes it to render-facing `contains`.
 - The backend has two graph shapes:
   - `DirectoryGraphSnapshotDto`, which represents repository structure.
   - `GraphSnapshotDto`, which already has analysis nodes and edges such as
@@ -325,7 +328,7 @@ export type RenderGraphEdge = {
   readonly fromNodeId: string;
   readonly toNodeId: string;
   readonly weight?: number;
-  readonly visibleAtDetail?: readonly FileRelationDetail[];
+  readonly visibleAtDetails?: readonly FileRelationDetail[];
   readonly evidenceCount?: number;
   readonly confidence?: 'exact' | 'inferred' | 'partial';
 };
@@ -354,10 +357,10 @@ export type FileRelationDetail =
   | 'structure'
   | 'imports'
   | 'calls'
-  | 'types'
-  | 'data-flow'
-  | 'ownership'
-  | 'coordination';
+  | 'data'
+  | 'tests'
+  | 'configuration'
+  | 'contracts';
 ```
 
 Suggested defaults:
@@ -367,10 +370,10 @@ Suggested defaults:
 | `structure` | Directory containment, no visible file containment edges |
 | `imports` | `imports` |
 | `calls` | `imports`, `calls` |
-| `types` | `imports`, `calls`, `references_type` |
-| `data-flow` | `passes_data`, `reads_data`, `writes_data` plus previous levels |
-| `ownership` | `borrows_data`, `mutably_borrows_data`, `copies_data` plus previous levels |
-| `coordination` | `tests`, `configures`, `implements_contract` plus previous levels |
+| `data` | `references_type`, `passes_data`, `reads_data`, `writes_data`, `borrows_data`, `mutably_borrows_data`, `copies_data` plus previous levels |
+| `tests` | `tests` plus previous levels |
+| `configuration` | `configures` plus previous levels |
+| `contracts` | `implements_contract` plus previous levels |
 
 The UI can start as a segmented control or select in the existing 3D graph
 settings panel. The filtering should happen before selection indexing so hidden
@@ -531,8 +534,7 @@ Impact:
 
 Maintainability response:
 - Add relation DTOs in a new backend submodule such as `graph/relations.rs`
-  and re-export stable public types from `graph/mod.rs`, rather than expanding
-  `graph/mod.rs` further.
+  exposed as `graph::relations`, rather than expanding `graph/mod.rs` further.
 - If directory graph code is touched heavily, consider moving the existing
   directory builder into `graph/directory.rs` in the same slice that modifies
   it, preserving `DirectoryGraphBuilder` as the public facade.
@@ -776,7 +778,7 @@ Maintainability response:
 
 - Split generic source-root validation from Cargo-specific validation.
 - Add backend DTOs for `FileRelationGraphSnapshotDto` in a focused relation
-  module re-exported by `graph/mod.rs`.
+  module exposed by `graph/mod.rs`.
 - Mirror the DTOs in `TauriArchitectureBackend.ts`.
 - Extend frontend `RenderGraphEdge.kind` beyond `tree`.
 - Add `fileRelationSnapshotToRenderGraph`.
@@ -903,6 +905,45 @@ Verification:
 - `cargo fmt --all -- --check`
 - `cargo clippy --workspace --all-targets --all-features -- -D warnings`
 - `cargo test --workspace`
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test:frontend`
+
+## Implementation Log
+
+### 2026-05-17 Slice 1: Contract Foundation
+
+Status: completed.
+
+Implemented:
+- Split generic source-root validation from Cargo-manifest validation so future
+  relation graph commands can validate mixed-language roots without inheriting
+  Rust-only assumptions.
+- Added backend-owned `FileRelationGraphSnapshotDto` relation contracts in a
+  focused graph module rather than expanding the existing graph module body.
+- Added a structure-only `load_file_relation_graph` vertical path that promotes
+  directory graph facts into the relation graph contract while Rust import/call
+  extraction remains pending.
+- Added TypeScript DTO mirrors and a frontend render adapter that normalizes
+  legacy directory `tree` edges to render-facing `contains` edges and preserves
+  relation edge metadata.
+
+Discovered issues:
+- The existing directory graph command still emits `tree` on the wire. This is
+  retained for compatibility, but all render-facing graph code should use
+  `contains` after adapter normalization.
+- Relation detail names should stay close to current edge categories for V0.
+  The plan now uses `data`, `tests`, `configuration`, and `contracts` instead
+  of broader names that would need a second mapping table immediately.
+- A contract-only Rust module fails the standards gate under `clippy
+  -D warnings` as dead code. The slice therefore includes a structure-only
+  backend command path that exercises the relation DTOs without adding fake
+  semantic edges.
+
+Validation:
+- `cargo fmt --manifest-path src-tauri/Cargo.toml`
+- `cargo test --manifest-path src-tauri/Cargo.toml`
+- `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings`
 - `npm run lint`
 - `npm run typecheck`
 - `npm run test:frontend`

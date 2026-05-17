@@ -9,7 +9,7 @@ export {
   GRAPH_V0_SELECTION_ID,
   GRAPH_V0_SELECTION_PRIORITY,
 } from './constants';
-export { directorySnapshotToRenderGraph } from './adapters';
+export { directorySnapshotToRenderGraph, fileRelationSnapshotToRenderGraph } from './adapters';
 export {
   layoutLayeredGrid,
   layoutRadialTree,
@@ -36,7 +36,11 @@ export type {
   DirectoryGraphSceneTheme,
   DirectoryGraphSceneControlMode,
   DirectoryGraphNeighborhood,
+  FileRelationDetail,
+  GraphEdgeConfidence,
+  GraphEdgeDirection,
   GraphEdgeKind,
+  GraphEdgeProvenance,
   GraphNodeKind,
   LayoutAlgorithmId,
   LayoutNodePosition,
@@ -50,5 +54,6 @@ export type {
   SelectionOptions,
   SelectionPoint,
   SelectionSampleBuffer,
+  SourceLanguage,
   Vec3,
 } from './types';

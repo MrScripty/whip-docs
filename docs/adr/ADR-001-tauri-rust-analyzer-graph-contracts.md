@@ -24,10 +24,18 @@ Use backend-owned Rust DTOs as the source contracts for:
 - validated source repository paths
 - graph snapshots, nodes, edges, source ranges, diagnostics, edge provenance,
   and edge confidence
+- file relation graph snapshots, repo/directory/file relation nodes,
+  normalized file-to-file relation edges, analyzer run metadata, and bounded
+  relation evidence
 
 Tauri command handlers will expose serialized DTOs to the frontend. The
 frontend may mirror those types in TypeScript, but the Rust backend remains the
 authority for validation, graph IDs, snapshot schema version, and diagnostics.
+
+The cross-file relation graph remains file-focused in the global 3D scene.
+Language analyzers may inspect symbols, calls, imports, and ownership details,
+but those internals collapse into file-to-file edges with evidence metadata
+instead of becoming global rendered nodes.
 
 ## Consequences
 
@@ -38,6 +46,8 @@ authority for validation, graph IDs, snapshot schema version, and diagnostics.
   metadata, not frontend-provided paths.
 - Future persisted snapshots or generated TypeScript bindings have an explicit
   migration point.
+- Cross-file relation support can add language analyzers incrementally as long
+  as each analyzer emits the same normalized backend-owned relation DTOs.
 
 ## Alternatives Rejected
 
@@ -55,4 +65,3 @@ authority for validation, graph IDs, snapshot schema version, and diagnostics.
 - TypeScript DTO mirrors drift from Rust DTOs.
 - Saved graph snapshots are introduced.
 - Non-Rust language analysis becomes in scope.
-

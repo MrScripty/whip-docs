@@ -3,6 +3,7 @@ import type {
   AnalysisStatusDto,
   CommandErrorDto,
   DirectoryGraphSnapshotDto,
+  FileRelationGraphSnapshotDto,
   GraphSnapshotDto,
   SourceSnippetDto,
 } from '../../backends/TauriArchitectureBackend';
@@ -29,6 +30,10 @@ export class ArchitectureService {
 
   loadDirectoryGraph(path: string): Promise<DirectoryGraphSnapshotDto> {
     return this.backend.loadDirectoryGraph(path.trim());
+  }
+
+  loadFileRelationGraph(path: string): Promise<FileRelationGraphSnapshotDto> {
+    return this.backend.loadFileRelationGraph(path.trim());
   }
 
   getGraphSnapshot(): Promise<GraphSnapshotDto | null> {

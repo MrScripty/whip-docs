@@ -6,7 +6,7 @@ This directory contains Tauri command adapters and command-facing DTOs.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `mod.rs` | App state, app status, app config, analyzer status, V0 directory graph loading, graph analysis/snapshot commands, source snippet lookup, source repo path commands, and command error DTO. |
+| `mod.rs` | App state, app status, app config, analyzer status, V0 directory graph loading, file relation graph loading, graph analysis/snapshot commands, source snippet lookup, source repo path commands, and command error DTO. |
 
 ## Problem
 Frontend IPC needs a stable Rust boundary while backend services retain
@@ -26,6 +26,11 @@ come from backend modules after source path validation.
 
 Directory graph traversal is dispatched through blocking-task execution so
 filesystem walking does not occupy the async command path.
+
+File relation graph loading currently exposes the same structure as the
+directory graph through the relation graph contract. It validates a generic
+source root, then dispatches filesystem traversal through blocking-task
+execution before Rust-specific import/call extraction is added.
 
 ## Alternatives Rejected
 - Let frontend services construct local source paths: rejected by path security
@@ -69,16 +74,25 @@ pub fn load_directory_graph(
 ) -> Result<DirectoryGraphSnapshotDto, CommandErrorDto> {
     state.load_directory_graph(path)
 }
+
+#[tauri::command]
+pub async fn load_file_relation_graph(
+    path: String,
+    state: tauri::State<'_, std::sync::Arc<AppState>>,
+) -> Result<FileRelationGraphSnapshotDto, CommandErrorDto> {
+    state.load_file_relation_graph(path).await
+}
 ```
 
 ## API Consumer Contract
 - Inputs: Tauri invoke payloads and managed app state.
 - Outputs: serde DTOs returned to the frontend adapter, including V0 directory
-  graph snapshots.
+  graph snapshots and file relation graph snapshots.
 - Lifecycle: commands may request work but do not own app shutdown; app state
   delegates shutdown cleanup to backend services. Directory graph loading
   validates synchronously at the boundary, then performs filesystem traversal
-  in a blocking task.
+  in a blocking task. File relation graph loading follows the same blocking
+  boundary and does not require a Cargo manifest for the structure-only slice.
 - Errors: recoverable failures return structured command errors once error DTOs
   are introduced.
 - Compatibility: command names and payload shapes are frontend-visible

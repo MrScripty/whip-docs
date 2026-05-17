@@ -5,6 +5,7 @@ use tokio::sync::RwLock;
 
 use crate::analyzer::{AnalysisStatusDto, RustAnalyzerService, RustGraphExtractor};
 use crate::config::{AppConfigDto, ConfigStore, SourceRepoStatusDto};
+use crate::graph::relations::{FileRelationGraphBuilder, FileRelationGraphSnapshotDto};
 use crate::graph::{DirectoryGraphBuilder, DirectoryGraphSnapshotDto, GraphSnapshotDto};
 use crate::source::ValidatedRepoPath;
 
@@ -157,6 +158,19 @@ impl AppState {
             .map_err(|error| CommandErrorDto::internal(error.to_string()))
     }
 
+    pub async fn load_file_relation_graph(
+        &self,
+        raw_path: String,
+    ) -> Result<FileRelationGraphSnapshotDto, CommandErrorDto> {
+        let source_root = ValidatedRepoPath::parse_existing_source_root(&raw_path)
+            .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
+
+        tokio::task::spawn_blocking(move || FileRelationGraphBuilder::build_structure(&source_root))
+            .await
+            .map_err(|error| CommandErrorDto::internal(error.to_string()))?
+            .map_err(|error| CommandErrorDto::internal(error.to_string()))
+    }
+
     pub async fn shutdown_services(&self) -> Result<(), CommandErrorDto> {
         self.analyzer_service
             .shutdown()
@@ -271,6 +285,14 @@ pub async fn load_directory_graph(
 }
 
 #[tauri::command]
+pub async fn load_file_relation_graph(
+    path: String,
+    state: tauri::State<'_, std::sync::Arc<AppState>>,
+) -> Result<FileRelationGraphSnapshotDto, CommandErrorDto> {
+    state.load_file_relation_graph(path).await
+}
+
+#[tauri::command]
 pub async fn get_graph_snapshot(
     state: tauri::State<'_, std::sync::Arc<AppState>>,
 ) -> Result<Option<GraphSnapshotDto>, CommandErrorDto> {
@@ -357,7 +379,6 @@ mod tests {
             config
         );
 
-        fs::remove_dir_all(app_dir).expect("cleanup app dir");
         fs::remove_dir_all(repo_dir).expect("cleanup repo dir");
     }
 
@@ -418,7 +439,6 @@ mod tests {
         assert!(snapshot.nodes.iter().any(|node| node.label == "entry"));
         assert_eq!(state.graph_snapshot().await, Some(snapshot));
 
-        fs::remove_dir_all(app_dir).expect("cleanup app dir");
         fs::remove_dir_all(repo_dir).expect("cleanup repo dir");
     }
 
@@ -446,6 +466,33 @@ mod tests {
             .edges
             .iter()
             .any(|edge| edge.from_node_id == "repo:." && edge.to_node_id == "dir:src"));
+        assert_eq!(state.graph_snapshot().await, None);
+
+        fs::remove_dir_all(repo_dir).expect("cleanup repo dir");
+    }
+
+    #[tokio::test]
+    async fn app_state_loads_file_relation_graph_from_generic_source_root() {
+        let app_dir = unique_temp_dir("file-relation-graph-app");
+        let repo_dir = unique_temp_dir("file-relation-graph-repo");
+        fs::create_dir_all(repo_dir.join("src")).expect("create repo src");
+        fs::write(repo_dir.join("src/lib.rs"), "pub fn fixture() {}\n").expect("write source");
+        let store = ConfigStore::new(&app_dir);
+        let state = AppState::new(store, AppConfigDto::default());
+
+        let snapshot = state
+            .load_file_relation_graph(repo_dir.to_string_lossy().into_owned())
+            .await
+            .expect("load file relation graph");
+
+        assert!(snapshot
+            .nodes
+            .iter()
+            .any(|node| node.id == "file:src/lib.rs"));
+        assert!(snapshot
+            .edges
+            .iter()
+            .any(|edge| edge.id == "contains:repo:.:dir:src"));
         assert_eq!(state.graph_snapshot().await, None);
 
         fs::remove_dir_all(repo_dir).expect("cleanup repo dir");

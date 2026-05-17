@@ -7,7 +7,7 @@ backend adapters for the UI.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `ArchitectureService.ts` | Frontend service facade for app config, analyzer status, V0 directory graph loading, graph analysis, graph snapshot access, source snippets, and source repository setup. |
+| `ArchitectureService.ts` | Frontend service facade for app config, analyzer status, V0 directory graph loading, file relation graph loading, graph analysis, graph snapshot access, source snippets, and source repository setup. |
 | `ArchitectureService.test.ts` | Unit coverage for command error message preservation and service delegation. |
 | `graphView.ts` | Pure graph node search/filter helpers for Svelte views. |
 | `graphView.test.ts` | Unit coverage for graph search/filter helper behavior. |
@@ -58,6 +58,7 @@ const service = new ArchitectureService();
 const config = await service.getConfig();
 const analyzer = await service.getAnalysisStatus();
 const directoryGraph = await service.loadDirectoryGraph('/path/to/repo');
+const relationGraph = await service.loadFileRelationGraph('/path/to/repo');
 const snapshot = await service.analyzeSourceRepo();
 ```
 

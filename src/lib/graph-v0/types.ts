@@ -1,6 +1,36 @@
 export type GraphNodeKind = 'repo' | 'directory' | 'file';
 
-export type GraphEdgeKind = 'tree';
+export type GraphEdgeKind =
+  | 'contains'
+  | 'imports'
+  | 'calls'
+  | 'references_type'
+  | 'passes_data'
+  | 'reads_data'
+  | 'writes_data'
+  | 'borrows_data'
+  | 'mutably_borrows_data'
+  | 'copies_data'
+  | 'tests'
+  | 'configures'
+  | 'implements_contract';
+
+export type GraphEdgeDirection = 'directed' | 'undirected';
+
+export type GraphEdgeConfidence = 'exact' | 'inferred' | 'partial';
+
+export type GraphEdgeProvenance = 'rust_analyzer' | 'syn' | 'normalized';
+
+export type FileRelationDetail =
+  | 'structure'
+  | 'imports'
+  | 'calls'
+  | 'data'
+  | 'tests'
+  | 'configuration'
+  | 'contracts';
+
+export type SourceLanguage = 'rust' | 'typescript' | 'javascript' | 'python' | 'csharp' | 'unknown';
 
 export type Vec3 = {
   readonly x: number;
@@ -15,6 +45,7 @@ export type RenderGraphNode = {
   readonly path: string;
   readonly parentId?: string;
   readonly childIds: readonly string[];
+  readonly language?: SourceLanguage;
 };
 
 export type RenderGraphEdge = {
@@ -22,6 +53,12 @@ export type RenderGraphEdge = {
   readonly kind: GraphEdgeKind;
   readonly fromNodeId: string;
   readonly toNodeId: string;
+  readonly weight?: number;
+  readonly direction?: GraphEdgeDirection;
+  readonly confidence?: GraphEdgeConfidence;
+  readonly provenance?: GraphEdgeProvenance;
+  readonly evidenceCount?: number;
+  readonly visibleAtDetails?: readonly FileRelationDetail[];
 };
 
 export type RenderGraph = {

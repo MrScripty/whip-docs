@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { DirectoryGraphSnapshotDto } from '../../backends/TauriArchitectureBackend.ts';
+import type {
+  DirectoryGraphSnapshotDto,
+  FileRelationGraphSnapshotDto,
+} from '../../backends/TauriArchitectureBackend.ts';
 import { ArchitectureService, commandErrorMessage } from './ArchitectureService.ts';
 
 test('commandErrorMessage preserves backend validation message', () => {
@@ -36,6 +39,32 @@ test('loadDirectoryGraph trims the path before delegating to backend', async () 
   const service = new ArchitectureService(backend as never);
 
   const result = await service.loadDirectoryGraph('  /tmp/example  ');
+
+  assert.equal(result, snapshot);
+  assert.deepEqual(calls, ['/tmp/example']);
+});
+
+test('loadFileRelationGraph trims the path before delegating to backend', async () => {
+  const calls: string[] = [];
+  const snapshot: FileRelationGraphSnapshotDto = {
+    schemaVersion: 1,
+    sourceRoot: '/tmp/example',
+    generatedAt: 'unix:1',
+    rootNodeId: 'repo:.',
+    nodes: [],
+    edges: [],
+    analyzers: [],
+    diagnostics: [],
+  };
+  const backend = {
+    loadFileRelationGraph(path: string): Promise<FileRelationGraphSnapshotDto> {
+      calls.push(path);
+      return Promise.resolve(snapshot);
+    },
+  };
+  const service = new ArchitectureService(backend as never);
+
+  const result = await service.loadFileRelationGraph('  /tmp/example  ');
 
   assert.equal(result, snapshot);
   assert.deepEqual(calls, ['/tmp/example']);

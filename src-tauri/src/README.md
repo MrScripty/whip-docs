@@ -19,7 +19,8 @@ rust-analyzer, graph snapshots, and frontend IPC without moving core analysis
 policy into command handlers.
 
 ## Constraints
-- Command handlers are adapters over backend-owned services.
+- Command handlers are adapters over backend-owned services and register both
+  legacy directory graph loading and the file relation graph contract.
 - rust-analyzer lifecycle is backend-owned.
 - App-state locks must not be held across expensive async work.
 - Startup and shutdown failures return structured errors where possible.
@@ -67,7 +68,8 @@ tauri::Builder::default()
 - Lifecycle: setup creates shared services; shutdown requests cleanup through
   `app_lifecycle`.
 - Errors: backend errors stay categorized when mapped to command responses.
-- Compatibility: command DTO changes require matching frontend adapter changes.
+- Compatibility: command DTO changes require matching frontend adapter and
+  service changes.
 
 ## Structured Producer Contract
 - Stable fields: command DTOs and app status payloads are machine-consumed.

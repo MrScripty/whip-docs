@@ -27,10 +27,10 @@ const graph: RenderGraph = {
     { id: 'docs', kind: 'directory', name: 'docs', path: 'docs', childIds: [] },
   ],
   edges: [
-    { id: 'repo-src', kind: 'tree', fromNodeId: 'repo', toNodeId: 'src' },
-    { id: 'repo-docs', kind: 'tree', fromNodeId: 'repo', toNodeId: 'docs' },
-    { id: 'src-lib', kind: 'tree', fromNodeId: 'src', toNodeId: 'lib' },
-    { id: 'src-main', kind: 'tree', fromNodeId: 'src', toNodeId: 'main' },
+    { id: 'repo-src', kind: 'contains', fromNodeId: 'repo', toNodeId: 'src' },
+    { id: 'repo-docs', kind: 'contains', fromNodeId: 'repo', toNodeId: 'docs' },
+    { id: 'src-lib', kind: 'contains', fromNodeId: 'src', toNodeId: 'lib' },
+    { id: 'src-main', kind: 'contains', fromNodeId: 'src', toNodeId: 'main' },
   ],
 };
 

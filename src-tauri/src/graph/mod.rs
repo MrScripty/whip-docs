@@ -1,5 +1,7 @@
 //! Versioned architecture graph contracts and normalization.
 
+pub mod relations;
+
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};

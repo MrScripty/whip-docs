@@ -7,7 +7,7 @@ method calls into Tauri command invocations.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `TauriArchitectureBackend.ts` | Tauri adapter for app status, app config, analyzer status, V0 directory graph loading, graph snapshot, source snippet, analysis, and source repository path commands. |
+| `TauriArchitectureBackend.ts` | Tauri adapter and DTO mirror for app status, app config, analyzer status, V0 directory graph loading, file relation graph contracts, graph snapshot, source snippet, analysis, and source repository path commands. |
 
 ## Problem
 Svelte components need backend data, but direct `invoke(...)` calls spread IPC
@@ -51,6 +51,7 @@ wire normalization here, then let services/components depend on typed methods.
 const backend = new TauriArchitectureBackend();
 const status = await backend.getAppStatus();
 const directoryGraph = await backend.loadDirectoryGraph('/path/to/repo');
+const relationGraph = await backend.loadFileRelationGraph('/path/to/repo');
 ```
 
 ## API Consumer Contract
@@ -65,7 +66,8 @@ const directoryGraph = await backend.loadDirectoryGraph('/path/to/repo');
 
 ## Structured Producer Contract
 - Stable fields: exported TypeScript DTO shapes are consumed by frontend
-  services.
+  services and pure graph adapters. File relation DTOs mirror backend serde
+  field and enum casing exactly.
 - Defaults: no local defaults are invented for backend-owned fields.
 - Enum semantics: preserve backend casing until an explicit normalization helper
   documents a display-only mapping.

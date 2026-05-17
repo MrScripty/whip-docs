@@ -10,8 +10,11 @@ by backend graph node ID.
 | `mod.rs` | `ValidatedRepoPath` and source repository validation errors. |
 
 ## Problem
-The app must read a user-selected local Rust repository without allowing path
-traversal, symlink escapes, or frontend-controlled snippet file paths.
+The app must read a user-selected local source root without allowing path
+traversal, symlink escapes, or frontend-controlled snippet file paths. Rust
+analysis still requires a Cargo manifest, but directory and relation graph
+contracts can validate a generic source root before language-specific checks
+run.
 
 ## Constraints
 - External paths are parsed once into validated backend types.
@@ -34,8 +37,9 @@ handlers and analyzer modules consume trusted types.
 - Unknown graph node IDs cannot resolve snippets.
 
 ## Revisit Triggers
-- Non-Cargo roots are supported.
-- Directory graph V0 needs to open non-Rust or mixed-language repositories.
+- More commands move from Cargo-only validation to generic source-root
+  validation plus language-specific analyzer checks.
+- Directory graph V0 needs richer mixed-language repository filtering.
 - Multiple source roots are configured.
 - Snippet lookup needs cached file content.
 
@@ -49,7 +53,8 @@ handlers and analyzer modules consume trusted types.
 
 ## Usage Examples
 ```rust
-let repo = ValidatedRepoPath::parse_existing_cargo_repo(raw_path)?;
+let repo = ValidatedRepoPath::parse_existing_source_root(raw_path)?;
+repo.require_cargo_manifest()?;
 let source_file = repo.resolve_existing_child("src/lib.rs")?;
 ```
 
@@ -59,7 +64,9 @@ let source_file = repo.resolve_existing_child("src/lib.rs")?;
 - Outputs: validated repository paths and source snippets.
 - Lifecycle: paths are validated before config persistence or analysis.
 - Errors: missing path, non-directory path, missing Cargo manifest, traversal,
-  and symlink escape are distinct validation failures.
+  and symlink escape are distinct validation failures. Cargo manifest checks are
+  explicit so non-Cargo relation graph commands do not inherit Rust-only
+  assumptions.
 - Compatibility: path validation behavior changes require command tests.
 
 ## Structured Producer Contract

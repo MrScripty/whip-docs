@@ -66,10 +66,10 @@ const sampleGraph: RenderGraph = {
     },
   ],
   edges: [
-    { id: 'repo-src', kind: 'tree', fromNodeId: 'repo', toNodeId: 'src' },
-    { id: 'repo-readme', kind: 'tree', fromNodeId: 'repo', toNodeId: 'readme' },
-    { id: 'src-main', kind: 'tree', fromNodeId: 'src', toNodeId: 'main' },
-    { id: 'src-lib', kind: 'tree', fromNodeId: 'src', toNodeId: 'lib' },
+    { id: 'repo-src', kind: 'contains', fromNodeId: 'repo', toNodeId: 'src' },
+    { id: 'repo-readme', kind: 'contains', fromNodeId: 'repo', toNodeId: 'readme' },
+    { id: 'src-main', kind: 'contains', fromNodeId: 'src', toNodeId: 'main' },
+    { id: 'src-lib', kind: 'contains', fromNodeId: 'src', toNodeId: 'lib' },
   ],
 };
 
@@ -370,12 +370,12 @@ const branchingGraph: RenderGraph = {
     },
   ],
   edges: [
-    { id: 'repo-src', kind: 'tree', fromNodeId: 'repo', toNodeId: 'src' },
-    { id: 'repo-docs', kind: 'tree', fromNodeId: 'repo', toNodeId: 'docs' },
-    { id: 'src-main', kind: 'tree', fromNodeId: 'src', toNodeId: 'main' },
-    { id: 'src-lib', kind: 'tree', fromNodeId: 'src', toNodeId: 'lib' },
-    { id: 'docs-api', kind: 'tree', fromNodeId: 'docs', toNodeId: 'api' },
-    { id: 'docs-guide', kind: 'tree', fromNodeId: 'docs', toNodeId: 'guide' },
+    { id: 'repo-src', kind: 'contains', fromNodeId: 'repo', toNodeId: 'src' },
+    { id: 'repo-docs', kind: 'contains', fromNodeId: 'repo', toNodeId: 'docs' },
+    { id: 'src-main', kind: 'contains', fromNodeId: 'src', toNodeId: 'main' },
+    { id: 'src-lib', kind: 'contains', fromNodeId: 'src', toNodeId: 'lib' },
+    { id: 'docs-api', kind: 'contains', fromNodeId: 'docs', toNodeId: 'api' },
+    { id: 'docs-guide', kind: 'contains', fromNodeId: 'docs', toNodeId: 'guide' },
   ],
 };
 
@@ -423,12 +423,12 @@ const wideBranchGraph: RenderGraph = {
     })),
   ],
   edges: [
-    { id: 'repo-wide', kind: 'tree', fromNodeId: 'repo', toNodeId: 'wide' },
-    { id: 'repo-narrow', kind: 'tree', fromNodeId: 'repo', toNodeId: 'narrow' },
-    { id: 'narrow-single', kind: 'tree', fromNodeId: 'narrow', toNodeId: 'single' },
+    { id: 'repo-wide', kind: 'contains', fromNodeId: 'repo', toNodeId: 'wide' },
+    { id: 'repo-narrow', kind: 'contains', fromNodeId: 'repo', toNodeId: 'narrow' },
+    { id: 'narrow-single', kind: 'contains', fromNodeId: 'narrow', toNodeId: 'single' },
     ...childIds('wide-child', 16).map((id) => ({
       id: `wide-${id}`,
-      kind: 'tree' as const,
+      kind: 'contains' as const,
       fromNodeId: 'wide',
       toNodeId: id,
     })),
@@ -495,19 +495,19 @@ const adjacentWideBranchGraph: RenderGraph = {
     })),
   ],
   edges: [
-    { id: 'repo-alpha', kind: 'tree', fromNodeId: 'repo', toNodeId: 'alpha' },
-    { id: 'repo-beta', kind: 'tree', fromNodeId: 'repo', toNodeId: 'beta' },
-    { id: 'repo-gamma', kind: 'tree', fromNodeId: 'repo', toNodeId: 'gamma' },
-    { id: 'gamma-child', kind: 'tree', fromNodeId: 'gamma', toNodeId: 'gamma-child' },
+    { id: 'repo-alpha', kind: 'contains', fromNodeId: 'repo', toNodeId: 'alpha' },
+    { id: 'repo-beta', kind: 'contains', fromNodeId: 'repo', toNodeId: 'beta' },
+    { id: 'repo-gamma', kind: 'contains', fromNodeId: 'repo', toNodeId: 'gamma' },
+    { id: 'gamma-child', kind: 'contains', fromNodeId: 'gamma', toNodeId: 'gamma-child' },
     ...childIds('alpha-child', 18).map((id) => ({
       id: `alpha-${id}`,
-      kind: 'tree' as const,
+      kind: 'contains' as const,
       fromNodeId: 'alpha',
       toNodeId: id,
     })),
     ...childIds('beta-child', 18).map((id) => ({
       id: `beta-${id}`,
-      kind: 'tree' as const,
+      kind: 'contains' as const,
       fromNodeId: 'beta',
       toNodeId: id,
     })),
@@ -552,9 +552,9 @@ const deepWideBranchGraph: RenderGraph = {
     ...nestedDirectoryNodes('beta-dir', 'beta-file', 'beta'),
   ],
   edges: [
-    { id: 'repo-alpha', kind: 'tree', fromNodeId: 'repo', toNodeId: 'alpha' },
-    { id: 'repo-beta', kind: 'tree', fromNodeId: 'repo', toNodeId: 'beta' },
-    { id: 'repo-gamma', kind: 'tree', fromNodeId: 'repo', toNodeId: 'gamma' },
+    { id: 'repo-alpha', kind: 'contains', fromNodeId: 'repo', toNodeId: 'alpha' },
+    { id: 'repo-beta', kind: 'contains', fromNodeId: 'repo', toNodeId: 'beta' },
+    { id: 'repo-gamma', kind: 'contains', fromNodeId: 'repo', toNodeId: 'gamma' },
     ...nestedDirectoryEdges('alpha-dir', 'alpha-file', 'alpha'),
     ...nestedDirectoryEdges('beta-dir', 'beta-file', 'beta'),
   ],
@@ -622,12 +622,12 @@ const lopsidedNestedBranchGraph: RenderGraph = {
     ...fileNodes('beta-file', 'beta-heavy', 'beta/heavy', 20),
   ],
   edges: [
-    { id: 'repo-alpha', kind: 'tree', fromNodeId: 'repo', toNodeId: 'alpha' },
-    { id: 'repo-beta', kind: 'tree', fromNodeId: 'repo', toNodeId: 'beta' },
-    { id: 'alpha-heavy', kind: 'tree', fromNodeId: 'alpha', toNodeId: 'alpha-heavy' },
-    { id: 'alpha-light', kind: 'tree', fromNodeId: 'alpha', toNodeId: 'alpha-light' },
-    { id: 'beta-heavy', kind: 'tree', fromNodeId: 'beta', toNodeId: 'beta-heavy' },
-    { id: 'beta-light', kind: 'tree', fromNodeId: 'beta', toNodeId: 'beta-light' },
+    { id: 'repo-alpha', kind: 'contains', fromNodeId: 'repo', toNodeId: 'alpha' },
+    { id: 'repo-beta', kind: 'contains', fromNodeId: 'repo', toNodeId: 'beta' },
+    { id: 'alpha-heavy', kind: 'contains', fromNodeId: 'alpha', toNodeId: 'alpha-heavy' },
+    { id: 'alpha-light', kind: 'contains', fromNodeId: 'alpha', toNodeId: 'alpha-light' },
+    { id: 'beta-heavy', kind: 'contains', fromNodeId: 'beta', toNodeId: 'beta-heavy' },
+    { id: 'beta-light', kind: 'contains', fromNodeId: 'beta', toNodeId: 'beta-light' },
     ...fileEdges('alpha-file', 'alpha-heavy', 20),
     ...fileEdges('beta-file', 'beta-heavy', 20),
   ],
@@ -656,7 +656,7 @@ function fileNodes(
 function fileEdges(prefix: string, parentId: string, count: number): RenderGraph['edges'] {
   return childIds(prefix, count).map((fileId) => ({
     id: `${parentId}-${fileId}`,
-    kind: 'tree' as const,
+    kind: 'contains' as const,
     fromNodeId: parentId,
     toNodeId: fileId,
   }));
@@ -695,13 +695,13 @@ function nestedDirectoryEdges(
   return childIds(directoryPrefix, 12).flatMap((directoryId) => [
     {
       id: `${parentId}-${directoryId}`,
-      kind: 'tree' as const,
+      kind: 'contains' as const,
       fromNodeId: parentId,
       toNodeId: directoryId,
     },
     ...childIds(`${filePrefix}-${directoryId}`, 12).map((fileId) => ({
       id: `${directoryId}-${fileId}`,
-      kind: 'tree' as const,
+      kind: 'contains' as const,
       fromNodeId: directoryId,
       toNodeId: fileId,
     })),

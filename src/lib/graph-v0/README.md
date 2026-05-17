@@ -7,9 +7,9 @@ projection.
 ## Contents
 | File/Folder | Description |
 |-------------|-------------|
-| `types.ts` | Render-facing graph, layout, vector, and ID-map selection types. |
+| `types.ts` | Render-facing graph, cross-file relation edge metadata, layout, vector, and ID-map selection types. |
 | `constants.ts` | Centralized layout geometry, scene styling, camera, interaction, depth, and selection constants. |
-| `adapters.ts` | Directory graph DTO to render graph normalization. |
+| `adapters.ts` | Directory graph and file relation graph DTO to render graph normalization. |
 | `layouts.ts` | Deterministic directory/file graph layout algorithms. |
 | `neighborhood.ts` | Selected-node first/second level neighborhood highlighting and labeling sets. |
 | `selectionIndex.ts` | Derived graph selection indexes, indexed neighborhood lookup, and selection-state diff helpers. |
@@ -27,7 +27,9 @@ letting Svelte components or renderer code invent graph facts.
   Three.js or Svelte.
 - The scene system may import Three.js directly but must not depend on Svelte
   components.
-- Backend graph snapshots remain the source of graph truth.
+- Backend graph snapshots remain the source of graph truth. Directory graph
+  `tree` edges normalize to render-facing `contains` edges; relation snapshots
+  preserve file-to-file edge metadata.
 - Selection indexes are derived frontend view state and can be rebuilt from the
   render graph at any time.
 - Directory focus mode is derived scene state only: it may hide and reposition
@@ -92,12 +94,13 @@ mounts and disposes.
 
 ## Revisit Triggers
 - Layout options become persisted user settings.
-- Directory/file graph rendering starts using semantic edges.
+- Relation detail toggles require edge visibility indexes beyond static render
+  graph metadata.
 - ID-map selection needs multi-hit inspection instead of a single best hit.
 
 ## Dependencies
-**Internal:** backend directory graph DTO shape after frontend adapter
-normalization.
+**Internal:** backend directory graph and file relation graph DTO shape after
+frontend adapter normalization.
 **External:** TypeScript and Node test runner.
 
 ## Related ADRs
@@ -108,7 +111,12 @@ normalization.
 
 ## Usage Examples
 ```ts
-import { DirectoryGraphScene, layoutRadialTree, selectFromIdMap } from './graph-v0';
+import {
+  DirectoryGraphScene,
+  fileRelationSnapshotToRenderGraph,
+  layoutRadialTree,
+  selectFromIdMap,
+} from './graph-v0';
 ```
 
 ## API Consumer Contract
@@ -124,7 +132,8 @@ import { DirectoryGraphScene, layoutRadialTree, selectFromIdMap } from './graph-
   and order.
 - Defaults: layout and selection defaults live in `constants.ts`.
 - Enum semantics: node and edge kind labels mirror the backend V0 graph
-  contract after adapter normalization.
+  contract after adapter normalization. Render-facing containment is named
+  `contains` even when the legacy directory DTO uses `tree` on the wire.
 - Compatibility: add fields where possible; breaking return shape changes need
   coordinated renderer updates.
 - Regeneration or migration: no generated artifacts are produced here.
