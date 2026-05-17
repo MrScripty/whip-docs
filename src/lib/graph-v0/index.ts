@@ -26,7 +26,13 @@ export {
   selectionStateForNode,
 } from './selectionIndex';
 export { decodeSelectionId, encodeSelectionId, selectFromIdMap } from './selection';
-export type { GraphSelectionIndex, GraphSelectionState, GraphSelectionStateDiff } from './selectionIndex';
+export { isEdgeVisibleAtRelationDetails, visibleEdgeIdsForRelationDetails } from './relationVisibility';
+export type {
+  GraphSelectionIndex,
+  GraphSelectionIndexOptions,
+  GraphSelectionState,
+  GraphSelectionStateDiff,
+} from './selectionIndex';
 export type {
   DecodedSelectionId,
   DirectoryGraphEdgeStyle,

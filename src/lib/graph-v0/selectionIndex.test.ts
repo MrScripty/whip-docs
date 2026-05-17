@@ -49,6 +49,35 @@ test('buildSelectionIndex indexes nodes, edges, incident edges, adjacency, and n
   assert.deepEqual(index.edgeIdsByNodePair.get('lib\0src'), ['src-lib']);
 });
 
+test('buildSelectionIndex excludes hidden edges from neighborhoods and distance', () => {
+  const relationGraph: RenderGraph = {
+    ...graph,
+    edges: [
+      ...graph.edges,
+      {
+        id: 'main-imports-lib',
+        kind: 'imports',
+        fromNodeId: 'main',
+        toNodeId: 'lib',
+        visibleAtDetails: ['imports'],
+      },
+    ],
+  };
+  const index = buildSelectionIndex(relationGraph, {
+    visibleEdgeIds: ['repo-src', 'repo-docs', 'src-lib', 'src-main'],
+  });
+
+  assert.equal(index.edgeById.has('main-imports-lib'), false);
+  assert.deepEqual(selectionNeighborhood(index, 'main'), {
+    highlightedNodeIds: ['main', 'src'],
+    highlightedEdgeIds: ['src-main'],
+    labeledNodeIds: ['main', 'src', 'lib', 'repo'],
+    firstLevelNodeIds: ['src'],
+    secondLevelNodeIds: ['lib', 'repo'],
+  });
+  assert.equal(selectionDistanceByNodeId(index, 'main').get('lib'), 2);
+});
+
 test('selectionNeighborhood resolves bidirectional first and second level node sets', () => {
   const index = buildSelectionIndex(graph);
 

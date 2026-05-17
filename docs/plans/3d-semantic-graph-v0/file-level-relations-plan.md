@@ -948,6 +948,25 @@ Validation:
 - `npm run typecheck`
 - `npm run test:frontend`
 
+### 2026-05-17 Slice 2: Frontend Relation Visibility Foundation
+
+Status: completed.
+
+Implemented:
+- Added pure relation detail visibility helpers that derive visible edge ID sets
+  from stable render graphs.
+- Extended selection indexing to accept visible edge IDs so hidden relation
+  edges do not affect neighborhoods, highlighted edges, or graph-distance
+  styling.
+- Kept relation detail filtering outside the Three.js scene and outside the
+  render graph object so future toggles can update interaction state without
+  forcing a node/layout rebuild.
+
+Validation:
+- `npm run lint`
+- `npm run typecheck`
+- `npm run test:frontend`
+
 ## Re-Plan Triggers
 
 - `GraphSnapshotDto`, `DirectoryGraphSnapshotDto`, and

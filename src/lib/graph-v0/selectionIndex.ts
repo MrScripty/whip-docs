@@ -1,5 +1,9 @@
 import type { DirectoryGraphNeighborhood, RenderGraph, RenderGraphEdge, RenderGraphNode } from './types';
 
+export type GraphSelectionIndexOptions = Partial<{
+  readonly visibleEdgeIds: ReadonlySet<string> | readonly string[];
+}>;
+
 export type GraphSelectionIndex = {
   readonly nodeById: ReadonlyMap<string, RenderGraphNode>;
   readonly edgeById: ReadonlyMap<string, RenderGraphEdge>;
@@ -23,12 +27,16 @@ export type GraphSelectionStateDiff = {
   readonly exitedLabeledNodeIds: readonly string[];
 };
 
-export function buildSelectionIndex(graph: RenderGraph): GraphSelectionIndex {
+export function buildSelectionIndex(
+  graph: RenderGraph,
+  options: GraphSelectionIndexOptions = {},
+): GraphSelectionIndex {
   const nodeById = new Map<string, RenderGraphNode>();
   const edgeById = new Map<string, RenderGraphEdge>();
   const incidentEdgeIdsByNodeId = new Map<string, string[]>();
   const adjacentNodeIdsByNodeId = new Map<string, Set<string>>();
   const edgeIdsByNodePair = new Map<string, string[]>();
+  const visibleEdgeIds = normalizeVisibleEdgeIds(options.visibleEdgeIds);
 
   for (const node of graph.nodes) {
     nodeById.set(node.id, node);
@@ -37,6 +45,10 @@ export function buildSelectionIndex(graph: RenderGraph): GraphSelectionIndex {
   }
 
   for (const edge of graph.edges) {
+    if (visibleEdgeIds && !visibleEdgeIds.has(edge.id)) {
+      continue;
+    }
+
     edgeById.set(edge.id, edge);
     appendMapValue(incidentEdgeIdsByNodeId, edge.fromNodeId, edge.id);
     appendMapValue(incidentEdgeIdsByNodeId, edge.toNodeId, edge.id);
@@ -52,6 +64,16 @@ export function buildSelectionIndex(graph: RenderGraph): GraphSelectionIndex {
     adjacentNodeIdsByNodeId: sortedSetMap(adjacentNodeIdsByNodeId),
     edgeIdsByNodePair: sortedArrayMap(edgeIdsByNodePair),
   };
+}
+
+function normalizeVisibleEdgeIds(
+  visibleEdgeIds: ReadonlySet<string> | readonly string[] | undefined,
+): ReadonlySet<string> | null {
+  if (!visibleEdgeIds) {
+    return null;
+  }
+
+  return visibleEdgeIds instanceof Set ? visibleEdgeIds : new Set(visibleEdgeIds);
 }
 
 export function selectionNeighborhood(

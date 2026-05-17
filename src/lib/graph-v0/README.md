@@ -14,6 +14,7 @@ projection.
 | `neighborhood.ts` | Selected-node first/second level neighborhood highlighting and labeling sets. |
 | `selectionIndex.ts` | Derived graph selection indexes, indexed neighborhood lookup, and selection-state diff helpers. |
 | `selection.ts` | ID-map selection encoding, decoding, and sampled hit testing. |
+| `relationVisibility.ts` | Pure relation detail filtering helpers for visible edge ID sets. |
 | `ThreeDirectoryGraphScene.ts` | Direct Three.js scene system for the V0 directory/file graph. |
 | `*.test.ts` | Node test coverage for layout determinism and selection behavior. |
 | `index.ts` | Public exports for graph V0 helpers. |
@@ -32,6 +33,8 @@ letting Svelte components or renderer code invent graph facts.
   preserve file-to-file edge metadata.
 - Selection indexes are derived frontend view state and can be rebuilt from the
   render graph at any time.
+- Relation detail changes derive visible edge ID sets and filtered selection
+  indexes; they must not require changing the stable render graph object.
 - Directory focus mode is derived scene state only: it may hide and reposition
   Three.js objects, but it must not mutate backend graph data or layout results.
 - Layout algorithms must be deterministic for equivalent graph inputs.
@@ -72,6 +75,8 @@ mounts and disposes.
   nodes, and fades the rest of the graph by distance from the selection.
 - Indexed selection lookup must not rescan all graph edges for each selected
   node.
+- Selection indexes can be built from a visible edge ID set so hidden relation
+  edges do not affect neighborhoods or graph-distance highlighting.
 - Selection/highlight changes restyle existing Three.js objects in place;
   full geometry rebuilds are reserved for graph or layout algorithm changes.
 - Scene controls are centralized in the scene system: left click selects,
@@ -116,6 +121,7 @@ import {
   fileRelationSnapshotToRenderGraph,
   layoutRadialTree,
   selectFromIdMap,
+  visibleEdgeIdsForRelationDetails,
 } from './graph-v0';
 ```
 
@@ -130,7 +136,8 @@ import {
 ## Structured Producer Contract
 - Stable fields: layout node positions include node ID, position, radius, depth,
   and order.
-- Defaults: layout and selection defaults live in `constants.ts`.
+- Defaults: layout and selection defaults live in `constants.ts`; containment
+  edges without explicit relation detail metadata are visible at `structure`.
 - Enum semantics: node and edge kind labels mirror the backend V0 graph
   contract after adapter normalization. Render-facing containment is named
   `contains` even when the legacy directory DTO uses `tree` on the wire.
