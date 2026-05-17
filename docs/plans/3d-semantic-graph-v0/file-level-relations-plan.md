@@ -1005,6 +1005,24 @@ Validation:
 - `cargo test --manifest-path src-tauri/Cargo.toml`
 - `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings`
 
+### 2026-05-17 Slice 5: Rust Import Relation Graph Integration
+
+Status: completed.
+
+Implemented:
+- Folded Rust import extraction facts into `FileRelationGraphSnapshotDto` as
+  weighted `imports` file-to-file edges with bounded evidence samples.
+- Extended `load_file_relation_graph` so the command returns directory
+  structure plus Rust import relations in one snapshot.
+- Preserved unresolved local imports as diagnostics and skipped them as edges.
+
+Validation:
+- `cargo fmt --manifest-path src-tauri/Cargo.toml`
+- `cargo test --manifest-path src-tauri/Cargo.toml`
+- `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings`
+- `npm run typecheck`
+- `npm run test:frontend`
+
 ## Re-Plan Triggers
 
 - `GraphSnapshotDto`, `DirectoryGraphSnapshotDto`, and

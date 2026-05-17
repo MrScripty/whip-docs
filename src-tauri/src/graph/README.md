@@ -9,7 +9,7 @@ frontend-readable snapshots.
 | File/Folder | Description |
 |-------------|-------------|
 | `mod.rs` | Versioned analyzer graph DTOs, V0 directory/file graph DTOs, stable ID helpers, and deterministic directory graph building. |
-| `relations.rs` | Language-neutral file relation graph DTOs, edge/evidence enums, analyzer run metadata, stable relation edge IDs, and structure-only relation graph promotion. |
+| `relations.rs` | Language-neutral file relation graph DTOs, edge/evidence enums, analyzer run metadata, stable relation edge IDs, directory structure promotion, and Rust import relation merging. |
 
 ## Problem
 Frontend graph rendering and backend extraction need a stable contract before
@@ -44,9 +44,9 @@ facts from raw filesystem paths.
 - File relation graph nodes stay repo/directory/file scoped. Analyzer internals
   collapse into file-to-file edges with bounded evidence instead of becoming
   global scene nodes.
-- Structure-only relation graph loading promotes directory graph nodes and
-  containment edges into the relation contract before language analyzers add
-  imports, calls, and data edges.
+- Relation graph loading promotes directory graph nodes and containment edges
+  into the relation contract, then merges analyzer facts such as Rust imports
+  into weighted file-to-file edges.
 
 ## Revisit Triggers
 - Snapshots become too large for direct Tauri IPC.

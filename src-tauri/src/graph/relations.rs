@@ -5,9 +5,13 @@ use super::{
     stable_id, AnalyzerDiagnosticDto, DirectoryGraphBuilder, DirectoryGraphError,
     DirectoryGraphNodeKind, EdgeConfidenceDto, EdgeProvenanceDto, SourceRangeDto,
 };
+use crate::analyzer::rust_relations::{
+    RustImportRelationSnapshotDto, RustImportResolutionStatusDto,
+};
 use crate::source::ValidatedRepoPath;
 
 pub const FILE_RELATION_GRAPH_SCHEMA_VERSION: u32 = 1;
+const FILE_RELATION_EVIDENCE_SAMPLE_LIMIT: usize = 10;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -237,6 +241,86 @@ impl FileRelationGraphBuilder {
             diagnostics: Vec::new(),
         })
     }
+
+    pub fn add_rust_import_relations(
+        snapshot: &mut FileRelationGraphSnapshotDto,
+        import_snapshot: RustImportRelationSnapshotDto,
+    ) {
+        snapshot.analyzers.push(AnalyzerRunDto {
+            analyzer: import_snapshot.analyzer.clone(),
+            language: SourceLanguageDto::Rust,
+            version: None,
+        });
+        snapshot.diagnostics.extend(import_snapshot.diagnostics);
+
+        for fact in import_snapshot.facts {
+            if fact.status != RustImportResolutionStatusDto::Resolved {
+                continue;
+            }
+
+            let Some(target_path) = fact.target_path else {
+                continue;
+            };
+
+            let from_node_id = file_relation_file_id(&fact.source_path);
+            let to_node_id = file_relation_file_id(&target_path);
+            let edge_id = stable_file_relation_edge_id(
+                FileRelationEdgeKind::Imports,
+                &from_node_id,
+                &to_node_id,
+            );
+            let evidence = FileRelationEvidenceDto {
+                kind: FileRelationEvidenceKind::Import,
+                source_range: fact.evidence,
+                target_range: None,
+                source_label: Some(fact.import_path),
+                target_label: Some(target_path),
+                access: None,
+                analyzer: import_snapshot.analyzer.clone(),
+            };
+
+            upsert_relation_edge(
+                &mut snapshot.edges,
+                FileRelationEdgeDto {
+                    id: edge_id,
+                    kind: FileRelationEdgeKind::Imports,
+                    from_node_id,
+                    to_node_id,
+                    weight: 1,
+                    direction: FileRelationDirectionDto::Directed,
+                    confidence: EdgeConfidenceDto::Exact,
+                    provenance: EdgeProvenanceDto::Syn,
+                    evidence_count: 1,
+                    evidence_sample: vec![evidence],
+                },
+            );
+        }
+    }
+}
+
+fn upsert_relation_edge(edges: &mut Vec<FileRelationEdgeDto>, new_edge: FileRelationEdgeDto) {
+    if let Some(existing_edge) = edges.iter_mut().find(|edge| edge.id == new_edge.id) {
+        existing_edge.weight = existing_edge.weight.saturating_add(new_edge.weight);
+        existing_edge.evidence_count = existing_edge
+            .evidence_count
+            .saturating_add(new_edge.evidence_count);
+
+        for evidence in new_edge.evidence_sample {
+            if existing_edge.evidence_sample.len() >= FILE_RELATION_EVIDENCE_SAMPLE_LIMIT {
+                break;
+            }
+
+            existing_edge.evidence_sample.push(evidence);
+        }
+
+        return;
+    }
+
+    edges.push(new_edge);
+}
+
+fn file_relation_file_id(path: &str) -> String {
+    stable_id("file", &[path])
 }
 
 fn source_language_for_path(path: &str) -> Option<SourceLanguageDto> {
@@ -280,6 +364,9 @@ mod tests {
         FileRelationNodeDto, FileRelationNodeKind, SourceLanguageDto,
         FILE_RELATION_GRAPH_SCHEMA_VERSION,
     };
+    use crate::analyzer::rust_relations::{
+        RustImportRelationFactDto, RustImportRelationSnapshotDto, RustImportResolutionStatusDto,
+    };
     use crate::graph::{
         AnalyzerDiagnosticDto, EdgeConfidenceDto, EdgeProvenanceDto, SourceRangeDto,
     };
@@ -297,6 +384,16 @@ mod tests {
             "whip-docs-relation-{name}-{}-{timestamp}",
             std::process::id()
         ))
+    }
+
+    fn test_source_range(path: &str, line: u32) -> SourceRangeDto {
+        SourceRangeDto {
+            path: path.to_string(),
+            start_line: line,
+            start_column: 1,
+            end_line: line,
+            end_column: 1,
+        }
     }
 
     #[test]
@@ -410,6 +507,89 @@ mod tests {
                 && edge.confidence == EdgeConfidenceDto::Exact
                 && edge.provenance == EdgeProvenanceDto::Normalized
         }));
+
+        fs::remove_dir_all(repo).expect("cleanup temp repo");
+    }
+
+    #[test]
+    fn rust_import_facts_merge_into_weighted_file_relation_edges() {
+        let repo = unique_temp_dir("rust-import-merge");
+        fs::create_dir_all(repo.join("src")).expect("create src");
+        fs::write(
+            repo.join("src/main.rs"),
+            "use crate::lib::run;\nuse crate::lib::State;\n",
+        )
+        .expect("write main source");
+        fs::write(
+            repo.join("src/lib.rs"),
+            "pub fn run() {}\npub struct State;\n",
+        )
+        .expect("write lib source");
+        let source_root =
+            ValidatedRepoPath::parse_existing_source_root(&repo).expect("valid source root");
+        let mut snapshot =
+            FileRelationGraphBuilder::build_structure(&source_root).expect("relation graph");
+
+        FileRelationGraphBuilder::add_rust_import_relations(
+            &mut snapshot,
+            RustImportRelationSnapshotDto {
+                analyzer: "syn-rust-import-relations".to_string(),
+                source_root: source_root.display_path(),
+                facts: vec![
+                    RustImportRelationFactDto {
+                        source_path: "src/main.rs".to_string(),
+                        import_path: "crate::lib::run".to_string(),
+                        target_path: Some("src/lib.rs".to_string()),
+                        status: RustImportResolutionStatusDto::Resolved,
+                        evidence: test_source_range("src/main.rs", 1),
+                    },
+                    RustImportRelationFactDto {
+                        source_path: "src/main.rs".to_string(),
+                        import_path: "crate::lib::State".to_string(),
+                        target_path: Some("src/lib.rs".to_string()),
+                        status: RustImportResolutionStatusDto::Resolved,
+                        evidence: test_source_range("src/main.rs", 2),
+                    },
+                    RustImportRelationFactDto {
+                        source_path: "src/main.rs".to_string(),
+                        import_path: "crate::missing::Thing".to_string(),
+                        target_path: None,
+                        status: RustImportResolutionStatusDto::Unresolved,
+                        evidence: test_source_range("src/main.rs", 3),
+                    },
+                ],
+                diagnostics: vec![AnalyzerDiagnosticDto {
+                    code: "rust_import_unresolved".to_string(),
+                    message: "unresolved Rust import 'crate::missing::Thing'".to_string(),
+                    source_path: Some("src/main.rs".to_string()),
+                }],
+            },
+        );
+
+        let import_edge = snapshot
+            .edges
+            .iter()
+            .find(|edge| edge.id == "imports:file:src/main.rs:file:src/lib.rs")
+            .expect("merged import edge");
+
+        assert_eq!(import_edge.kind, FileRelationEdgeKind::Imports);
+        assert_eq!(import_edge.weight, 2);
+        assert_eq!(import_edge.evidence_count, 2);
+        assert_eq!(import_edge.evidence_sample.len(), 2);
+        assert_eq!(import_edge.confidence, EdgeConfidenceDto::Exact);
+        assert_eq!(import_edge.provenance, EdgeProvenanceDto::Syn);
+        assert!(snapshot.analyzers.iter().any(|analyzer| {
+            analyzer.analyzer == "syn-rust-import-relations"
+                && analyzer.language == SourceLanguageDto::Rust
+        }));
+        assert!(snapshot
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "rust_import_unresolved"));
+        assert!(!snapshot
+            .edges
+            .iter()
+            .any(|edge| edge.id.contains("missing")));
 
         fs::remove_dir_all(repo).expect("cleanup temp repo");
     }

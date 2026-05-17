@@ -27,10 +27,9 @@ come from backend modules after source path validation.
 Directory graph traversal is dispatched through blocking-task execution so
 filesystem walking does not occupy the async command path.
 
-File relation graph loading currently exposes the same structure as the
-directory graph through the relation graph contract. It validates a generic
-source root, then dispatches filesystem traversal through blocking-task
-execution before Rust-specific import/call extraction is added.
+File relation graph loading validates a generic source root, then dispatches
+filesystem traversal and Rust import extraction through blocking-task execution
+before returning the normalized relation graph contract.
 
 ## Alternatives Rejected
 - Let frontend services construct local source paths: rejected by path security
@@ -92,7 +91,7 @@ pub async fn load_file_relation_graph(
   delegates shutdown cleanup to backend services. Directory graph loading
   validates synchronously at the boundary, then performs filesystem traversal
   in a blocking task. File relation graph loading follows the same blocking
-  boundary and does not require a Cargo manifest for the structure-only slice.
+  boundary and does not require a Cargo manifest for import relation extraction.
 - Errors: recoverable failures return structured command errors once error DTOs
   are introduced.
 - Compatibility: command names and payload shapes are frontend-visible

@@ -3,6 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
+use crate::analyzer::rust_relations::RustImportRelationExtractor;
 use crate::analyzer::{AnalysisStatusDto, RustAnalyzerService, RustGraphExtractor};
 use crate::config::{AppConfigDto, ConfigStore, SourceRepoStatusDto};
 use crate::graph::relations::{FileRelationGraphBuilder, FileRelationGraphSnapshotDto};
@@ -165,10 +166,19 @@ impl AppState {
         let source_root = ValidatedRepoPath::parse_existing_source_root(&raw_path)
             .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
 
-        tokio::task::spawn_blocking(move || FileRelationGraphBuilder::build_structure(&source_root))
-            .await
-            .map_err(|error| CommandErrorDto::internal(error.to_string()))?
-            .map_err(|error| CommandErrorDto::internal(error.to_string()))
+        tokio::task::spawn_blocking(move || {
+            let mut snapshot = FileRelationGraphBuilder::build_structure(&source_root)
+                .map_err(|error| error.to_string())?;
+            let import_snapshot = RustImportRelationExtractor
+                .extract(&source_root)
+                .map_err(|error| error.to_string())?;
+
+            FileRelationGraphBuilder::add_rust_import_relations(&mut snapshot, import_snapshot);
+            Ok::<_, String>(snapshot)
+        })
+        .await
+        .map_err(|error| CommandErrorDto::internal(error.to_string()))?
+        .map_err(CommandErrorDto::internal)
     }
 
     pub async fn shutdown_services(&self) -> Result<(), CommandErrorDto> {
@@ -476,7 +486,9 @@ mod tests {
         let app_dir = unique_temp_dir("file-relation-graph-app");
         let repo_dir = unique_temp_dir("file-relation-graph-repo");
         fs::create_dir_all(repo_dir.join("src")).expect("create repo src");
-        fs::write(repo_dir.join("src/lib.rs"), "pub fn fixture() {}\n").expect("write source");
+        fs::write(repo_dir.join("src/main.rs"), "use crate::lib::fixture;\n")
+            .expect("write main source");
+        fs::write(repo_dir.join("src/lib.rs"), "pub fn fixture() {}\n").expect("write lib source");
         let store = ConfigStore::new(&app_dir);
         let state = AppState::new(store, AppConfigDto::default());
 
@@ -493,6 +505,14 @@ mod tests {
             .edges
             .iter()
             .any(|edge| edge.id == "contains:repo:.:dir:src"));
+        assert!(snapshot
+            .edges
+            .iter()
+            .any(|edge| edge.id == "imports:file:src/main.rs:file:src/lib.rs"));
+        assert!(snapshot
+            .analyzers
+            .iter()
+            .any(|analyzer| analyzer.analyzer == "syn-rust-import-relations"));
         assert_eq!(state.graph_snapshot().await, None);
 
         fs::remove_dir_all(repo_dir).expect("cleanup repo dir");
