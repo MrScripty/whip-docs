@@ -30,8 +30,8 @@ test('focusedFileOffsets falls back to a centered grid without relation edges', 
 
 test('focusedFileOffsets places related files closer than unrelated files', () => {
   const edges: RenderGraphEdge[] = [
-    { id: 'a-b', kind: 'imports', fromNodeId: 'a', toNodeId: 'b', weight: 4 },
-    { id: 'b-c', kind: 'calls', fromNodeId: 'b', toNodeId: 'c', weight: 2 },
+    { id: 'a-b', kind: 'imports', fromNodeId: 'a', toNodeId: 'b', weight: 4, direction: 'undirected' },
+    { id: 'b-c', kind: 'calls', fromNodeId: 'b', toNodeId: 'c', weight: 2, direction: 'undirected' },
   ];
   const offsets = focusedFileOffsets(['a', 'b', 'c', 'd'], edges, 5);
   const a = requiredOffset(offsets, 'a');
@@ -39,6 +39,26 @@ test('focusedFileOffsets places related files closer than unrelated files', () =
   const d = requiredOffset(offsets, 'd');
 
   assert.ok(distance(a, b) < distance(a, d));
+});
+
+test('focusedFileOffsets layers high-output files above high-input files', () => {
+  const edges: RenderGraphEdge[] = [
+    { id: 'producer-mid-a', kind: 'calls', fromNodeId: 'producer', toNodeId: 'mid-a', weight: 2 },
+    { id: 'producer-mid-b', kind: 'imports', fromNodeId: 'producer', toNodeId: 'mid-b', weight: 2 },
+    { id: 'producer-sink', kind: 'calls', fromNodeId: 'producer', toNodeId: 'sink', weight: 2 },
+    { id: 'mid-a-sink', kind: 'imports', fromNodeId: 'mid-a', toNodeId: 'sink', weight: 1 },
+    { id: 'mid-b-sink', kind: 'calls', fromNodeId: 'mid-b', toNodeId: 'sink', weight: 1 },
+  ];
+  const offsets = focusedFileOffsets(['producer', 'mid-a', 'mid-b', 'sink'], edges, 5);
+  const producer = requiredOffset(offsets, 'producer');
+  const midA = requiredOffset(offsets, 'mid-a');
+  const midB = requiredOffset(offsets, 'mid-b');
+  const sink = requiredOffset(offsets, 'sink');
+
+  assert.ok(producer.y > midA.y);
+  assert.ok(producer.y > midB.y);
+  assert.ok(midA.y > sink.y);
+  assert.ok(midB.y > sink.y);
 });
 
 function requiredOffset(

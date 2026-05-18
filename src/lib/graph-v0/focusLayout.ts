@@ -22,17 +22,27 @@ export function focusedFileOffsets(
   }
 
   const degreeByNodeId = new Map(fileNodeIds.map((fileNodeId) => [fileNodeId, 0]));
+  const relationFlowByNodeId = new Map(fileNodeIds.map((fileNodeId) => [fileNodeId, 0]));
   for (const edge of localRelationEdges) {
     degreeByNodeId.set(edge.fromNodeId, (degreeByNodeId.get(edge.fromNodeId) ?? 0) + 1);
     degreeByNodeId.set(edge.toNodeId, (degreeByNodeId.get(edge.toNodeId) ?? 0) + 1);
+
+    const flowWeight = directedRelationWeight(edge);
+    relationFlowByNodeId.set(edge.fromNodeId, (relationFlowByNodeId.get(edge.fromNodeId) ?? 0) + flowWeight);
+    relationFlowByNodeId.set(edge.toNodeId, (relationFlowByNodeId.get(edge.toNodeId) ?? 0) - flowWeight);
   }
 
   const orderedFileNodeIds = [...fileNodeIds].sort((leftId, rightId) => {
     const degreeDelta = (degreeByNodeId.get(rightId) ?? 0) - (degreeByNodeId.get(leftId) ?? 0);
     return degreeDelta || leftId.localeCompare(rightId);
   });
-  const positions = radialFileOffsets(orderedFileNodeIds, spacing);
+  const positions = flowLayeredFileOffsets(orderedFileNodeIds, relationFlowByNodeId, spacing);
   const maxRadius = Math.max(spacing, Math.sqrt(fileNodeIds.length) * spacing * 0.9);
+  const maxFlowMagnitude = Math.max(
+    ...fileNodeIds.map((fileNodeId) => Math.abs(relationFlowByNodeId.get(fileNodeId) ?? 0)),
+    0,
+  );
+  const flowRadius = Math.max(spacing, maxRadius * 0.82);
 
   for (let iteration = 0; iteration < 90; iteration += 1) {
     const deltas = new Map(fileNodeIds.map((fileNodeId) => [fileNodeId, { x: 0, y: 0 }]));
@@ -93,8 +103,13 @@ export function focusedFileOffsets(
         continue;
       }
 
+      const flowTargetY = maxFlowMagnitude === 0
+        ? 0
+        : ((relationFlowByNodeId.get(fileNodeId) ?? 0) / maxFlowMagnitude) * flowRadius;
+      const flowPullY = (flowTargetY - position.y) * 0.04;
+
       position.x = clamp(position.x + delta.x - position.x * 0.018, -maxRadius, maxRadius);
-      position.y = clamp(position.y + delta.y - position.y * 0.018, -maxRadius, maxRadius);
+      position.y = clamp(position.y + delta.y + flowPullY - position.y * 0.01, -maxRadius, maxRadius);
     }
   }
 
@@ -117,6 +132,31 @@ function gridFileOffsets(fileNodeIds: readonly string[], spacing: number): Map<s
       y: halfHeight - row * spacing,
     });
   });
+
+  return positions;
+}
+
+function flowLayeredFileOffsets(
+  fileNodeIds: readonly string[],
+  relationFlowByNodeId: ReadonlyMap<string, number>,
+  spacing: number,
+): Map<string, { x: number; y: number }> {
+  const positions = radialFileOffsets(fileNodeIds, spacing);
+  const maxFlowMagnitude = Math.max(
+    ...fileNodeIds.map((fileNodeId) => Math.abs(relationFlowByNodeId.get(fileNodeId) ?? 0)),
+    0,
+  );
+
+  if (maxFlowMagnitude === 0) {
+    return positions;
+  }
+
+  const layerRadius = Math.max(spacing, Math.sqrt(fileNodeIds.length) * spacing * 0.72);
+
+  for (const [fileNodeId, position] of positions.entries()) {
+    const relationFlow = relationFlowByNodeId.get(fileNodeId) ?? 0;
+    position.y = (relationFlow / maxFlowMagnitude) * layerRadius;
+  }
 
   return positions;
 }
@@ -144,6 +184,14 @@ function radialFileOffsets(fileNodeIds: readonly string[], spacing: number): Map
   });
 
   return positions;
+}
+
+function directedRelationWeight(edge: RenderGraphEdge): number {
+  if (edge.direction === 'undirected') {
+    return 0;
+  }
+
+  return edge.weight ?? 1;
 }
 
 function addFileLayoutDelta(
