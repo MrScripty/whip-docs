@@ -55,6 +55,7 @@ import {
   GRAPH_V0_INTERACTION_DEFAULTS,
 } from './constants';
 import { directoryEdgeCurve, directoryEdgeElbowPoints, directoryEdgePathPoints } from './edgeGeometry';
+import { focusedFileOffsets } from './focusLayout';
 import {
   layoutLayeredGrid,
   layoutRadialTree,
@@ -98,6 +99,8 @@ type EdgeSceneEntry = {
   readonly fromNodeId: string;
   readonly toNodeId: string;
   readonly depth: number;
+  readonly edgeStyle: DirectoryGraphEdgeStyle;
+  readonly selectionId: number;
 };
 
 type FocusedDirectoryView = {
@@ -335,14 +338,16 @@ export class DirectoryGraphScene {
         leafDirectoryEdgeStyle,
       );
       const line = this.createEdge(source, target, effectiveEdgeStyle);
+      const selectionId = encodeSelectionId('edge', edgeIndex);
       this.edgeGroup.add(line);
       this.edgeEntries.set(edge.id, {
         line,
         fromNodeId: edge.fromNodeId,
         toNodeId: edge.toNodeId,
         depth: Math.max(source.depth, target.depth),
+        edgeStyle: effectiveEdgeStyle,
+        selectionId,
       });
-      const selectionId = encodeSelectionId('edge', edgeIndex);
       this.selectionTargetById.set(selectionId, {
         kind: 'edge',
         id: edge.id,
@@ -740,24 +745,24 @@ export class DirectoryGraphScene {
     const up = new Vector3().crossVectors(right, forward).normalize();
     const center = vectorFromPosition(directoryEntry.position);
     const spacing = Math.max(3.4, GRAPH_V0_INTERACTION_DEFAULTS.minCameraDistance * 0.18);
-    const columns = Math.max(1, Math.ceil(Math.sqrt(fileNodeIds.length)));
-    const rows = Math.max(1, Math.ceil(fileNodeIds.length / columns));
-    const halfWidth = ((columns - 1) * spacing) / 2;
-    const halfHeight = ((rows - 1) * spacing) / 2;
+    const fileOffsets = focusedFileOffsets(fileNodeIds, this.currentGraph?.edges ?? [], spacing);
+    const focusRadius = Array.from(fileOffsets.values()).reduce(
+      (maxRadius, offset) => Math.max(maxRadius, Math.hypot(offset.x, offset.y)),
+      0,
+    );
 
-    fileNodeIds.forEach((fileNodeId, index) => {
+    for (const fileNodeId of fileNodeIds) {
       const fileEntry = this.nodeEntries.get(fileNodeId);
 
       if (!fileEntry) {
-        return;
+        continue;
       }
 
-      const column = index % columns;
-      const row = Math.floor(index / columns);
+      const fileOffset = fileOffsets.get(fileNodeId) ?? { x: 0, y: 0 };
       const offset = right
         .clone()
-        .multiplyScalar(column * spacing - halfWidth)
-        .add(up.clone().multiplyScalar(halfHeight - row * spacing));
+        .multiplyScalar(fileOffset.x)
+        .add(up.clone().multiplyScalar(fileOffset.y));
       const filePosition = center.clone().add(offset);
 
       fileEntry.mesh.position.copy(filePosition);
@@ -770,9 +775,11 @@ export class DirectoryGraphScene {
       }
 
       this.syncLabelPosition(fileNodeId);
-    });
+    }
 
-    const radius = Math.max(4, Math.hypot(halfWidth, halfHeight) + spacing);
+    this.syncConnectedEdgeGeometry(fileNodeIds);
+
+    const radius = Math.max(4, focusRadius + spacing);
     this.focusedDirectoryView = {
       directoryNodeId,
       hiddenEdgeIds,
@@ -830,7 +837,68 @@ export class DirectoryGraphScene {
       this.syncLabelPosition(fileNodeId);
     }
 
+    this.syncConnectedEdgeGeometry(focusedView.fileNodeIds);
+
     this.focusedDirectoryView = null;
+  }
+
+  private syncConnectedEdgeGeometry(nodeIds: readonly string[]): void {
+    const nodeIdSet = new Set(nodeIds);
+    const edgeIds = Array.from(this.edgeEntries.entries())
+      .filter(([, edge]) => nodeIdSet.has(edge.fromNodeId) || nodeIdSet.has(edge.toNodeId))
+      .map(([edgeId]) => edgeId);
+
+    for (const edgeId of edgeIds) {
+      this.syncEdgeGeometry(edgeId);
+    }
+  }
+
+  private syncEdgeGeometry(edgeId: string): void {
+    const edgeEntry = this.edgeEntries.get(edgeId);
+
+    if (!edgeEntry) {
+      return;
+    }
+
+    const source = this.dynamicLayoutPosition(edgeEntry.fromNodeId);
+    const target = this.dynamicLayoutPosition(edgeEntry.toNodeId);
+
+    if (!source || !target) {
+      return;
+    }
+
+    const nextGeometry = new BufferGeometry().setFromPoints(directoryEdgePathPoints(source, target, edgeEntry.edgeStyle));
+    edgeEntry.line.geometry.dispose();
+    edgeEntry.line.geometry = nextGeometry;
+
+    const previousSelectionEdge = this.selectionEdgeMeshesByEdgeId.get(edgeId);
+    const wasVisible = previousSelectionEdge?.visible ?? true;
+    if (previousSelectionEdge) {
+      this.selectionEdgeGroup.remove(previousSelectionEdge);
+      disposeObject(previousSelectionEdge);
+    }
+
+    const selectionEdge = this.createSelectionEdge(source, target, edgeEntry.edgeStyle, edgeEntry.selectionId);
+    selectionEdge.visible = wasVisible;
+    this.selectionEdgeMeshesByEdgeId.set(edgeId, selectionEdge);
+    this.selectionEdgeGroup.add(selectionEdge);
+  }
+
+  private dynamicLayoutPosition(nodeId: string): LayoutNodePosition | null {
+    const entry = this.nodeEntries.get(nodeId);
+
+    if (!entry) {
+      return null;
+    }
+
+    return {
+      ...entry.position,
+      position: {
+        x: entry.mesh.position.x,
+        y: entry.mesh.position.y,
+        z: entry.mesh.position.z,
+      },
+    };
   }
 
   private syncNodeSelectionMeshPosition(nodeId: string): void {

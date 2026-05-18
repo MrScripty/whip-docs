@@ -11,6 +11,7 @@ projection.
 | `constants.ts` | Centralized layout geometry, scene styling, camera, interaction, depth, and selection constants. |
 | `adapters.ts` | Directory graph and file relation graph DTO to render graph normalization. |
 | `layouts.ts` | Deterministic directory/file graph layout algorithms. |
+| `focusLayout.ts` | Deterministic focused-directory file plane layout that keeps related files closer together. |
 | `neighborhood.ts` | Selected-node first/second level neighborhood highlighting and labeling sets. |
 | `selectionIndex.ts` | Derived graph selection indexes, indexed neighborhood lookup, and selection-state diff helpers. |
 | `selection.ts` | ID-map selection encoding, decoding, and sampled hit testing. |
@@ -101,7 +102,10 @@ mounts and disposes.
   in-flight camera transition.
 - Pressing `Tab` on a directory enters a reversible file focus view that hides
   the directory sphere, arranges direct file children on a camera-facing plane,
-  and frames that plane. Pressing `Tab` again restores the original scene view.
+  rewrites connected edge geometry to the focused positions, and frames that
+  plane. Pressing `Tab` again restores the original scene view and edge
+  geometry. Relation-connected files are placed closer together than unrelated
+  files to reduce edge crossing and visual clutter.
 
 ## Revisit Triggers
 - Layout options become persisted user settings.
