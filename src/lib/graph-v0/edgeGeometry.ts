@@ -2,6 +2,7 @@ import { CubicBezierCurve3, Vector3 } from 'three';
 import type { DirectoryGraphEdgeStyle, LayoutNodePosition } from './types';
 
 export const EDGE_CURVE_SEGMENTS = 28;
+export const FOCUSED_EDGE_BUNDLE_SEGMENTS = 36;
 
 export function directoryEdgePathPoints(
   source: LayoutNodePosition,
@@ -59,6 +60,24 @@ export function directoryEdgeCurve(
   );
 }
 
+export function focusedCircularBundleEdgePathPoints(
+  source: LayoutNodePosition,
+  target: LayoutNodePosition,
+  bundleCenter: Vector3,
+): Vector3[] {
+  const sourceAnchor = nodeCenter(source);
+  const targetAnchor = nodeCenter(target);
+  const sourceControl = bundleControlPoint(sourceAnchor, bundleCenter);
+  const targetControl = bundleControlPoint(targetAnchor, bundleCenter);
+
+  return new CubicBezierCurve3(
+    sourceAnchor,
+    sourceControl,
+    targetControl,
+    targetAnchor,
+  ).getPoints(FOCUSED_EDGE_BUNDLE_SEGMENTS);
+}
+
 function edgeHandleLength(sourceAnchor: Vector3, targetAnchor: Vector3): number {
   const horizontalDistance = Math.hypot(sourceAnchor.x - targetAnchor.x, sourceAnchor.z - targetAnchor.z);
   const verticalDistance = Math.abs(sourceAnchor.y - targetAnchor.y);
@@ -81,4 +100,12 @@ function nodeBottom(node: LayoutNodePosition): Vector3 {
 
 function nodeTop(node: LayoutNodePosition): Vector3 {
   return new Vector3(node.position.x, node.position.y + node.radius, node.position.z);
+}
+
+function nodeCenter(node: LayoutNodePosition): Vector3 {
+  return new Vector3(node.position.x, node.position.y, node.position.z);
+}
+
+function bundleControlPoint(anchor: Vector3, bundleCenter: Vector3): Vector3 {
+  return anchor.clone().lerp(bundleCenter, 0.86);
 }

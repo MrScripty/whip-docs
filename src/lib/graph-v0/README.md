@@ -107,8 +107,9 @@ mounts and disposes.
   geometry. The focused file layout is selectable from graph settings. DAG
   layered uses directed file relations for top-to-bottom dependency flow, flow
   layered biases high-output files upward and high-input files downward, force
-  directed clusters related files, circular places files on a ring, and grid
-  keeps the deterministic fallback plane.
+  directed clusters related files, circular places files on a ring with
+  directory-centered bundled relation edges, and grid keeps the deterministic
+  fallback plane.
 
 ## Revisit Triggers
 - Layout options become persisted user settings.

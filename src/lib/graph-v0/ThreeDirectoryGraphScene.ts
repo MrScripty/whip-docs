@@ -54,7 +54,12 @@ import {
   GRAPH_V0_DEPTH_STYLE_DEFAULTS,
   GRAPH_V0_INTERACTION_DEFAULTS,
 } from './constants';
-import { directoryEdgeCurve, directoryEdgeElbowPoints, directoryEdgePathPoints } from './edgeGeometry';
+import {
+  directoryEdgeCurve,
+  directoryEdgeElbowPoints,
+  directoryEdgePathPoints,
+  focusedCircularBundleEdgePathPoints,
+} from './edgeGeometry';
 import { focusedFileOffsets } from './focusLayout';
 import {
   layoutLayeredGrid,
@@ -108,6 +113,8 @@ type FocusedDirectoryView = {
   readonly directoryNodeId: string;
   readonly hiddenEdgeIds: readonly string[];
   readonly fileNodeIds: readonly string[];
+  readonly layoutAlgorithm: FocusedFileLayoutAlgorithmId;
+  readonly bundleCenter: Vec3;
 };
 
 type PointerDragState = {
@@ -797,9 +804,11 @@ export class DirectoryGraphScene {
 
     const radius = Math.max(4, focusRadius + spacing);
     this.focusedDirectoryView = {
+      bundleCenter: { x: center.x, y: center.y, z: center.z },
       directoryNodeId,
       hiddenEdgeIds,
       fileNodeIds,
+      layoutAlgorithm: this.currentFocusedFileLayoutAlgorithm,
     };
     this.frameBoundsFromCameraOffset(
       { center, radius },
@@ -853,9 +862,8 @@ export class DirectoryGraphScene {
       this.syncLabelPosition(fileNodeId);
     }
 
-    this.syncConnectedEdgeGeometry(focusedView.fileNodeIds);
-
     this.focusedDirectoryView = null;
+    this.syncConnectedEdgeGeometry(focusedView.fileNodeIds);
   }
 
   private syncConnectedEdgeGeometry(nodeIds: readonly string[]): void {
@@ -883,7 +891,10 @@ export class DirectoryGraphScene {
       return;
     }
 
-    const nextGeometry = new BufferGeometry().setFromPoints(directoryEdgePathPoints(source, target, edgeEntry.edgeStyle));
+    const bundledPathPoints = this.focusedCircularBundlePathPoints(edgeEntry, source, target);
+    const nextGeometry = new BufferGeometry().setFromPoints(
+      bundledPathPoints ?? directoryEdgePathPoints(source, target, edgeEntry.edgeStyle),
+    );
     edgeEntry.line.geometry.dispose();
     edgeEntry.line.geometry = nextGeometry;
 
@@ -894,10 +905,40 @@ export class DirectoryGraphScene {
       disposeObject(previousSelectionEdge);
     }
 
-    const selectionEdge = this.createSelectionEdge(source, target, edgeEntry.edgeStyle, edgeEntry.selectionId);
+    const selectionEdge = bundledPathPoints
+      ? this.createSelectionEdgePath(bundledPathPoints, edgeEntry.selectionId)
+      : this.createSelectionEdge(source, target, edgeEntry.edgeStyle, edgeEntry.selectionId);
     selectionEdge.visible = wasVisible;
     this.selectionEdgeMeshesByEdgeId.set(edgeId, selectionEdge);
     this.selectionEdgeGroup.add(selectionEdge);
+  }
+
+  private focusedCircularBundlePathPoints(
+    edgeEntry: EdgeSceneEntry,
+    source: LayoutNodePosition,
+    target: LayoutNodePosition,
+  ): Vector3[] | null {
+    const focusedView = this.focusedDirectoryView;
+
+    if (!focusedView || focusedView.layoutAlgorithm !== 'circular') {
+      return null;
+    }
+
+    const focusedFileNodeIds = new Set(focusedView.fileNodeIds);
+
+    if (!focusedFileNodeIds.has(edgeEntry.fromNodeId) || !focusedFileNodeIds.has(edgeEntry.toNodeId)) {
+      return null;
+    }
+
+    return focusedCircularBundleEdgePathPoints(
+      source,
+      target,
+      new Vector3(
+        focusedView.bundleCenter.x,
+        focusedView.bundleCenter.y,
+        focusedView.bundleCenter.z,
+      ),
+    );
   }
 
   private dynamicLayoutPosition(nodeId: string): LayoutNodePosition | null {
@@ -1229,6 +1270,27 @@ export class DirectoryGraphScene {
 
     const [sourcePosition, targetPosition] = directoryEdgePathPoints(source, target, 'straight');
     return this.createSelectionEdgeSegment(sourcePosition, targetPosition, selectionId);
+  }
+
+  private createSelectionEdgePath(
+    pathPoints: readonly Vector3[],
+    selectionId: number,
+  ): SelectionMesh {
+    const group = new Group();
+
+    for (let index = 1; index < pathPoints.length; index += 1) {
+      const sourcePosition = pathPoints[index - 1];
+      const targetPosition = pathPoints[index];
+
+      if (!sourcePosition || !targetPosition) {
+        continue;
+      }
+
+      group.add(this.createSelectionEdgeSegment(sourcePosition, targetPosition, selectionId));
+    }
+
+    group.userData = { selectionId };
+    return group;
   }
 
   private createSelectionEdgeSegment(
