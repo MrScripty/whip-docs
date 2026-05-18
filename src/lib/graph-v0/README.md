@@ -11,7 +11,7 @@ projection.
 | `constants.ts` | Centralized layout geometry, scene styling, camera, interaction, depth, and selection constants. |
 | `adapters.ts` | Directory graph and file relation graph DTO to render graph normalization. |
 | `layouts.ts` | Deterministic directory/file graph layout algorithms. |
-| `focusLayout.ts` | Deterministic focused-directory file plane layout that keeps related files closer together and layers directed flow vertically. |
+| `focusLayout.ts` | Deterministic focused-directory file plane layouts for grid, flow-layered, DAG-layered, force-directed, and circular focused file views. |
 | `neighborhood.ts` | Selected-node first/second level neighborhood highlighting and labeling sets. |
 | `selectionIndex.ts` | Derived graph selection indexes, indexed neighborhood lookup, and selection-state diff helpers. |
 | `selection.ts` | ID-map selection encoding, decoding, and sampled hit testing. |
@@ -104,9 +104,11 @@ mounts and disposes.
   the directory sphere, arranges direct file children on a camera-facing plane,
   rewrites connected edge geometry to the focused positions, and frames that
   plane. Pressing `Tab` again restores the original scene view and edge
-  geometry. Relation-connected files are placed closer together than unrelated
-  files, with high-output files biased upward and high-input files biased
-  downward, to reduce edge crossing and visual clutter.
+  geometry. The focused file layout is selectable from graph settings. DAG
+  layered uses directed file relations for top-to-bottom dependency flow, flow
+  layered biases high-output files upward and high-input files downward, force
+  directed clusters related files, circular places files on a ring, and grid
+  keeps the deterministic fallback plane.
 
 ## Revisit Triggers
 - Layout options become persisted user settings.

@@ -10,7 +10,7 @@ export {
   GRAPH_V0_SELECTION_PRIORITY,
 } from './constants';
 export { directorySnapshotToRenderGraph, fileRelationSnapshotToRenderGraph } from './adapters';
-export { focusedFileOffsets } from './focusLayout';
+export { FOCUSED_FILE_LAYOUT_ALGORITHMS, focusedFileOffsets } from './focusLayout';
 export {
   layoutLayeredGrid,
   layoutRadialTree,
@@ -45,6 +45,7 @@ export type {
   DirectoryGraphSceneControlMode,
   DirectoryGraphNeighborhood,
   FileRelationDetail,
+  FocusedFileLayoutAlgorithmId,
   GraphEdgeConfidence,
   GraphEdgeDirection,
   GraphEdgeKind,

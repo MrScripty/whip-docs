@@ -47,6 +47,7 @@
   let directoryPanelMode = $state('tree');
   let directorySceneModuleReady = $state(false);
   let directoryLayoutAlgorithm = $state('weighted-safe-radial-tree');
+  let focusedFileLayoutAlgorithm = $state('dag-layered');
   let directoryEdgeStyle = $state('c-curve');
   let directoryRootEdgeStyle = $state('elbow');
   let directoryLeafEdgeStyle = $state('straight');
@@ -143,6 +144,7 @@
         highlightedNodeIds: selectedDirectoryNeighborhood.highlightedNodeIds,
         labeledNodeIds: selectedDirectoryNeighborhood.labeledNodeIds,
         layoutAlgorithm: directoryLayoutAlgorithm,
+        focusedFileLayoutAlgorithm,
         edgeStyle: graphEdgeStyleValue(directoryEdgeStyle),
         rootEdgeStyle: graphEdgeStyleValue(directoryRootEdgeStyle),
         leafDirectoryEdgeStyle: graphLeafDirectoryEdgeStyleValue(directoryLeafEdgeStyle),
@@ -572,6 +574,16 @@
                 <option value="safe-radial-tree">Safe radial tree</option>
                 <option value="weighted-safe-radial-tree">Weighted safe radial tree</option>
                 <option value="layered-grid">Layered grid</option>
+              </select>
+            </label>
+            <label class="settings-field" for="focused-file-layout-algorithm">
+              <span>File layout</span>
+              <select id="focused-file-layout-algorithm" bind:value={focusedFileLayoutAlgorithm} aria-label="Focused file layout">
+                <option value="dag-layered">DAG layered</option>
+                <option value="flow-layered">Flow layered</option>
+                <option value="force-directed">Force directed</option>
+                <option value="circular">Circular</option>
+                <option value="grid">Grid</option>
               </select>
             </label>
             <label class="settings-field" for="directory-edge-style">

@@ -73,6 +73,7 @@ import type {
   DirectoryGraphSceneControlMode,
   DirectoryGraphEdgeStyle,
   DirectoryGraphLeafEdgeStyle,
+  FocusedFileLayoutAlgorithmId,
   GraphNodeKind,
   LayoutOptions,
   LayoutNodePosition,
@@ -212,6 +213,7 @@ export class DirectoryGraphScene {
   private currentEdgeStyle: DirectoryGraphEdgeStyle | null = null;
   private currentRootEdgeStyle: DirectoryGraphEdgeStyle | null = null;
   private currentLeafDirectoryEdgeStyle: DirectoryGraphLeafEdgeStyle | null = null;
+  private currentFocusedFileLayoutAlgorithm: FocusedFileLayoutAlgorithmId = 'dag-layered';
   private currentLayoutBounds: LayoutBounds | null = null;
   private focusedDirectoryView: FocusedDirectoryView | null = null;
   private cameraTransition: CameraTransition | null = null;
@@ -253,6 +255,7 @@ export class DirectoryGraphScene {
     const edgeStyle = options.edgeStyle ?? 'straight';
     const rootEdgeStyle = options.rootEdgeStyle ?? edgeStyle;
     const leafDirectoryEdgeStyle = options.leafDirectoryEdgeStyle ?? 'global';
+    const focusedFileLayoutAlgorithm = options.focusedFileLayoutAlgorithm ?? 'dag-layered';
     if (
       this.currentGraph !== graph ||
       this.currentLayoutAlgorithm !== options.layoutAlgorithm ||
@@ -274,6 +277,16 @@ export class DirectoryGraphScene {
       this.currentEdgeStyle = edgeStyle;
       this.currentRootEdgeStyle = rootEdgeStyle;
       this.currentLeafDirectoryEdgeStyle = leafDirectoryEdgeStyle;
+    }
+
+    if (this.currentFocusedFileLayoutAlgorithm !== focusedFileLayoutAlgorithm) {
+      const focusedDirectoryNodeId = this.focusedDirectoryView?.directoryNodeId ?? null;
+      this.currentFocusedFileLayoutAlgorithm = focusedFileLayoutAlgorithm;
+
+      if (focusedDirectoryNodeId) {
+        this.exitFocusedDirectoryView();
+        this.enterFocusedDirectoryView(focusedDirectoryNodeId);
+      }
     }
 
     this.applySceneState(options);
@@ -745,7 +758,10 @@ export class DirectoryGraphScene {
     const up = new Vector3().crossVectors(right, forward).normalize();
     const center = vectorFromPosition(directoryEntry.position);
     const spacing = Math.max(3.4, GRAPH_V0_INTERACTION_DEFAULTS.minCameraDistance * 0.18);
-    const fileOffsets = focusedFileOffsets(fileNodeIds, this.currentGraph?.edges ?? [], spacing);
+    const fileOffsets = focusedFileOffsets(fileNodeIds, this.currentGraph?.edges ?? [], {
+      algorithm: this.currentFocusedFileLayoutAlgorithm,
+      spacing,
+    });
     const focusRadius = Array.from(fileOffsets.values()).reduce(
       (maxRadius, offset) => Math.max(maxRadius, Math.hypot(offset.x, offset.y)),
       0,

@@ -30,6 +30,13 @@ export type FileRelationDetail =
   | 'configuration'
   | 'contracts';
 
+export type FocusedFileLayoutAlgorithmId =
+  | 'grid'
+  | 'flow-layered'
+  | 'dag-layered'
+  | 'force-directed'
+  | 'circular';
+
 export type SourceLanguage = 'rust' | 'typescript' | 'javascript' | 'python' | 'csharp' | 'unknown';
 
 export type Vec3 = {
@@ -82,6 +89,7 @@ export type DirectoryGraphSceneTheme = {
 
 export type DirectoryGraphSceneOptions = {
   readonly layoutAlgorithm: LayoutAlgorithmId;
+  readonly focusedFileLayoutAlgorithm?: FocusedFileLayoutAlgorithmId;
   readonly layoutOptions?: LayoutOptions;
   readonly edgeStyle?: DirectoryGraphEdgeStyle;
   readonly rootEdgeStyle?: DirectoryGraphEdgeStyle;
