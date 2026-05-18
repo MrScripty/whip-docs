@@ -74,14 +74,20 @@ test('focused circular bundle path connects node centers and bends toward the bu
   const bundleCenter = new Vector3(0, -12, 0);
   const points = focusedCircularBundleEdgePathPoints(sourceNode, targetNode, bundleCenter);
   const first = points[0];
+  const early = points[Math.floor(points.length * 0.22)];
   const middle = points[Math.floor(points.length / 2)];
+  const late = points[Math.floor(points.length * 0.78)];
   const last = points[points.length - 1];
   const chordMiddle = new Vector3(6, -12, 2.5);
+  const earlyChord = new Vector3(12 * 0.22, -24 * 0.22, 5 * 0.22);
+  const lateChord = new Vector3(12 * 0.78, -24 * 0.78, 5 * 0.78);
 
   assert.ok(points.length > 2);
   assert.deepEqual(first.toArray(), [0, 0, 0]);
   assert.deepEqual(last.toArray(), [12, -24, 5]);
+  assert.ok(early.distanceTo(earlyChord) > 1);
   assert.ok(middle.distanceTo(bundleCenter) < chordMiddle.distanceTo(bundleCenter));
+  assert.ok(late.distanceTo(lateChord) > 1);
 });
 
 const sourceNode: LayoutNodePosition = {

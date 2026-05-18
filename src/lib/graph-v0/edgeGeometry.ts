@@ -3,7 +3,7 @@ import type { DirectoryGraphEdgeStyle, LayoutNodePosition } from './types';
 
 export const EDGE_CURVE_SEGMENTS = 28;
 export const FOCUSED_EDGE_BUNDLE_SEGMENTS = 36;
-const FOCUSED_EDGE_BUNDLE_INSET = 0.12;
+const FOCUSED_EDGE_BUNDLE_PULL = 0.62;
 
 export function directoryEdgePathPoints(
   source: LayoutNodePosition,
@@ -68,34 +68,15 @@ export function focusedCircularBundleEdgePathPoints(
 ): Vector3[] {
   const sourceAnchor = nodeCenter(source);
   const targetAnchor = nodeCenter(target);
-  const sourceBundleAnchor = bundleEndpoint(sourceAnchor, bundleCenter);
-  const targetBundleAnchor = bundleEndpoint(targetAnchor, bundleCenter);
-  const sourceControl = sourceBundleAnchor.clone().lerp(bundleCenter, 0.92);
-  const targetControl = targetBundleAnchor.clone().lerp(bundleCenter, 0.92);
-  const outboundCurve = new CubicBezierCurve3(
+  const sourceControl = bundleControlPoint(sourceAnchor, targetAnchor, bundleCenter, FOCUSED_EDGE_BUNDLE_PULL);
+  const targetControl = bundleControlPoint(targetAnchor, sourceAnchor, bundleCenter, FOCUSED_EDGE_BUNDLE_PULL);
+
+  return new CubicBezierCurve3(
     sourceAnchor,
-    sourceAnchor.clone().lerp(sourceBundleAnchor, 0.72),
-    sourceBundleAnchor.clone().lerp(sourceAnchor, 0.28),
-    sourceBundleAnchor,
-  );
-  const bundledCurve = new CubicBezierCurve3(
-    sourceBundleAnchor,
     sourceControl,
     targetControl,
-    targetBundleAnchor,
-  );
-  const inboundCurve = new CubicBezierCurve3(
-    targetBundleAnchor,
-    targetBundleAnchor.clone().lerp(targetAnchor, 0.28),
-    targetAnchor.clone().lerp(targetBundleAnchor, 0.72),
     targetAnchor,
-  );
-
-  return [
-    ...outboundCurve.getPoints(8),
-    ...bundledCurve.getPoints(FOCUSED_EDGE_BUNDLE_SEGMENTS).slice(1),
-    ...inboundCurve.getPoints(8).slice(1),
-  ];
+  ).getPoints(FOCUSED_EDGE_BUNDLE_SEGMENTS);
 }
 
 function edgeHandleLength(sourceAnchor: Vector3, targetAnchor: Vector3): number {
@@ -126,6 +107,14 @@ function nodeCenter(node: LayoutNodePosition): Vector3 {
   return new Vector3(node.position.x, node.position.y, node.position.z);
 }
 
-function bundleEndpoint(anchor: Vector3, bundleCenter: Vector3): Vector3 {
-  return anchor.clone().lerp(bundleCenter, 1 - FOCUSED_EDGE_BUNDLE_INSET);
+function bundleControlPoint(
+  anchor: Vector3,
+  oppositeAnchor: Vector3,
+  bundleCenter: Vector3,
+  bundlePull: number,
+): Vector3 {
+  return anchor
+    .clone()
+    .lerp(oppositeAnchor, 0.28)
+    .lerp(bundleCenter, bundlePull);
 }
