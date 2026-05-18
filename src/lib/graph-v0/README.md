@@ -104,12 +104,16 @@ mounts and disposes.
   the directory sphere, arranges direct file children on a camera-facing plane,
   rewrites connected edge geometry to the focused positions, and frames that
   plane. Pressing `Tab` again restores the original scene view and edge
-  geometry. The focused file layout is selectable from graph settings. DAG
-  layered uses directed file relations for top-to-bottom dependency flow, flow
-  layered biases high-output files upward and high-input files downward, force
-  directed clusters related files, circular places files on a ring with
-  directory-centered bundled relation edges, and grid keeps the deterministic
-  fallback plane.
+  geometry. The focused file layout is selectable from graph settings and
+  defaults to the circular file view. DAG layered uses directed file relations
+  for top-to-bottom dependency flow, flow layered biases high-output files
+  upward and high-input files downward, force directed clusters related files,
+  circular places files on a ring with directory-centered bundled relation
+  edges, and grid keeps the deterministic fallback plane. Focused file views dim
+  file relation edges that cross out of the focused directory. Internal focused
+  edges use directional and bidirectional colors; selecting a focused file
+  recolors its incoming, outgoing, and bidirectional edges while greying
+  unrelated focused edges.
 
 ## Revisit Triggers
 - Layout options become persisted user settings.

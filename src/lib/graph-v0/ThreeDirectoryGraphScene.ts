@@ -84,6 +84,7 @@ import type {
   LayoutNodePosition,
   LayoutResult,
   RenderGraph,
+  RenderGraphEdge,
   RenderGraphNode,
   Vec3,
 } from './types';
@@ -145,8 +146,29 @@ type CameraTransition = {
   readonly toFar: number;
 };
 
+type FocusedEdgeTone = {
+  readonly color: number;
+  readonly opacity: number;
+};
+
 const FILE_NODE_GEOMETRY = fileNodeGeometryFromObj(fileModelObj);
 FILE_NODE_GEOMETRY.userData = { sharedFileNodeGeometry: true };
+const FOCUSED_EDGE_COLOR = {
+  directional: 0x56b6ff,
+  bidirectional: 0xc084fc,
+  incoming: 0x34d399,
+  outgoing: 0xf59e0b,
+  selectedBidirectional: 0xf472b6,
+  dimmed: 0x6b7280,
+} as const;
+const FOCUSED_EDGE_OPACITY = {
+  internal: 0.88,
+  selectedInternal: 0.96,
+  external: 0.16,
+  selectedExternal: 0.42,
+  dimmedInternal: 0.2,
+  dimmedExternal: 0.1,
+} as const;
 const FILE_ICON_BY_EXTENSION = new Map<string, string>([
   ['bash', bashIconUrl],
   ['cfg', cfgIconUrl],
@@ -200,6 +222,8 @@ export class DirectoryGraphScene {
   private readonly textureLoader = new TextureLoader();
   private readonly fileIconTextureByUrl = new Map<string, Texture>();
   private readonly graphNodesById = new Map<string, RenderGraphNode>();
+  private readonly graphEdgesById = new Map<string, RenderGraphEdge>();
+  private readonly bidirectionalRelationPairKeys = new Set<string>();
   private readonly nodeEntries = new Map<string, NodeSceneEntry>();
   private readonly edgeEntries = new Map<string, EdgeSceneEntry>();
   private readonly selectionNodeMeshesByNodeId = new Map<string, SelectionMesh>();
@@ -220,7 +244,7 @@ export class DirectoryGraphScene {
   private currentEdgeStyle: DirectoryGraphEdgeStyle | null = null;
   private currentRootEdgeStyle: DirectoryGraphEdgeStyle | null = null;
   private currentLeafDirectoryEdgeStyle: DirectoryGraphLeafEdgeStyle | null = null;
-  private currentFocusedFileLayoutAlgorithm: FocusedFileLayoutAlgorithmId = 'dag-layered';
+  private currentFocusedFileLayoutAlgorithm: FocusedFileLayoutAlgorithmId = 'circular';
   private currentLayoutBounds: LayoutBounds | null = null;
   private focusedDirectoryView: FocusedDirectoryView | null = null;
   private cameraTransition: CameraTransition | null = null;
@@ -262,7 +286,7 @@ export class DirectoryGraphScene {
     const edgeStyle = options.edgeStyle ?? 'straight';
     const rootEdgeStyle = options.rootEdgeStyle ?? edgeStyle;
     const leafDirectoryEdgeStyle = options.leafDirectoryEdgeStyle ?? 'global';
-    const focusedFileLayoutAlgorithm = options.focusedFileLayoutAlgorithm ?? 'dag-layered';
+    const focusedFileLayoutAlgorithm = options.focusedFileLayoutAlgorithm ?? 'circular';
     if (
       this.currentGraph !== graph ||
       this.currentLayoutAlgorithm !== options.layoutAlgorithm ||
@@ -314,6 +338,8 @@ export class DirectoryGraphScene {
     this.currentLayoutBounds = layoutBounds(layout.positions);
     this.selectionTargetById.clear();
     this.graphNodesById.clear();
+    this.graphEdgesById.clear();
+    this.bidirectionalRelationPairKeys.clear();
     this.nodeEntries.clear();
     this.edgeEntries.clear();
     this.selectionNodeMeshesByNodeId.clear();
@@ -331,6 +357,11 @@ export class DirectoryGraphScene {
     for (const node of graph.nodes) {
       this.graphNodesById.set(node.id, node);
     }
+
+    for (const edge of graph.edges) {
+      this.graphEdgesById.set(edge.id, edge);
+    }
+    this.rebuildBidirectionalRelationPairKeys(graph.edges);
 
     this.clearGroup(this.edgeGroup);
     this.clearGroup(this.nodeGroup);
@@ -446,6 +477,10 @@ export class DirectoryGraphScene {
       addMapKeys(changedEdgeIds, this.edgeEntries);
     }
 
+    if (this.focusedDirectoryView && this.activeSelectedNodeId !== selectedNodeId) {
+      this.addFocusedDirectoryEdgeIds(changedEdgeIds);
+    }
+
     if (nodeDistanceChanged) {
       addMapKeys(changedNodeIds, this.nodeEntries);
       addMapKeys(changedEdgeIds, this.edgeEntries);
@@ -479,11 +514,12 @@ export class DirectoryGraphScene {
           selectionMesh.visible = visible;
         }
         this.styleEdge(
-          entry.line,
-          entry.depth,
+          edgeId,
+          entry,
           graphDistanceForEdge(entry, nextNodeDistanceById),
           edgeId === selectedEdgeId,
           nextSelectionState.highlightedEdgeIds.has(edgeId),
+          selectedNodeId,
         );
       }
     }
@@ -809,6 +845,7 @@ export class DirectoryGraphScene {
       layoutAlgorithm: this.currentFocusedFileLayoutAlgorithm,
     };
     this.syncConnectedEdgeGeometry(fileNodeIds);
+    this.restyleConnectedEdges(fileNodeIds);
     this.frameBoundsFromCameraOffset(
       { center, radius },
       forward.multiplyScalar(-1),
@@ -863,6 +900,7 @@ export class DirectoryGraphScene {
 
     this.focusedDirectoryView = null;
     this.syncConnectedEdgeGeometry(focusedView.fileNodeIds);
+    this.restyleConnectedEdges(focusedView.fileNodeIds);
   }
 
   private syncConnectedEdgeGeometry(nodeIds: readonly string[]): void {
@@ -873,6 +911,33 @@ export class DirectoryGraphScene {
 
     for (const edgeId of edgeIds) {
       this.syncEdgeGeometry(edgeId);
+    }
+  }
+
+  private restyleConnectedEdges(nodeIds: readonly string[]): void {
+    const nodeIdSet = new Set(nodeIds);
+    const edgeIds = Array.from(this.edgeEntries.entries())
+      .filter(([, edge]) => nodeIdSet.has(edge.fromNodeId) || nodeIdSet.has(edge.toNodeId))
+      .map(([edgeId]) => edgeId);
+
+    for (const edgeId of edgeIds) {
+      this.restyleEdge(edgeId);
+    }
+  }
+
+  private addFocusedDirectoryEdgeIds(edgeIds: Set<string>): void {
+    const focusedView = this.focusedDirectoryView;
+
+    if (!focusedView) {
+      return;
+    }
+
+    const focusedFileNodeIds = new Set(focusedView.fileNodeIds);
+
+    for (const [edgeId, edge] of this.edgeEntries.entries()) {
+      if (focusedFileNodeIds.has(edge.fromNodeId) || focusedFileNodeIds.has(edge.toNodeId)) {
+        edgeIds.add(edgeId);
+      }
     }
   }
 
@@ -910,6 +975,24 @@ export class DirectoryGraphScene {
     selectionEdge.visible = wasVisible;
     this.selectionEdgeMeshesByEdgeId.set(edgeId, selectionEdge);
     this.selectionEdgeGroup.add(selectionEdge);
+    this.restyleEdge(edgeId);
+  }
+
+  private restyleEdge(edgeId: string): void {
+    const entry = this.edgeEntries.get(edgeId);
+
+    if (!entry) {
+      return;
+    }
+
+    this.styleEdge(
+      edgeId,
+      entry,
+      graphDistanceForEdge(entry, this.activeNodeDistanceById),
+      edgeId === this.activeSelectedEdgeId,
+      this.activeSelectionState.highlightedEdgeIds.has(edgeId),
+      this.activeSelectedNodeId,
+    );
   }
 
   private focusedCircularBundlePathPoints(
@@ -1223,24 +1306,129 @@ export class DirectoryGraphScene {
     });
   }
 
+  private rebuildBidirectionalRelationPairKeys(edges: readonly RenderGraphEdge[]): void {
+    const directedRelationKeys = new Set<string>();
+
+    for (const edge of edges) {
+      if (edge.kind === 'contains' || edge.direction === 'undirected') {
+        continue;
+      }
+
+      directedRelationKeys.add(directedRelationKey(edge.fromNodeId, edge.toNodeId));
+    }
+
+    for (const edge of edges) {
+      if (edge.kind === 'contains' || edge.direction === 'undirected') {
+        continue;
+      }
+
+      if (directedRelationKeys.has(directedRelationKey(edge.toNodeId, edge.fromNodeId))) {
+        this.bidirectionalRelationPairKeys.add(relationPairKey(edge.fromNodeId, edge.toNodeId));
+      }
+    }
+  }
+
   private styleEdge(
-    line: EdgeLine,
-    depth: number,
+    edgeId: string,
+    edge: EdgeSceneEntry,
     graphDistance: number | null,
     selected: boolean,
     highlighted: boolean,
+    selectedNodeId: string | null,
   ): void {
-    const opacity = selected || highlighted ? 0.95 : styleOpacity(depth, graphDistance) * 0.58;
-    const color = selected
+    const focusedTone = this.focusedEdgeTone(edgeId, edge, selectedNodeId);
+    const opacity = focusedTone?.opacity ?? (selected || highlighted ? 0.95 : styleOpacity(edge.depth, graphDistance) * 0.58);
+    const color = focusedTone?.color ?? (selected
       ? this.theme.selected
       : highlighted
         ? this.theme.highlighted
         : new Color(this.theme.edge)
-            .lerp(new Color(this.theme.distantEdge), styleFadeBlend(depth, graphDistance))
-            .getHex();
+            .lerp(new Color(this.theme.distantEdge), styleFadeBlend(edge.depth, graphDistance))
+            .getHex());
 
-    line.material.color.setHex(color);
-    line.material.opacity = opacity;
+    edge.line.material.color.setHex(color);
+    edge.line.material.opacity = opacity;
+  }
+
+  private focusedEdgeTone(
+    edgeId: string,
+    edge: EdgeSceneEntry,
+    selectedNodeId: string | null,
+  ): FocusedEdgeTone | null {
+    const focusedView = this.focusedDirectoryView;
+
+    if (!focusedView) {
+      return null;
+    }
+
+    const focusedFileNodeIds = new Set(focusedView.fileNodeIds);
+    const sourceFocused = focusedFileNodeIds.has(edge.fromNodeId);
+    const targetFocused = focusedFileNodeIds.has(edge.toNodeId);
+
+    if (!sourceFocused && !targetFocused) {
+      return null;
+    }
+
+    const internal = sourceFocused && targetFocused;
+    const selectedFocusedFileId = selectedNodeId && focusedFileNodeIds.has(selectedNodeId)
+      ? selectedNodeId
+      : null;
+
+    if (selectedFocusedFileId) {
+      const selectedEdgeEndpoint = edge.fromNodeId === selectedFocusedFileId || edge.toNodeId === selectedFocusedFileId;
+
+      if (!selectedEdgeEndpoint) {
+        return {
+          color: FOCUSED_EDGE_COLOR.dimmed,
+          opacity: internal ? FOCUSED_EDGE_OPACITY.dimmedInternal : FOCUSED_EDGE_OPACITY.dimmedExternal,
+        };
+      }
+
+      return {
+        color: this.focusedSelectedEdgeColor(edgeId, edge, selectedFocusedFileId),
+        opacity: internal ? FOCUSED_EDGE_OPACITY.selectedInternal : FOCUSED_EDGE_OPACITY.selectedExternal,
+      };
+    }
+
+    if (!internal) {
+      return {
+        color: FOCUSED_EDGE_COLOR.dimmed,
+        opacity: FOCUSED_EDGE_OPACITY.external,
+      };
+    }
+
+    return {
+      color: this.isBidirectionalRelationEdge(edgeId, edge)
+        ? FOCUSED_EDGE_COLOR.bidirectional
+        : FOCUSED_EDGE_COLOR.directional,
+      opacity: FOCUSED_EDGE_OPACITY.internal,
+    };
+  }
+
+  private focusedSelectedEdgeColor(
+    edgeId: string,
+    edge: EdgeSceneEntry,
+    selectedFileNodeId: string,
+  ): number {
+    if (this.isBidirectionalRelationEdge(edgeId, edge)) {
+      return FOCUSED_EDGE_COLOR.selectedBidirectional;
+    }
+
+    if (edge.toNodeId === selectedFileNodeId) {
+      return FOCUSED_EDGE_COLOR.incoming;
+    }
+
+    return FOCUSED_EDGE_COLOR.outgoing;
+  }
+
+  private isBidirectionalRelationEdge(edgeId: string, edge: EdgeSceneEntry): boolean {
+    const graphEdge = this.graphEdgesById.get(edgeId);
+
+    if (graphEdge?.direction === 'undirected') {
+      return true;
+    }
+
+    return this.bidirectionalRelationPairKeys.has(relationPairKey(edge.fromNodeId, edge.toNodeId));
   }
 
   private createSelectionEdge(
@@ -2207,6 +2395,16 @@ function isEditableShortcutTarget(target: EventTarget | null): boolean {
     target instanceof HTMLSelectElement ||
     target instanceof HTMLTextAreaElement
   );
+}
+
+function directedRelationKey(fromNodeId: string, toNodeId: string): string {
+  return `${fromNodeId}\u0000${toNodeId}`;
+}
+
+function relationPairKey(leftNodeId: string, rightNodeId: string): string {
+  return leftNodeId < rightNodeId
+    ? directedRelationKey(leftNodeId, rightNodeId)
+    : directedRelationKey(rightNodeId, leftNodeId);
 }
 
 function labelTexture(label: string, theme: DirectoryGraphSceneTheme): CanvasTexture {

@@ -47,7 +47,7 @@
   let directoryPanelMode = $state('tree');
   let directorySceneModuleReady = $state(false);
   let directoryLayoutAlgorithm = $state('weighted-safe-radial-tree');
-  let focusedFileLayoutAlgorithm = $state('dag-layered');
+  let focusedFileLayoutAlgorithm = $state('circular');
   let directoryEdgeStyle = $state('c-curve');
   let directoryRootEdgeStyle = $state('elbow');
   let directoryLeafEdgeStyle = $state('straight');
