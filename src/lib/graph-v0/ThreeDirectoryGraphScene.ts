@@ -800,8 +800,6 @@ export class DirectoryGraphScene {
       this.syncLabelPosition(fileNodeId);
     }
 
-    this.syncConnectedEdgeGeometry(fileNodeIds);
-
     const radius = Math.max(4, focusRadius + spacing);
     this.focusedDirectoryView = {
       bundleCenter: { x: center.x, y: center.y, z: center.z },
@@ -810,6 +808,7 @@ export class DirectoryGraphScene {
       fileNodeIds,
       layoutAlgorithm: this.currentFocusedFileLayoutAlgorithm,
     };
+    this.syncConnectedEdgeGeometry(fileNodeIds);
     this.frameBoundsFromCameraOffset(
       { center, radius },
       forward.multiplyScalar(-1),
