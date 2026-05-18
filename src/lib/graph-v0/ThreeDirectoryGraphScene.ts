@@ -86,6 +86,7 @@ import type {
   RenderGraph,
   RenderGraphEdge,
   RenderGraphNode,
+  SelectionEntityKind,
   Vec3,
 } from './types';
 
@@ -127,7 +128,9 @@ type PointerDragState = {
   moved: boolean;
 };
 
-type SelectionTarget = DirectoryGraphSceneSelection & {
+type SelectionTarget = {
+  readonly kind: SelectionEntityKind;
+  readonly id: string;
   readonly selectionId: number;
 };
 
@@ -1852,7 +1855,10 @@ export class DirectoryGraphScene {
 
     if (target) {
       this.selectionCallback({ kind: target.kind, id: target.id });
+      return;
     }
+
+    this.selectionCallback({ kind: 'none' });
   }
 
   private raycastSelection(event: PointerEvent): SelectionTarget | null {

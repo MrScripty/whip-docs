@@ -304,9 +304,27 @@
     sourceSnippet.set(null);
     graphError.set(null);
 
+    if (selection.kind === 'none') {
+      selectedNodeId.set(null);
+      selectedEdgeId.set(null);
+      return;
+    }
+
     if (selection.kind === 'node') {
+      if ($selectedNodeId === selection.id) {
+        selectedNodeId.set(null);
+        selectedEdgeId.set(null);
+        return;
+      }
+
       selectedEdgeId.set(null);
       selectedNodeId.set(selection.id);
+      return;
+    }
+
+    if ($selectedEdgeId === selection.id) {
+      selectedNodeId.set(null);
+      selectedEdgeId.set(null);
       return;
     }
 

@@ -107,6 +107,8 @@ export type DirectoryGraphSceneOptions = {
 export type DirectoryGraphSceneSelection = {
   readonly kind: SelectionEntityKind;
   readonly id: string;
+} | {
+  readonly kind: 'none';
 };
 
 export type DirectoryGraphSceneControlMode = 'select' | 'orbit' | 'pan';
