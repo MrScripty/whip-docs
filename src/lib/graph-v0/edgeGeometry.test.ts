@@ -72,7 +72,13 @@ test('elbow edge path uses a hard horizontal then vertical 90 degree turn', () =
 
 test('focused circular bundle path connects node centers and bends toward the bundle center', () => {
   const bundleCenter = new Vector3(0, -12, 0);
-  const points = focusedCircularBundleEdgePathPoints(sourceNode, targetNode, bundleCenter);
+  const points = focusedCircularBundleEdgePathPoints([
+    new Vector3(0, 0, 0),
+    new Vector3(0, -5, 0),
+    bundleCenter,
+    new Vector3(4, -18, 0),
+    new Vector3(12, -24, 5),
+  ]);
   const first = points[0];
   const early = points[Math.floor(points.length * 0.22)];
   const middle = points[Math.floor(points.length / 2)];

@@ -60,7 +60,13 @@ import {
   directoryEdgePathPoints,
   focusedCircularBundleEdgePathPoints,
 } from './edgeGeometry';
-import { focusedFileOffsets } from './focusLayout';
+import {
+  buildFocusedFileHierarchy,
+  focusedFileHierarchyPath,
+  focusedFileOffsets,
+  type FocusedFileHierarchy,
+  type FocusedFileHierarchyNode,
+} from './focusLayout';
 import {
   layoutLayeredGrid,
   layoutRadialTree,
@@ -112,6 +118,7 @@ type EdgeSceneEntry = {
 };
 
 type FocusedDirectoryView = {
+  readonly fileHierarchy: FocusedFileHierarchy;
   readonly directoryNodeId: string;
   readonly hiddenEdgeIds: readonly string[];
   readonly fileNodeIds: readonly string[];
@@ -804,6 +811,7 @@ export class DirectoryGraphScene {
     const up = new Vector3().crossVectors(right, forward).normalize();
     const center = vectorFromPosition(directoryEntry.position);
     const spacing = Math.max(3.4, GRAPH_V0_INTERACTION_DEFAULTS.minCameraDistance * 0.18);
+    const fileHierarchy = buildFocusedFileHierarchy(fileNodeIds, this.currentGraph?.edges ?? []);
     const fileOffsets = focusedFileOffsets(fileNodeIds, this.currentGraph?.edges ?? [], {
       algorithm: this.currentFocusedFileLayoutAlgorithm,
       spacing,
@@ -843,6 +851,7 @@ export class DirectoryGraphScene {
     this.focusedDirectoryView = {
       bundleCenter: { x: center.x, y: center.y, z: center.z },
       directoryNodeId,
+      fileHierarchy,
       hiddenEdgeIds,
       fileNodeIds,
       layoutAlgorithm: this.currentFocusedFileLayoutAlgorithm,
@@ -1015,15 +1024,71 @@ export class DirectoryGraphScene {
       return null;
     }
 
-    return focusedCircularBundleEdgePathPoints(
+    const hierarchyPath = focusedFileHierarchyPath(
+      focusedView.fileHierarchy,
+      edgeEntry.fromNodeId,
+      edgeEntry.toNodeId,
+    );
+    const controlPath = hierarchyPath.map((hierarchyNode) => this.focusedHierarchyNodePosition(
+      hierarchyNode,
+      focusedView,
       source,
       target,
-      new Vector3(
-        focusedView.bundleCenter.x,
-        focusedView.bundleCenter.y,
-        focusedView.bundleCenter.z,
-      ),
+    ));
+
+    return focusedCircularBundleEdgePathPoints(controlPath);
+  }
+
+  private focusedHierarchyNodePosition(
+    hierarchyNode: FocusedFileHierarchyNode,
+    focusedView: FocusedDirectoryView,
+    source: LayoutNodePosition,
+    target: LayoutNodePosition,
+  ): Vector3 {
+    if (hierarchyNode.fileNodeId === source.nodeId) {
+      return vectorFromPosition(source);
+    }
+
+    if (hierarchyNode.fileNodeId === target.nodeId) {
+      return vectorFromPosition(target);
+    }
+
+    const bundleCenter = new Vector3(
+      focusedView.bundleCenter.x,
+      focusedView.bundleCenter.y,
+      focusedView.bundleCenter.z,
     );
+
+    if (hierarchyNode.depth === 0) {
+      return bundleCenter;
+    }
+
+    const leafPositions = hierarchyNode.fileNodeIds
+      .map((fileNodeId) => this.nodeEntries.get(fileNodeId)?.mesh.position)
+      .filter((position): position is Vector3 => position !== undefined);
+
+    if (leafPositions.length === 0) {
+      return bundleCenter;
+    }
+
+    const direction = leafPositions.reduce((total, position) => {
+      const leafDirection = position.clone().sub(bundleCenter);
+      return leafDirection.lengthSq() === 0
+        ? total
+        : total.add(leafDirection.normalize());
+    }, new Vector3());
+    const fallbackDirection = leafPositions[0]?.clone().sub(bundleCenter) ?? new Vector3(1, 0, 0);
+    const normalizedDirection = direction.lengthSq() > 0
+      ? direction.normalize()
+      : fallbackDirection.normalize();
+    const averageLeafRadius = leafPositions.reduce(
+      (total, position) => total + position.distanceTo(bundleCenter),
+      0,
+    ) / leafPositions.length;
+    const hierarchyRadius = averageLeafRadius *
+      (hierarchyNode.depth / Math.max(1, focusedView.fileHierarchy.maxDepth));
+
+    return bundleCenter.clone().add(normalizedDirection.multiplyScalar(hierarchyRadius));
   }
 
   private dynamicLayoutPosition(nodeId: string): LayoutNodePosition | null {

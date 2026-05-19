@@ -13,7 +13,7 @@ registerHooks({
   },
 });
 
-const { focusedFileOffsets } = (await import(
+const { buildFocusedFileHierarchy, focusedFileHierarchyPath, focusedFileOffsets } = (await import(
   new URL('./focusLayout.ts', import.meta.url).href
 )) as typeof import('./focusLayout');
 
@@ -143,6 +143,22 @@ test('focusedFileOffsets circular layout clusters related files around the ring'
   assert.ok(
     ringDistance(offsets, 'd', 'f') < ringDistance(offsets, 'd', 'a'),
   );
+});
+
+test('focusedFileHierarchyPath uses shallow ancestors for local edges and root for distant edges', () => {
+  const edges: RenderGraphEdge[] = [
+    { id: 'a-b', kind: 'imports', fromNodeId: 'a', toNodeId: 'b', weight: 8 },
+    { id: 'c-d', kind: 'imports', fromNodeId: 'c', toNodeId: 'd', weight: 8 },
+    { id: 'b-c', kind: 'calls', fromNodeId: 'b', toNodeId: 'c', weight: 1 },
+    { id: 'e-f', kind: 'calls', fromNodeId: 'e', toNodeId: 'f', weight: 8 },
+  ];
+  const hierarchy = buildFocusedFileHierarchy(['a', 'b', 'c', 'd', 'e', 'f'], edges);
+  const localPath = focusedFileHierarchyPath(hierarchy, 'a', 'b');
+  const bridgePath = focusedFileHierarchyPath(hierarchy, 'a', 'd');
+  const distantPath = focusedFileHierarchyPath(hierarchy, 'a', 'e');
+
+  assert.ok(localPath.length < bridgePath.length);
+  assert.ok(distantPath.some((node) => node.id === hierarchy.root.id));
 });
 
 function requiredOffset(

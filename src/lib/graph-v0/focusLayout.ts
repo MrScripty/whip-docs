@@ -18,9 +18,32 @@ export type FocusedFileLayoutOptions = {
   readonly algorithm?: FocusedFileLayoutAlgorithmId;
 };
 
+export type FocusedFileHierarchyNode = {
+  readonly id: string;
+  readonly fileNodeId?: string;
+  readonly fileNodeIds: readonly string[];
+  readonly children: readonly FocusedFileHierarchyNode[];
+  readonly depth: number;
+};
+
+export type FocusedFileHierarchy = {
+  readonly root: FocusedFileHierarchyNode;
+  readonly leafOrder: readonly string[];
+  readonly maxDepth: number;
+  readonly leafByFileNodeId: ReadonlyMap<string, FocusedFileHierarchyNode>;
+  readonly parentByNodeId: ReadonlyMap<string, FocusedFileHierarchyNode>;
+};
+
 type MutableFileOffset = {
   x: number;
   y: number;
+};
+
+type FocusedFileHierarchyBuildNode = {
+  readonly id: string;
+  readonly fileNodeId?: string;
+  readonly fileNodeIds: readonly string[];
+  readonly children: readonly FocusedFileHierarchyBuildNode[];
 };
 
 type LocalRelationGraph = {
@@ -44,7 +67,7 @@ export function focusedFileOffsets(
   }
 
   if (algorithm === 'circular') {
-    return circularFileOffsets(circularOrderedFileNodeIds(fileNodeIds, localGraph), spacing);
+    return circularFileOffsets(buildFocusedFileHierarchy(fileNodeIds, relationEdges).leafOrder, spacing);
   }
 
   if (localGraph.relationEdges.length === 0) {
@@ -67,6 +90,66 @@ export function focusedFileOffsets(
   }
 
   return flowLayeredFileOffsets(orderedNodeIds, localGraph, spacing);
+}
+
+export function buildFocusedFileHierarchy(
+  fileNodeIds: readonly string[],
+  relationEdges: readonly RenderGraphEdge[],
+): FocusedFileHierarchy {
+  const localGraph = localRelationGraph(fileNodeIds, relationEdges);
+  const componentRoots = localGraph.relationEdges.length === 0
+    ? sortedLeafNodes(fileNodeIds, localGraph)
+    : focusedHierarchyComponentRoots(fileNodeIds, localGraph);
+  const root = finalizeFocusedFileHierarchyNode({
+    children: componentRoots,
+    fileNodeIds: componentRoots.flatMap((componentRoot) => componentRoot.fileNodeIds),
+    id: 'root',
+  }, 0);
+  const leafByFileNodeId = new Map<string, FocusedFileHierarchyNode>();
+  const parentByNodeId = new Map<string, FocusedFileHierarchyNode>();
+  let maxDepth = 0;
+
+  indexFocusedFileHierarchy(root, null, leafByFileNodeId, parentByNodeId, (depth) => {
+    maxDepth = Math.max(maxDepth, depth);
+  });
+
+  return {
+    leafByFileNodeId,
+    leafOrder: leafOrderForHierarchy(root),
+    maxDepth,
+    parentByNodeId,
+    root,
+  };
+}
+
+export function focusedFileHierarchyPath(
+  hierarchy: FocusedFileHierarchy,
+  sourceFileNodeId: string,
+  targetFileNodeId: string,
+): readonly FocusedFileHierarchyNode[] {
+  const sourceLeaf = hierarchy.leafByFileNodeId.get(sourceFileNodeId);
+  const targetLeaf = hierarchy.leafByFileNodeId.get(targetFileNodeId);
+
+  if (!sourceLeaf || !targetLeaf) {
+    return [];
+  }
+
+  const sourcePath = hierarchyNodePathToRoot(sourceLeaf, hierarchy.parentByNodeId);
+  const targetPath = hierarchyNodePathToRoot(targetLeaf, hierarchy.parentByNodeId);
+  const targetPathIds = new Set(targetPath.map((node) => node.id));
+  const lca = sourcePath.find((node) => targetPathIds.has(node.id));
+
+  if (!lca) {
+    return [sourceLeaf, targetLeaf];
+  }
+
+  const sourceToLca = sourcePath.slice(0, sourcePath.indexOf(lca) + 1);
+  const targetToLca = targetPath.slice(0, targetPath.indexOf(lca));
+
+  return [
+    ...sourceToLca,
+    ...targetToLca.reverse(),
+  ];
 }
 
 function normalizeFocusedFileLayoutOptions(
@@ -135,16 +218,12 @@ function orderedFileNodeIds(
   });
 }
 
-function circularOrderedFileNodeIds(
+function focusedHierarchyComponentRoots(
   fileNodeIds: readonly string[],
   localGraph: LocalRelationGraph,
-): string[] {
-  if (localGraph.relationEdges.length === 0) {
-    return [...fileNodeIds].sort((leftId, rightId) => leftId.localeCompare(rightId));
-  }
-
+): FocusedFileHierarchyBuildNode[] {
   const remainingNodeIds = new Set(fileNodeIds);
-  const components: string[][] = [];
+  const componentRoots: FocusedFileHierarchyBuildNode[] = [];
 
   for (const fileNodeId of fileNodeIds) {
     if (!remainingNodeIds.has(fileNodeId)) {
@@ -152,14 +231,25 @@ function circularOrderedFileNodeIds(
     }
 
     const component = connectedComponent(fileNodeId, remainingNodeIds, localGraph);
-    components.push(greedyCircularComponentOrder(component, localGraph));
+    componentRoots.push(componentHierarchy(component, localGraph));
   }
 
-  return components
-    .sort((left, right) => componentWeight(right, localGraph) - componentWeight(left, localGraph) ||
-      (right.length - left.length) ||
-      (left[0] ?? '').localeCompare(right[0] ?? ''))
-    .flat();
+  return componentRoots.sort((left, right) => componentWeight(right.fileNodeIds, localGraph) -
+    componentWeight(left.fileNodeIds, localGraph) ||
+    (right.fileNodeIds.length - left.fileNodeIds.length) ||
+    clusterSortKey(left).localeCompare(clusterSortKey(right)));
+}
+
+function sortedLeafNodes(
+  fileNodeIds: readonly string[],
+  localGraph: LocalRelationGraph,
+): FocusedFileHierarchyBuildNode[] {
+  return [...fileNodeIds]
+    .sort((leftId, rightId) => {
+      const degreeDelta = (localGraph.degreeByNodeId.get(rightId) ?? 0) - (localGraph.degreeByNodeId.get(leftId) ?? 0);
+      return degreeDelta || leftId.localeCompare(rightId);
+    })
+    .map(leafHierarchyNode);
 }
 
 function connectedComponent(
@@ -193,81 +283,112 @@ function connectedComponent(
   return component;
 }
 
-function greedyCircularComponentOrder(
+function componentHierarchy(
   componentNodeIds: readonly string[],
   localGraph: LocalRelationGraph,
-): string[] {
-  const unplacedNodeIds = new Set(componentNodeIds);
-  const startNodeId = [...componentNodeIds].sort((leftId, rightId) => {
-    const degreeDelta = (localGraph.degreeByNodeId.get(rightId) ?? 0) - (localGraph.degreeByNodeId.get(leftId) ?? 0);
-    return degreeDelta || leftId.localeCompare(rightId);
-  })[0];
+): FocusedFileHierarchyBuildNode {
+  let activeNodes = sortedLeafNodes(componentNodeIds, localGraph);
 
-  if (!startNodeId) {
-    return [];
-  }
+  while (activeNodes.length > 1) {
+    const merge = strongestClusterMerge(activeNodes, localGraph);
+    const left = activeNodes[merge.leftIndex];
+    const right = activeNodes[merge.rightIndex];
 
-  const orderedNodeIds = [startNodeId];
-  unplacedNodeIds.delete(startNodeId);
-
-  while (unplacedNodeIds.size > 0) {
-    const headId = orderedNodeIds[0];
-    const tailId = orderedNodeIds[orderedNodeIds.length - 1];
-    const bestHeadId = strongestUnplacedNeighbor(headId, unplacedNodeIds, localGraph);
-    const bestTailId = strongestUnplacedNeighbor(tailId, unplacedNodeIds, localGraph);
-    const headWeight = bestHeadId ? relationWeight(headId, bestHeadId, localGraph) : -1;
-    const tailWeight = bestTailId ? relationWeight(tailId, bestTailId, localGraph) : -1;
-
-    if (bestHeadId && headWeight > tailWeight) {
-      orderedNodeIds.unshift(bestHeadId);
-      unplacedNodeIds.delete(bestHeadId);
-      continue;
-    }
-
-    if (bestTailId) {
-      orderedNodeIds.push(bestTailId);
-      unplacedNodeIds.delete(bestTailId);
-      continue;
-    }
-
-    const fallbackId = [...unplacedNodeIds].sort((leftId, rightId) => {
-      const degreeDelta = (localGraph.degreeByNodeId.get(rightId) ?? 0) - (localGraph.degreeByNodeId.get(leftId) ?? 0);
-      return degreeDelta || leftId.localeCompare(rightId);
-    })[0];
-
-    if (!fallbackId) {
+    if (!left || !right) {
       break;
     }
 
-    orderedNodeIds.push(fallbackId);
-    unplacedNodeIds.delete(fallbackId);
+    const [firstChild, secondChild] = orderedClusterChildren(left, right, localGraph);
+    const mergedNode: FocusedFileHierarchyBuildNode = {
+      children: [firstChild, secondChild],
+      fileNodeIds: [...firstChild.fileNodeIds, ...secondChild.fileNodeIds],
+      id: `cluster:${firstChild.id}:${secondChild.id}`,
+    };
+
+    activeNodes = activeNodes
+      .filter((_, index) => index !== merge.leftIndex && index !== merge.rightIndex)
+      .concat(mergedNode)
+      .sort((leftNode, rightNode) => clusterSortKey(leftNode).localeCompare(clusterSortKey(rightNode)));
   }
 
-  return orderedNodeIds;
+  return activeNodes[0] ?? {
+    children: [],
+    fileNodeIds: [],
+    id: 'empty',
+  };
 }
 
-function strongestUnplacedNeighbor(
-  fileNodeId: string | undefined,
-  unplacedNodeIds: ReadonlySet<string>,
+function strongestClusterMerge(
+  activeNodes: readonly FocusedFileHierarchyBuildNode[],
   localGraph: LocalRelationGraph,
-): string | null {
-  if (!fileNodeId) {
-    return null;
-  }
+): { readonly leftIndex: number; readonly rightIndex: number } {
+  let bestMerge = { leftIndex: 0, rightIndex: 1 };
+  let bestScore = Number.NEGATIVE_INFINITY;
+  let bestWeight = Number.NEGATIVE_INFINITY;
+  let bestKey = '';
 
-  let strongestNeighborId: string | null = null;
-  let strongestWeight = 0;
+  for (let leftIndex = 0; leftIndex < activeNodes.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < activeNodes.length; rightIndex += 1) {
+      const leftNode = activeNodes[leftIndex];
+      const rightNode = activeNodes[rightIndex];
 
-  for (const neighborId of unplacedNodeIds) {
-    const weight = relationWeight(fileNodeId, neighborId, localGraph);
+      if (!leftNode || !rightNode) {
+        continue;
+      }
 
-    if (weight > strongestWeight || (weight === strongestWeight && strongestNeighborId && neighborId < strongestNeighborId)) {
-      strongestNeighborId = neighborId;
-      strongestWeight = weight;
+      const weight = clusterRelationWeight(leftNode, rightNode, localGraph);
+      const score = weight / Math.sqrt(leftNode.fileNodeIds.length * rightNode.fileNodeIds.length);
+      const key = `${clusterSortKey(leftNode)}\u0000${clusterSortKey(rightNode)}`;
+
+      if (
+        score > bestScore ||
+        (score === bestScore && weight > bestWeight) ||
+        (score === bestScore && weight === bestWeight && key < bestKey)
+      ) {
+        bestMerge = { leftIndex, rightIndex };
+        bestScore = score;
+        bestWeight = weight;
+        bestKey = key;
+      }
     }
   }
 
-  return strongestNeighborId;
+  return bestMerge;
+}
+
+function clusterRelationWeight(
+  leftNode: FocusedFileHierarchyBuildNode,
+  rightNode: FocusedFileHierarchyBuildNode,
+  localGraph: LocalRelationGraph,
+): number {
+  let weight = 0;
+
+  for (const leftFileNodeId of leftNode.fileNodeIds) {
+    for (const rightFileNodeId of rightNode.fileNodeIds) {
+      weight += relationWeight(leftFileNodeId, rightFileNodeId, localGraph);
+    }
+  }
+
+  return weight;
+}
+
+function orderedClusterChildren(
+  leftNode: FocusedFileHierarchyBuildNode,
+  rightNode: FocusedFileHierarchyBuildNode,
+  localGraph: LocalRelationGraph,
+): [FocusedFileHierarchyBuildNode, FocusedFileHierarchyBuildNode] {
+  const leftDegree = componentWeight(leftNode.fileNodeIds, localGraph);
+  const rightDegree = componentWeight(rightNode.fileNodeIds, localGraph);
+
+  if (rightDegree > leftDegree) {
+    return [rightNode, leftNode];
+  }
+
+  if (rightDegree === leftDegree && clusterSortKey(rightNode) < clusterSortKey(leftNode)) {
+    return [rightNode, leftNode];
+  }
+
+  return [leftNode, rightNode];
 }
 
 function relationNeighborIds(fileNodeId: string, localGraph: LocalRelationGraph): string[] {
@@ -294,6 +415,85 @@ function relationWeight(leftNodeId: string | undefined, rightNodeId: string | un
   }
 
   return localGraph.relationWeightByPairKey.get(relationPairKey(leftNodeId, rightNodeId)) ?? 0;
+}
+
+function leafHierarchyNode(fileNodeId: string): FocusedFileHierarchyBuildNode {
+  return {
+    children: [],
+    fileNodeId,
+    fileNodeIds: [fileNodeId],
+    id: `leaf:${fileNodeId}`,
+  };
+}
+
+function finalizeFocusedFileHierarchyNode(
+  node: FocusedFileHierarchyBuildNode,
+  depth: number,
+): FocusedFileHierarchyNode {
+  const children = node.children.map((child) => finalizeFocusedFileHierarchyNode(child, depth + 1));
+
+  return {
+    children,
+    depth,
+    fileNodeId: node.fileNodeId,
+    fileNodeIds: node.fileNodeIds,
+    id: node.id,
+  };
+}
+
+function indexFocusedFileHierarchy(
+  node: FocusedFileHierarchyNode,
+  parent: FocusedFileHierarchyNode | null,
+  leafByFileNodeId: Map<string, FocusedFileHierarchyNode>,
+  parentByNodeId: Map<string, FocusedFileHierarchyNode>,
+  visitDepth: (depth: number) => void,
+): void {
+  visitDepth(node.depth);
+
+  if (parent) {
+    parentByNodeId.set(node.id, parent);
+  }
+
+  if (node.fileNodeId) {
+    leafByFileNodeId.set(node.fileNodeId, node);
+  }
+
+  for (const child of node.children) {
+    indexFocusedFileHierarchy(child, node, leafByFileNodeId, parentByNodeId, visitDepth);
+  }
+}
+
+function leafOrderForHierarchy(node: FocusedFileHierarchyNode): string[] {
+  if (node.fileNodeId) {
+    return [node.fileNodeId];
+  }
+
+  return node.children.flatMap(leafOrderForHierarchy);
+}
+
+function hierarchyNodePathToRoot(
+  node: FocusedFileHierarchyNode,
+  parentByNodeId: ReadonlyMap<string, FocusedFileHierarchyNode>,
+): FocusedFileHierarchyNode[] {
+  const path = [node];
+  let currentNode: FocusedFileHierarchyNode | undefined = node;
+
+  while (currentNode) {
+    const parent = parentByNodeId.get(currentNode.id);
+
+    if (!parent) {
+      break;
+    }
+
+    path.push(parent);
+    currentNode = parent;
+  }
+
+  return path;
+}
+
+function clusterSortKey(node: Pick<FocusedFileHierarchyBuildNode, 'fileNodeIds'>): string {
+  return [...node.fileNodeIds].sort((leftId, rightId) => leftId.localeCompare(rightId))[0] ?? '';
 }
 
 function gridFileOffsets(fileNodeIds: readonly string[], spacing: number): Map<string, MutableFileOffset> {
