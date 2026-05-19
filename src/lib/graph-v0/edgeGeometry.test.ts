@@ -83,8 +83,8 @@ test('focused circular bundle path connects node centers and bends toward the bu
   const lateChord = new Vector3(12 * 0.78, -24 * 0.78, 5 * 0.78);
 
   assert.ok(points.length > 2);
-  assert.deepEqual(first.toArray(), [0, 0, 0]);
-  assert.deepEqual(last.toArray(), [12, -24, 5]);
+  assert.ok(first.distanceTo(new Vector3(0, 0, 0)) < 0.000001);
+  assert.ok(last.distanceTo(new Vector3(12, -24, 5)) < 0.000001);
   assert.ok(early.distanceTo(earlyChord) > 1);
   assert.ok(middle.distanceTo(bundleCenter) < chordMiddle.distanceTo(bundleCenter));
   assert.ok(late.distanceTo(lateChord) > 1);

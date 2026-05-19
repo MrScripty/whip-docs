@@ -28,6 +28,7 @@ type LocalRelationGraph = {
   readonly directedEdges: readonly RenderGraphEdge[];
   readonly degreeByNodeId: ReadonlyMap<string, number>;
   readonly relationFlowByNodeId: ReadonlyMap<string, number>;
+  readonly relationWeightByPairKey: ReadonlyMap<string, number>;
 };
 
 export function focusedFileOffsets(
@@ -43,7 +44,7 @@ export function focusedFileOffsets(
   }
 
   if (algorithm === 'circular') {
-    return circularFileOffsets(orderedFileNodeIds(fileNodeIds, localGraph), spacing);
+    return circularFileOffsets(circularOrderedFileNodeIds(fileNodeIds, localGraph), spacing);
   }
 
   if (localGraph.relationEdges.length === 0) {
@@ -93,6 +94,7 @@ function localRelationGraph(
   ));
   const degreeByNodeId = new Map(fileNodeIds.map((fileNodeId) => [fileNodeId, 0]));
   const relationFlowByNodeId = new Map(fileNodeIds.map((fileNodeId) => [fileNodeId, 0]));
+  const relationWeightByPairKey = new Map<string, number>();
   const directedEdges: RenderGraphEdge[] = [];
 
   for (const edge of localRelationEdges) {
@@ -106,6 +108,10 @@ function localRelationGraph(
 
     relationFlowByNodeId.set(edge.fromNodeId, (relationFlowByNodeId.get(edge.fromNodeId) ?? 0) + flowWeight);
     relationFlowByNodeId.set(edge.toNodeId, (relationFlowByNodeId.get(edge.toNodeId) ?? 0) - flowWeight);
+    relationWeightByPairKey.set(
+      relationPairKey(edge.fromNodeId, edge.toNodeId),
+      (relationWeightByPairKey.get(relationPairKey(edge.fromNodeId, edge.toNodeId)) ?? 0) + (edge.weight ?? 1),
+    );
   }
 
   return {
@@ -113,6 +119,7 @@ function localRelationGraph(
     directedEdges,
     relationEdges: localRelationEdges,
     relationFlowByNodeId,
+    relationWeightByPairKey,
   };
 }
 
@@ -126,6 +133,167 @@ function orderedFileNodeIds(
       (localGraph.relationFlowByNodeId.get(leftId) ?? 0);
     return degreeDelta || flowDelta || leftId.localeCompare(rightId);
   });
+}
+
+function circularOrderedFileNodeIds(
+  fileNodeIds: readonly string[],
+  localGraph: LocalRelationGraph,
+): string[] {
+  if (localGraph.relationEdges.length === 0) {
+    return [...fileNodeIds].sort((leftId, rightId) => leftId.localeCompare(rightId));
+  }
+
+  const remainingNodeIds = new Set(fileNodeIds);
+  const components: string[][] = [];
+
+  for (const fileNodeId of fileNodeIds) {
+    if (!remainingNodeIds.has(fileNodeId)) {
+      continue;
+    }
+
+    const component = connectedComponent(fileNodeId, remainingNodeIds, localGraph);
+    components.push(greedyCircularComponentOrder(component, localGraph));
+  }
+
+  return components
+    .sort((left, right) => componentWeight(right, localGraph) - componentWeight(left, localGraph) ||
+      (right.length - left.length) ||
+      (left[0] ?? '').localeCompare(right[0] ?? ''))
+    .flat();
+}
+
+function connectedComponent(
+  startNodeId: string,
+  remainingNodeIds: Set<string>,
+  localGraph: LocalRelationGraph,
+): string[] {
+  const component: string[] = [];
+  const queue = [startNodeId];
+  remainingNodeIds.delete(startNodeId);
+
+  while (queue.length > 0) {
+    const fileNodeId = queue.shift();
+
+    if (!fileNodeId) {
+      continue;
+    }
+
+    component.push(fileNodeId);
+
+    for (const neighborId of relationNeighborIds(fileNodeId, localGraph)) {
+      if (!remainingNodeIds.has(neighborId)) {
+        continue;
+      }
+
+      remainingNodeIds.delete(neighborId);
+      queue.push(neighborId);
+    }
+  }
+
+  return component;
+}
+
+function greedyCircularComponentOrder(
+  componentNodeIds: readonly string[],
+  localGraph: LocalRelationGraph,
+): string[] {
+  const unplacedNodeIds = new Set(componentNodeIds);
+  const startNodeId = [...componentNodeIds].sort((leftId, rightId) => {
+    const degreeDelta = (localGraph.degreeByNodeId.get(rightId) ?? 0) - (localGraph.degreeByNodeId.get(leftId) ?? 0);
+    return degreeDelta || leftId.localeCompare(rightId);
+  })[0];
+
+  if (!startNodeId) {
+    return [];
+  }
+
+  const orderedNodeIds = [startNodeId];
+  unplacedNodeIds.delete(startNodeId);
+
+  while (unplacedNodeIds.size > 0) {
+    const headId = orderedNodeIds[0];
+    const tailId = orderedNodeIds[orderedNodeIds.length - 1];
+    const bestHeadId = strongestUnplacedNeighbor(headId, unplacedNodeIds, localGraph);
+    const bestTailId = strongestUnplacedNeighbor(tailId, unplacedNodeIds, localGraph);
+    const headWeight = bestHeadId ? relationWeight(headId, bestHeadId, localGraph) : -1;
+    const tailWeight = bestTailId ? relationWeight(tailId, bestTailId, localGraph) : -1;
+
+    if (bestHeadId && headWeight > tailWeight) {
+      orderedNodeIds.unshift(bestHeadId);
+      unplacedNodeIds.delete(bestHeadId);
+      continue;
+    }
+
+    if (bestTailId) {
+      orderedNodeIds.push(bestTailId);
+      unplacedNodeIds.delete(bestTailId);
+      continue;
+    }
+
+    const fallbackId = [...unplacedNodeIds].sort((leftId, rightId) => {
+      const degreeDelta = (localGraph.degreeByNodeId.get(rightId) ?? 0) - (localGraph.degreeByNodeId.get(leftId) ?? 0);
+      return degreeDelta || leftId.localeCompare(rightId);
+    })[0];
+
+    if (!fallbackId) {
+      break;
+    }
+
+    orderedNodeIds.push(fallbackId);
+    unplacedNodeIds.delete(fallbackId);
+  }
+
+  return orderedNodeIds;
+}
+
+function strongestUnplacedNeighbor(
+  fileNodeId: string | undefined,
+  unplacedNodeIds: ReadonlySet<string>,
+  localGraph: LocalRelationGraph,
+): string | null {
+  if (!fileNodeId) {
+    return null;
+  }
+
+  let strongestNeighborId: string | null = null;
+  let strongestWeight = 0;
+
+  for (const neighborId of unplacedNodeIds) {
+    const weight = relationWeight(fileNodeId, neighborId, localGraph);
+
+    if (weight > strongestWeight || (weight === strongestWeight && strongestNeighborId && neighborId < strongestNeighborId)) {
+      strongestNeighborId = neighborId;
+      strongestWeight = weight;
+    }
+  }
+
+  return strongestNeighborId;
+}
+
+function relationNeighborIds(fileNodeId: string, localGraph: LocalRelationGraph): string[] {
+  const neighborIds = new Set<string>();
+
+  for (const edge of localGraph.relationEdges) {
+    if (edge.fromNodeId === fileNodeId) {
+      neighborIds.add(edge.toNodeId);
+    } else if (edge.toNodeId === fileNodeId) {
+      neighborIds.add(edge.fromNodeId);
+    }
+  }
+
+  return [...neighborIds].sort((leftId, rightId) => leftId.localeCompare(rightId));
+}
+
+function componentWeight(fileNodeIds: readonly string[], localGraph: LocalRelationGraph): number {
+  return fileNodeIds.reduce((total, fileNodeId) => total + (localGraph.degreeByNodeId.get(fileNodeId) ?? 0), 0);
+}
+
+function relationWeight(leftNodeId: string | undefined, rightNodeId: string | undefined, localGraph: LocalRelationGraph): number {
+  if (!leftNodeId || !rightNodeId) {
+    return 0;
+  }
+
+  return localGraph.relationWeightByPairKey.get(relationPairKey(leftNodeId, rightNodeId)) ?? 0;
 }
 
 function gridFileOffsets(fileNodeIds: readonly string[], spacing: number): Map<string, MutableFileOffset> {
@@ -572,6 +740,12 @@ function directedRelationWeight(edge: RenderGraphEdge): number {
   }
 
   return Math.max(0, edge.weight ?? 1);
+}
+
+function relationPairKey(leftNodeId: string, rightNodeId: string): string {
+  return leftNodeId < rightNodeId
+    ? `${leftNodeId}\u0000${rightNodeId}`
+    : `${rightNodeId}\u0000${leftNodeId}`;
 }
 
 function cloneFileOffsets(positions: ReadonlyMap<string, MutableFileOffset>): Map<string, MutableFileOffset> {

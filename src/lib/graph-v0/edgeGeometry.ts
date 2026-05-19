@@ -1,9 +1,11 @@
-import { CubicBezierCurve3, Vector3 } from 'three';
+import { CatmullRomCurve3, CubicBezierCurve3, Vector3 } from 'three';
 import type { DirectoryGraphEdgeStyle, LayoutNodePosition } from './types';
 
 export const EDGE_CURVE_SEGMENTS = 28;
 export const FOCUSED_EDGE_BUNDLE_SEGMENTS = 36;
-const FOCUSED_EDGE_BUNDLE_PULL = 0.62;
+const FOCUSED_EDGE_BUNDLE_BETA = 0.85;
+const FOCUSED_EDGE_BUNDLE_INNER_RADIUS_RATIO = 0.38;
+const FOCUSED_EDGE_BUNDLE_MIDDLE_RADIUS_RATIO = 0.12;
 
 export function directoryEdgePathPoints(
   source: LayoutNodePosition,
@@ -68,15 +70,38 @@ export function focusedCircularBundleEdgePathPoints(
 ): Vector3[] {
   const sourceAnchor = nodeCenter(source);
   const targetAnchor = nodeCenter(target);
-  const sourceControl = bundleControlPoint(sourceAnchor, targetAnchor, bundleCenter, FOCUSED_EDGE_BUNDLE_PULL);
-  const targetControl = bundleControlPoint(targetAnchor, sourceAnchor, bundleCenter, FOCUSED_EDGE_BUNDLE_PULL);
+  const bundlePath = bundledRadialControlPath(sourceAnchor, targetAnchor, bundleCenter);
+  const straightenedPath = bundlePath.map((point, index) => {
+    const straightPoint = sourceAnchor.clone().lerp(targetAnchor, index / Math.max(1, bundlePath.length - 1));
+    return straightPoint.lerp(point, FOCUSED_EDGE_BUNDLE_BETA);
+  });
 
-  return new CubicBezierCurve3(
+  return new CatmullRomCurve3(straightenedPath, false, 'centripetal')
+    .getPoints(FOCUSED_EDGE_BUNDLE_SEGMENTS);
+}
+
+function bundledRadialControlPath(
+  sourceAnchor: Vector3,
+  targetAnchor: Vector3,
+  bundleCenter: Vector3,
+): Vector3[] {
+  const sourceRadius = Math.max(0.001, sourceAnchor.distanceTo(bundleCenter));
+  const targetRadius = Math.max(0.001, targetAnchor.distanceTo(bundleCenter));
+  const sourceDirection = sourceAnchor.clone().sub(bundleCenter).normalize();
+  const targetDirection = targetAnchor.clone().sub(bundleCenter).normalize();
+  const sourceInnerRadius = sourceRadius * FOCUSED_EDGE_BUNDLE_INNER_RADIUS_RATIO;
+  const targetInnerRadius = targetRadius * FOCUSED_EDGE_BUNDLE_INNER_RADIUS_RATIO;
+  const middleRadius = Math.min(sourceRadius, targetRadius) * FOCUSED_EDGE_BUNDLE_MIDDLE_RADIUS_RATIO;
+
+  return [
     sourceAnchor,
-    sourceControl,
-    targetControl,
+    bundleCenter.clone().add(sourceDirection.clone().multiplyScalar(sourceInnerRadius)),
+    bundleCenter.clone().add(sourceDirection.clone().multiplyScalar(middleRadius)),
+    bundleCenter.clone(),
+    bundleCenter.clone().add(targetDirection.clone().multiplyScalar(middleRadius)),
+    bundleCenter.clone().add(targetDirection.clone().multiplyScalar(targetInnerRadius)),
     targetAnchor,
-  ).getPoints(FOCUSED_EDGE_BUNDLE_SEGMENTS);
+  ];
 }
 
 function edgeHandleLength(sourceAnchor: Vector3, targetAnchor: Vector3): number {
@@ -105,16 +130,4 @@ function nodeTop(node: LayoutNodePosition): Vector3 {
 
 function nodeCenter(node: LayoutNodePosition): Vector3 {
   return new Vector3(node.position.x, node.position.y, node.position.z);
-}
-
-function bundleControlPoint(
-  anchor: Vector3,
-  oppositeAnchor: Vector3,
-  bundleCenter: Vector3,
-  bundlePull: number,
-): Vector3 {
-  return anchor
-    .clone()
-    .lerp(oppositeAnchor, 0.28)
-    .lerp(bundleCenter, bundlePull);
 }

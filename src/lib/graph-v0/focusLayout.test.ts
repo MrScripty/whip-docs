@@ -125,6 +125,26 @@ test('focusedFileOffsets circular layout places files on a ring', () => {
   assert.ok(radii.every((radius) => approximatelyEqual(radius, radii[0] ?? 0)));
 });
 
+test('focusedFileOffsets circular layout clusters related files around the ring', () => {
+  const edges: RenderGraphEdge[] = [
+    { id: 'a-b', kind: 'imports', fromNodeId: 'a', toNodeId: 'b', weight: 4 },
+    { id: 'b-c', kind: 'calls', fromNodeId: 'b', toNodeId: 'c', weight: 3 },
+    { id: 'd-e', kind: 'imports', fromNodeId: 'd', toNodeId: 'e', weight: 4 },
+    { id: 'e-f', kind: 'calls', fromNodeId: 'e', toNodeId: 'f', weight: 3 },
+  ];
+  const offsets = focusedFileOffsets(['a', 'd', 'b', 'e', 'c', 'f'], edges, {
+    algorithm: 'circular',
+    spacing: 5,
+  });
+
+  assert.ok(
+    ringDistance(offsets, 'a', 'c') < ringDistance(offsets, 'a', 'd'),
+  );
+  assert.ok(
+    ringDistance(offsets, 'd', 'f') < ringDistance(offsets, 'd', 'a'),
+  );
+});
+
 function requiredOffset(
   offsets: ReadonlyMap<string, { readonly x: number; readonly y: number }>,
   id: string,
@@ -144,4 +164,12 @@ function distance(
 
 function approximatelyEqual(left: number, right: number): boolean {
   return Math.abs(left - right) < 0.000001;
+}
+
+function ringDistance(
+  offsets: ReadonlyMap<string, { readonly x: number; readonly y: number }>,
+  leftId: string,
+  rightId: string,
+): number {
+  return distance(requiredOffset(offsets, leftId), requiredOffset(offsets, rightId));
 }
