@@ -1124,16 +1124,15 @@ export class DirectoryGraphScene {
     const runMidAngle = this.focusedRingAngle(runMidIndex, leafCount);
     const runSize = Math.max(1, runEndIndex - runStartIndex + 1);
     const runRadiusRatio = Math.max(0.48, Math.min(0.9, 1 - Math.pow(runSize / leafCount, 0.75)));
-    const trunkRadiusRatio = Math.max(0.16, runRadiusRatio - 0.28);
-    const trunkAngle = sourceAngle + normalizedAngleDelta(runMidAngle - sourceAngle) * 0.52;
+    const sourceTrunkRadiusRatio = 0.18;
     const sourcePoint = vectorFromPosition(source);
     const targetPoint = vectorFromPosition(target);
     const controlPath = [
       sourcePoint,
       this.focusedBundlePlanePosition(
         focusedView,
-        trunkAngle,
-        focusedView.hierarchyRadius * trunkRadiusRatio,
+        sourceAngle,
+        focusedView.hierarchyRadius * sourceTrunkRadiusRatio,
         bundleCenter,
       ),
       this.focusedBundlePlanePosition(
@@ -2691,10 +2690,6 @@ function relationPairKey(leftNodeId: string, rightNodeId: string): string {
   return leftNodeId < rightNodeId
     ? directedRelationKey(leftNodeId, rightNodeId)
     : directedRelationKey(rightNodeId, leftNodeId);
-}
-
-function normalizedAngleDelta(angle: number): number {
-  return Math.atan2(Math.sin(angle), Math.cos(angle));
 }
 
 function labelTexture(label: string, theme: DirectoryGraphSceneTheme): CanvasTexture {

@@ -115,10 +115,10 @@ mounts and disposes.
   to target file, with D3-style beta straightening over a cubic basis spline.
   Internal hierarchy controls are stable for each file/module group and are
   placed by the group's ring-span size. Adjacency fanout bundling groups a
-  selected/source file's connected targets by contiguous ring runs, routes each
-  run through a shared trunk and segment fanout point, then evenly fans out near
-  the outer ring. None leaves circular focused edges on the configured edge
-  style without bundling.
+  selected/source file's connected targets by contiguous ring runs, routes them
+  through a shared inward source trunk, then splits each run at a segment fanout
+  point near the outer ring. None leaves circular focused edges on the
+  configured edge style without bundling.
   Focused file views dim file relation edges that cross out of the focused
   directory. Internal focused edges use directional and bidirectional colors;
   selecting a focused file recolors its incoming, outgoing, and bidirectional
