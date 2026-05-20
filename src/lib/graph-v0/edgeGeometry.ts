@@ -2,8 +2,9 @@ import { CubicBezierCurve3, Vector3 } from 'three';
 import type { DirectoryGraphEdgeStyle, LayoutNodePosition } from './types';
 
 export const EDGE_CURVE_SEGMENTS = 28;
-export const FOCUSED_EDGE_BUNDLE_SEGMENTS = 36;
+export const FOCUSED_EDGE_BUNDLE_SAMPLES_PER_SEGMENT = 14;
 const FOCUSED_EDGE_BUNDLE_BETA = 0.85;
+const FOCUSED_EDGE_BUNDLE_MIN_POINT_DISTANCE = 0.001;
 
 export function directoryEdgePathPoints(
   source: LayoutNodePosition,
@@ -68,69 +69,120 @@ export function focusedCircularBundleEdgePathPoints(
     return controlPath.map((point) => point.clone());
   }
 
-  const sourceAnchor = controlPath[0]?.clone() ?? new Vector3();
-  const targetAnchor = controlPath[controlPath.length - 1]?.clone() ?? sourceAnchor.clone();
-  const straightenedPath = controlPath.map((point, index) => {
-    const straightPoint = sourceAnchor.clone().lerp(targetAnchor, index / Math.max(1, controlPath.length - 1));
+  const compactPath = compactControlPath(controlPath);
+
+  if (compactPath.length < 2) {
+    return compactPath.map((point) => point.clone());
+  }
+
+  const sourceAnchor = compactPath[0]?.clone() ?? new Vector3();
+  const targetAnchor = compactPath[compactPath.length - 1]?.clone() ?? sourceAnchor.clone();
+  const straightenedPath = compactPath.map((point, index) => {
+    const straightPoint = sourceAnchor.clone().lerp(targetAnchor, index / Math.max(1, compactPath.length - 1));
     return straightPoint.lerp(point, FOCUSED_EDGE_BUNDLE_BETA);
   });
 
-  return cubicBasisSplinePoints(straightenedPath, FOCUSED_EDGE_BUNDLE_SEGMENTS);
+  return cubicBasisSplinePoints(straightenedPath, FOCUSED_EDGE_BUNDLE_SAMPLES_PER_SEGMENT);
 }
 
-function cubicBasisSplinePoints(controlPath: readonly Vector3[], segmentCount: number): Vector3[] {
+function compactControlPath(controlPath: readonly Vector3[]): Vector3[] {
+  const compactPath: Vector3[] = [];
+
+  for (const point of controlPath) {
+    const previousPoint = compactPath[compactPath.length - 1];
+
+    if (previousPoint && previousPoint.distanceTo(point) < FOCUSED_EDGE_BUNDLE_MIN_POINT_DISTANCE) {
+      continue;
+    }
+
+    compactPath.push(point.clone());
+  }
+
+  return compactPath;
+}
+
+function cubicBasisSplinePoints(controlPath: readonly Vector3[], samplesPerSegment: number): Vector3[] {
   if (controlPath.length < 2) {
     return controlPath.map((point) => point.clone());
   }
 
   const firstPoint = controlPath[0]?.clone() ?? new Vector3();
   const lastPoint = controlPath[controlPath.length - 1]?.clone() ?? firstPoint.clone();
-  const paddedPath = [
-    firstPoint.clone(),
-    firstPoint.clone(),
-    ...controlPath.map((point) => point.clone()),
-    lastPoint.clone(),
-    lastPoint.clone(),
-  ];
-  const splineSegmentCount = Math.max(1, paddedPath.length - 3);
-  const samplesPerSegment = Math.max(2, Math.ceil(segmentCount / splineSegmentCount));
-  const points: Vector3[] = [];
+  const points = [firstPoint];
 
-  for (let segmentIndex = 0; segmentIndex < splineSegmentCount; segmentIndex += 1) {
-    const p0 = paddedPath[segmentIndex] ?? firstPoint;
-    const p1 = paddedPath[segmentIndex + 1] ?? firstPoint;
-    const p2 = paddedPath[segmentIndex + 2] ?? lastPoint;
-    const p3 = paddedPath[segmentIndex + 3] ?? lastPoint;
-    const startSample = segmentIndex === 0 ? 0 : 1;
-
-    for (let sampleIndex = startSample; sampleIndex <= samplesPerSegment; sampleIndex += 1) {
-      points.push(cubicBasisPoint(p0, p1, p2, p3, sampleIndex / samplesPerSegment));
-    }
+  if (controlPath.length === 2) {
+    appendLineSamples(points, firstPoint, lastPoint, samplesPerSegment);
+    return points;
   }
 
-  points[0] = firstPoint;
-  points[points.length - 1] = lastPoint;
+  let previousPoint = firstPoint;
+  appendLineSamples(points, previousPoint, weightedPoint(firstPoint, firstPoint, controlPath[1] ?? firstPoint, 0, 5, 1), samplesPerSegment);
+  previousPoint = points[points.length - 1] ?? previousPoint;
+
+  for (let index = 2; index < controlPath.length; index += 1) {
+    const p0 = controlPath[index - 2] ?? firstPoint;
+    const p1 = controlPath[index - 1] ?? firstPoint;
+    const p2 = controlPath[index] ?? lastPoint;
+    const control1 = weightedPoint(p0, p1, p2, 2, 1, 0);
+    const control2 = weightedPoint(p0, p1, p2, 1, 2, 0);
+    const nextPoint = weightedPoint(p0, p1, p2, 1, 4, 1);
+
+    appendCubicBezierSamples(points, previousPoint, control1, control2, nextPoint, samplesPerSegment);
+    previousPoint = nextPoint;
+  }
+
+  const penultimatePoint = controlPath[controlPath.length - 2] ?? firstPoint;
+  appendLineSamples(points, previousPoint, weightedPoint(penultimatePoint, lastPoint, lastPoint, 1, 5, 0), samplesPerSegment);
+  appendLineSamples(points, points[points.length - 1] ?? previousPoint, lastPoint, samplesPerSegment);
 
   return points;
 }
 
-function cubicBasisPoint(
-  p0: Vector3,
-  p1: Vector3,
-  p2: Vector3,
-  p3: Vector3,
-  t: number,
-): Vector3 {
+function appendLineSamples(
+  points: Vector3[],
+  startPoint: Vector3,
+  endPoint: Vector3,
+  samplesPerSegment: number,
+): void {
+  for (let sampleIndex = 1; sampleIndex <= samplesPerSegment; sampleIndex += 1) {
+    points.push(startPoint.clone().lerp(endPoint, sampleIndex / samplesPerSegment));
+  }
+}
+
+function appendCubicBezierSamples(
+  points: Vector3[],
+  startPoint: Vector3,
+  control1: Vector3,
+  control2: Vector3,
+  endPoint: Vector3,
+  samplesPerSegment: number,
+): void {
+  for (let sampleIndex = 1; sampleIndex <= samplesPerSegment; sampleIndex += 1) {
+    points.push(cubicBezierPoint(startPoint, control1, control2, endPoint, sampleIndex / samplesPerSegment));
+  }
+}
+
+function cubicBezierPoint(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: number): Vector3 {
   const oneMinusT = 1 - t;
-  const b0 = (oneMinusT * oneMinusT * oneMinusT) / 6;
-  const b1 = (3 * t * t * t - 6 * t * t + 4) / 6;
-  const b2 = (-3 * t * t * t + 3 * t * t + 3 * t + 1) / 6;
-  const b3 = (t * t * t) / 6;
+  const b0 = oneMinusT * oneMinusT * oneMinusT;
+  const b1 = 3 * oneMinusT * oneMinusT * t;
+  const b2 = 3 * oneMinusT * t * t;
+  const b3 = t * t * t;
 
   return new Vector3(
     p0.x * b0 + p1.x * b1 + p2.x * b2 + p3.x * b3,
     p0.y * b0 + p1.y * b1 + p2.y * b2 + p3.y * b3,
     p0.z * b0 + p1.z * b1 + p2.z * b2 + p3.z * b3,
+  );
+}
+
+function weightedPoint(p0: Vector3, p1: Vector3, p2: Vector3, w0: number, w1: number, w2: number): Vector3 {
+  const totalWeight = w0 + w1 + w2;
+
+  return new Vector3(
+    (p0.x * w0 + p1.x * w1 + p2.x * w2) / totalWeight,
+    (p0.y * w0 + p1.y * w1 + p2.y * w2) / totalWeight,
+    (p0.z * w0 + p1.z * w1 + p2.z * w2) / totalWeight,
   );
 }
 
