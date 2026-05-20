@@ -112,8 +112,10 @@ mounts and disposes.
   clusters in contiguous ring arcs, and grid keeps the deterministic fallback
   plane. Circular focused edges use a D3-inspired hierarchy path: source file to
   least common cluster ancestor to target file, with beta-style bundling over
-  that path. Nearby files route through shallow local ancestors instead of the
-  directory center; unrelated clusters can still route through the root.
+  that path. Internal control points are placed by cluster leaf-span size, so
+  nearby files route through shallow local arcs near the outer ring instead of
+  being pulled into the directory center; unrelated clusters can still route
+  through the root.
   Focused file views dim file relation edges that cross out of the focused
   directory. Internal focused edges use directional and bidirectional colors;
   selecting a focused file recolors its incoming, outgoing, and bidirectional

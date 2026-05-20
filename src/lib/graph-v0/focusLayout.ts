@@ -154,6 +154,24 @@ export function focusedFileHierarchyPath(
   ];
 }
 
+export function focusedFileHierarchyRadiusRatio(
+  hierarchyNode: FocusedFileHierarchyNode,
+  leafCount: number,
+): number {
+  if (hierarchyNode.depth === 0 || leafCount <= 1) {
+    return 0;
+  }
+
+  const spanSize = Math.max(1, hierarchyNode.leafEndIndex - hierarchyNode.leafStartIndex + 1);
+
+  if (spanSize <= 1) {
+    return 1;
+  }
+
+  const normalizedSpan = Math.log2(spanSize) / Math.max(1, Math.log2(leafCount));
+  return Math.max(0, Math.min(1, 1 - normalizedSpan));
+}
+
 function normalizeFocusedFileLayoutOptions(
   options: number | FocusedFileLayoutOptions,
 ): Required<FocusedFileLayoutOptions> {

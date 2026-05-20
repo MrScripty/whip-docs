@@ -63,6 +63,7 @@ import {
 import {
   buildFocusedFileHierarchy,
   focusedFileHierarchyPath,
+  focusedFileHierarchyRadiusRatio,
   focusedFileOffsets,
   type FocusedFileHierarchy,
   type FocusedFileHierarchyNode,
@@ -1072,8 +1073,7 @@ export class DirectoryGraphScene {
     const leafCount = Math.max(1, focusedView.fileHierarchy.leafOrder.length);
     const spanCenterIndex = (hierarchyNode.leafStartIndex + hierarchyNode.leafEndIndex) / 2;
     const angle = (spanCenterIndex / leafCount) * Math.PI * 2 - Math.PI / 2;
-    const hierarchyRadius = focusedView.hierarchyRadius *
-      (hierarchyNode.depth / Math.max(1, focusedView.fileHierarchy.maxDepth));
+    const hierarchyRadius = focusedView.hierarchyRadius * focusedFileHierarchyRadiusRatio(hierarchyNode, leafCount);
     const right = new Vector3(
       focusedView.bundleRight.x,
       focusedView.bundleRight.y,

@@ -13,7 +13,12 @@ registerHooks({
   },
 });
 
-const { buildFocusedFileHierarchy, focusedFileHierarchyPath, focusedFileOffsets } = (await import(
+const {
+  buildFocusedFileHierarchy,
+  focusedFileHierarchyPath,
+  focusedFileHierarchyRadiusRatio,
+  focusedFileOffsets,
+} = (await import(
   new URL('./focusLayout.ts', import.meta.url).href
 )) as typeof import('./focusLayout');
 
@@ -159,6 +164,21 @@ test('focusedFileHierarchyPath uses shallow ancestors for local edges and root f
 
   assert.ok(localPath.length < bridgePath.length);
   assert.ok(distantPath.some((node) => node.id === hierarchy.root.id));
+});
+
+test('focusedFileHierarchyRadiusRatio keeps small clusters near the outer ring', () => {
+  const edges: RenderGraphEdge[] = [
+    { id: 'a-b', kind: 'imports', fromNodeId: 'a', toNodeId: 'b', weight: 8 },
+    { id: 'b-c', kind: 'calls', fromNodeId: 'b', toNodeId: 'c', weight: 5 },
+    { id: 'c-d', kind: 'calls', fromNodeId: 'c', toNodeId: 'd', weight: 1 },
+  ];
+  const hierarchy = buildFocusedFileHierarchy(['a', 'b', 'c', 'd'], edges);
+  const path = focusedFileHierarchyPath(hierarchy, 'a', 'b');
+  const localAncestor = path.find((node) => node.children.length > 0 && node.id !== hierarchy.root.id);
+
+  assert.ok(localAncestor);
+  assert.equal(focusedFileHierarchyRadiusRatio(hierarchy.root, hierarchy.leafOrder.length), 0);
+  assert.ok(focusedFileHierarchyRadiusRatio(localAncestor, hierarchy.leafOrder.length) > 0.4);
 });
 
 function requiredOffset(
