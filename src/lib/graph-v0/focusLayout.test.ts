@@ -216,7 +216,7 @@ test('focusedFileHierarchyRadiusRatio keeps small clusters near the outer ring',
 
   assert.ok(localAncestor);
   assert.equal(focusedFileHierarchyRadiusRatio(hierarchy.root, hierarchy.leafOrder.length), 0);
-  assert.ok(focusedFileHierarchyRadiusRatio(localAncestor, hierarchy.leafOrder.length) > 0.4);
+  assert.ok(focusedFileHierarchyRadiusRatio(localAncestor, hierarchy.leafOrder.length) > 0.3);
 });
 
 function fileNode(id: string, name: string): { readonly id: string; readonly name: string; readonly path: string } {

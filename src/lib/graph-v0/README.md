@@ -112,11 +112,10 @@ mounts and disposes.
   groups in contiguous ring arcs, and grid keeps the deterministic fallback
   plane. Circular focused edges use a D3-inspired hierarchy path: source file to
   least common file/module ancestor to target file, with D3-style beta
-  straightening over a cubic basis spline. Internal control points are placed by
-  cluster leaf-span size and by the source-to-target angular separation, so
-  nearby files route through shallow local arcs near the outer ring instead of
-  being pulled into the directory center; unrelated clusters can still route
-  through the root.
+  straightening over a cubic basis spline. Internal control points are stable
+  for each file/module group and are placed by the group's ring-span size, so
+  adjacent targets remain bundled until their shared segment can fan out near
+  the outer ring; unrelated clusters can still route through the root.
   Focused file views dim file relation edges that cross out of the focused
   directory. Internal focused edges use directional and bidirectional colors;
   selecting a focused file recolors its incoming, outgoing, and bidirectional
