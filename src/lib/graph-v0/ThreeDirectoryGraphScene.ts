@@ -122,8 +122,11 @@ type FocusedDirectoryView = {
   readonly directoryNodeId: string;
   readonly hiddenEdgeIds: readonly string[];
   readonly fileNodeIds: readonly string[];
+  readonly hierarchyRadius: number;
   readonly layoutAlgorithm: FocusedFileLayoutAlgorithmId;
   readonly bundleCenter: Vec3;
+  readonly bundleRight: Vec3;
+  readonly bundleUp: Vec3;
 };
 
 type PointerDragState = {
@@ -850,10 +853,13 @@ export class DirectoryGraphScene {
     const radius = Math.max(4, focusRadius + spacing);
     this.focusedDirectoryView = {
       bundleCenter: { x: center.x, y: center.y, z: center.z },
+      bundleRight: { x: right.x, y: right.y, z: right.z },
+      bundleUp: { x: up.x, y: up.y, z: up.z },
       directoryNodeId,
       fileHierarchy,
       hiddenEdgeIds,
       fileNodeIds,
+      hierarchyRadius: focusRadius,
       layoutAlgorithm: this.currentFocusedFileLayoutAlgorithm,
     };
     this.syncConnectedEdgeGeometry(fileNodeIds);
@@ -1063,32 +1069,26 @@ export class DirectoryGraphScene {
       return bundleCenter;
     }
 
-    const leafPositions = hierarchyNode.fileNodeIds
-      .map((fileNodeId) => this.nodeEntries.get(fileNodeId)?.mesh.position)
-      .filter((position): position is Vector3 => position !== undefined);
-
-    if (leafPositions.length === 0) {
-      return bundleCenter;
-    }
-
-    const direction = leafPositions.reduce((total, position) => {
-      const leafDirection = position.clone().sub(bundleCenter);
-      return leafDirection.lengthSq() === 0
-        ? total
-        : total.add(leafDirection.normalize());
-    }, new Vector3());
-    const fallbackDirection = leafPositions[0]?.clone().sub(bundleCenter) ?? new Vector3(1, 0, 0);
-    const normalizedDirection = direction.lengthSq() > 0
-      ? direction.normalize()
-      : fallbackDirection.normalize();
-    const averageLeafRadius = leafPositions.reduce(
-      (total, position) => total + position.distanceTo(bundleCenter),
-      0,
-    ) / leafPositions.length;
-    const hierarchyRadius = averageLeafRadius *
+    const leafCount = Math.max(1, focusedView.fileHierarchy.leafOrder.length);
+    const spanCenterIndex = (hierarchyNode.leafStartIndex + hierarchyNode.leafEndIndex) / 2;
+    const angle = (spanCenterIndex / leafCount) * Math.PI * 2 - Math.PI / 2;
+    const hierarchyRadius = focusedView.hierarchyRadius *
       (hierarchyNode.depth / Math.max(1, focusedView.fileHierarchy.maxDepth));
+    const right = new Vector3(
+      focusedView.bundleRight.x,
+      focusedView.bundleRight.y,
+      focusedView.bundleRight.z,
+    );
+    const up = new Vector3(
+      focusedView.bundleUp.x,
+      focusedView.bundleUp.y,
+      focusedView.bundleUp.z,
+    );
 
-    return bundleCenter.clone().add(normalizedDirection.multiplyScalar(hierarchyRadius));
+    return bundleCenter
+      .clone()
+      .add(right.multiplyScalar(Math.cos(angle) * hierarchyRadius))
+      .add(up.multiplyScalar(Math.sin(angle) * hierarchyRadius));
   }
 
   private dynamicLayoutPosition(nodeId: string): LayoutNodePosition | null {

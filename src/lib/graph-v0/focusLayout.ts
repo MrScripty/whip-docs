@@ -24,6 +24,8 @@ export type FocusedFileHierarchyNode = {
   readonly fileNodeIds: readonly string[];
   readonly children: readonly FocusedFileHierarchyNode[];
   readonly depth: number;
+  readonly leafEndIndex: number;
+  readonly leafStartIndex: number;
 };
 
 export type FocusedFileHierarchy = {
@@ -104,7 +106,7 @@ export function buildFocusedFileHierarchy(
     children: componentRoots,
     fileNodeIds: componentRoots.flatMap((componentRoot) => componentRoot.fileNodeIds),
     id: 'root',
-  }, 0);
+  }, 0, 0).node;
   const leafByFileNodeId = new Map<string, FocusedFileHierarchyNode>();
   const parentByNodeId = new Map<string, FocusedFileHierarchyNode>();
   let maxDepth = 0;
@@ -429,15 +431,43 @@ function leafHierarchyNode(fileNodeId: string): FocusedFileHierarchyBuildNode {
 function finalizeFocusedFileHierarchyNode(
   node: FocusedFileHierarchyBuildNode,
   depth: number,
-): FocusedFileHierarchyNode {
-  const children = node.children.map((child) => finalizeFocusedFileHierarchyNode(child, depth + 1));
+  nextLeafIndex: number,
+): { readonly node: FocusedFileHierarchyNode; readonly nextLeafIndex: number } {
+  if (node.children.length === 0) {
+    return {
+      nextLeafIndex: nextLeafIndex + 1,
+      node: {
+        children: [],
+        depth,
+        fileNodeId: node.fileNodeId,
+        fileNodeIds: node.fileNodeIds,
+        id: node.id,
+        leafEndIndex: nextLeafIndex,
+        leafStartIndex: nextLeafIndex,
+      },
+    };
+  }
+
+  const children: FocusedFileHierarchyNode[] = [];
+  let cursor = nextLeafIndex;
+
+  for (const child of node.children) {
+    const finalizedChild = finalizeFocusedFileHierarchyNode(child, depth + 1, cursor);
+    children.push(finalizedChild.node);
+    cursor = finalizedChild.nextLeafIndex;
+  }
 
   return {
-    children,
-    depth,
-    fileNodeId: node.fileNodeId,
-    fileNodeIds: node.fileNodeIds,
-    id: node.id,
+    nextLeafIndex: cursor,
+    node: {
+      children,
+      depth,
+      fileNodeId: node.fileNodeId,
+      fileNodeIds: node.fileNodeIds,
+      id: node.id,
+      leafEndIndex: children[children.length - 1]?.leafEndIndex ?? nextLeafIndex,
+      leafStartIndex: children[0]?.leafStartIndex ?? nextLeafIndex,
+    },
   };
 }
 
