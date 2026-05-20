@@ -45,6 +45,7 @@ export type {
   DirectoryGraphSceneControlMode,
   DirectoryGraphNeighborhood,
   FileRelationDetail,
+  FocusedCircularBundlingMode,
   FocusedFileLayoutAlgorithmId,
   GraphEdgeConfidence,
   GraphEdgeDirection,

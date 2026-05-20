@@ -85,6 +85,7 @@ import type {
   DirectoryGraphSceneControlMode,
   DirectoryGraphEdgeStyle,
   DirectoryGraphLeafEdgeStyle,
+  FocusedCircularBundlingMode,
   FocusedFileLayoutAlgorithmId,
   GraphNodeKind,
   LayoutOptions,
@@ -125,9 +126,16 @@ type FocusedDirectoryView = {
   readonly fileNodeIds: readonly string[];
   readonly hierarchyRadius: number;
   readonly layoutAlgorithm: FocusedFileLayoutAlgorithmId;
+  readonly bundlingMode: FocusedCircularBundlingMode;
   readonly bundleCenter: Vec3;
   readonly bundleRight: Vec3;
   readonly bundleUp: Vec3;
+};
+
+type FocusedAdjacencyFanout = {
+  readonly sourceNodeId: string;
+  readonly targetNodeId: string;
+  readonly runNodeIds: readonly string[];
 };
 
 type PointerDragState = {
@@ -259,6 +267,7 @@ export class DirectoryGraphScene {
   private currentRootEdgeStyle: DirectoryGraphEdgeStyle | null = null;
   private currentLeafDirectoryEdgeStyle: DirectoryGraphLeafEdgeStyle | null = null;
   private currentFocusedFileLayoutAlgorithm: FocusedFileLayoutAlgorithmId = 'circular';
+  private currentFocusedCircularBundlingMode: FocusedCircularBundlingMode = 'hierarchy';
   private currentLayoutBounds: LayoutBounds | null = null;
   private focusedDirectoryView: FocusedDirectoryView | null = null;
   private cameraTransition: CameraTransition | null = null;
@@ -301,6 +310,7 @@ export class DirectoryGraphScene {
     const rootEdgeStyle = options.rootEdgeStyle ?? edgeStyle;
     const leafDirectoryEdgeStyle = options.leafDirectoryEdgeStyle ?? 'global';
     const focusedFileLayoutAlgorithm = options.focusedFileLayoutAlgorithm ?? 'circular';
+    const focusedCircularBundlingMode = options.focusedCircularBundlingMode ?? 'hierarchy';
     if (
       this.currentGraph !== graph ||
       this.currentLayoutAlgorithm !== options.layoutAlgorithm ||
@@ -331,6 +341,19 @@ export class DirectoryGraphScene {
       if (focusedDirectoryNodeId) {
         this.exitFocusedDirectoryView();
         this.enterFocusedDirectoryView(focusedDirectoryNodeId);
+      }
+    }
+
+    if (this.currentFocusedCircularBundlingMode !== focusedCircularBundlingMode) {
+      this.currentFocusedCircularBundlingMode = focusedCircularBundlingMode;
+      const focusedFileNodeIds = this.focusedDirectoryView?.fileNodeIds ?? [];
+
+      if (this.focusedDirectoryView) {
+        this.focusedDirectoryView = {
+          ...this.focusedDirectoryView,
+          bundlingMode: focusedCircularBundlingMode,
+        };
+        this.syncConnectedEdgeGeometry(focusedFileNodeIds);
       }
     }
 
@@ -467,6 +490,11 @@ export class DirectoryGraphScene {
     const visibleEdgesChanged = this.activeVisibleEdgeIds !== nextVisibleEdgeIds;
     const nextSelectionState = this.selectionStateForOptions(options);
     const selectionDiff = diffSelectionState(this.activeSelectionState, nextSelectionState);
+    const focusedSelectionChanged = Boolean(
+      this.focusedDirectoryView &&
+      this.focusedDirectoryView.bundlingMode === 'adjacency-fanout' &&
+      this.activeSelectedNodeId !== selectedNodeId,
+    );
     const changedNodeIds = new Set([
       ...selectionDiff.enteredHighlightedNodeIds,
       ...selectionDiff.exitedHighlightedNodeIds,
@@ -551,6 +579,10 @@ export class DirectoryGraphScene {
     this.activeSelectedEdgeId = selectedEdgeId;
     this.activeNodeDistanceById = nextNodeDistanceById;
     this.activeVisibleEdgeIds = nextVisibleEdgeIds;
+
+    if (focusedSelectionChanged && this.focusedDirectoryView) {
+      this.syncConnectedEdgeGeometry(this.focusedDirectoryView.fileNodeIds);
+    }
   }
 
   dispose(): void {
@@ -866,6 +898,7 @@ export class DirectoryGraphScene {
       fileNodeIds,
       hierarchyRadius: focusRadius,
       layoutAlgorithm: this.currentFocusedFileLayoutAlgorithm,
+      bundlingMode: this.currentFocusedCircularBundlingMode,
     };
     this.syncConnectedEdgeGeometry(fileNodeIds);
     this.restyleConnectedEdges(fileNodeIds);
@@ -1035,6 +1068,14 @@ export class DirectoryGraphScene {
       return null;
     }
 
+    if (focusedView.bundlingMode === 'none') {
+      return null;
+    }
+
+    if (focusedView.bundlingMode === 'adjacency-fanout') {
+      return this.focusedAdjacencyFanoutPathPoints(edgeEntry, focusedView);
+    }
+
     const hierarchyPath = focusedFileHierarchyPath(
       focusedView.fileHierarchy,
       edgeEntry.fromNodeId,
@@ -1048,6 +1089,157 @@ export class DirectoryGraphScene {
     ));
 
     return focusedCircularBundleEdgePathPoints(controlPath);
+  }
+
+  private focusedAdjacencyFanoutPathPoints(
+    edgeEntry: EdgeSceneEntry,
+    focusedView: FocusedDirectoryView,
+  ): Vector3[] | null {
+    const fanout = this.focusedAdjacencyFanout(edgeEntry, focusedView);
+
+    if (!fanout) {
+      return null;
+    }
+
+    const source = this.dynamicLayoutPosition(fanout.sourceNodeId);
+    const target = this.dynamicLayoutPosition(fanout.targetNodeId);
+
+    if (!source || !target) {
+      return null;
+    }
+
+    const bundleCenter = new Vector3(
+      focusedView.bundleCenter.x,
+      focusedView.bundleCenter.y,
+      focusedView.bundleCenter.z,
+    );
+    const leafCount = Math.max(1, focusedView.fileHierarchy.leafOrder.length);
+    const sourceLeaf = focusedView.fileHierarchy.leafByFileNodeId.get(fanout.sourceNodeId);
+    const sourceAngle = this.focusedRingAngle(sourceLeaf?.leafStartIndex ?? 0, leafCount);
+    const runStartIndex = Math.min(...fanout.runNodeIds.map((nodeId) =>
+      focusedView.fileHierarchy.leafByFileNodeId.get(nodeId)?.leafStartIndex ?? 0));
+    const runEndIndex = Math.max(...fanout.runNodeIds.map((nodeId) =>
+      focusedView.fileHierarchy.leafByFileNodeId.get(nodeId)?.leafStartIndex ?? 0));
+    const runMidIndex = (runStartIndex + runEndIndex) / 2;
+    const runMidAngle = this.focusedRingAngle(runMidIndex, leafCount);
+    const runSize = Math.max(1, runEndIndex - runStartIndex + 1);
+    const runRadiusRatio = Math.max(0.48, Math.min(0.9, 1 - Math.pow(runSize / leafCount, 0.75)));
+    const trunkRadiusRatio = Math.max(0.16, runRadiusRatio - 0.28);
+    const trunkAngle = sourceAngle + normalizedAngleDelta(runMidAngle - sourceAngle) * 0.52;
+    const sourcePoint = vectorFromPosition(source);
+    const targetPoint = vectorFromPosition(target);
+    const controlPath = [
+      sourcePoint,
+      this.focusedBundlePlanePosition(
+        focusedView,
+        trunkAngle,
+        focusedView.hierarchyRadius * trunkRadiusRatio,
+        bundleCenter,
+      ),
+      this.focusedBundlePlanePosition(
+        focusedView,
+        runMidAngle,
+        focusedView.hierarchyRadius * runRadiusRatio,
+        bundleCenter,
+      ),
+      targetPoint,
+    ];
+    const pathPoints = focusedCircularBundleEdgePathPoints(controlPath);
+
+    return fanout.sourceNodeId === edgeEntry.fromNodeId ? pathPoints : [...pathPoints].reverse();
+  }
+
+  private focusedAdjacencyFanout(
+    edgeEntry: EdgeSceneEntry,
+    focusedView: FocusedDirectoryView,
+  ): FocusedAdjacencyFanout | null {
+    const focusedFileNodeIds = new Set(focusedView.fileNodeIds);
+    const selectedFocusedFileId = this.activeSelectedNodeId && focusedFileNodeIds.has(this.activeSelectedNodeId)
+      ? this.activeSelectedNodeId
+      : null;
+    const sourceNodeId = selectedFocusedFileId &&
+      (edgeEntry.fromNodeId === selectedFocusedFileId || edgeEntry.toNodeId === selectedFocusedFileId)
+      ? selectedFocusedFileId
+      : edgeEntry.fromNodeId;
+    const targetNodeId = edgeEntry.fromNodeId === sourceNodeId ? edgeEntry.toNodeId : edgeEntry.fromNodeId;
+
+    if (!focusedFileNodeIds.has(sourceNodeId) || !focusedFileNodeIds.has(targetNodeId)) {
+      return null;
+    }
+
+    const targetNodeIds = this.focusedAdjacentTargetNodeIds(sourceNodeId, focusedView);
+    const targetIndex = targetNodeIds.indexOf(targetNodeId);
+
+    if (targetIndex < 0) {
+      return null;
+    }
+
+    return {
+      runNodeIds: this.focusedTargetRun(targetNodeIds, targetIndex, focusedView),
+      sourceNodeId,
+      targetNodeId,
+    };
+  }
+
+  private focusedAdjacentTargetNodeIds(
+    sourceNodeId: string,
+    focusedView: FocusedDirectoryView,
+  ): string[] {
+    const focusedFileNodeIds = new Set(focusedView.fileNodeIds);
+    const targetNodeIds = new Set<string>();
+
+    for (const edge of this.edgeEntries.values()) {
+      if (edge.fromNodeId === sourceNodeId && focusedFileNodeIds.has(edge.toNodeId)) {
+        targetNodeIds.add(edge.toNodeId);
+      } else if (edge.toNodeId === sourceNodeId && focusedFileNodeIds.has(edge.fromNodeId)) {
+        targetNodeIds.add(edge.fromNodeId);
+      }
+    }
+
+    return [...targetNodeIds].sort((leftNodeId, rightNodeId) =>
+      this.focusedLeafIndex(leftNodeId, focusedView) - this.focusedLeafIndex(rightNodeId, focusedView) ||
+      leftNodeId.localeCompare(rightNodeId));
+  }
+
+  private focusedTargetRun(
+    targetNodeIds: readonly string[],
+    targetIndex: number,
+    focusedView: FocusedDirectoryView,
+  ): readonly string[] {
+    const targetNodeId = targetNodeIds[targetIndex];
+
+    if (!targetNodeId) {
+      return [];
+    }
+
+    const runNodeIds = [targetNodeId];
+    const leafIndex = this.focusedLeafIndex(targetNodeId, focusedView);
+
+    for (let index = targetIndex - 1; index >= 0; index -= 1) {
+      const previousNodeId = targetNodeIds[index];
+
+      if (!previousNodeId || this.focusedLeafIndex(previousNodeId, focusedView) !== leafIndex - runNodeIds.length) {
+        break;
+      }
+
+      runNodeIds.unshift(previousNodeId);
+    }
+
+    for (let index = targetIndex + 1; index < targetNodeIds.length; index += 1) {
+      const nextNodeId = targetNodeIds[index];
+
+      if (!nextNodeId || this.focusedLeafIndex(nextNodeId, focusedView) !== leafIndex + (index - targetIndex)) {
+        break;
+      }
+
+      runNodeIds.push(nextNodeId);
+    }
+
+    return runNodeIds;
+  }
+
+  private focusedLeafIndex(nodeId: string, focusedView: FocusedDirectoryView): number {
+    return focusedView.fileHierarchy.leafByFileNodeId.get(nodeId)?.leafStartIndex ?? Number.MAX_SAFE_INTEGER;
   }
 
   private focusedHierarchyNodePosition(
@@ -1108,6 +1300,10 @@ export class DirectoryGraphScene {
       .clone()
       .add(right.multiplyScalar(Math.cos(angle) * radius))
       .add(up.multiplyScalar(Math.sin(angle) * radius));
+  }
+
+  private focusedRingAngle(leafIndex: number, leafCount: number): number {
+    return (leafIndex / Math.max(1, leafCount)) * Math.PI * 2 - Math.PI / 2;
   }
 
   private dynamicLayoutPosition(nodeId: string): LayoutNodePosition | null {
@@ -2495,6 +2691,10 @@ function relationPairKey(leftNodeId: string, rightNodeId: string): string {
   return leftNodeId < rightNodeId
     ? directedRelationKey(leftNodeId, rightNodeId)
     : directedRelationKey(rightNodeId, leftNodeId);
+}
+
+function normalizedAngleDelta(angle: number): number {
+  return Math.atan2(Math.sin(angle), Math.cos(angle));
 }
 
 function labelTexture(label: string, theme: DirectoryGraphSceneTheme): CanvasTexture {

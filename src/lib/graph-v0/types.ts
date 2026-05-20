@@ -37,6 +37,11 @@ export type FocusedFileLayoutAlgorithmId =
   | 'force-directed'
   | 'circular';
 
+export type FocusedCircularBundlingMode =
+  | 'hierarchy'
+  | 'adjacency-fanout'
+  | 'none';
+
 export type SourceLanguage = 'rust' | 'typescript' | 'javascript' | 'python' | 'csharp' | 'unknown';
 
 export type Vec3 = {
@@ -90,6 +95,7 @@ export type DirectoryGraphSceneTheme = {
 export type DirectoryGraphSceneOptions = {
   readonly layoutAlgorithm: LayoutAlgorithmId;
   readonly focusedFileLayoutAlgorithm?: FocusedFileLayoutAlgorithmId;
+  readonly focusedCircularBundlingMode?: FocusedCircularBundlingMode;
   readonly layoutOptions?: LayoutOptions;
   readonly edgeStyle?: DirectoryGraphEdgeStyle;
   readonly rootEdgeStyle?: DirectoryGraphEdgeStyle;

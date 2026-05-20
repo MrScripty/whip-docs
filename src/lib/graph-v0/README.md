@@ -110,12 +110,15 @@ mounts and disposes.
   upward and high-input files downward, force directed clusters related files,
   circular builds a temporary file/module name hierarchy and places related file
   groups in contiguous ring arcs, and grid keeps the deterministic fallback
-  plane. Circular focused edges use a D3-inspired hierarchy path: source file to
-  least common file/module ancestor to target file, with D3-style beta
-  straightening over a cubic basis spline. Internal control points are stable
-  for each file/module group and are placed by the group's ring-span size, so
-  adjacent targets remain bundled until their shared segment can fan out near
-  the outer ring; unrelated clusters can still route through the root.
+  plane. Circular edge bundling is separately selectable. Hierarchy bundling
+  uses a D3-inspired path from source file to least common file/module ancestor
+  to target file, with D3-style beta straightening over a cubic basis spline.
+  Internal hierarchy controls are stable for each file/module group and are
+  placed by the group's ring-span size. Adjacency fanout bundling groups a
+  selected/source file's connected targets by contiguous ring runs, routes each
+  run through a shared trunk and segment fanout point, then evenly fans out near
+  the outer ring. None leaves circular focused edges on the configured edge
+  style without bundling.
   Focused file views dim file relation edges that cross out of the focused
   directory. Internal focused edges use directional and bidirectional colors;
   selecting a focused file recolors its incoming, outgoing, and bidirectional

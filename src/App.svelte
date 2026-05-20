@@ -48,6 +48,7 @@
   let directorySceneModuleReady = $state(false);
   let directoryLayoutAlgorithm = $state('weighted-safe-radial-tree');
   let focusedFileLayoutAlgorithm = $state('circular');
+  let focusedCircularBundlingMode = $state('hierarchy');
   let directoryEdgeStyle = $state('c-curve');
   let directoryRootEdgeStyle = $state('elbow');
   let directoryLeafEdgeStyle = $state('straight');
@@ -145,6 +146,7 @@
         labeledNodeIds: selectedDirectoryNeighborhood.labeledNodeIds,
         layoutAlgorithm: directoryLayoutAlgorithm,
         focusedFileLayoutAlgorithm,
+        focusedCircularBundlingMode,
         edgeStyle: graphEdgeStyleValue(directoryEdgeStyle),
         rootEdgeStyle: graphEdgeStyleValue(directoryRootEdgeStyle),
         leafDirectoryEdgeStyle: graphLeafDirectoryEdgeStyleValue(directoryLeafEdgeStyle),
@@ -602,6 +604,14 @@
                 <option value="force-directed">Force directed</option>
                 <option value="circular">Circular</option>
                 <option value="grid">Grid</option>
+              </select>
+            </label>
+            <label class="settings-field" for="focused-circular-bundling-mode">
+              <span>Circle bundling</span>
+              <select id="focused-circular-bundling-mode" bind:value={focusedCircularBundlingMode} aria-label="Focused circular edge bundling">
+                <option value="hierarchy">Hierarchy</option>
+                <option value="adjacency-fanout">Adjacency fanout</option>
+                <option value="none">None</option>
               </select>
             </label>
             <label class="settings-field" for="directory-edge-style">
