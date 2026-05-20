@@ -1,4 +1,4 @@
-import type { FocusedFileLayoutAlgorithmId, RenderGraphEdge } from './types';
+import type { FocusedFileLayoutAlgorithmId, RenderGraphEdge, RenderGraphNode } from './types';
 
 export const FOCUSED_FILE_LAYOUT_ALGORITHMS: readonly FocusedFileLayoutAlgorithmId[] = [
   'grid',
@@ -16,6 +16,7 @@ export type FocusedFileOffset = {
 export type FocusedFileLayoutOptions = {
   readonly spacing: number;
   readonly algorithm?: FocusedFileLayoutAlgorithmId;
+  readonly fileNodes?: readonly Pick<RenderGraphNode, 'id' | 'name' | 'path'>[];
 };
 
 export type FocusedFileHierarchyNode = {
@@ -48,6 +49,13 @@ type FocusedFileHierarchyBuildNode = {
   readonly children: readonly FocusedFileHierarchyBuildNode[];
 };
 
+type MutableHierarchyNode = {
+  readonly id: string;
+  readonly children: Map<string, MutableHierarchyNode>;
+  fileNodeId?: string;
+  fileNodeIds: string[];
+};
+
 type LocalRelationGraph = {
   readonly relationEdges: readonly RenderGraphEdge[];
   readonly directedEdges: readonly RenderGraphEdge[];
@@ -61,7 +69,7 @@ export function focusedFileOffsets(
   relationEdges: readonly RenderGraphEdge[],
   options: number | FocusedFileLayoutOptions,
 ): ReadonlyMap<string, FocusedFileOffset> {
-  const { algorithm, spacing } = normalizeFocusedFileLayoutOptions(options);
+  const { algorithm, fileNodes, spacing } = normalizeFocusedFileLayoutOptions(options);
   const localGraph = localRelationGraph(fileNodeIds, relationEdges);
 
   if (algorithm === 'grid') {
@@ -69,7 +77,7 @@ export function focusedFileOffsets(
   }
 
   if (algorithm === 'circular') {
-    return circularFileOffsets(buildFocusedFileHierarchy(fileNodeIds, relationEdges).leafOrder, spacing);
+    return circularFileOffsets(buildFocusedFileHierarchy(fileNodeIds, relationEdges, fileNodes).leafOrder, spacing);
   }
 
   if (localGraph.relationEdges.length === 0) {
@@ -97,11 +105,13 @@ export function focusedFileOffsets(
 export function buildFocusedFileHierarchy(
   fileNodeIds: readonly string[],
   relationEdges: readonly RenderGraphEdge[],
+  fileNodes: readonly Pick<RenderGraphNode, 'id' | 'name' | 'path'>[] = [],
 ): FocusedFileHierarchy {
   const localGraph = localRelationGraph(fileNodeIds, relationEdges);
-  const componentRoots = localGraph.relationEdges.length === 0
+  const componentRoots = filePathHierarchyRoots(fileNodeIds, fileNodes, localGraph) ??
+    (localGraph.relationEdges.length === 0
     ? sortedLeafNodes(fileNodeIds, localGraph)
-    : focusedHierarchyComponentRoots(fileNodeIds, localGraph);
+    : focusedHierarchyComponentRoots(fileNodeIds, localGraph));
   const root = finalizeFocusedFileHierarchyNode({
     children: componentRoots,
     fileNodeIds: componentRoots.flatMap((componentRoot) => componentRoot.fileNodeIds),
@@ -176,11 +186,12 @@ function normalizeFocusedFileLayoutOptions(
   options: number | FocusedFileLayoutOptions,
 ): Required<FocusedFileLayoutOptions> {
   if (typeof options === 'number') {
-    return { algorithm: 'flow-layered', spacing: options };
+    return { algorithm: 'flow-layered', fileNodes: [], spacing: options };
   }
 
   return {
     algorithm: options.algorithm ?? 'flow-layered',
+    fileNodes: options.fileNodes ?? [],
     spacing: options.spacing,
   };
 }
@@ -236,6 +247,138 @@ function orderedFileNodeIds(
       (localGraph.relationFlowByNodeId.get(leftId) ?? 0);
     return degreeDelta || flowDelta || leftId.localeCompare(rightId);
   });
+}
+
+function filePathHierarchyRoots(
+  fileNodeIds: readonly string[],
+  fileNodes: readonly Pick<RenderGraphNode, 'id' | 'name' | 'path'>[],
+  localGraph: LocalRelationGraph,
+): FocusedFileHierarchyBuildNode[] | null {
+  const nodeById = new Map(fileNodes.map((node) => [node.id, node]));
+  const pathPartsById = new Map<string, readonly string[]>();
+
+  for (const fileNodeId of fileNodeIds) {
+    const fileNode = nodeById.get(fileNodeId);
+
+    if (!fileNode) {
+      return null;
+    }
+
+    pathPartsById.set(fileNodeId, splitPathParts(fileNode.path));
+  }
+
+  const commonDirectoryParts = commonPrefix(
+    fileNodeIds
+      .map((fileNodeId) => pathPartsById.get(fileNodeId)?.slice(0, -1) ?? [])
+      .filter((parts) => parts.length > 0),
+  );
+  const root: MutableHierarchyNode = { children: new Map(), fileNodeIds: [], id: 'path-root' };
+
+  for (const fileNodeId of fileNodeIds) {
+    const fileNode = nodeById.get(fileNodeId);
+
+    if (!fileNode) {
+      return null;
+    }
+
+    const relativePathParts = (pathPartsById.get(fileNodeId) ?? []).slice(commonDirectoryParts.length);
+    const directorySegments = relativePathParts.slice(0, -1);
+    const nameSegments = hierarchyNameSegments(fileNode.name || relativePathParts[relativePathParts.length - 1] || fileNodeId);
+    const groupSegments = [...directorySegments, ...nameSegments.slice(0, -1)];
+
+    insertHierarchyLeaf(root, groupSegments, fileNodeId);
+  }
+
+  const hierarchyRoot = freezeMutableHierarchyNode(root, localGraph);
+  const hasSharedGroup = hierarchyRoot.children.some((child) => child.fileNodeIds.length > 1);
+
+  if (!hasSharedGroup) {
+    return null;
+  }
+
+  return [...hierarchyRoot.children];
+}
+
+function insertHierarchyLeaf(
+  root: MutableHierarchyNode,
+  groupSegments: readonly string[],
+  fileNodeId: string,
+): void {
+  let currentNode = root;
+  currentNode.fileNodeIds.push(fileNodeId);
+
+  for (const segment of groupSegments) {
+    const childId = `${currentNode.id}/${segment}`;
+    let childNode = currentNode.children.get(segment);
+
+    if (!childNode) {
+      childNode = { children: new Map(), fileNodeIds: [], id: childId };
+      currentNode.children.set(segment, childNode);
+    }
+
+    currentNode = childNode;
+    currentNode.fileNodeIds.push(fileNodeId);
+  }
+
+  const leafKey = `file:${fileNodeId}`;
+  currentNode.children.set(leafKey, {
+    children: new Map(),
+    fileNodeId,
+    fileNodeIds: [fileNodeId],
+    id: `leaf:${fileNodeId}`,
+  });
+}
+
+function freezeMutableHierarchyNode(
+  node: MutableHierarchyNode,
+  localGraph: LocalRelationGraph,
+): FocusedFileHierarchyBuildNode {
+  const children = [...node.children.values()]
+    .map((child) => freezeMutableHierarchyNode(child, localGraph))
+    .sort((left, right) => componentWeight(right.fileNodeIds, localGraph) -
+      componentWeight(left.fileNodeIds, localGraph) ||
+      (right.fileNodeIds.length - left.fileNodeIds.length) ||
+      clusterSortKey(left).localeCompare(clusterSortKey(right)));
+
+  return {
+    children,
+    fileNodeId: node.fileNodeId,
+    fileNodeIds: node.fileNodeIds,
+    id: node.id,
+  };
+}
+
+function splitPathParts(path: string): string[] {
+  return path.split(/[\\/]+/).filter((part) => part.length > 0);
+}
+
+function commonPrefix(paths: readonly (readonly string[])[]): string[] {
+  const firstPath = paths[0] ?? [];
+  const prefix: string[] = [];
+
+  for (let index = 0; index < firstPath.length; index += 1) {
+    const part = firstPath[index];
+
+    if (!part || !paths.every((path) => path[index] === part)) {
+      break;
+    }
+
+    prefix.push(part);
+  }
+
+  return prefix;
+}
+
+function hierarchyNameSegments(name: string): string[] {
+  const withoutExtension = name.replace(/\.[^.]+$/, '');
+  const normalizedName = withoutExtension
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .toLowerCase();
+  const segments = normalizedName
+    .split(/[^a-z0-9]+/)
+    .filter((segment) => segment.length > 0);
+
+  return segments.length > 0 ? segments : [name];
 }
 
 function focusedHierarchyComponentRoots(

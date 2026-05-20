@@ -150,6 +150,29 @@ test('focusedFileOffsets circular layout clusters related files around the ring'
   );
 });
 
+test('focusedFileOffsets circular layout can use file name hierarchy for ring clusters', () => {
+  const fileNodes = [
+    fileNode('ai-context-projection', 'ai_context_projection.rs'),
+    fileNode('ai-context-tests', 'ai_context_projection_tests.rs'),
+    fileNode('bible-graph-command', 'bible_graph_command.rs'),
+    fileNode('bible-graph-schema', 'bible_graph_schema.rs'),
+  ];
+  const offsets = focusedFileOffsets(fileNodes.map((node) => node.id), [], {
+    algorithm: 'circular',
+    fileNodes,
+    spacing: 5,
+  });
+
+  assert.ok(
+    ringDistance(offsets, 'ai-context-projection', 'ai-context-tests') <
+      ringDistance(offsets, 'ai-context-projection', 'bible-graph-command'),
+  );
+  assert.ok(
+    ringDistance(offsets, 'bible-graph-command', 'bible-graph-schema') <
+      ringDistance(offsets, 'bible-graph-command', 'ai-context-tests'),
+  );
+});
+
 test('focusedFileHierarchyPath uses shallow ancestors for local edges and root for distant edges', () => {
   const edges: RenderGraphEdge[] = [
     { id: 'a-b', kind: 'imports', fromNodeId: 'a', toNodeId: 'b', weight: 8 },
@@ -163,6 +186,21 @@ test('focusedFileHierarchyPath uses shallow ancestors for local edges and root f
   const distantPath = focusedFileHierarchyPath(hierarchy, 'a', 'e');
 
   assert.ok(localPath.length < bridgePath.length);
+  assert.ok(distantPath.some((node) => node.id === hierarchy.root.id));
+});
+
+test('buildFocusedFileHierarchy uses path groups when file metadata is available', () => {
+  const fileNodes = [
+    fileNode('ai-context-projection', 'ai_context_projection.rs'),
+    fileNode('ai-context-tests', 'ai_context_projection_tests.rs'),
+    fileNode('bible-graph-command', 'bible_graph_command.rs'),
+    fileNode('bible-graph-schema', 'bible_graph_schema.rs'),
+  ];
+  const hierarchy = buildFocusedFileHierarchy(fileNodes.map((node) => node.id), [], fileNodes);
+  const localPath = focusedFileHierarchyPath(hierarchy, 'ai-context-projection', 'ai-context-tests');
+  const distantPath = focusedFileHierarchyPath(hierarchy, 'ai-context-projection', 'bible-graph-command');
+
+  assert.ok(localPath.length < distantPath.length);
   assert.ok(distantPath.some((node) => node.id === hierarchy.root.id));
 });
 
@@ -180,6 +218,14 @@ test('focusedFileHierarchyRadiusRatio keeps small clusters near the outer ring',
   assert.equal(focusedFileHierarchyRadiusRatio(hierarchy.root, hierarchy.leafOrder.length), 0);
   assert.ok(focusedFileHierarchyRadiusRatio(localAncestor, hierarchy.leafOrder.length) > 0.4);
 });
+
+function fileNode(id: string, name: string): { readonly id: string; readonly name: string; readonly path: string } {
+  return {
+    id,
+    name,
+    path: `/repo/crates/server/src/${name}`,
+  };
+}
 
 function requiredOffset(
   offsets: ReadonlyMap<string, { readonly x: number; readonly y: number }>,

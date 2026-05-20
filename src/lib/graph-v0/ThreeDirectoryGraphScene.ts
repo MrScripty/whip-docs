@@ -815,9 +815,13 @@ export class DirectoryGraphScene {
     const up = new Vector3().crossVectors(right, forward).normalize();
     const center = vectorFromPosition(directoryEntry.position);
     const spacing = Math.max(3.4, GRAPH_V0_INTERACTION_DEFAULTS.minCameraDistance * 0.18);
-    const fileHierarchy = buildFocusedFileHierarchy(fileNodeIds, this.currentGraph?.edges ?? []);
+    const fileNodes = fileNodeIds
+      .map((fileNodeId) => this.graphNodesById.get(fileNodeId))
+      .filter((fileNode): fileNode is RenderGraphNode => fileNode !== undefined);
+    const fileHierarchy = buildFocusedFileHierarchy(fileNodeIds, this.currentGraph?.edges ?? [], fileNodes);
     const fileOffsets = focusedFileOffsets(fileNodeIds, this.currentGraph?.edges ?? [], {
       algorithm: this.currentFocusedFileLayoutAlgorithm,
+      fileNodes,
       spacing,
     });
     const focusRadius = Array.from(fileOffsets.values()).reduce(
