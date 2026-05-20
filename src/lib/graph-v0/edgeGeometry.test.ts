@@ -96,6 +96,20 @@ test('focused circular bundle path connects node centers and bends toward the bu
   assert.ok(late.distanceTo(lateChord) > 1);
 });
 
+test('focused circular bundle path smooths through interior controls', () => {
+  const interiorControl = new Vector3(0, -12, 0);
+  const points = focusedCircularBundleEdgePathPoints([
+    new Vector3(0, 0, 0),
+    interiorControl,
+    new Vector3(10, -12, 0),
+    new Vector3(10, 0, 0),
+  ]);
+  const nearestInteriorDistance = Math.min(...points.map((point) => point.distanceTo(interiorControl)));
+
+  assert.ok(points.length > 4);
+  assert.ok(nearestInteriorDistance > 0.1);
+});
+
 const sourceNode: LayoutNodePosition = {
   nodeId: 'source',
   position: { x: 0, y: 0, z: 0 },

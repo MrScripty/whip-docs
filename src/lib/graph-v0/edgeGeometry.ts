@@ -1,4 +1,4 @@
-import { CatmullRomCurve3, CubicBezierCurve3, Vector3 } from 'three';
+import { CubicBezierCurve3, Vector3 } from 'three';
 import type { DirectoryGraphEdgeStyle, LayoutNodePosition } from './types';
 
 export const EDGE_CURVE_SEGMENTS = 28;
@@ -75,8 +75,63 @@ export function focusedCircularBundleEdgePathPoints(
     return straightPoint.lerp(point, FOCUSED_EDGE_BUNDLE_BETA);
   });
 
-  return new CatmullRomCurve3(straightenedPath, false, 'centripetal')
-    .getPoints(FOCUSED_EDGE_BUNDLE_SEGMENTS);
+  return cubicBasisSplinePoints(straightenedPath, FOCUSED_EDGE_BUNDLE_SEGMENTS);
+}
+
+function cubicBasisSplinePoints(controlPath: readonly Vector3[], segmentCount: number): Vector3[] {
+  if (controlPath.length < 2) {
+    return controlPath.map((point) => point.clone());
+  }
+
+  const firstPoint = controlPath[0]?.clone() ?? new Vector3();
+  const lastPoint = controlPath[controlPath.length - 1]?.clone() ?? firstPoint.clone();
+  const paddedPath = [
+    firstPoint.clone(),
+    firstPoint.clone(),
+    ...controlPath.map((point) => point.clone()),
+    lastPoint.clone(),
+    lastPoint.clone(),
+  ];
+  const splineSegmentCount = Math.max(1, paddedPath.length - 3);
+  const samplesPerSegment = Math.max(2, Math.ceil(segmentCount / splineSegmentCount));
+  const points: Vector3[] = [];
+
+  for (let segmentIndex = 0; segmentIndex < splineSegmentCount; segmentIndex += 1) {
+    const p0 = paddedPath[segmentIndex] ?? firstPoint;
+    const p1 = paddedPath[segmentIndex + 1] ?? firstPoint;
+    const p2 = paddedPath[segmentIndex + 2] ?? lastPoint;
+    const p3 = paddedPath[segmentIndex + 3] ?? lastPoint;
+    const startSample = segmentIndex === 0 ? 0 : 1;
+
+    for (let sampleIndex = startSample; sampleIndex <= samplesPerSegment; sampleIndex += 1) {
+      points.push(cubicBasisPoint(p0, p1, p2, p3, sampleIndex / samplesPerSegment));
+    }
+  }
+
+  points[0] = firstPoint;
+  points[points.length - 1] = lastPoint;
+
+  return points;
+}
+
+function cubicBasisPoint(
+  p0: Vector3,
+  p1: Vector3,
+  p2: Vector3,
+  p3: Vector3,
+  t: number,
+): Vector3 {
+  const oneMinusT = 1 - t;
+  const b0 = (oneMinusT * oneMinusT * oneMinusT) / 6;
+  const b1 = (3 * t * t * t - 6 * t * t + 4) / 6;
+  const b2 = (-3 * t * t * t + 3 * t * t + 3 * t + 1) / 6;
+  const b3 = (t * t * t) / 6;
+
+  return new Vector3(
+    p0.x * b0 + p1.x * b1 + p2.x * b2 + p3.x * b3,
+    p0.y * b0 + p1.y * b1 + p2.y * b2 + p3.y * b3,
+    p0.z * b0 + p1.z * b1 + p2.z * b2 + p3.z * b3,
+  );
 }
 
 function edgeHandleLength(sourceAnchor: Vector3, targetAnchor: Vector3): number {

@@ -1069,15 +1069,39 @@ export class DirectoryGraphScene {
       focusedView.bundleCenter.y,
       focusedView.bundleCenter.z,
     );
+    const edgeArc = this.focusedEdgeArc(focusedView, source.nodeId, target.nodeId);
 
     if (hierarchyNode.depth === 0) {
-      return bundleCenter;
+      return this.focusedBundlePlanePosition(
+        focusedView,
+        edgeArc.midpointAngle,
+        focusedView.hierarchyRadius * edgeArc.centerRadiusRatio,
+        bundleCenter,
+      );
     }
 
     const leafCount = Math.max(1, focusedView.fileHierarchy.leafOrder.length);
     const spanCenterIndex = (hierarchyNode.leafStartIndex + hierarchyNode.leafEndIndex) / 2;
     const angle = (spanCenterIndex / leafCount) * Math.PI * 2 - Math.PI / 2;
-    const hierarchyRadius = focusedView.hierarchyRadius * focusedFileHierarchyRadiusRatio(hierarchyNode, leafCount);
+    const hierarchyRadiusRatio = Math.max(
+      focusedFileHierarchyRadiusRatio(hierarchyNode, leafCount),
+      edgeArc.centerRadiusRatio,
+    );
+
+    return this.focusedBundlePlanePosition(
+      focusedView,
+      angle,
+      focusedView.hierarchyRadius * hierarchyRadiusRatio,
+      bundleCenter,
+    );
+  }
+
+  private focusedBundlePlanePosition(
+    focusedView: FocusedDirectoryView,
+    angle: number,
+    radius: number,
+    center: Vector3,
+  ): Vector3 {
     const right = new Vector3(
       focusedView.bundleRight.x,
       focusedView.bundleRight.y,
@@ -1089,10 +1113,34 @@ export class DirectoryGraphScene {
       focusedView.bundleUp.z,
     );
 
-    return bundleCenter
+    return center
       .clone()
-      .add(right.multiplyScalar(Math.cos(angle) * hierarchyRadius))
-      .add(up.multiplyScalar(Math.sin(angle) * hierarchyRadius));
+      .add(right.multiplyScalar(Math.cos(angle) * radius))
+      .add(up.multiplyScalar(Math.sin(angle) * radius));
+  }
+
+  private focusedEdgeArc(
+    focusedView: FocusedDirectoryView,
+    sourceNodeId: string,
+    targetNodeId: string,
+  ): { readonly centerRadiusRatio: number; readonly midpointAngle: number } {
+    const leafCount = Math.max(1, focusedView.fileHierarchy.leafOrder.length);
+    const sourceLeaf = focusedView.fileHierarchy.leafByFileNodeId.get(sourceNodeId);
+    const targetLeaf = focusedView.fileHierarchy.leafByFileNodeId.get(targetNodeId);
+    const sourceAngle = this.focusedLeafAngle(sourceLeaf?.leafStartIndex ?? 0, leafCount);
+    const targetAngle = this.focusedLeafAngle(targetLeaf?.leafStartIndex ?? 0, leafCount);
+    const delta = normalizedAngleDelta(targetAngle - sourceAngle);
+    const angularSeparationRatio = Math.min(1, Math.abs(delta) / Math.PI);
+    const localArcRatio = Math.pow(1 - angularSeparationRatio, 1.7);
+
+    return {
+      centerRadiusRatio: localArcRatio * 0.72,
+      midpointAngle: sourceAngle + delta / 2,
+    };
+  }
+
+  private focusedLeafAngle(leafIndex: number, leafCount: number): number {
+    return (leafIndex / Math.max(1, leafCount)) * Math.PI * 2 - Math.PI / 2;
   }
 
   private dynamicLayoutPosition(nodeId: string): LayoutNodePosition | null {
@@ -2480,6 +2528,10 @@ function relationPairKey(leftNodeId: string, rightNodeId: string): string {
   return leftNodeId < rightNodeId
     ? directedRelationKey(leftNodeId, rightNodeId)
     : directedRelationKey(rightNodeId, leftNodeId);
+}
+
+function normalizedAngleDelta(angle: number): number {
+  return Math.atan2(Math.sin(angle), Math.cos(angle));
 }
 
 function labelTexture(label: string, theme: DirectoryGraphSceneTheme): CanvasTexture {
