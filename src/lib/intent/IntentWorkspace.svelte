@@ -10,6 +10,7 @@
   import { coverageLabel, dialectChoices, QUALIFICATION_GAPS, validateGraphAnalysis, restoredDialectOverrides } from './syntaxSupport';
   import { fixtureFiles, fixtureSymbols, fixtureSources } from './fileWorkspaceFixture';
   import { WorkspaceLoader } from './workspaceLoading';
+  import { toggleExpansion, isBatchKey, EXPANSION_HELP, MAX_EXPANDED_SYMBOLS } from './expansion';
   import { DirectoryGraphScene } from '../graph-v0/ThreeDirectoryGraphScene';
   import { fileRelationSnapshotToRenderGraph, buildSelectionIndex, selectionNeighborhood, emptyGraphNeighborhood, selectionDistanceByNodeId, visibleEdgeIdsForRelationDetails } from '../graph-v0';
   import type { RenderGraph, RenderGraphNode, DirectoryGraphSceneSelection, LayoutAlgorithmId, FocusedFileLayoutAlgorithmId, FocusedCircularBundlingMode, DirectoryGraphEdgeStyle, DirectoryGraphLeafEdgeStyle, FileRelationDetail } from '../graph-v0';
@@ -57,6 +58,13 @@
   let leafEdgeStyle = $state<DirectoryGraphLeafEdgeStyle>('straight');
   let relationDetail = $state('all');
   const drafts = new SvelteMap<string, { text: string; kind: IntentKind; parentId: string }>();
+  const symbolsByPath = $derived.by(() => {
+    const result=new SvelteMap<string,NonNullable<typeof graph>['nodes']>();
+    if(graph?.sourceRoot!==fileSnapshot?.sourceRoot)return result;
+    for(const node of graph?.nodes??[])if(!['file','workspace','crate'].includes(node.kind)&&node.sourceRange){const path=node.sourceRange.path;const nodes=result.get(path)??[];nodes.push(node);result.set(path,nodes);}
+    return result;
+  });
+  const expansionCandidates = $derived(renderGraph?.nodes.filter(node=>node.kind==='file').map(node=>({id:node.id,path:node.path,symbolCount:symbolsByPath.get(node.path)?.length??0}))??[]);
   const selected = $derived(graph?.nodes.find(node => node.id === selectedId) ?? null);
   const selectedBase = $derived(renderGraph?.nodes.find(node => node.id === baseSelectedId) ?? null);
   const selectedSyntaxFile = $derived(sourceAnalysis?.files.find(file => file.identity.path === selectedBase?.path) ?? null);
@@ -166,11 +174,15 @@
     saveDraft();selectedId=id;baseSelectedId=fileId;edgeSelectedId=null;
     const draft=drafts.get(id);kind=draft?.kind??'original';parentId=draft?.parentId??'';text=draft?.text??'';notice='';
   }
-  function symbolsFor(file:RenderGraphNode) {return graph?.sourceRoot===fileSnapshot?.sourceRoot?graph?.nodes.filter(node=>!['file','workspace','crate'].includes(node.kind)&&node.sourceRange?.path===file.path)??[]:[];}
-  function toggleFile(file:RenderGraphNode) {
-    if(saving)return;
-    const close=expanded.has(file.id);selectBase({kind:'node',id:file.id});expanded.clear();if(!close)expanded.add(file.id);
+  function symbolsFor(file:RenderGraphNode) {return symbolsByPath.get(file.path)??[];}
+  function toggleFile(file:RenderGraphNode,all=false) {
+    if(saving||busy)return;
+    const next=toggleExpansion(expanded,file.id,expansionCandidates,all);
+    // Keep a selected symbol and its draft while its file remains visible.
+    if(!selectedId||!baseSelectedId||!next.expanded.has(baseSelectedId))selectBase({kind:'node',id:file.id});
+    expanded.clear();for(const id of next.expanded)expanded.add(id);notice=next.notice;
   }
+  function toggleKey(event:KeyboardEvent,file:RenderGraphNode) {if(isBatchKey(event)){event.preventDefault();toggleFile(file,true);}}
   function toggleDirectory(id:string) {if(collapsedDirectories.has(id))collapsedDirectories.delete(id);else collapsedDirectories.add(id);}
   async function refreshRecords(current=generation) {
     const request=++recordRequest;
@@ -199,15 +211,9 @@
 
 <div class="intent-app">
   <header class="topbar">
-    <div class="brand"><span class="brand-icon">W</span><div><strong>WHIP DOCS</strong><span>Intent, in context</span></div></div>
-    <div class="top-meta"><span class="mode-dot"></span>{preview ? 'FIXTURE PREVIEW' : nativeAvailable ? 'LOCAL WORKSPACE' : 'DESKTOP REQUIRED'}<span class="version">PROTOTYPE · 01</span></div>
+    <div class="brand"><span class="brand-icon">W</span><div><strong>WHIP DOCS</strong></div></div>
+    <div class="top-meta" title={preview?'Recorded Rust fixture data. Native Tauri IPC is not running or validated.':'Local analysis workspace'}><span class="mode-dot"></span>{preview ? 'FIXTURE PREVIEW' : nativeAvailable ? 'LOCAL WORKSPACE' : 'DESKTOP REQUIRED'}<span class="version">PROTOTYPE · 01</span></div>
   </header>
-
-  {#if preview}
-    <div class="preview-banner"><strong>Browser fixture</strong> Recorded multi-file graph from the Rust backend, replayed locally. Native Tauri IPC is not running. Intent entries stay in this browser. <a href={mixedPreview?"?preview=1":"?preview=mixed"}>{mixedPreview?"Legacy Rust fixture":"Mixed-language fixture"}</a></div>
-  {:else if !nativeAvailable}
-    <div class="preview-banner"><strong>Open the Tauri desktop app to analyze a local Repository.</strong> <a href="?preview=mixed">Open the mixed-language browser fixture</a> · <a href="?preview=1">Legacy Rust fixture</a></div>
-  {/if}
 
   {#if nativeAvailable}
     <form class="repo-bar" onsubmit={(event) => { event.preventDefault(); void analyze(); }}>
@@ -218,23 +224,20 @@
   <main class="workspace">
     <aside class="navigator">
       <div class="section-heading"><span>REPOSITORY</span><span>{renderGraph?.nodes.filter(n=>n.kind==='file').length??0} FILES</span></div>
-      <h1>{preview?(mixedPreview?'Mixed-language fixture':'Graph fixture'):fileSnapshot?.sourceRoot.split(/[\\/]/).pop()??'Open a workspace'}</h1>
-      <p class="muted small">Explore files and their relationships. Expand a file to see its symbols.</p>
       <input class="search" aria-label="Find a file" placeholder="Find a file…" bind:value={filter} />
       <div class="file-list">
         {#each rows as {node,depth} (node.id)}
           <div class="file-row" style:padding-left={`${depth*9}px`}>
-            {#if node.kind==='file'}<button class="expand" aria-label={`${expanded.has(node.id)?'Collapse':'Expand'} ${node.path}`} aria-expanded={expanded.has(node.id)} disabled={saving||!symbolsFor(node).length} onclick={()=>toggleFile(node)}>{expanded.has(node.id)?'−':'+'}</button>
+            {#if node.kind==='file'}<button class="expand" aria-label={`${expanded.has(node.id)?'Collapse':'Expand'} ${node.path}`} aria-expanded={expanded.has(node.id)} title={EXPANSION_HELP} disabled={saving||busy||!symbolsFor(node).length} onclick={event=>toggleFile(node,event.ctrlKey)} onkeydown={event=>toggleKey(event,node)}>{expanded.has(node.id)?'−':'+'}</button>
             {:else}<button class="expand" aria-label={`Toggle directory ${node.path}`} aria-expanded={!collapsedDirectories.has(node.id)} onclick={()=>toggleDirectory(node.id)}>{collapsedDirectories.has(node.id)?'›':'⌄'}</button>{/if}
             <button class:selected={baseSelectedId===node.id&&!selectedId} class="file-name" data-node-id={node.id} onclick={()=>selectBase({kind:'node',id:node.id})} title={node.path}>{node.name}<small>{node.kind==='directory'?' /':''}</small></button>
           </div>
           {#if expanded.has(node.id)}<div class="symbol-list">{#each symbolsFor(node) as symbol (symbol.id)}<button class:selected={selectedId===symbol.id} onclick={()=>selectNode(symbol.id)}><span class="kind-dot" data-kind={symbol.kind}></span><span>{symbol.label}</span><small>{symbol.kind.replaceAll('_',' ')}</small></button>{/each}</div>{/if}
         {/each}
       </div>
-      <div class="nav-bottom">{#if sourceAnalysis}<details class="analysis-coverage"><summary>Source coverage · {sourceAnalysis.files.length} captured files</summary><p>{sourceAnalysis.identity.discoveryComplete?'Discovery completed; unsupported files excluded.':'Discovery incomplete. Some files were not captured.'}</p><p>{QUALIFICATION_GAPS}</p></details>{/if}<span class="eyebrow">EVIDENCE BOUNDARY</span><p>File relations retain direction, confidence and evidence. Symbol locations are approximate. Intent and proposals never change observed relationships.</p></div>
+      <div class="nav-bottom">{#if sourceAnalysis}<details class="analysis-coverage"><summary>Source coverage · {sourceAnalysis.files.length} captured files</summary><p>{sourceAnalysis.identity.discoveryComplete?'Discovery completed; unsupported files excluded.':'Discovery incomplete. Some files were not captured.'}</p><p>{QUALIFICATION_GAPS}</p></details>{/if}</div>
     </aside>
     <section class="graph-area" aria-label="3D file and symbol graph">
-      <div class="graph-title"><span class="eyebrow">OBSERVED STRUCTURE</span><h2>Explore the shape of your code.</h2><p>Drag to orbit · Scroll to zoom · Select a file, then expand its symbols</p></div>
       <div class="graph-mount" bind:this={mount}></div>
       <div class="graph-toolbar">
         <button onclick={()=>scene?.fitGraph()} disabled={!renderGraph}>Fit graph</button>
@@ -242,6 +245,8 @@
         <button onclick={()=>scene?.toggleDirectoryFocus()} disabled={!renderGraph}>Directory focus</button>
         <button onclick={()=>scene?.focusSymbols()} disabled={!expanded.size}>Frame symbols</button>
         <details class="graph-settings"><summary>Graph settings</summary>
+          <p class="fine expansion-help">{EXPANSION_HELP}</p>
+          {#if preview}<p class="fine"><a href={mixedPreview?"?preview=1":"?preview=mixed"}>{mixedPreview?"Legacy Rust fixture":"Mixed-language fixture"}</a></p>{/if}
           <label>File layout<select aria-label="File layout" bind:value={layout}><option value="weighted-safe-radial-tree">Weighted radial</option><option value="safe-radial-tree">Safe radial</option><option value="radial-tree">Radial</option><option value="layered-grid">Layered grid</option></select></label>
           <label>Focused files<select aria-label="Focused files" bind:value={focusedLayout}>{#each ['circular','grid','flow-layered','dag-layered','force-directed'] as value (value)}<option {value}>{value}</option>{/each}</select></label>
           <label>Circular bundles<select aria-label="Circular bundles" bind:value={bundling}><option value="hierarchy">Hierarchy</option><option value="adjacency-fanout">Adjacency fanout</option><option value="none">None</option></select></label>
@@ -251,10 +256,10 @@
           <label>Leaf edges<select aria-label="Leaf edges" bind:value={leafEdgeStyle}>{#each ['global','straight','bezier','c-curve','elbow'] as value (value)}<option {value}>{value}</option>{/each}</select></label>
         </details>
       </div>
-      {#if !renderGraph&&!busy}<div class="graph-empty">Choose a local repository to begin.</div>{/if}
+      {#if !renderGraph&&!busy}<div class="graph-empty">{#if !nativeAvailable}<p>Open a local repository in the desktop app.</p><a href="?preview=mixed">Mixed-language fixture</a> · <a href="?preview=1">Legacy Rust fixture</a>{:else}Choose a local repository to begin.{/if}</div>{/if}
       {#if busy}<div class="graph-empty">Loading workspace…</div>{/if}
       <div class="graph-legend"><span><i class="legend-file"></i>File</span><span><i class="legend-type"></i>Directory / type</span><span><i class="legend-callable"></i>Callable</span><span>Focus: incoming / outgoing / mutual</span></div>
-      <div class="graph-note">Graph keys: arrows navigate directories · Tab toggles directory focus · . centers selection · R fits<br />File relations remain visible when symbols expand. Proposals are annotations.</div>
+      <div class="graph-note">Graph keys: arrows navigate directories · Tab toggles directory focus · . centers selection · R fits</div>
     </section>
     <aside class="inspector">
       <div class="section-heading"><span>INSPECTOR</span><span>{selected?.kind.replaceAll('_',' ')??selectedBase?.kind??(selectedEdge?'RELATION':'NO SELECTION')}</span></div>
@@ -275,10 +280,10 @@
 
       {:else if selectedBase}
         <h2 class="symbol-title">{selectedBase.name}</h2><p class="source-path">{selectedBase.path}</p>
-        <div class="metadata"><span>Graph context</span><strong>{selectedBase.kind}</strong><span>File relationships</span><strong>{fileRelations.length}</strong></div>
+        <div class="metadata-inline"><span>Graph context <strong>{selectedBase.kind}</strong></span><span>File relationships <strong>{fileRelations.length}</strong></span></div>
         {#if selectedBase.kind==='file'}
-          <button class="outline wide" disabled={saving||!symbolsFor(selectedBase).length} onclick={()=>toggleFile(selectedBase)}>{expanded.has(selectedBase.id)?'Collapse symbols':'Expand symbols'} · {symbolsFor(selectedBase).length}</button>
-          {#if !graph}<p class="fine">The file graph is available. Analyze the repository to add symbol detail; current analysis supports Rust Cargo workspaces.</p>{/if}
+          <button class="symbol-disclosure" aria-label={`Toggle symbols for ${selectedBase.path}`} aria-expanded={expanded.has(selectedBase.id)} title={EXPANSION_HELP} disabled={saving||busy||!symbolsFor(selectedBase).length} onclick={event=>toggleFile(selectedBase!,event.ctrlKey)} onkeydown={event=>toggleKey(event,selectedBase!)}><span aria-hidden="true">{expanded.has(selectedBase.id)?'−':'+'}</span> Symbols · {symbolsFor(selectedBase).length}</button>{#if symbolsFor(selectedBase).length>MAX_EXPANDED_SYMBOLS}<p class="fine">This file exceeds the {MAX_EXPANDED_SYMBOLS.toLocaleString()}-symbol expansion limit.</p>{/if}
+          {#if !graph}<p class="fine">The file graph is available. Analyze the repository to add symbol detail for supported source languages.</p>{/if}
         {:else}<button class="outline wide" onclick={()=>scene?.toggleDirectoryFocus()}>Focus this directory’s files</button>{/if}
       {:else if selectedEdge}
         <h2>{selectedEdge.kind.replaceAll('_',' ')}</h2>
@@ -316,5 +321,5 @@
       {#if graph?.diagnostics.length||fileSnapshot?.diagnostics.length}<details class="diagnostics"><summary>Analysis limits</summary>{#each [...(fileSnapshot?.diagnostics??[]),...(graph?.diagnostics??[])] as diagnostic, i (i)}<p>{diagnostic.message}</p>{/each}</details>{/if}
     </aside>
   </main>
-  <footer class="statusbar" aria-live="polite"><span class:error={Boolean(error)}>{error||notice||'Explore files. Expand symbols. Preserve intent.'}</span><span>{preview?'BROWSER FIXTURE':'LOCAL JOURNAL'} · {records.length} ENTRIES</span></footer>
+  <footer class="statusbar" aria-live="polite"><span class:error={Boolean(error)}>{error||notice}</span></footer>
 </div>

@@ -15,7 +15,7 @@ const exact='  Preserve checkout responsibility — 蟹.\n\tKeep proposals separ
  const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));
  await page.goto(origin+'/?preview=1');await page.locator('[data-node-id="file:src/checkout.rs"]').waitFor();await page.waitForTimeout(350);
  assert.equal(await page.locator('.graph-mount canvas').count(),1);
- assert.match(await page.locator('.preview-banner').innerText(),/Native Tauri IPC is not running/);
+ assert.match(await page.locator('.top-meta').getAttribute('title'),/Native Tauri IPC is not running/);
  assert.match(await page.locator('.section-heading').first().innerText(),/9 FILES/);
  await page.screenshot({path:path.join(out,'browser-fixture-file-overview.png')});
  const baseRows=await page.locator('[data-node-id]').evaluateAll(es=>es.map(e=>e.dataset.nodeId));

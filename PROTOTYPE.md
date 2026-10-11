@@ -30,6 +30,13 @@ layout settings, not encodings of relationship type. With the canvas focused,
 arrows navigate directories, Tab toggles directory focus, period centers the
 selection and R fits the graph. Shift+Tab leaves the canvas.
 
+The compact file disclosure toggles only that file. Ctrl-click or Ctrl+Enter/Space
+applies the target's new state across eligible files in the loaded repository,
+including filtered or collapsed tree rows. Batch expansion retains existing open
+files and is bounded to 24 files / 4,096 symbols; a notice reports partial expansion.
+Disclosures preserve the camera and any selected symbol that remains visible.
+Collapsing a selected symbol's parent preserves its draft for reopening.
+
 File overview is language-neutral. Source analysis uses the owned multilingual
 Tree-sitter parser without requiring Cargo. Rust file import/call aggregates keep
 the existing backend behavior; multilingual unresolved facts remain separate.
@@ -69,7 +76,8 @@ npm run dev
 
 Open the served URL with `?preview=mixed` for recorded multilingual Rust-service
 output from a no-Cargo fixture, or `?preview=1` for the original Rust fixture. A plain browser without that opt-in shows
-a desktop-required message. The banner always identifies fixture mode.
+a desktop-required message. The small Fixture Preview indicator identifies fixture
+mode; its tooltip makes the absence of native Tauri IPC explicit.
 
 This mode replays recorded output of the real Rust file-relation and symbol
 services for the synthetic MIT-licensed public sample in
@@ -88,13 +96,15 @@ to the current fixture root. Browser checks cannot establish native durability.
 
 ## Evidence and limits
 
-See [graph restoration verification](verification/graph-restoration/README.md)
-for current frontend, headless Rust and actual browser checks, and
+See [integration verification](verification/integration/README.md) and
+[graph restoration verification](verification/graph-restoration/README.md)
+for frontend, Rust service and actual browser checks, and
 [the original record](verification/README.md) for initial publication evidence.
 Native Tauri linking, IPC and desktop end-to-end acceptance remain blocked by
 missing system libraries. Browser screenshots are explicitly fixture execution.
 
-- Existing syntax extraction gives approximate symbol locations. Historical
+- The new parser records exact UTF-8 syntax byte ranges within its qualified
+  subsets; legacy journal locations remain approximate. Historical
   snapshots retain structural nodes/edges and digests, not source bodies; they
   cannot reconstruct original code.
 - Symbols have analysis-scoped identities. There is no universal identity or
@@ -115,8 +125,8 @@ missing system libraries. Browser screenshots are explicitly fixture execution.
   files, assets and skipped files are excluded.
   The observed Git revision does not claim a clean worktree.
 - Schema-2 journal records remain unchanged; they become stale against the new
-  parser. Schema-3 records retain extractor identity; `@1` records likewise become
-  stale against `@2`. Older binaries cannot read schema-3 lines; downgrade is unsupported.
+  parser. Schema-3 records retain extractor identity; `@1` and `@2` records likewise
+  become stale against `@3`. Older binaries cannot read schema-3 lines; downgrade is unsupported.
 - Legacy V1 journals that retained source bodies block V2 reads/appends. They
   are never silently copied, deleted or migrated. Review them separately before
   using the new journal; this prototype offers no automatic migration.
