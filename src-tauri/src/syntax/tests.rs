@@ -126,14 +126,14 @@ fn all_language_families_extract_real_declarations() {
 }
 
 #[test]
-fn registry_modern_syntax_is_qualified_and_gaps_are_visible() {
+fn pinned_modern_syntax_is_qualified_and_gaps_are_visible() {
     for (path, dialect, expected_acceptance) in [
         ("rust.rs", Dialect::Rust, true),
         ("python.py", Dialect::Python, false),
         ("kotlin.kt", Dialect::Kotlin, false),
         ("c.c", Dialect::C, false),
-        ("cpp.cpp", Dialect::Cpp, false),
-        ("csharp.cs", Dialect::CSharp, false),
+        ("cpp.cpp", Dialect::Cpp, true),
+        ("csharp.cs", Dialect::CSharp, true),
         ("zig.zig", Dialect::Zig, true),
     ] {
         let source = fixture(&format!("modern/{path}"));
@@ -511,9 +511,9 @@ fn modern_acceptance_requires_expected_grammar_shapes() {
             "cpp.cpp",
             Dialect::Cpp,
             "explicit_object_parameter_declaration",
-            false,
+            true,
         ),
-        ("csharp.cs", Dialect::CSharp, "extension_declaration", false),
+        ("csharp.cs", Dialect::CSharp, "extension_declaration", true),
     ] {
         let source = fixture(&format!("modern/{path}"));
         let mut parser = tree_sitter::Parser::new();
@@ -598,36 +598,52 @@ fn parser_identities_and_provenance_match_exact_manifest_and_lock_pins() {
             Dialect::Svelte5,
         ]
         .map(|d| {
-            d.grammar_identity()
+            let identity = d.grammar_identity();
+            identity
                 .strip_prefix("crates.io/")
-                .unwrap()
-                .split('/')
-                .next()
-                .unwrap()
+                .map(|value| value.split('/').next().unwrap())
+                .unwrap_or(identity)
                 .to_owned()
         }),
     );
     for identity in identities {
-        let (package, version) = identity.split_once('@').unwrap();
-        assert!(
-            manifest.contains(&format!("{package} = \"={version}\"")),
-            "identity must match exact dependency {identity}"
-        );
+        let (origin, version_or_commit) = identity.split_once('@').unwrap();
+        let package = origin.rsplit('/').next().unwrap();
         let pin = provenance["packages"]
             .as_array()
             .unwrap()
             .iter()
             .find(|p| p["package"] == package)
             .unwrap();
-        assert_eq!(pin["version"], version);
         let block = lock
             .split("[[package]]")
             .find(|block| block.contains(&format!("name = \"{package}\"")))
             .unwrap();
-        assert!(block.contains(&format!("version = \"{version}\"")));
+        if let Some(repository) = origin.strip_prefix("git+") {
+            assert_eq!(pin["repository"], repository);
+            assert_eq!(pin["upstreamCommit"], version_or_commit);
+            assert!(manifest.contains(&format!(
+                "{package} = {{ git = \"{repository}\", rev = \"{version_or_commit}\" }}"
+            )));
+            assert!(block.contains(&format!(
+                "source = \"git+{repository}?rev={version_or_commit}#{version_or_commit}\""
+            )));
+            assert_eq!(pin["generatedParser"]["abi"], 15);
+            assert!(!pin["generatedParser"]["files"]["src/parser.c"]
+                .as_str()
+                .unwrap()
+                .is_empty());
+        } else {
+            assert_eq!(pin["version"], version_or_commit);
+            assert!(manifest.contains(&format!("{package} = \"={version_or_commit}\"")));
+            assert!(block.contains(&format!(
+                "checksum = \"{}\"",
+                pin["sha256"].as_str().unwrap()
+            )));
+        }
         assert!(block.contains(&format!(
-            "checksum = \"{}\"",
-            pin["sha256"].as_str().unwrap()
+            "version = \"{}\"",
+            pin["version"].as_str().unwrap()
         )));
     }
 }
@@ -780,14 +796,6 @@ fn each_reported_registry_grammar_gap_is_qualified_individually() {
         ),
         (Dialect::C, "unsigned _BitInt(17) bits;"),
         (Dialect::C, "void read(_BitInt(17) value) {}"),
-        (
-            Dialect::Cpp,
-            "struct Item { int read(this Item const& self) { return 1; } };",
-        ),
-        (
-            Dialect::CSharp,
-            "static class Ext { extension(string text) { public int Length() => text.Length; } }",
-        ),
     ] {
         let file = analyze_file("gap", source, dialect);
         assert_eq!(
@@ -801,6 +809,336 @@ fn each_reported_registry_grammar_gap_is_qualified_individually() {
                 .any(|d| matches!(d.code.as_str(), "parse_error" | "unsupported_modern_syntax")),
             "{:?}",
             file.diagnostics
+        );
+    }
+}
+
+fn assert_exact_ranges(file: &FileAnalysis, source: &str) {
+    for declaration in &file.declarations {
+        assert_eq!(
+            &source[declaration.name_range.start_byte..declaration.name_range.end_byte],
+            declaration.name
+        );
+        assert!(declaration.range.start_byte <= declaration.name_range.start_byte);
+        assert!(declaration.range.end_byte >= declaration.name_range.end_byte);
+        assert!(source
+            .get(declaration.range.start_byte..declaration.range.end_byte)
+            .is_some());
+        if let Some(parent) = &declaration.parent_id {
+            let parent = file.declarations.iter().find(|d| &d.id == parent).unwrap();
+            assert!(parent.range.start_byte <= declaration.range.start_byte);
+            assert!(parent.range.end_byte >= declaration.range.end_byte);
+        }
+    }
+    for fact in &file.relations {
+        assert!(source
+            .get(fact.range.start_byte..fact.range.end_byte)
+            .is_some());
+        assert!(source
+            .get(fact.target_range.start_byte..fact.target_range.end_byte)
+            .is_some());
+        assert!(fact.range.start_byte <= fact.target_range.start_byte);
+        assert!(fact.range.end_byte >= fact.target_range.end_byte);
+        assert!(fact.qualification.ends_with("unresolved"));
+        if let Some(owner) = &fact.owner_id {
+            assert!(file.declarations.iter().any(|d| &d.id == owner));
+        }
+    }
+}
+
+#[test]
+fn official_cpp_explicit_receivers_preserve_methods_parameters_and_ranges() {
+    let source = fixture("modern/explicit-object.cpp").replace('\n', "\r\n");
+    let file = analyze_file("a.cpp", &source, Dialect::Cpp);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_exact_ranges(&file, &source);
+    let container = file
+        .declarations
+        .iter()
+        .find(|d| d.name == "Sample")
+        .unwrap();
+    for (method, receiver, typ) in [
+        ("copy", "this Sample self", "Sample"),
+        ("view", "this Sample const& /* receiver */ self", "Sample"),
+        ("update", "this Sample& self", "Sample"),
+        ("forward", "this Self&& /* generic */ self", "Self"),
+        ("declared", "this Sample const& self", "Sample"),
+    ] {
+        let method = file.declarations.iter().find(|d| d.name == method).unwrap();
+        assert_eq!(method.kind, DeclarationKind::Method);
+        assert_eq!(method.parent_id.as_ref(), Some(&container.id));
+        let parameter = file
+            .declarations
+            .iter()
+            .find(|d| d.name == "self" && d.parent_id.as_ref() == Some(&method.id))
+            .unwrap();
+        assert_eq!(parameter.kind, DeclarationKind::Parameter);
+        assert_eq!(
+            &source[parameter.range.start_byte..parameter.range.end_byte],
+            receiver
+        );
+        assert!(parameter.header_complete && parameter.body_complete);
+        assert!(file
+            .relations
+            .iter()
+            .any(|fact| fact.kind == RelationKind::WrittenType
+                && fact.owner_id.as_ref() == Some(&parameter.id)
+                && &source[fact.target_range.start_byte..fact.target_range.end_byte] == typ));
+    }
+    assert_eq!(
+        file.declarations
+            .iter()
+            .find(|d| d.name == "ordinary")
+            .unwrap()
+            .kind,
+        DeclarationKind::Method
+    );
+    assert_eq!(
+        file.declarations
+            .iter()
+            .find(|d| d.name == "callback")
+            .unwrap()
+            .kind,
+        DeclarationKind::Field
+    );
+    let call = file
+        .relations
+        .iter()
+        .find(|r| r.kind == RelationKind::CallSyntax)
+        .unwrap();
+    assert_eq!(
+        &source[call.range.start_byte..call.range.end_byte],
+        "inspect(self)"
+    );
+    assert_eq!(
+        &source[call.target_range.start_byte..call.target_range.end_byte],
+        "inspect"
+    );
+}
+
+#[test]
+fn official_csharp_extensions_inventory_containers_receivers_and_members() {
+    let source = fixture("modern/extension-blocks.cs").replace('\n', "\r\n");
+    let file = analyze_file("a.cs", &source, Dialect::CSharp);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_exact_ranges(&file, &source);
+    let extensions: Vec<_> = file
+        .declarations
+        .iter()
+        .filter(|d| d.syntax_kind == "extension_declaration")
+        .collect();
+    assert_eq!(extensions.len(), 4);
+    let class = file
+        .declarations
+        .iter()
+        .find(|d| d.name == "Extensions")
+        .unwrap();
+    for extension in &extensions {
+        assert_eq!(extension.name, "extension");
+        assert_eq!(extension.kind, DeclarationKind::Implementation);
+        assert_eq!(extension.parent_id.as_ref(), Some(&class.id));
+        assert!(extension.header_complete && extension.body_complete);
+        assert!(
+            source[extension.range.start_byte..extension.range.end_byte].starts_with("extension")
+        );
+    }
+    for (name, typ, receiver, members) in [
+        ("text", "string", "string text", vec!["Read", "Size"]),
+        (
+            "values",
+            "IEnumerable<T>",
+            "IEnumerable<T> values",
+            vec!["Count"],
+        ),
+        ("number", "int", "ref int number", vec!["Increment"]),
+    ] {
+        let parameter = file
+            .declarations
+            .iter()
+            .find(|d| d.syntax_kind == "receiver_parameter" && d.name == name)
+            .unwrap();
+        assert_eq!(parameter.kind, DeclarationKind::Parameter);
+        assert_eq!(
+            &source[parameter.range.start_byte..parameter.range.end_byte],
+            receiver
+        );
+        assert!(extensions
+            .iter()
+            .any(|e| Some(&e.id) == parameter.parent_id.as_ref()));
+        for member in members {
+            let member = file
+                .declarations
+                .iter()
+                .find(|d| d.name == member && d.parent_id == parameter.parent_id)
+                .unwrap();
+            assert!(matches!(
+                member.kind,
+                DeclarationKind::Field | DeclarationKind::Method
+            ));
+        }
+        assert!(file
+            .relations
+            .iter()
+            .any(|r| r.kind == RelationKind::WrittenType
+                && r.owner_id.as_ref() == Some(&parameter.id)
+                && &source[r.target_range.start_byte..r.target_range.end_byte] == typ));
+    }
+    assert_eq!(
+        file.declarations
+            .iter()
+            .filter(|d| d.syntax_kind == "receiver_parameter")
+            .count(),
+        3
+    );
+    let operator = file
+        .declarations
+        .iter()
+        .find(|d| d.syntax_kind == "operator_declaration")
+        .unwrap();
+    assert_eq!(operator.name, "+");
+    assert_eq!(operator.kind, DeclarationKind::Method);
+    let anonymous = extensions
+        .iter()
+        .find(|e| Some(&e.id) == operator.parent_id.as_ref())
+        .unwrap();
+    assert!(file
+        .relations
+        .iter()
+        .any(|r| r.owner_id.as_ref() == Some(&anonymous.id)
+            && r.kind == RelationKind::WrittenType
+            && &source[r.target_range.start_byte..r.target_range.end_byte] == "List<int>"));
+    assert!(file
+        .declarations
+        .iter()
+        .any(|d| d.name == "extension" && d.syntax_kind == "constructor_declaration"));
+    assert!(file
+        .declarations
+        .iter()
+        .any(|d| d.name == "extension" && d.syntax_kind == "method_declaration"));
+    for expected in ["measure", "count", "merge", "extension"] {
+        assert!(file
+            .relations
+            .iter()
+            .any(|r| r.kind == RelationKind::CallSyntax
+                && &source[r.target_range.start_byte..r.target_range.end_byte] == expected));
+    }
+}
+
+#[test]
+fn official_new_constructs_reject_damaged_headers_and_preserve_partial_bodies() {
+    for (path, dialect, source) in [
+        (
+            "a.cpp",
+            Dialect::Cpp,
+            "struct Sample { int broken(this & self) { return 1; } };",
+        ),
+        (
+            "a.cpp",
+            Dialect::Cpp,
+            "struct Sample { int broken(this Sample& self, ) { return 1; } };",
+        ),
+        (
+            "a.cs",
+            Dialect::CSharp,
+            "static class E { extension(string text, int other) { public int Value => 1; } }",
+        ),
+        (
+            "a.cs",
+            Dialect::CSharp,
+            "static class E { extension(string text) { public int Value => ; } }",
+        ),
+        (
+            "a.cs",
+            Dialect::CSharp,
+            "static class E { extension() { public int Value => 1; } }",
+        ),
+    ] {
+        let repo = Repo::new();
+        std::fs::write(repo.0.join(path), source).unwrap();
+        let analysis = analyze_repository(&repo.root(), &AnalysisOptions::default());
+        let file = &analysis.syntax.as_ref().unwrap().files[0];
+        assert_eq!(file.identity.dialect, dialect);
+        assert_eq!(file.identity.coverage, Coverage::Incomplete, "{source}");
+        assert!(file.diagnostics.iter().any(|d| d.code == "parse_error"));
+        assert_exact_ranges(file, source);
+        for declaration in &file.declarations {
+            let mut current = Some(declaration);
+            let mut damaged = false;
+            while let Some(node) = current {
+                damaged |= !node.header_complete;
+                current = node
+                    .parent_id
+                    .as_ref()
+                    .and_then(|id| file.declarations.iter().find(|d| &d.id == id));
+            }
+            if damaged {
+                assert!(!analysis
+                    .snapshot
+                    .nodes
+                    .iter()
+                    .any(|n| n.id == declaration.id));
+            }
+        }
+        if source.contains("extension()") {
+            let extension = file
+                .declarations
+                .iter()
+                .find(|d| d.syntax_kind == "extension_declaration")
+                .unwrap();
+            assert!(!extension.header_complete);
+            assert!(!analysis
+                .snapshot
+                .nodes
+                .iter()
+                .any(|n| n.label == "extension" || n.label == "Value"));
+        }
+        if source.contains("Value => ;") {
+            let extension = file
+                .declarations
+                .iter()
+                .find(|d| d.syntax_kind == "extension_declaration")
+                .unwrap();
+            assert!(extension.header_complete);
+            assert!(!extension.body_complete);
+        }
+    }
+}
+
+#[test]
+fn official_git_grammars_are_abi_compatible_and_match_recorded_node_types() {
+    for (dialect, node_types) in [
+        (Dialect::Cpp, tree_sitter_cpp::NODE_TYPES),
+        (Dialect::CSharp, tree_sitter_c_sharp::NODE_TYPES),
+    ] {
+        let language = dialect.language();
+        assert_eq!(language.abi_version(), 15);
+        let mut parser = tree_sitter::Parser::new();
+        parser.set_language(&language).unwrap();
+        let provenance: serde_json::Value =
+            serde_json::from_str(include_str!("../../../docs/design/grammar-pins.json")).unwrap();
+        let (_, commit) = dialect.grammar_identity().split_once('@').unwrap();
+        let pin = provenance["packages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["upstreamCommit"] == commit)
+            .unwrap();
+        assert_eq!(
+            format!(
+                "{:x}",
+                <sha2::Sha256 as sha2::Digest>::digest(node_types.as_bytes())
+            ),
+            pin["generatedParser"]["files"]["src/node-types.json"]
         );
     }
 }

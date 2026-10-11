@@ -688,6 +688,1244 @@
         "declarations": [
           {
             "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "kind": "struct",
+            "name": "Sample",
+            "nameRange": {
+              "endByte": 45,
+              "startByte": 39
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 501,
+              "startByte": 32
+            },
+            "syntaxKind": "struct_specifier"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:ad8039e39b3b26c35c3dee564558beaf13bdf0c3bdf815f67eb8d5b4d76c9caf",
+            "kind": "field",
+            "name": "value",
+            "nameRange": {
+              "endByte": 61,
+              "startByte": 56
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 62,
+              "startByte": 52
+            },
+            "syntaxKind": "field_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+            "kind": "method",
+            "name": "copy",
+            "nameRange": {
+              "endByte": 75,
+              "startByte": 71
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 116,
+              "startByte": 67
+            },
+            "syntaxKind": "function_definition"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:db456432082d8a66a0ad7993497c6efd321f93a06627a31b731e639379554308",
+            "kind": "parameter",
+            "name": "self",
+            "nameRange": {
+              "endByte": 92,
+              "startByte": 88
+            },
+            "parentId": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+            "range": {
+              "endByte": 92,
+              "startByte": 76
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+            "kind": "method",
+            "name": "view",
+            "nameRange": {
+              "endByte": 129,
+              "startByte": 125
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 192,
+              "startByte": 121
+            },
+            "syntaxKind": "function_definition"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:90b2c2e01bef7c6a4f682dc5b2a94b92016bd085c885a08b36e06c9afdcfb909",
+            "kind": "parameter",
+            "name": "self",
+            "nameRange": {
+              "endByte": 168,
+              "startByte": 164
+            },
+            "parentId": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+            "range": {
+              "endByte": 168,
+              "startByte": 130
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+            "kind": "method",
+            "name": "update",
+            "nameRange": {
+              "endByte": 207,
+              "startByte": 201
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 272,
+              "startByte": 197
+            },
+            "syntaxKind": "function_definition"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:48faee489a4a5b697241d6550fbf6a9ee9cbbd6cac541c34b5a1400ab6a3951f",
+            "kind": "parameter",
+            "name": "self",
+            "nameRange": {
+              "endByte": 225,
+              "startByte": 221
+            },
+            "parentId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+            "range": {
+              "endByte": 225,
+              "startByte": 208
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:4d84de2c934b2787aabc9c479b4f14691b346c0b75dd8ff1f17c61b07cdcaa6c",
+            "kind": "parameter",
+            "name": "next",
+            "nameRange": {
+              "endByte": 235,
+              "startByte": 231
+            },
+            "parentId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+            "range": {
+              "endByte": 235,
+              "startByte": 227
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+            "kind": "method",
+            "name": "forward",
+            "nameRange": {
+              "endByte": 315,
+              "startByte": 308
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 380,
+              "startByte": 303
+            },
+            "syntaxKind": "function_definition"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:c4d832853b19072f81e8215d79302bb7612bfb8b19a7f9d22623773daa951cc8",
+            "kind": "parameter",
+            "name": "self",
+            "nameRange": {
+              "endByte": 346,
+              "startByte": 342
+            },
+            "parentId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+            "range": {
+              "endByte": 346,
+              "startByte": 316
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+            "kind": "method",
+            "name": "declared",
+            "nameRange": {
+              "endByte": 397,
+              "startByte": 389
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 423,
+              "startByte": 385
+            },
+            "syntaxKind": "field_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:ad1b8e2fe02aeae649be2ced4436e650a2d3de524ef11aa638bebca218f3d84a",
+            "kind": "parameter",
+            "name": "self",
+            "nameRange": {
+              "endByte": 421,
+              "startByte": 417
+            },
+            "parentId": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+            "range": {
+              "endByte": 421,
+              "startByte": 398
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+            "kind": "method",
+            "name": "ordinary",
+            "nameRange": {
+              "endByte": 447,
+              "startByte": 439
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 459,
+              "startByte": 428
+            },
+            "syntaxKind": "field_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:0de2a51475d1700d67b28e7956c2d6451c608ee8fa4b316c8e4295a63433537c",
+            "kind": "parameter",
+            "name": "value",
+            "nameRange": {
+              "endByte": 457,
+              "startByte": 452
+            },
+            "parentId": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+            "range": {
+              "endByte": 457,
+              "startByte": 448
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c",
+            "kind": "field",
+            "name": "callback",
+            "nameRange": {
+              "endByte": 492,
+              "startByte": 484
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 499,
+              "startByte": 464
+            },
+            "syntaxKind": "field_declaration"
+          }
+        ],
+        "diagnostics": [],
+        "identity": {
+          "byteLength": 503,
+          "coverage": "supported_subset",
+          "dialect": "cpp",
+          "grammars": [
+            {
+              "dialect": "cpp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
+            }
+          ],
+          "path": "native/explicit-object.cpp",
+          "sourceDigest": "sha256:7580030bf3aaa90150a899340929f7a6bd072d1000349497a06236cf79e1cb21",
+          "structureDigest": "sha256:2da33ebe490af37b7dac9a33aea5365ef345848caa4adae8f12151efaf6161aa"
+        },
+        "relations": [
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:ad8039e39b3b26c35c3dee564558beaf13bdf0c3bdf815f67eb8d5b4d76c9caf",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 62,
+              "startByte": 52
+            },
+            "targetRange": {
+              "endByte": 55,
+              "startByte": 52
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 116,
+              "startByte": 67
+            },
+            "targetRange": {
+              "endByte": 70,
+              "startByte": 67
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:db456432082d8a66a0ad7993497c6efd321f93a06627a31b731e639379554308",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 92,
+              "startByte": 81
+            },
+            "targetRange": {
+              "endByte": 87,
+              "startByte": 81
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 192,
+              "startByte": 121
+            },
+            "targetRange": {
+              "endByte": 124,
+              "startByte": 121
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:90b2c2e01bef7c6a4f682dc5b2a94b92016bd085c885a08b36e06c9afdcfb909",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 168,
+              "startByte": 135
+            },
+            "targetRange": {
+              "endByte": 141,
+              "startByte": 135
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 272,
+              "startByte": 197
+            },
+            "targetRange": {
+              "endByte": 200,
+              "startByte": 197
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:48faee489a4a5b697241d6550fbf6a9ee9cbbd6cac541c34b5a1400ab6a3951f",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 225,
+              "startByte": 213
+            },
+            "targetRange": {
+              "endByte": 219,
+              "startByte": 213
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:4d84de2c934b2787aabc9c479b4f14691b346c0b75dd8ff1f17c61b07cdcaa6c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 235,
+              "startByte": 227
+            },
+            "targetRange": {
+              "endByte": 230,
+              "startByte": 227
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 380,
+              "startByte": 303
+            },
+            "targetRange": {
+              "endByte": 307,
+              "startByte": 303
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:c4d832853b19072f81e8215d79302bb7612bfb8b19a7f9d22623773daa951cc8",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 346,
+              "startByte": 321
+            },
+            "targetRange": {
+              "endByte": 325,
+              "startByte": 321
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 354,
+              "startByte": 351
+            },
+            "targetRange": {
+              "endByte": 354,
+              "startByte": 351
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 377,
+              "startByte": 364
+            },
+            "targetRange": {
+              "endByte": 371,
+              "startByte": 364
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 423,
+              "startByte": 385
+            },
+            "targetRange": {
+              "endByte": 388,
+              "startByte": 385
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:ad1b8e2fe02aeae649be2ced4436e650a2d3de524ef11aa638bebca218f3d84a",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 421,
+              "startByte": 403
+            },
+            "targetRange": {
+              "endByte": 409,
+              "startByte": 403
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 459,
+              "startByte": 428
+            },
+            "targetRange": {
+              "endByte": 438,
+              "startByte": 435
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:0de2a51475d1700d67b28e7956c2d6451c608ee8fa4b316c8e4295a63433537c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 457,
+              "startByte": 448
+            },
+            "targetRange": {
+              "endByte": 451,
+              "startByte": 448
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 499,
+              "startByte": 464
+            },
+            "targetRange": {
+              "endByte": 467,
+              "startByte": 464
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 497,
+              "startByte": 494
+            },
+            "targetRange": {
+              "endByte": 497,
+              "startByte": 494
+            }
+          }
+        ]
+      },
+      {
+        "declarations": [
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+            "kind": "class",
+            "name": "Extensions",
+            "nameRange": {
+              "endByte": 62,
+              "startByte": 52
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 570,
+              "startByte": 32
+            },
+            "syntaxKind": "class_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+            "kind": "implementation",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 78,
+              "startByte": 69
+            },
+            "parentId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+            "range": {
+              "endByte": 201,
+              "startByte": 69
+            },
+            "syntaxKind": "extension_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:72e2b3af4d4bb427549d55a712a9359fa5e2fa7aa6a2407ba80efcc495004f33",
+            "kind": "parameter",
+            "name": "text",
+            "nameRange": {
+              "endByte": 90,
+              "startByte": 86
+            },
+            "parentId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+            "range": {
+              "endByte": 90,
+              "startByte": 79
+            },
+            "syntaxKind": "receiver_parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:4227788893a37f1a769a5401638c7ec7882eabfa6e581c952d0f0bdfb470256b",
+            "kind": "field",
+            "name": "Size",
+            "nameRange": {
+              "endByte": 117,
+              "startByte": 113
+            },
+            "parentId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+            "range": {
+              "endByte": 133,
+              "startByte": 102
+            },
+            "syntaxKind": "property_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+            "kind": "method",
+            "name": "Read",
+            "nameRange": {
+              "endByte": 157,
+              "startByte": 153
+            },
+            "parentId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+            "range": {
+              "endByte": 195,
+              "startByte": 142
+            },
+            "syntaxKind": "method_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:4899b60c9a61ddd424da03815a3a2aa74ef900bd64b24f6c8015ff44a1b32771",
+            "kind": "parameter",
+            "name": "offset",
+            "nameRange": {
+              "endByte": 168,
+              "startByte": 162
+            },
+            "parentId": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+            "range": {
+              "endByte": 168,
+              "startByte": 158
+            },
+            "syntaxKind": "parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+            "kind": "implementation",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 215,
+              "startByte": 206
+            },
+            "parentId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+            "range": {
+              "endByte": 310,
+              "startByte": 206
+            },
+            "syntaxKind": "extension_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:064ea64e4c54cbbcdcf135a97ff53400fd1fbe466a48511544c4383fd493315e",
+            "kind": "parameter",
+            "name": "values",
+            "nameRange": {
+              "endByte": 240,
+              "startByte": 234
+            },
+            "parentId": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+            "range": {
+              "endByte": 240,
+              "startByte": 219
+            },
+            "syntaxKind": "receiver_parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728",
+            "kind": "method",
+            "name": "Count",
+            "nameRange": {
+              "endByte": 284,
+              "startByte": 279
+            },
+            "parentId": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+            "range": {
+              "endByte": 304,
+              "startByte": 268
+            },
+            "syntaxKind": "method_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+            "kind": "implementation",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 324,
+              "startByte": 315
+            },
+            "parentId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+            "range": {
+              "endByte": 394,
+              "startByte": 315
+            },
+            "syntaxKind": "extension_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:6b424c2e0c94c5e7971439b5514333df77e634fc0d5dc28a504073d31287b17c",
+            "kind": "parameter",
+            "name": "number",
+            "nameRange": {
+              "endByte": 339,
+              "startByte": 333
+            },
+            "parentId": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+            "range": {
+              "endByte": 339,
+              "startByte": 325
+            },
+            "syntaxKind": "receiver_parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:5659d2baf04af7a15f461f03f482099bb085575c63566d5cd1c7386c68f77f0b",
+            "kind": "method",
+            "name": "Increment",
+            "nameRange": {
+              "endByte": 372,
+              "startByte": 363
+            },
+            "parentId": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+            "range": {
+              "endByte": 388,
+              "startByte": 351
+            },
+            "syntaxKind": "method_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+            "kind": "implementation",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 408,
+              "startByte": 399
+            },
+            "parentId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+            "range": {
+              "endByte": 568,
+              "startByte": 399
+            },
+            "syntaxKind": "extension_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:f5dcf6585cf9066b0c11db4ba6c65a8c4b9b9a31bc68d896d75320f2df258112",
+            "kind": "field",
+            "name": "EmptySize",
+            "nameRange": {
+              "endByte": 457,
+              "startByte": 448
+            },
+            "parentId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+            "range": {
+              "endByte": 463,
+              "startByte": 430
+            },
+            "syntaxKind": "property_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+            "kind": "method",
+            "name": "+",
+            "nameRange": {
+              "endByte": 506,
+              "startByte": 505
+            },
+            "parentId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+            "range": {
+              "endByte": 562,
+              "startByte": 472
+            },
+            "syntaxKind": "operator_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:35fbd356d69fdad7b36716874cebfc6e6a466f5fe9cea1c13e5b4714ae157e50",
+            "kind": "parameter",
+            "name": "left",
+            "nameRange": {
+              "endByte": 521,
+              "startByte": 517
+            },
+            "parentId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+            "range": {
+              "endByte": 521,
+              "startByte": 507
+            },
+            "syntaxKind": "parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:919cef25a52871bef77740de78267c45999f07517d8e4b05a29d477639d0b2b6",
+            "kind": "parameter",
+            "name": "right",
+            "nameRange": {
+              "endByte": 538,
+              "startByte": 533
+            },
+            "parentId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+            "range": {
+              "endByte": 538,
+              "startByte": 523
+            },
+            "syntaxKind": "parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4",
+            "kind": "class",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 586,
+              "startByte": 577
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 616,
+              "startByte": 571
+            },
+            "syntaxKind": "class_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:7bf38b4ea9e814a551d3c428d6f37c719a57771d1aff17455adb34559e3fdbff",
+            "kind": "method",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 609,
+              "startByte": 600
+            },
+            "parentId": "syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4",
+            "range": {
+              "endByte": 614,
+              "startByte": 593
+            },
+            "syntaxKind": "constructor_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+            "kind": "class",
+            "name": "Contextual",
+            "nameRange": {
+              "endByte": 633,
+              "startByte": 623
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 722,
+              "startByte": 617
+            },
+            "syntaxKind": "class_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+            "kind": "method",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 660,
+              "startByte": 651
+            },
+            "parentId": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+            "range": {
+              "endByte": 681,
+              "startByte": 640
+            },
+            "syntaxKind": "method_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:cfd05677acd0d3ede4daf6e4ae93ef9b6016168124f7c95ca1ed0662b234e8e4",
+            "kind": "parameter",
+            "name": "value",
+            "nameRange": {
+              "endByte": 670,
+              "startByte": 665
+            },
+            "parentId": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+            "range": {
+              "endByte": 670,
+              "startByte": 661
+            },
+            "syntaxKind": "parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5",
+            "kind": "method",
+            "name": "Read",
+            "nameRange": {
+              "endByte": 701,
+              "startByte": 697
+            },
+            "parentId": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+            "range": {
+              "endByte": 720,
+              "startByte": 686
+            },
+            "syntaxKind": "method_declaration"
+          }
+        ],
+        "diagnostics": [],
+        "identity": {
+          "byteLength": 723,
+          "coverage": "supported_subset",
+          "dialect": "csharp",
+          "grammars": [
+            {
+              "dialect": "csharp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
+            }
+          ],
+          "path": "native/extension-blocks.cs",
+          "sourceDigest": "sha256:4311c5d4c480ff01cbdcfa3e5ae313f5422bd9a3be1b0ac297296f128be835bd",
+          "structureDigest": "sha256:872a536302856035683a392b90fc479d77e59b8e16b0a6f557f4042545660a82"
+        },
+        "relations": [
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:72e2b3af4d4bb427549d55a712a9359fa5e2fa7aa6a2407ba80efcc495004f33",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 90,
+              "startByte": 79
+            },
+            "targetRange": {
+              "endByte": 85,
+              "startByte": 79
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:4227788893a37f1a769a5401638c7ec7882eabfa6e581c952d0f0bdfb470256b",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 133,
+              "startByte": 102
+            },
+            "targetRange": {
+              "endByte": 112,
+              "startByte": 109
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 195,
+              "startByte": 142
+            },
+            "targetRange": {
+              "endByte": 152,
+              "startByte": 149
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:4899b60c9a61ddd424da03815a3a2aa74ef900bd64b24f6c8015ff44a1b32771",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 168,
+              "startByte": 158
+            },
+            "targetRange": {
+              "endByte": 161,
+              "startByte": 158
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 194,
+              "startByte": 173
+            },
+            "targetRange": {
+              "endByte": 180,
+              "startByte": 173
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:064ea64e4c54cbbcdcf135a97ff53400fd1fbe466a48511544c4383fd493315e",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 240,
+              "startByte": 219
+            },
+            "targetRange": {
+              "endByte": 233,
+              "startByte": 219
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 304,
+              "startByte": 268
+            },
+            "targetRange": {
+              "endByte": 278,
+              "startByte": 275
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 303,
+              "startByte": 290
+            },
+            "targetRange": {
+              "endByte": 295,
+              "startByte": 290
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:6b424c2e0c94c5e7971439b5514333df77e634fc0d5dc28a504073d31287b17c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 339,
+              "startByte": 325
+            },
+            "targetRange": {
+              "endByte": 332,
+              "startByte": 329
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:5659d2baf04af7a15f461f03f482099bb085575c63566d5cd1c7386c68f77f0b",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 388,
+              "startByte": 351
+            },
+            "targetRange": {
+              "endByte": 362,
+              "startByte": 358
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 418,
+              "startByte": 409
+            },
+            "targetRange": {
+              "endByte": 418,
+              "startByte": 409
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:f5dcf6585cf9066b0c11db4ba6c65a8c4b9b9a31bc68d896d75320f2df258112",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 463,
+              "startByte": 430
+            },
+            "targetRange": {
+              "endByte": 447,
+              "startByte": 444
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 562,
+              "startByte": 472
+            },
+            "targetRange": {
+              "endByte": 495,
+              "startByte": 486
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:35fbd356d69fdad7b36716874cebfc6e6a466f5fe9cea1c13e5b4714ae157e50",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 521,
+              "startByte": 507
+            },
+            "targetRange": {
+              "endByte": 516,
+              "startByte": 507
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:919cef25a52871bef77740de78267c45999f07517d8e4b05a29d477639d0b2b6",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 538,
+              "startByte": 523
+            },
+            "targetRange": {
+              "endByte": 532,
+              "startByte": 523
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 561,
+              "startByte": 543
+            },
+            "targetRange": {
+              "endByte": 548,
+              "startByte": 543
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 681,
+              "startByte": 640
+            },
+            "targetRange": {
+              "endByte": 650,
+              "startByte": 647
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:cfd05677acd0d3ede4daf6e4ae93ef9b6016168124f7c95ca1ed0662b234e8e4",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 670,
+              "startByte": 661
+            },
+            "targetRange": {
+              "endByte": 664,
+              "startByte": 661
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 720,
+              "startByte": 686
+            },
+            "targetRange": {
+              "endByte": 696,
+              "startByte": 693
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 719,
+              "startByte": 707
+            },
+            "targetRange": {
+              "endByte": 716,
+              "startByte": 707
+            }
+          }
+        ]
+      },
+      {
+        "declarations": [
+          {
+            "bodyComplete": true,
             "dialect": "c",
             "headerComplete": true,
             "id": "syntax:3725c1bba64ce529bf5ab3e3bd29e456dc0b1ece3eea244eb299d1af46b47f96",
@@ -1325,7 +2563,7 @@
           "grammars": [
             {
               "dialect": "cpp",
-              "grammar": "crates.io/tree-sitter-cpp@0.23.4"
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
             }
           ],
           "path": "native/vector.cpp",
@@ -1997,7 +3235,7 @@
           "grammars": [
             {
               "dialect": "csharp",
-              "grammar": "crates.io/tree-sitter-c-sharp@0.23.5"
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
             }
           ],
           "path": "server/Service.cs",
@@ -3916,7 +5154,7 @@
     ],
     "identity": {
       "discoveryComplete": false,
-      "extractor": "whip-docs-syntax@2",
+      "extractor": "whip-docs-syntax@3",
       "files": [
         {
           "byteLength": 277,
@@ -3961,6 +5199,34 @@
           "structureDigest": "sha256:bc68ad1795e79158b9e9b64981432b414b1b51288c59f8c138be1f0bac0f5a7b"
         },
         {
+          "byteLength": 503,
+          "coverage": "supported_subset",
+          "dialect": "cpp",
+          "grammars": [
+            {
+              "dialect": "cpp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
+            }
+          ],
+          "path": "native/explicit-object.cpp",
+          "sourceDigest": "sha256:7580030bf3aaa90150a899340929f7a6bd072d1000349497a06236cf79e1cb21",
+          "structureDigest": "sha256:2da33ebe490af37b7dac9a33aea5365ef345848caa4adae8f12151efaf6161aa"
+        },
+        {
+          "byteLength": 723,
+          "coverage": "supported_subset",
+          "dialect": "csharp",
+          "grammars": [
+            {
+              "dialect": "csharp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
+            }
+          ],
+          "path": "native/extension-blocks.cs",
+          "sourceDigest": "sha256:4311c5d4c480ff01cbdcfa3e5ae313f5422bd9a3be1b0ac297296f128be835bd",
+          "structureDigest": "sha256:872a536302856035683a392b90fc479d77e59b8e16b0a6f557f4042545660a82"
+        },
+        {
           "byteLength": 138,
           "coverage": "supported_subset",
           "dialect": "c",
@@ -3995,7 +5261,7 @@
           "grammars": [
             {
               "dialect": "cpp",
-              "grammar": "crates.io/tree-sitter-cpp@0.23.4"
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
             }
           ],
           "path": "native/vector.cpp",
@@ -4037,7 +5303,7 @@
           "grammars": [
             {
               "dialect": "csharp",
-              "grammar": "crates.io/tree-sitter-c-sharp@0.23.5"
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
             }
           ],
           "path": "server/Service.cs",
@@ -4289,6 +5555,30 @@
         "kind": "contains",
         "provenance": "normalized",
         "toNodeId": "dir:mobile",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:native",
+        "id": "contains:dir:native:file:native/explicit-object.cpp",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:native/explicit-object.cpp",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:native",
+        "id": "contains:dir:native:file:native/extension-blocks.cs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:native/extension-blocks.cs",
         "weight": 1
       },
       {
@@ -4701,6 +5991,24 @@
       },
       {
         "childIds": [],
+        "id": "file:native/explicit-object.cpp",
+        "kind": "file",
+        "language": null,
+        "name": "explicit-object.cpp",
+        "parentId": "dir:native",
+        "path": "native/explicit-object.cpp"
+      },
+      {
+        "childIds": [],
+        "id": "file:native/extension-blocks.cs",
+        "kind": "file",
+        "language": "csharp",
+        "name": "extension-blocks.cs",
+        "parentId": "dir:native",
+        "path": "native/extension-blocks.cs"
+      },
+      {
+        "childIds": [],
         "id": "file:native/math.c",
         "kind": "file",
         "language": null,
@@ -4737,6 +6045,8 @@
       },
       {
         "childIds": [
+          "file:native/explicit-object.cpp",
+          "file:native/extension-blocks.cs",
           "file:native/math.c",
           "file:native/memory.zig",
           "file:native/vector.cpp",
@@ -4944,7 +6254,7 @@
       "analysisAt": "fixture:mixed-overriddenSymbols",
       "analysisIdentity": {
         "discoveryComplete": true,
-        "extractor": "whip-docs-syntax@2",
+        "extractor": "whip-docs-syntax@3",
         "files": [
           {
             "byteLength": 277,
@@ -4981,7 +6291,7 @@
             "grammars": [
               {
                 "dialect": "cpp",
-                "grammar": "crates.io/tree-sitter-cpp@0.23.4"
+                "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
               }
             ],
             "path": "include/api.h",
@@ -5001,6 +6311,34 @@
             "path": "mobile/Screen.kt",
             "sourceDigest": "sha256:cb5f66195218dc2b6c2ba67e4faa29adcd56e516b268d7e6d2d8ed12c0dd99e9",
             "structureDigest": "sha256:bc68ad1795e79158b9e9b64981432b414b1b51288c59f8c138be1f0bac0f5a7b"
+          },
+          {
+            "byteLength": 503,
+            "coverage": "supported_subset",
+            "dialect": "cpp",
+            "grammars": [
+              {
+                "dialect": "cpp",
+                "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
+              }
+            ],
+            "path": "native/explicit-object.cpp",
+            "sourceDigest": "sha256:7580030bf3aaa90150a899340929f7a6bd072d1000349497a06236cf79e1cb21",
+            "structureDigest": "sha256:2da33ebe490af37b7dac9a33aea5365ef345848caa4adae8f12151efaf6161aa"
+          },
+          {
+            "byteLength": 723,
+            "coverage": "supported_subset",
+            "dialect": "csharp",
+            "grammars": [
+              {
+                "dialect": "csharp",
+                "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
+              }
+            ],
+            "path": "native/extension-blocks.cs",
+            "sourceDigest": "sha256:4311c5d4c480ff01cbdcfa3e5ae313f5422bd9a3be1b0ac297296f128be835bd",
+            "structureDigest": "sha256:872a536302856035683a392b90fc479d77e59b8e16b0a6f557f4042545660a82"
           },
           {
             "byteLength": 138,
@@ -5037,7 +6375,7 @@
             "grammars": [
               {
                 "dialect": "cpp",
-                "grammar": "crates.io/tree-sitter-cpp@0.23.4"
+                "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
               }
             ],
             "path": "native/vector.cpp",
@@ -5079,7 +6417,7 @@
             "grammars": [
               {
                 "dialect": "csharp",
-                "grammar": "crates.io/tree-sitter-c-sharp@0.23.5"
+                "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
               }
             ],
             "path": "server/Service.cs",
@@ -5425,7 +6763,7 @@
           }
         ]
       },
-      "worktreeDigest": "sha256:9ebe18f9cca2541950e269e56265e26f3d6ac437ffa1eb475920864e0d841320",
+      "worktreeDigest": "sha256:9d5190c8e261642ad602df225a0da971c0e3b90e3e528a5067788e86425ddcaf",
       "worktreeDigestScope": "captured_multilingual_sources_v1"
     },
     "symbol": {
@@ -5887,7 +7225,7 @@
           "grammars": [
             {
               "dialect": "cpp",
-              "grammar": "crates.io/tree-sitter-cpp@0.23.4"
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
             }
           ],
           "path": "include/api.h",
@@ -6250,6 +7588,1244 @@
             "targetRange": {
               "endByte": 185,
               "startByte": 177
+            }
+          }
+        ]
+      },
+      {
+        "declarations": [
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "kind": "struct",
+            "name": "Sample",
+            "nameRange": {
+              "endByte": 45,
+              "startByte": 39
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 501,
+              "startByte": 32
+            },
+            "syntaxKind": "struct_specifier"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:ad8039e39b3b26c35c3dee564558beaf13bdf0c3bdf815f67eb8d5b4d76c9caf",
+            "kind": "field",
+            "name": "value",
+            "nameRange": {
+              "endByte": 61,
+              "startByte": 56
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 62,
+              "startByte": 52
+            },
+            "syntaxKind": "field_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+            "kind": "method",
+            "name": "copy",
+            "nameRange": {
+              "endByte": 75,
+              "startByte": 71
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 116,
+              "startByte": 67
+            },
+            "syntaxKind": "function_definition"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:db456432082d8a66a0ad7993497c6efd321f93a06627a31b731e639379554308",
+            "kind": "parameter",
+            "name": "self",
+            "nameRange": {
+              "endByte": 92,
+              "startByte": 88
+            },
+            "parentId": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+            "range": {
+              "endByte": 92,
+              "startByte": 76
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+            "kind": "method",
+            "name": "view",
+            "nameRange": {
+              "endByte": 129,
+              "startByte": 125
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 192,
+              "startByte": 121
+            },
+            "syntaxKind": "function_definition"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:90b2c2e01bef7c6a4f682dc5b2a94b92016bd085c885a08b36e06c9afdcfb909",
+            "kind": "parameter",
+            "name": "self",
+            "nameRange": {
+              "endByte": 168,
+              "startByte": 164
+            },
+            "parentId": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+            "range": {
+              "endByte": 168,
+              "startByte": 130
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+            "kind": "method",
+            "name": "update",
+            "nameRange": {
+              "endByte": 207,
+              "startByte": 201
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 272,
+              "startByte": 197
+            },
+            "syntaxKind": "function_definition"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:48faee489a4a5b697241d6550fbf6a9ee9cbbd6cac541c34b5a1400ab6a3951f",
+            "kind": "parameter",
+            "name": "self",
+            "nameRange": {
+              "endByte": 225,
+              "startByte": 221
+            },
+            "parentId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+            "range": {
+              "endByte": 225,
+              "startByte": 208
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:4d84de2c934b2787aabc9c479b4f14691b346c0b75dd8ff1f17c61b07cdcaa6c",
+            "kind": "parameter",
+            "name": "next",
+            "nameRange": {
+              "endByte": 235,
+              "startByte": 231
+            },
+            "parentId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+            "range": {
+              "endByte": 235,
+              "startByte": 227
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+            "kind": "method",
+            "name": "forward",
+            "nameRange": {
+              "endByte": 315,
+              "startByte": 308
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 380,
+              "startByte": 303
+            },
+            "syntaxKind": "function_definition"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:c4d832853b19072f81e8215d79302bb7612bfb8b19a7f9d22623773daa951cc8",
+            "kind": "parameter",
+            "name": "self",
+            "nameRange": {
+              "endByte": 346,
+              "startByte": 342
+            },
+            "parentId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+            "range": {
+              "endByte": 346,
+              "startByte": 316
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+            "kind": "method",
+            "name": "declared",
+            "nameRange": {
+              "endByte": 397,
+              "startByte": 389
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 423,
+              "startByte": 385
+            },
+            "syntaxKind": "field_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:ad1b8e2fe02aeae649be2ced4436e650a2d3de524ef11aa638bebca218f3d84a",
+            "kind": "parameter",
+            "name": "self",
+            "nameRange": {
+              "endByte": 421,
+              "startByte": 417
+            },
+            "parentId": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+            "range": {
+              "endByte": 421,
+              "startByte": 398
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+            "kind": "method",
+            "name": "ordinary",
+            "nameRange": {
+              "endByte": 447,
+              "startByte": 439
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 459,
+              "startByte": 428
+            },
+            "syntaxKind": "field_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:0de2a51475d1700d67b28e7956c2d6451c608ee8fa4b316c8e4295a63433537c",
+            "kind": "parameter",
+            "name": "value",
+            "nameRange": {
+              "endByte": 457,
+              "startByte": 452
+            },
+            "parentId": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+            "range": {
+              "endByte": 457,
+              "startByte": 448
+            },
+            "syntaxKind": "parameter_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c",
+            "kind": "field",
+            "name": "callback",
+            "nameRange": {
+              "endByte": 492,
+              "startByte": 484
+            },
+            "parentId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+            "range": {
+              "endByte": 499,
+              "startByte": 464
+            },
+            "syntaxKind": "field_declaration"
+          }
+        ],
+        "diagnostics": [],
+        "identity": {
+          "byteLength": 503,
+          "coverage": "supported_subset",
+          "dialect": "cpp",
+          "grammars": [
+            {
+              "dialect": "cpp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
+            }
+          ],
+          "path": "native/explicit-object.cpp",
+          "sourceDigest": "sha256:7580030bf3aaa90150a899340929f7a6bd072d1000349497a06236cf79e1cb21",
+          "structureDigest": "sha256:2da33ebe490af37b7dac9a33aea5365ef345848caa4adae8f12151efaf6161aa"
+        },
+        "relations": [
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:ad8039e39b3b26c35c3dee564558beaf13bdf0c3bdf815f67eb8d5b4d76c9caf",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 62,
+              "startByte": 52
+            },
+            "targetRange": {
+              "endByte": 55,
+              "startByte": 52
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 116,
+              "startByte": 67
+            },
+            "targetRange": {
+              "endByte": 70,
+              "startByte": 67
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:db456432082d8a66a0ad7993497c6efd321f93a06627a31b731e639379554308",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 92,
+              "startByte": 81
+            },
+            "targetRange": {
+              "endByte": 87,
+              "startByte": 81
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 192,
+              "startByte": 121
+            },
+            "targetRange": {
+              "endByte": 124,
+              "startByte": 121
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:90b2c2e01bef7c6a4f682dc5b2a94b92016bd085c885a08b36e06c9afdcfb909",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 168,
+              "startByte": 135
+            },
+            "targetRange": {
+              "endByte": 141,
+              "startByte": 135
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 272,
+              "startByte": 197
+            },
+            "targetRange": {
+              "endByte": 200,
+              "startByte": 197
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:48faee489a4a5b697241d6550fbf6a9ee9cbbd6cac541c34b5a1400ab6a3951f",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 225,
+              "startByte": 213
+            },
+            "targetRange": {
+              "endByte": 219,
+              "startByte": 213
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:4d84de2c934b2787aabc9c479b4f14691b346c0b75dd8ff1f17c61b07cdcaa6c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 235,
+              "startByte": 227
+            },
+            "targetRange": {
+              "endByte": 230,
+              "startByte": 227
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 380,
+              "startByte": 303
+            },
+            "targetRange": {
+              "endByte": 307,
+              "startByte": 303
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:c4d832853b19072f81e8215d79302bb7612bfb8b19a7f9d22623773daa951cc8",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 346,
+              "startByte": 321
+            },
+            "targetRange": {
+              "endByte": 325,
+              "startByte": 321
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 354,
+              "startByte": 351
+            },
+            "targetRange": {
+              "endByte": 354,
+              "startByte": 351
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 377,
+              "startByte": 364
+            },
+            "targetRange": {
+              "endByte": 371,
+              "startByte": 364
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 423,
+              "startByte": 385
+            },
+            "targetRange": {
+              "endByte": 388,
+              "startByte": 385
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:ad1b8e2fe02aeae649be2ced4436e650a2d3de524ef11aa638bebca218f3d84a",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 421,
+              "startByte": 403
+            },
+            "targetRange": {
+              "endByte": 409,
+              "startByte": 403
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 459,
+              "startByte": 428
+            },
+            "targetRange": {
+              "endByte": 438,
+              "startByte": 435
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:0de2a51475d1700d67b28e7956c2d6451c608ee8fa4b316c8e4295a63433537c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 457,
+              "startByte": 448
+            },
+            "targetRange": {
+              "endByte": 451,
+              "startByte": 448
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 499,
+              "startByte": 464
+            },
+            "targetRange": {
+              "endByte": 467,
+              "startByte": 464
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 497,
+              "startByte": 494
+            },
+            "targetRange": {
+              "endByte": 497,
+              "startByte": 494
+            }
+          }
+        ]
+      },
+      {
+        "declarations": [
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+            "kind": "class",
+            "name": "Extensions",
+            "nameRange": {
+              "endByte": 62,
+              "startByte": 52
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 570,
+              "startByte": 32
+            },
+            "syntaxKind": "class_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+            "kind": "implementation",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 78,
+              "startByte": 69
+            },
+            "parentId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+            "range": {
+              "endByte": 201,
+              "startByte": 69
+            },
+            "syntaxKind": "extension_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:72e2b3af4d4bb427549d55a712a9359fa5e2fa7aa6a2407ba80efcc495004f33",
+            "kind": "parameter",
+            "name": "text",
+            "nameRange": {
+              "endByte": 90,
+              "startByte": 86
+            },
+            "parentId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+            "range": {
+              "endByte": 90,
+              "startByte": 79
+            },
+            "syntaxKind": "receiver_parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:4227788893a37f1a769a5401638c7ec7882eabfa6e581c952d0f0bdfb470256b",
+            "kind": "field",
+            "name": "Size",
+            "nameRange": {
+              "endByte": 117,
+              "startByte": 113
+            },
+            "parentId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+            "range": {
+              "endByte": 133,
+              "startByte": 102
+            },
+            "syntaxKind": "property_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+            "kind": "method",
+            "name": "Read",
+            "nameRange": {
+              "endByte": 157,
+              "startByte": 153
+            },
+            "parentId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+            "range": {
+              "endByte": 195,
+              "startByte": 142
+            },
+            "syntaxKind": "method_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:4899b60c9a61ddd424da03815a3a2aa74ef900bd64b24f6c8015ff44a1b32771",
+            "kind": "parameter",
+            "name": "offset",
+            "nameRange": {
+              "endByte": 168,
+              "startByte": 162
+            },
+            "parentId": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+            "range": {
+              "endByte": 168,
+              "startByte": 158
+            },
+            "syntaxKind": "parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+            "kind": "implementation",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 215,
+              "startByte": 206
+            },
+            "parentId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+            "range": {
+              "endByte": 310,
+              "startByte": 206
+            },
+            "syntaxKind": "extension_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:064ea64e4c54cbbcdcf135a97ff53400fd1fbe466a48511544c4383fd493315e",
+            "kind": "parameter",
+            "name": "values",
+            "nameRange": {
+              "endByte": 240,
+              "startByte": 234
+            },
+            "parentId": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+            "range": {
+              "endByte": 240,
+              "startByte": 219
+            },
+            "syntaxKind": "receiver_parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728",
+            "kind": "method",
+            "name": "Count",
+            "nameRange": {
+              "endByte": 284,
+              "startByte": 279
+            },
+            "parentId": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+            "range": {
+              "endByte": 304,
+              "startByte": 268
+            },
+            "syntaxKind": "method_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+            "kind": "implementation",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 324,
+              "startByte": 315
+            },
+            "parentId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+            "range": {
+              "endByte": 394,
+              "startByte": 315
+            },
+            "syntaxKind": "extension_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:6b424c2e0c94c5e7971439b5514333df77e634fc0d5dc28a504073d31287b17c",
+            "kind": "parameter",
+            "name": "number",
+            "nameRange": {
+              "endByte": 339,
+              "startByte": 333
+            },
+            "parentId": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+            "range": {
+              "endByte": 339,
+              "startByte": 325
+            },
+            "syntaxKind": "receiver_parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:5659d2baf04af7a15f461f03f482099bb085575c63566d5cd1c7386c68f77f0b",
+            "kind": "method",
+            "name": "Increment",
+            "nameRange": {
+              "endByte": 372,
+              "startByte": 363
+            },
+            "parentId": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+            "range": {
+              "endByte": 388,
+              "startByte": 351
+            },
+            "syntaxKind": "method_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+            "kind": "implementation",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 408,
+              "startByte": 399
+            },
+            "parentId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+            "range": {
+              "endByte": 568,
+              "startByte": 399
+            },
+            "syntaxKind": "extension_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:f5dcf6585cf9066b0c11db4ba6c65a8c4b9b9a31bc68d896d75320f2df258112",
+            "kind": "field",
+            "name": "EmptySize",
+            "nameRange": {
+              "endByte": 457,
+              "startByte": 448
+            },
+            "parentId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+            "range": {
+              "endByte": 463,
+              "startByte": 430
+            },
+            "syntaxKind": "property_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+            "kind": "method",
+            "name": "+",
+            "nameRange": {
+              "endByte": 506,
+              "startByte": 505
+            },
+            "parentId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+            "range": {
+              "endByte": 562,
+              "startByte": 472
+            },
+            "syntaxKind": "operator_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:35fbd356d69fdad7b36716874cebfc6e6a466f5fe9cea1c13e5b4714ae157e50",
+            "kind": "parameter",
+            "name": "left",
+            "nameRange": {
+              "endByte": 521,
+              "startByte": 517
+            },
+            "parentId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+            "range": {
+              "endByte": 521,
+              "startByte": 507
+            },
+            "syntaxKind": "parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:919cef25a52871bef77740de78267c45999f07517d8e4b05a29d477639d0b2b6",
+            "kind": "parameter",
+            "name": "right",
+            "nameRange": {
+              "endByte": 538,
+              "startByte": 533
+            },
+            "parentId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+            "range": {
+              "endByte": 538,
+              "startByte": 523
+            },
+            "syntaxKind": "parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4",
+            "kind": "class",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 586,
+              "startByte": 577
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 616,
+              "startByte": 571
+            },
+            "syntaxKind": "class_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:7bf38b4ea9e814a551d3c428d6f37c719a57771d1aff17455adb34559e3fdbff",
+            "kind": "method",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 609,
+              "startByte": 600
+            },
+            "parentId": "syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4",
+            "range": {
+              "endByte": 614,
+              "startByte": 593
+            },
+            "syntaxKind": "constructor_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+            "kind": "class",
+            "name": "Contextual",
+            "nameRange": {
+              "endByte": 633,
+              "startByte": 623
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 722,
+              "startByte": 617
+            },
+            "syntaxKind": "class_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+            "kind": "method",
+            "name": "extension",
+            "nameRange": {
+              "endByte": 660,
+              "startByte": 651
+            },
+            "parentId": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+            "range": {
+              "endByte": 681,
+              "startByte": 640
+            },
+            "syntaxKind": "method_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:cfd05677acd0d3ede4daf6e4ae93ef9b6016168124f7c95ca1ed0662b234e8e4",
+            "kind": "parameter",
+            "name": "value",
+            "nameRange": {
+              "endByte": 670,
+              "startByte": 665
+            },
+            "parentId": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+            "range": {
+              "endByte": 670,
+              "startByte": 661
+            },
+            "syntaxKind": "parameter"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5",
+            "kind": "method",
+            "name": "Read",
+            "nameRange": {
+              "endByte": 701,
+              "startByte": 697
+            },
+            "parentId": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+            "range": {
+              "endByte": 720,
+              "startByte": 686
+            },
+            "syntaxKind": "method_declaration"
+          }
+        ],
+        "diagnostics": [],
+        "identity": {
+          "byteLength": 723,
+          "coverage": "supported_subset",
+          "dialect": "csharp",
+          "grammars": [
+            {
+              "dialect": "csharp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
+            }
+          ],
+          "path": "native/extension-blocks.cs",
+          "sourceDigest": "sha256:4311c5d4c480ff01cbdcfa3e5ae313f5422bd9a3be1b0ac297296f128be835bd",
+          "structureDigest": "sha256:872a536302856035683a392b90fc479d77e59b8e16b0a6f557f4042545660a82"
+        },
+        "relations": [
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:72e2b3af4d4bb427549d55a712a9359fa5e2fa7aa6a2407ba80efcc495004f33",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 90,
+              "startByte": 79
+            },
+            "targetRange": {
+              "endByte": 85,
+              "startByte": 79
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:4227788893a37f1a769a5401638c7ec7882eabfa6e581c952d0f0bdfb470256b",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 133,
+              "startByte": 102
+            },
+            "targetRange": {
+              "endByte": 112,
+              "startByte": 109
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 195,
+              "startByte": 142
+            },
+            "targetRange": {
+              "endByte": 152,
+              "startByte": 149
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:4899b60c9a61ddd424da03815a3a2aa74ef900bd64b24f6c8015ff44a1b32771",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 168,
+              "startByte": 158
+            },
+            "targetRange": {
+              "endByte": 161,
+              "startByte": 158
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 194,
+              "startByte": 173
+            },
+            "targetRange": {
+              "endByte": 180,
+              "startByte": 173
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:064ea64e4c54cbbcdcf135a97ff53400fd1fbe466a48511544c4383fd493315e",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 240,
+              "startByte": 219
+            },
+            "targetRange": {
+              "endByte": 233,
+              "startByte": 219
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 304,
+              "startByte": 268
+            },
+            "targetRange": {
+              "endByte": 278,
+              "startByte": 275
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 303,
+              "startByte": 290
+            },
+            "targetRange": {
+              "endByte": 295,
+              "startByte": 290
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:6b424c2e0c94c5e7971439b5514333df77e634fc0d5dc28a504073d31287b17c",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 339,
+              "startByte": 325
+            },
+            "targetRange": {
+              "endByte": 332,
+              "startByte": 329
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:5659d2baf04af7a15f461f03f482099bb085575c63566d5cd1c7386c68f77f0b",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 388,
+              "startByte": 351
+            },
+            "targetRange": {
+              "endByte": 362,
+              "startByte": 358
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 418,
+              "startByte": 409
+            },
+            "targetRange": {
+              "endByte": 418,
+              "startByte": 409
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:f5dcf6585cf9066b0c11db4ba6c65a8c4b9b9a31bc68d896d75320f2df258112",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 463,
+              "startByte": 430
+            },
+            "targetRange": {
+              "endByte": 447,
+              "startByte": 444
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 562,
+              "startByte": 472
+            },
+            "targetRange": {
+              "endByte": 495,
+              "startByte": 486
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:35fbd356d69fdad7b36716874cebfc6e6a466f5fe9cea1c13e5b4714ae157e50",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 521,
+              "startByte": 507
+            },
+            "targetRange": {
+              "endByte": 516,
+              "startByte": 507
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:919cef25a52871bef77740de78267c45999f07517d8e4b05a29d477639d0b2b6",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 538,
+              "startByte": 523
+            },
+            "targetRange": {
+              "endByte": 532,
+              "startByte": 523
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 561,
+              "startByte": 543
+            },
+            "targetRange": {
+              "endByte": 548,
+              "startByte": 543
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 681,
+              "startByte": 640
+            },
+            "targetRange": {
+              "endByte": 650,
+              "startByte": 647
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:cfd05677acd0d3ede4daf6e4ae93ef9b6016168124f7c95ca1ed0662b234e8e4",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 670,
+              "startByte": 661
+            },
+            "targetRange": {
+              "endByte": 664,
+              "startByte": 661
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 720,
+              "startByte": 686
+            },
+            "targetRange": {
+              "endByte": 696,
+              "startByte": 693
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 719,
+              "startByte": 707
+            },
+            "targetRange": {
+              "endByte": 716,
+              "startByte": 707
             }
           }
         ]
@@ -6895,7 +9471,7 @@
           "grammars": [
             {
               "dialect": "cpp",
-              "grammar": "crates.io/tree-sitter-cpp@0.23.4"
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
             }
           ],
           "path": "native/vector.cpp",
@@ -7567,7 +10143,7 @@
           "grammars": [
             {
               "dialect": "csharp",
-              "grammar": "crates.io/tree-sitter-c-sharp@0.23.5"
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
             }
           ],
           "path": "server/Service.cs",
@@ -9476,7 +12052,7 @@
     ],
     "identity": {
       "discoveryComplete": true,
-      "extractor": "whip-docs-syntax@2",
+      "extractor": "whip-docs-syntax@3",
       "files": [
         {
           "byteLength": 277,
@@ -9513,7 +12089,7 @@
           "grammars": [
             {
               "dialect": "cpp",
-              "grammar": "crates.io/tree-sitter-cpp@0.23.4"
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
             }
           ],
           "path": "include/api.h",
@@ -9533,6 +12109,34 @@
           "path": "mobile/Screen.kt",
           "sourceDigest": "sha256:cb5f66195218dc2b6c2ba67e4faa29adcd56e516b268d7e6d2d8ed12c0dd99e9",
           "structureDigest": "sha256:bc68ad1795e79158b9e9b64981432b414b1b51288c59f8c138be1f0bac0f5a7b"
+        },
+        {
+          "byteLength": 503,
+          "coverage": "supported_subset",
+          "dialect": "cpp",
+          "grammars": [
+            {
+              "dialect": "cpp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
+            }
+          ],
+          "path": "native/explicit-object.cpp",
+          "sourceDigest": "sha256:7580030bf3aaa90150a899340929f7a6bd072d1000349497a06236cf79e1cb21",
+          "structureDigest": "sha256:2da33ebe490af37b7dac9a33aea5365ef345848caa4adae8f12151efaf6161aa"
+        },
+        {
+          "byteLength": 723,
+          "coverage": "supported_subset",
+          "dialect": "csharp",
+          "grammars": [
+            {
+              "dialect": "csharp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
+            }
+          ],
+          "path": "native/extension-blocks.cs",
+          "sourceDigest": "sha256:4311c5d4c480ff01cbdcfa3e5ae313f5422bd9a3be1b0ac297296f128be835bd",
+          "structureDigest": "sha256:872a536302856035683a392b90fc479d77e59b8e16b0a6f557f4042545660a82"
         },
         {
           "byteLength": 138,
@@ -9569,7 +12173,7 @@
           "grammars": [
             {
               "dialect": "cpp",
-              "grammar": "crates.io/tree-sitter-cpp@0.23.4"
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
             }
           ],
           "path": "native/vector.cpp",
@@ -9611,7 +12215,7 @@
           "grammars": [
             {
               "dialect": "csharp",
-              "grammar": "crates.io/tree-sitter-c-sharp@0.23.5"
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
             }
           ],
           "path": "server/Service.cs",
@@ -10044,6 +12648,334 @@
         "provenance": "tree_sitter",
         "sourceId": "syntax:6f2ada6d1520ee088b0082519e56294253099303a2623e198b003195326b8c36",
         "targetId": "syntax:0b065dcfa25b8b09f92dc57d8383290d0abccfb420f363114636919a4bfd1bd5"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:syntax:file:native/explicit-object.cpp",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "workspace:syntax",
+        "targetId": "file:native/explicit-object.cpp"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:native/explicit-object.cpp:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:native/explicit-object.cpp",
+        "targetId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:ad8039e39b3b26c35c3dee564558beaf13bdf0c3bdf815f67eb8d5b4d76c9caf",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:ad8039e39b3b26c35c3dee564558beaf13bdf0c3bdf815f67eb8d5b4d76c9caf"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b:syntax:db456432082d8a66a0ad7993497c6efd321f93a06627a31b731e639379554308",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+        "targetId": "syntax:db456432082d8a66a0ad7993497c6efd321f93a06627a31b731e639379554308"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b:syntax:90b2c2e01bef7c6a4f682dc5b2a94b92016bd085c885a08b36e06c9afdcfb909",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+        "targetId": "syntax:90b2c2e01bef7c6a4f682dc5b2a94b92016bd085c885a08b36e06c9afdcfb909"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9:syntax:48faee489a4a5b697241d6550fbf6a9ee9cbbd6cac541c34b5a1400ab6a3951f",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+        "targetId": "syntax:48faee489a4a5b697241d6550fbf6a9ee9cbbd6cac541c34b5a1400ab6a3951f"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9:syntax:4d84de2c934b2787aabc9c479b4f14691b346c0b75dd8ff1f17c61b07cdcaa6c",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+        "targetId": "syntax:4d84de2c934b2787aabc9c479b4f14691b346c0b75dd8ff1f17c61b07cdcaa6c"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c:syntax:c4d832853b19072f81e8215d79302bb7612bfb8b19a7f9d22623773daa951cc8",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+        "targetId": "syntax:c4d832853b19072f81e8215d79302bb7612bfb8b19a7f9d22623773daa951cc8"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00:syntax:ad1b8e2fe02aeae649be2ced4436e650a2d3de524ef11aa638bebca218f3d84a",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+        "targetId": "syntax:ad1b8e2fe02aeae649be2ced4436e650a2d3de524ef11aa638bebca218f3d84a"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e:syntax:0de2a51475d1700d67b28e7956c2d6451c608ee8fa4b316c8e4295a63433537c",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+        "targetId": "syntax:0de2a51475d1700d67b28e7956c2d6451c608ee8fa4b316c8e4295a63433537c"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:syntax:file:native/extension-blocks.cs",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "workspace:syntax",
+        "targetId": "file:native/extension-blocks.cs"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:native/extension-blocks.cs:syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:native/extension-blocks.cs",
+        "targetId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f:syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "targetId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac:syntax:72e2b3af4d4bb427549d55a712a9359fa5e2fa7aa6a2407ba80efcc495004f33",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+        "targetId": "syntax:72e2b3af4d4bb427549d55a712a9359fa5e2fa7aa6a2407ba80efcc495004f33"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac:syntax:4227788893a37f1a769a5401638c7ec7882eabfa6e581c952d0f0bdfb470256b",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+        "targetId": "syntax:4227788893a37f1a769a5401638c7ec7882eabfa6e581c952d0f0bdfb470256b"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac:syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+        "targetId": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097:syntax:4899b60c9a61ddd424da03815a3a2aa74ef900bd64b24f6c8015ff44a1b32771",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+        "targetId": "syntax:4899b60c9a61ddd424da03815a3a2aa74ef900bd64b24f6c8015ff44a1b32771"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f:syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "targetId": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b:syntax:064ea64e4c54cbbcdcf135a97ff53400fd1fbe466a48511544c4383fd493315e",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+        "targetId": "syntax:064ea64e4c54cbbcdcf135a97ff53400fd1fbe466a48511544c4383fd493315e"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b:syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+        "targetId": "syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f:syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "targetId": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975:syntax:6b424c2e0c94c5e7971439b5514333df77e634fc0d5dc28a504073d31287b17c",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+        "targetId": "syntax:6b424c2e0c94c5e7971439b5514333df77e634fc0d5dc28a504073d31287b17c"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975:syntax:5659d2baf04af7a15f461f03f482099bb085575c63566d5cd1c7386c68f77f0b",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+        "targetId": "syntax:5659d2baf04af7a15f461f03f482099bb085575c63566d5cd1c7386c68f77f0b"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f:syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "targetId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a:syntax:f5dcf6585cf9066b0c11db4ba6c65a8c4b9b9a31bc68d896d75320f2df258112",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+        "targetId": "syntax:f5dcf6585cf9066b0c11db4ba6c65a8c4b9b9a31bc68d896d75320f2df258112"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a:syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+        "targetId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14:syntax:35fbd356d69fdad7b36716874cebfc6e6a466f5fe9cea1c13e5b4714ae157e50",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+        "targetId": "syntax:35fbd356d69fdad7b36716874cebfc6e6a466f5fe9cea1c13e5b4714ae157e50"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14:syntax:919cef25a52871bef77740de78267c45999f07517d8e4b05a29d477639d0b2b6",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+        "targetId": "syntax:919cef25a52871bef77740de78267c45999f07517d8e4b05a29d477639d0b2b6"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:native/extension-blocks.cs:syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:native/extension-blocks.cs",
+        "targetId": "syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4:syntax:7bf38b4ea9e814a551d3c428d6f37c719a57771d1aff17455adb34559e3fdbff",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4",
+        "targetId": "syntax:7bf38b4ea9e814a551d3c428d6f37c719a57771d1aff17455adb34559e3fdbff"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:native/extension-blocks.cs:syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:native/extension-blocks.cs",
+        "targetId": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310:syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+        "targetId": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054:syntax:cfd05677acd0d3ede4daf6e4ae93ef9b6016168124f7c95ca1ed0662b234e8e4",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+        "targetId": "syntax:cfd05677acd0d3ede4daf6e4ae93ef9b6016168124f7c95ca1ed0662b234e8e4"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310:syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+        "targetId": "syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5"
       },
       {
         "confidence": "exact",
@@ -11264,6 +14196,486 @@
           "path": "mobile/Screen.kt",
           "startColumn": 41,
           "startLine": 7
+        }
+      },
+      {
+        "id": "file:native/explicit-object.cpp",
+        "kind": "file",
+        "label": "native/explicit-object.cpp",
+        "sourceRange": null
+      },
+      {
+        "id": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "kind": "struct",
+        "label": "Sample",
+        "sourceRange": {
+          "endColumn": 2,
+          "endLine": 12,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "syntax:ad8039e39b3b26c35c3dee564558beaf13bdf0c3bdf815f67eb8d5b4d76c9caf",
+        "kind": "field",
+        "label": "value",
+        "sourceRange": {
+          "endColumn": 15,
+          "endLine": 3,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+        "kind": "method",
+        "label": "copy",
+        "sourceRange": {
+          "endColumn": 54,
+          "endLine": 4,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "syntax:db456432082d8a66a0ad7993497c6efd321f93a06627a31b731e639379554308",
+        "kind": "parameter",
+        "label": "self",
+        "sourceRange": {
+          "endColumn": 30,
+          "endLine": 4,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 14,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+        "kind": "method",
+        "label": "view",
+        "sourceRange": {
+          "endColumn": 76,
+          "endLine": 5,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "syntax:90b2c2e01bef7c6a4f682dc5b2a94b92016bd085c885a08b36e06c9afdcfb909",
+        "kind": "parameter",
+        "label": "self",
+        "sourceRange": {
+          "endColumn": 52,
+          "endLine": 5,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 14,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+        "kind": "method",
+        "label": "update",
+        "sourceRange": {
+          "endColumn": 80,
+          "endLine": 6,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 6
+        }
+      },
+      {
+        "id": "syntax:48faee489a4a5b697241d6550fbf6a9ee9cbbd6cac541c34b5a1400ab6a3951f",
+        "kind": "parameter",
+        "label": "self",
+        "sourceRange": {
+          "endColumn": 33,
+          "endLine": 6,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 16,
+          "startLine": 6
+        }
+      },
+      {
+        "id": "syntax:4d84de2c934b2787aabc9c479b4f14691b346c0b75dd8ff1f17c61b07cdcaa6c",
+        "kind": "parameter",
+        "label": "next",
+        "sourceRange": {
+          "endColumn": 43,
+          "endLine": 6,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 35,
+          "startLine": 6
+        }
+      },
+      {
+        "id": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+        "kind": "method",
+        "label": "forward",
+        "sourceRange": {
+          "endColumn": 82,
+          "endLine": 8,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 8
+        }
+      },
+      {
+        "id": "syntax:c4d832853b19072f81e8215d79302bb7612bfb8b19a7f9d22623773daa951cc8",
+        "kind": "parameter",
+        "label": "self",
+        "sourceRange": {
+          "endColumn": 48,
+          "endLine": 8,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 18,
+          "startLine": 8
+        }
+      },
+      {
+        "id": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+        "kind": "method",
+        "label": "declared",
+        "sourceRange": {
+          "endColumn": 43,
+          "endLine": 9,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 9
+        }
+      },
+      {
+        "id": "syntax:ad1b8e2fe02aeae649be2ced4436e650a2d3de524ef11aa638bebca218f3d84a",
+        "kind": "parameter",
+        "label": "self",
+        "sourceRange": {
+          "endColumn": 41,
+          "endLine": 9,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 18,
+          "startLine": 9
+        }
+      },
+      {
+        "id": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+        "kind": "method",
+        "label": "ordinary",
+        "sourceRange": {
+          "endColumn": 36,
+          "endLine": 10,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 10
+        }
+      },
+      {
+        "id": "syntax:0de2a51475d1700d67b28e7956c2d6451c608ee8fa4b316c8e4295a63433537c",
+        "kind": "parameter",
+        "label": "value",
+        "sourceRange": {
+          "endColumn": 34,
+          "endLine": 10,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 25,
+          "startLine": 10
+        }
+      },
+      {
+        "id": "syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c",
+        "kind": "field",
+        "label": "callback",
+        "sourceRange": {
+          "endColumn": 40,
+          "endLine": 11,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 11
+        }
+      },
+      {
+        "id": "file:native/extension-blocks.cs",
+        "kind": "file",
+        "label": "native/extension-blocks.cs",
+        "sourceRange": null
+      },
+      {
+        "id": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "kind": "class",
+        "label": "Extensions",
+        "sourceRange": {
+          "endColumn": 2,
+          "endLine": 17,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+        "kind": "impl",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 6,
+          "endLine": 6,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "syntax:72e2b3af4d4bb427549d55a712a9359fa5e2fa7aa6a2407ba80efcc495004f33",
+        "kind": "parameter",
+        "label": "text",
+        "sourceRange": {
+          "endColumn": 26,
+          "endLine": 3,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 15,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "syntax:4227788893a37f1a769a5401638c7ec7882eabfa6e581c952d0f0bdfb470256b",
+        "kind": "field",
+        "label": "Size",
+        "sourceRange": {
+          "endColumn": 40,
+          "endLine": 4,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+        "kind": "method",
+        "label": "Read",
+        "sourceRange": {
+          "endColumn": 62,
+          "endLine": 5,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "syntax:4899b60c9a61ddd424da03815a3a2aa74ef900bd64b24f6c8015ff44a1b32771",
+        "kind": "parameter",
+        "label": "offset",
+        "sourceRange": {
+          "endColumn": 35,
+          "endLine": 5,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 25,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+        "kind": "impl",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 6,
+          "endLine": 9,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 7
+        }
+      },
+      {
+        "id": "syntax:064ea64e4c54cbbcdcf135a97ff53400fd1fbe466a48511544c4383fd493315e",
+        "kind": "parameter",
+        "label": "values",
+        "sourceRange": {
+          "endColumn": 39,
+          "endLine": 7,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 18,
+          "startLine": 7
+        }
+      },
+      {
+        "id": "syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728",
+        "kind": "method",
+        "label": "Count",
+        "sourceRange": {
+          "endColumn": 45,
+          "endLine": 8,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 8
+        }
+      },
+      {
+        "id": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+        "kind": "impl",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 6,
+          "endLine": 12,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 10
+        }
+      },
+      {
+        "id": "syntax:6b424c2e0c94c5e7971439b5514333df77e634fc0d5dc28a504073d31287b17c",
+        "kind": "parameter",
+        "label": "number",
+        "sourceRange": {
+          "endColumn": 29,
+          "endLine": 10,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 15,
+          "startLine": 10
+        }
+      },
+      {
+        "id": "syntax:5659d2baf04af7a15f461f03f482099bb085575c63566d5cd1c7386c68f77f0b",
+        "kind": "method",
+        "label": "Increment",
+        "sourceRange": {
+          "endColumn": 46,
+          "endLine": 11,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 11
+        }
+      },
+      {
+        "id": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+        "kind": "impl",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 6,
+          "endLine": 16,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 13
+        }
+      },
+      {
+        "id": "syntax:f5dcf6585cf9066b0c11db4ba6c65a8c4b9b9a31bc68d896d75320f2df258112",
+        "kind": "field",
+        "label": "EmptySize",
+        "sourceRange": {
+          "endColumn": 42,
+          "endLine": 14,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 14
+        }
+      },
+      {
+        "id": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+        "kind": "method",
+        "label": "+",
+        "sourceRange": {
+          "endColumn": 99,
+          "endLine": 15,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 15
+        }
+      },
+      {
+        "id": "syntax:35fbd356d69fdad7b36716874cebfc6e6a466f5fe9cea1c13e5b4714ae157e50",
+        "kind": "parameter",
+        "label": "left",
+        "sourceRange": {
+          "endColumn": 58,
+          "endLine": 15,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 44,
+          "startLine": 15
+        }
+      },
+      {
+        "id": "syntax:919cef25a52871bef77740de78267c45999f07517d8e4b05a29d477639d0b2b6",
+        "kind": "parameter",
+        "label": "right",
+        "sourceRange": {
+          "endColumn": 75,
+          "endLine": 15,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 60,
+          "startLine": 15
+        }
+      },
+      {
+        "id": "syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4",
+        "kind": "class",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 2,
+          "endLine": 20,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 1,
+          "startLine": 18
+        }
+      },
+      {
+        "id": "syntax:7bf38b4ea9e814a551d3c428d6f37c719a57771d1aff17455adb34559e3fdbff",
+        "kind": "method",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 26,
+          "endLine": 19,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 19
+        }
+      },
+      {
+        "id": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+        "kind": "class",
+        "label": "Contextual",
+        "sourceRange": {
+          "endColumn": 2,
+          "endLine": 24,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 1,
+          "startLine": 21
+        }
+      },
+      {
+        "id": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+        "kind": "method",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 46,
+          "endLine": 22,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 22
+        }
+      },
+      {
+        "id": "syntax:cfd05677acd0d3ede4daf6e4ae93ef9b6016168124f7c95ca1ed0662b234e8e4",
+        "kind": "parameter",
+        "label": "value",
+        "sourceRange": {
+          "endColumn": 35,
+          "endLine": 22,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 26,
+          "startLine": 22
+        }
+      },
+      {
+        "id": "syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5",
+        "kind": "method",
+        "label": "Read",
+        "sourceRange": {
+          "endColumn": 39,
+          "endLine": 23,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 23
         }
       },
       {
@@ -12770,6 +16182,334 @@
       },
       {
         "confidence": "exact",
+        "id": "contains:workspace:syntax:file:native/explicit-object.cpp",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "workspace:syntax",
+        "targetId": "file:native/explicit-object.cpp"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:native/explicit-object.cpp:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:native/explicit-object.cpp",
+        "targetId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:ad8039e39b3b26c35c3dee564558beaf13bdf0c3bdf815f67eb8d5b4d76c9caf",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:ad8039e39b3b26c35c3dee564558beaf13bdf0c3bdf815f67eb8d5b4d76c9caf"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b:syntax:db456432082d8a66a0ad7993497c6efd321f93a06627a31b731e639379554308",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+        "targetId": "syntax:db456432082d8a66a0ad7993497c6efd321f93a06627a31b731e639379554308"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b:syntax:90b2c2e01bef7c6a4f682dc5b2a94b92016bd085c885a08b36e06c9afdcfb909",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+        "targetId": "syntax:90b2c2e01bef7c6a4f682dc5b2a94b92016bd085c885a08b36e06c9afdcfb909"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9:syntax:48faee489a4a5b697241d6550fbf6a9ee9cbbd6cac541c34b5a1400ab6a3951f",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+        "targetId": "syntax:48faee489a4a5b697241d6550fbf6a9ee9cbbd6cac541c34b5a1400ab6a3951f"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9:syntax:4d84de2c934b2787aabc9c479b4f14691b346c0b75dd8ff1f17c61b07cdcaa6c",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+        "targetId": "syntax:4d84de2c934b2787aabc9c479b4f14691b346c0b75dd8ff1f17c61b07cdcaa6c"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c:syntax:c4d832853b19072f81e8215d79302bb7612bfb8b19a7f9d22623773daa951cc8",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+        "targetId": "syntax:c4d832853b19072f81e8215d79302bb7612bfb8b19a7f9d22623773daa951cc8"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00:syntax:ad1b8e2fe02aeae649be2ced4436e650a2d3de524ef11aa638bebca218f3d84a",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+        "targetId": "syntax:ad1b8e2fe02aeae649be2ced4436e650a2d3de524ef11aa638bebca218f3d84a"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e:syntax:0de2a51475d1700d67b28e7956c2d6451c608ee8fa4b316c8e4295a63433537c",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+        "targetId": "syntax:0de2a51475d1700d67b28e7956c2d6451c608ee8fa4b316c8e4295a63433537c"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d:syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "targetId": "syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:syntax:file:native/extension-blocks.cs",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "workspace:syntax",
+        "targetId": "file:native/extension-blocks.cs"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:native/extension-blocks.cs:syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:native/extension-blocks.cs",
+        "targetId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f:syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "targetId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac:syntax:72e2b3af4d4bb427549d55a712a9359fa5e2fa7aa6a2407ba80efcc495004f33",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+        "targetId": "syntax:72e2b3af4d4bb427549d55a712a9359fa5e2fa7aa6a2407ba80efcc495004f33"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac:syntax:4227788893a37f1a769a5401638c7ec7882eabfa6e581c952d0f0bdfb470256b",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+        "targetId": "syntax:4227788893a37f1a769a5401638c7ec7882eabfa6e581c952d0f0bdfb470256b"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac:syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+        "targetId": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097:syntax:4899b60c9a61ddd424da03815a3a2aa74ef900bd64b24f6c8015ff44a1b32771",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+        "targetId": "syntax:4899b60c9a61ddd424da03815a3a2aa74ef900bd64b24f6c8015ff44a1b32771"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f:syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "targetId": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b:syntax:064ea64e4c54cbbcdcf135a97ff53400fd1fbe466a48511544c4383fd493315e",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+        "targetId": "syntax:064ea64e4c54cbbcdcf135a97ff53400fd1fbe466a48511544c4383fd493315e"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b:syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+        "targetId": "syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f:syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "targetId": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975:syntax:6b424c2e0c94c5e7971439b5514333df77e634fc0d5dc28a504073d31287b17c",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+        "targetId": "syntax:6b424c2e0c94c5e7971439b5514333df77e634fc0d5dc28a504073d31287b17c"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975:syntax:5659d2baf04af7a15f461f03f482099bb085575c63566d5cd1c7386c68f77f0b",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+        "targetId": "syntax:5659d2baf04af7a15f461f03f482099bb085575c63566d5cd1c7386c68f77f0b"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f:syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "targetId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a:syntax:f5dcf6585cf9066b0c11db4ba6c65a8c4b9b9a31bc68d896d75320f2df258112",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+        "targetId": "syntax:f5dcf6585cf9066b0c11db4ba6c65a8c4b9b9a31bc68d896d75320f2df258112"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a:syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+        "targetId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14:syntax:35fbd356d69fdad7b36716874cebfc6e6a466f5fe9cea1c13e5b4714ae157e50",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+        "targetId": "syntax:35fbd356d69fdad7b36716874cebfc6e6a466f5fe9cea1c13e5b4714ae157e50"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14:syntax:919cef25a52871bef77740de78267c45999f07517d8e4b05a29d477639d0b2b6",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+        "targetId": "syntax:919cef25a52871bef77740de78267c45999f07517d8e4b05a29d477639d0b2b6"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:native/extension-blocks.cs:syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:native/extension-blocks.cs",
+        "targetId": "syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4:syntax:7bf38b4ea9e814a551d3c428d6f37c719a57771d1aff17455adb34559e3fdbff",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4",
+        "targetId": "syntax:7bf38b4ea9e814a551d3c428d6f37c719a57771d1aff17455adb34559e3fdbff"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:native/extension-blocks.cs:syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:native/extension-blocks.cs",
+        "targetId": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310:syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+        "targetId": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054:syntax:cfd05677acd0d3ede4daf6e4ae93ef9b6016168124f7c95ca1ed0662b234e8e4",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+        "targetId": "syntax:cfd05677acd0d3ede4daf6e4ae93ef9b6016168124f7c95ca1ed0662b234e8e4"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310:syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+        "targetId": "syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5"
+      },
+      {
+        "confidence": "exact",
         "id": "contains:workspace:syntax:file:native/math.c",
         "kind": "contains",
         "provenance": "tree_sitter",
@@ -13933,6 +17673,486 @@
           "path": "mobile/Screen.kt",
           "startColumn": 41,
           "startLine": 7
+        }
+      },
+      {
+        "id": "file:native/explicit-object.cpp",
+        "kind": "file",
+        "label": "native/explicit-object.cpp",
+        "sourceRange": null
+      },
+      {
+        "id": "syntax:68c782007647a0c88f9fb223a918313ebb0373c33858274935b47ff52f86932d",
+        "kind": "struct",
+        "label": "Sample",
+        "sourceRange": {
+          "endColumn": 2,
+          "endLine": 12,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "syntax:ad8039e39b3b26c35c3dee564558beaf13bdf0c3bdf815f67eb8d5b4d76c9caf",
+        "kind": "field",
+        "label": "value",
+        "sourceRange": {
+          "endColumn": 15,
+          "endLine": 3,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "syntax:657cf22fdbb2923b9071c9f076206f659675527d906e5fcb20daa548db0a867b",
+        "kind": "method",
+        "label": "copy",
+        "sourceRange": {
+          "endColumn": 54,
+          "endLine": 4,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "syntax:db456432082d8a66a0ad7993497c6efd321f93a06627a31b731e639379554308",
+        "kind": "parameter",
+        "label": "self",
+        "sourceRange": {
+          "endColumn": 30,
+          "endLine": 4,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 14,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "syntax:1e78297a568dd09c4f4813fac2489c0f40a4d23f305a120542a671521cfbeb8b",
+        "kind": "method",
+        "label": "view",
+        "sourceRange": {
+          "endColumn": 76,
+          "endLine": 5,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "syntax:90b2c2e01bef7c6a4f682dc5b2a94b92016bd085c885a08b36e06c9afdcfb909",
+        "kind": "parameter",
+        "label": "self",
+        "sourceRange": {
+          "endColumn": 52,
+          "endLine": 5,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 14,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "syntax:53aee135a96a8cde8a586d79395fc5859379b4525a0208d2c9825974a04e90b9",
+        "kind": "method",
+        "label": "update",
+        "sourceRange": {
+          "endColumn": 80,
+          "endLine": 6,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 6
+        }
+      },
+      {
+        "id": "syntax:48faee489a4a5b697241d6550fbf6a9ee9cbbd6cac541c34b5a1400ab6a3951f",
+        "kind": "parameter",
+        "label": "self",
+        "sourceRange": {
+          "endColumn": 33,
+          "endLine": 6,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 16,
+          "startLine": 6
+        }
+      },
+      {
+        "id": "syntax:4d84de2c934b2787aabc9c479b4f14691b346c0b75dd8ff1f17c61b07cdcaa6c",
+        "kind": "parameter",
+        "label": "next",
+        "sourceRange": {
+          "endColumn": 43,
+          "endLine": 6,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 35,
+          "startLine": 6
+        }
+      },
+      {
+        "id": "syntax:f036c9b07034da298101e1d700d1027b6c0eab719c04389565327de24a902e7c",
+        "kind": "method",
+        "label": "forward",
+        "sourceRange": {
+          "endColumn": 82,
+          "endLine": 8,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 8
+        }
+      },
+      {
+        "id": "syntax:c4d832853b19072f81e8215d79302bb7612bfb8b19a7f9d22623773daa951cc8",
+        "kind": "parameter",
+        "label": "self",
+        "sourceRange": {
+          "endColumn": 48,
+          "endLine": 8,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 18,
+          "startLine": 8
+        }
+      },
+      {
+        "id": "syntax:a1f141cc604c24a2607bd2da65a420a45b680b9f59e38ff984ab16bf62b22a00",
+        "kind": "method",
+        "label": "declared",
+        "sourceRange": {
+          "endColumn": 43,
+          "endLine": 9,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 9
+        }
+      },
+      {
+        "id": "syntax:ad1b8e2fe02aeae649be2ced4436e650a2d3de524ef11aa638bebca218f3d84a",
+        "kind": "parameter",
+        "label": "self",
+        "sourceRange": {
+          "endColumn": 41,
+          "endLine": 9,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 18,
+          "startLine": 9
+        }
+      },
+      {
+        "id": "syntax:2051d58ef35b8a9b9f4042a4a3759f8a0cb61f1bc032eebe92f98c0bf608fe9e",
+        "kind": "method",
+        "label": "ordinary",
+        "sourceRange": {
+          "endColumn": 36,
+          "endLine": 10,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 10
+        }
+      },
+      {
+        "id": "syntax:0de2a51475d1700d67b28e7956c2d6451c608ee8fa4b316c8e4295a63433537c",
+        "kind": "parameter",
+        "label": "value",
+        "sourceRange": {
+          "endColumn": 34,
+          "endLine": 10,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 25,
+          "startLine": 10
+        }
+      },
+      {
+        "id": "syntax:6969de649b09b881748c25f3c10faa217a7085f046fc638b5953043ae74eb00c",
+        "kind": "field",
+        "label": "callback",
+        "sourceRange": {
+          "endColumn": 40,
+          "endLine": 11,
+          "path": "native/explicit-object.cpp",
+          "startColumn": 5,
+          "startLine": 11
+        }
+      },
+      {
+        "id": "file:native/extension-blocks.cs",
+        "kind": "file",
+        "label": "native/extension-blocks.cs",
+        "sourceRange": null
+      },
+      {
+        "id": "syntax:567123bd1c2378368321e81755f7889a5319357c733d64464777dd4b60366b8f",
+        "kind": "class",
+        "label": "Extensions",
+        "sourceRange": {
+          "endColumn": 2,
+          "endLine": 17,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "syntax:ab2fd3ea4af09f2cd0bb3c18c5e1d6a13d0163611f7ae8712a2bb89876fe9aac",
+        "kind": "impl",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 6,
+          "endLine": 6,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "syntax:72e2b3af4d4bb427549d55a712a9359fa5e2fa7aa6a2407ba80efcc495004f33",
+        "kind": "parameter",
+        "label": "text",
+        "sourceRange": {
+          "endColumn": 26,
+          "endLine": 3,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 15,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "syntax:4227788893a37f1a769a5401638c7ec7882eabfa6e581c952d0f0bdfb470256b",
+        "kind": "field",
+        "label": "Size",
+        "sourceRange": {
+          "endColumn": 40,
+          "endLine": 4,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "syntax:f29fa9d333d817c45b29bc810c8903657dd992231db20b21c938ec240b09c097",
+        "kind": "method",
+        "label": "Read",
+        "sourceRange": {
+          "endColumn": 62,
+          "endLine": 5,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "syntax:4899b60c9a61ddd424da03815a3a2aa74ef900bd64b24f6c8015ff44a1b32771",
+        "kind": "parameter",
+        "label": "offset",
+        "sourceRange": {
+          "endColumn": 35,
+          "endLine": 5,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 25,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "syntax:df2913c3ffc5348a9852680f88bbf3129a69d94bfeecc08a60a29ae88d07467b",
+        "kind": "impl",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 6,
+          "endLine": 9,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 7
+        }
+      },
+      {
+        "id": "syntax:064ea64e4c54cbbcdcf135a97ff53400fd1fbe466a48511544c4383fd493315e",
+        "kind": "parameter",
+        "label": "values",
+        "sourceRange": {
+          "endColumn": 39,
+          "endLine": 7,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 18,
+          "startLine": 7
+        }
+      },
+      {
+        "id": "syntax:945da855a7276bb2ad88918a829bfee7170e1b55ea5797dbad33680c0e872728",
+        "kind": "method",
+        "label": "Count",
+        "sourceRange": {
+          "endColumn": 45,
+          "endLine": 8,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 8
+        }
+      },
+      {
+        "id": "syntax:7a8ce1c41e240801da0f54f800b5d2ba9848be1924951e323c45f7f928f4d975",
+        "kind": "impl",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 6,
+          "endLine": 12,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 10
+        }
+      },
+      {
+        "id": "syntax:6b424c2e0c94c5e7971439b5514333df77e634fc0d5dc28a504073d31287b17c",
+        "kind": "parameter",
+        "label": "number",
+        "sourceRange": {
+          "endColumn": 29,
+          "endLine": 10,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 15,
+          "startLine": 10
+        }
+      },
+      {
+        "id": "syntax:5659d2baf04af7a15f461f03f482099bb085575c63566d5cd1c7386c68f77f0b",
+        "kind": "method",
+        "label": "Increment",
+        "sourceRange": {
+          "endColumn": 46,
+          "endLine": 11,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 11
+        }
+      },
+      {
+        "id": "syntax:b11e2eb5f9bbf97b37811ee9fcfe2f834d96f817e86a38b245bfa248e1ca320a",
+        "kind": "impl",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 6,
+          "endLine": 16,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 13
+        }
+      },
+      {
+        "id": "syntax:f5dcf6585cf9066b0c11db4ba6c65a8c4b9b9a31bc68d896d75320f2df258112",
+        "kind": "field",
+        "label": "EmptySize",
+        "sourceRange": {
+          "endColumn": 42,
+          "endLine": 14,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 14
+        }
+      },
+      {
+        "id": "syntax:a014526516a5116e8248d57d055fee37814c9b681c6d3368b93af750e0715c14",
+        "kind": "method",
+        "label": "+",
+        "sourceRange": {
+          "endColumn": 99,
+          "endLine": 15,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 9,
+          "startLine": 15
+        }
+      },
+      {
+        "id": "syntax:35fbd356d69fdad7b36716874cebfc6e6a466f5fe9cea1c13e5b4714ae157e50",
+        "kind": "parameter",
+        "label": "left",
+        "sourceRange": {
+          "endColumn": 58,
+          "endLine": 15,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 44,
+          "startLine": 15
+        }
+      },
+      {
+        "id": "syntax:919cef25a52871bef77740de78267c45999f07517d8e4b05a29d477639d0b2b6",
+        "kind": "parameter",
+        "label": "right",
+        "sourceRange": {
+          "endColumn": 75,
+          "endLine": 15,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 60,
+          "startLine": 15
+        }
+      },
+      {
+        "id": "syntax:ded48bdec0898145404061b1fe4ced1cf7555bcc11d8c4aa68132ee87bb83fa4",
+        "kind": "class",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 2,
+          "endLine": 20,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 1,
+          "startLine": 18
+        }
+      },
+      {
+        "id": "syntax:7bf38b4ea9e814a551d3c428d6f37c719a57771d1aff17455adb34559e3fdbff",
+        "kind": "method",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 26,
+          "endLine": 19,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 19
+        }
+      },
+      {
+        "id": "syntax:0254509fdd016f449c4d48eea525bd663509d2441cdec21898ce2c268c85a310",
+        "kind": "class",
+        "label": "Contextual",
+        "sourceRange": {
+          "endColumn": 2,
+          "endLine": 24,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 1,
+          "startLine": 21
+        }
+      },
+      {
+        "id": "syntax:e820c4ebe084d80f50b123f496d9fb3d13b70f812c8c796ac84438d7d9618054",
+        "kind": "method",
+        "label": "extension",
+        "sourceRange": {
+          "endColumn": 46,
+          "endLine": 22,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 22
+        }
+      },
+      {
+        "id": "syntax:cfd05677acd0d3ede4daf6e4ae93ef9b6016168124f7c95ca1ed0662b234e8e4",
+        "kind": "parameter",
+        "label": "value",
+        "sourceRange": {
+          "endColumn": 35,
+          "endLine": 22,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 26,
+          "startLine": 22
+        }
+      },
+      {
+        "id": "syntax:2cb19b7ab780fada5e8b27adb2a7946a60e1fde7a8e34b5942d4d87773ee4df5",
+        "kind": "method",
+        "label": "Read",
+        "sourceRange": {
+          "endColumn": 39,
+          "endLine": 23,
+          "path": "native/extension-blocks.cs",
+          "startColumn": 5,
+          "startLine": 23
         }
       },
       {

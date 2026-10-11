@@ -12,7 +12,7 @@ test('real no-Cargo mixed parser output validates; nullable file ranges still co
   const analysis=validateGraphAnalysis(fixture.overriddenSymbols,fixture.overriddenAnalysis)!;
   assert.ok(new Set(analysis.files.map(file=>file.identity.dialect)).size>=12);
   const files=fileRelationSnapshotToRenderGraph(fixture.files),before=JSON.stringify(files);
-  for(const path of ['api/handler.py','web/app.ts','web/Panel.svelte','include/api.h']){
+  for(const path of ['api/handler.py','web/app.ts','web/Panel.svelte','include/api.h','native/explicit-object.cpp','native/extension-blocks.cs']){
     for(let i=0;i<4;i++){
       const overlay=projectSymbolOverlay(files,fixture.files.sourceRoot,fixture.overriddenSymbols,new Set(['file:'+path]));
       assert.ok(overlay.nodes.length>1,path);assert.equal(overlay.fileIdByAnalysisId.get('file:'+path),'file:'+path);
@@ -23,6 +23,10 @@ test('real no-Cargo mixed parser output validates; nullable file ranges still co
     }
   }
   assert.ok(analysis.files.some(file=>file.relations.some(fact=>fact.kind==='call_syntax')));
+  assert.equal(analysis.identity.extractor,'whip-docs-syntax@3');
+  const extensions=analysis.files.find(file=>file.identity.path==='native/extension-blocks.cs')!;
+  assert.ok(extensions.declarations.some(node=>node.kind==='implementation'&&node.name==='extension'));
+  assert.ok(fixture.overriddenSymbols.nodes.some(node=>node.kind==='impl'&&node.label==='extension'));
 });
 test('schema drift, mismatched metadata and out-of-bounds ranges fail closed',()=>{
   assert.throws(()=>validateGraphAnalysis({...fixture.symbols,schemaVersion:99},fixture.analysis),/Unsupported graph schema/);

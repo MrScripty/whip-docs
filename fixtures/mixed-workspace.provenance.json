@@ -1,5 +1,5 @@
 {
-  "parserCommit": "1015275810f7574382fc641b15ed46e61f4106b6",
+  "parserCommit": "2afd3c0a03d48ac05e9717d5dd6f727a44691fc3",
   "graphCommit": "2a6b73da3fce1ce099e91fa386986c4b2f63a44e",
   "generator": "cargo run --no-default-features --example integration_fixture -- FIXTURE_ROOT DISPOSABLE_APP_DATA",
   "normalization": "Absolute root replaced with public fixture label; graph and journal timestamps fixed; identities, digests, ranges, facts and relationships unchanged.",
@@ -9,6 +9,8 @@
     "broken/bad.py": "6b8c8a725c23dc076d9a2c185ce4e02435746bc3b4f99906d13de360e56898c7",
     "include/api.h": "a018ff632a2e649484c047bc38297246836f02033f9338e32c300acbb3a3933e",
     "mobile/Screen.kt": "cb5f66195218dc2b6c2ba67e4faa29adcd56e516b268d7e6d2d8ed12c0dd99e9",
+    "native/explicit-object.cpp": "7580030bf3aaa90150a899340929f7a6bd072d1000349497a06236cf79e1cb21",
+    "native/extension-blocks.cs": "4311c5d4c480ff01cbdcfa3e5ae313f5422bd9a3be1b0ac297296f128be835bd",
     "native/math.c": "4825155d47a94bd0b4d39dffd324c9bfe1681f912dd9bfebafbf551a44e280b2",
     "native/memory.zig": "d050d6f82249e54715358306059019756ed7af4f0e006e030d2852bf820f2e83",
     "native/vector.cpp": "876570a8b7a6b406a5f76e83502b63649f16a7797bd744d2fcb5cdc495494c78",

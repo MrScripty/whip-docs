@@ -1,7 +1,11 @@
 # Bounded parity-gap qualification follow-up
 
 2026-10-11. Baseline `91b05b696ca4bd1121137fe2a78faac36e0f630d`.
-No grammar dependencies, lockfile, graph shape, IPC shape or journal format changed.
+Historical report for `1015275810f7574382fc641b15ed46e61f4106b6`.
+The subsequent [official qualification](official-grammar-qualification.md) builds
+and qualifies the C++/C# candidates described here.
+
+In this initial follow-up, no grammar dependencies, lockfile, graph shape, IPC shape or journal format changed.
 No Passeur build/artifact was installed. This is not full extraction parity.
 
 ## Classification and recommended fixes

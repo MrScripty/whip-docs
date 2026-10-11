@@ -14,6 +14,6 @@ record['journalVector']['createdAt'] = record['journalVector']['snapshot']['capt
 (repo / 'fixtures/mixed-workspace.snapshot.json').write_text(json.dumps(record, indent=2) + '\n')
 fixture = repo / 'fixtures/mixed-workspace'
 hashes = {str(p.relative_to(fixture)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(fixture.rglob('*')) if p.is_file()}
-provenance = {'parserCommit': '1015275810f7574382fc641b15ed46e61f4106b6', 'graphCommit': '2a6b73da3fce1ce099e91fa386986c4b2f63a44e', 'generator': 'cargo run --no-default-features --example integration_fixture -- FIXTURE_ROOT DISPOSABLE_APP_DATA', 'normalization': 'Absolute root replaced with public fixture label; graph and journal timestamps fixed; identities, digests, ranges, facts and relationships unchanged.', 'sourceSha256': hashes}
+provenance = {'parserCommit': '2afd3c0a03d48ac05e9717d5dd6f727a44691fc3', 'graphCommit': '2a6b73da3fce1ce099e91fa386986c4b2f63a44e', 'generator': 'cargo run --no-default-features --example integration_fixture -- FIXTURE_ROOT DISPOSABLE_APP_DATA', 'normalization': 'Absolute root replaced with public fixture label; graph and journal timestamps fixed; identities, digests, ranges, facts and relationships unchanged.', 'sourceSha256': hashes}
 (repo / 'fixtures/mixed-workspace.provenance.json').write_text(json.dumps(provenance, indent=2) + '\n')
 print(f"Recorded {len(record['overriddenAnalysis']['files'])} files with {record['overriddenAnalysis']['identity']['extractor']}.")
