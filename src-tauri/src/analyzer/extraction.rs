@@ -37,7 +37,8 @@ impl RustGraphExtractor {
         &self,
         source_root: &ValidatedRepoPath,
     ) -> Result<GraphSnapshotDto, RustGraphExtractionError> {
-        self.extract_with_sources(source_root).map(|analysis| analysis.snapshot)
+        self.extract_with_sources(source_root)
+            .map(|analysis| analysis.snapshot)
     }
 
     pub fn extract_with_sources(
@@ -142,7 +143,11 @@ impl RustGraphExtractor {
         graph.warn_if_large();
         let sources = std::mem::take(&mut graph.sources);
         let repository_revision = observed_git_revision(source_root.as_path());
-        Ok(AnalyzedGraph { snapshot: graph.finish(), sources, repository_revision })
+        Ok(AnalyzedGraph {
+            snapshot: graph.finish(),
+            sources,
+            repository_revision,
+        })
     }
 
     fn extract_source_file(
@@ -986,10 +991,17 @@ fn find_line(source: &str, needle: &str) -> u32 {
 }
 
 fn observed_git_revision(root: &Path) -> Option<String> {
-    let output = Command::new("git").arg("-C").arg(root)
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(root)
         .args(["rev-parse", "--verify", "HEAD"])
-        .stdin(Stdio::null()).stderr(Stdio::null()).output().ok()?;
-    if !output.status.success() { return None; }
+        .stdin(Stdio::null())
+        .stderr(Stdio::null())
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
     let revision = String::from_utf8(output.stdout).ok()?.trim().to_owned();
     if matches!(revision.len(), 40 | 64) && revision.bytes().all(|byte| byte.is_ascii_hexdigit()) {
         Some(revision)
@@ -1046,11 +1058,36 @@ mod tests {
         let source = "// 蟹\r\npub fn ship() {}\r\n";
         let (repo, root) = fixture_repo("exact-capture", source);
         let mut graph = super::GraphAccumulator::new(root.display_path());
-        RustGraphExtractor.extract_source_file(&root, "fixture", "crate:fixture", &repo.join("src/lib.rs"), &mut graph);
-        assert_eq!(graph.sources.get("src/lib.rs").expect("captured source").as_bytes(), source.as_bytes());
+        RustGraphExtractor.extract_source_file(
+            &root,
+            "fixture",
+            "crate:fixture",
+            &repo.join("src/lib.rs"),
+            &mut graph,
+        );
+        assert_eq!(
+            graph
+                .sources
+                .get("src/lib.rs")
+                .expect("captured source")
+                .as_bytes(),
+            source.as_bytes()
+        );
         fs::write(repo.join("src/lib.rs"), "pub fn changed() {}\n").expect("change source");
-        RustGraphExtractor.extract_source_file(&root, "fixture", "crate:fixture", &repo.join("src/lib.rs"), &mut graph);
-        assert_eq!(graph.sources.get("src/lib.rs").expect("first capture preserved"), source);
+        RustGraphExtractor.extract_source_file(
+            &root,
+            "fixture",
+            "crate:fixture",
+            &repo.join("src/lib.rs"),
+            &mut graph,
+        );
+        assert_eq!(
+            graph
+                .sources
+                .get("src/lib.rs")
+                .expect("first capture preserved"),
+            source
+        );
         assert!(!graph.nodes.values().any(|node| node.label == "changed"));
         fs::remove_dir_all(repo).expect("cleanup fixture");
     }

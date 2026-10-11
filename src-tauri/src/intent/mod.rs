@@ -141,13 +141,21 @@ impl IntentStore {
     ) -> Result<IntentRecordDto, IntentError> {
         validate_text(&request.text)?;
         if request.expected_analysis_at != analysis.snapshot.generated_at {
-            return Err(reject("intent_stale_selection", "The selected analysis has changed. Analyze and select the symbol again."));
+            return Err(reject(
+                "intent_stale_selection",
+                "The selected analysis has changed. Analyze and select the symbol again.",
+            ));
         }
         let (symbol, analyzed_source) = selection(analysis, &request.node_id)?;
         let source_files = source_fingerprints(analysis);
         let worktree_digest = source_set_digest(&source_files);
         let structural_snapshot = structural_snapshot(analysis, &symbol.source_range.path);
-        let _gate = self.gate.lock().map_err(|_| reject("intent_store_unavailable", "The intent store lock is unavailable."))?;
+        let _gate = self.gate.lock().map_err(|_| {
+            reject(
+                "intent_store_unavailable",
+                "The intent store lock is unavailable.",
+            )
+        })?;
         let _file_lock = self.acquire_lock()?;
         let records = self.read_journal()?;
         let created_at = timestamp();
@@ -155,7 +163,10 @@ impl IntentStore {
         let record = match request.kind {
             IntentKind::Original => {
                 if request.parent_id.is_some() {
-                    return Err(reject("intent_invalid_parent", "An original intent cannot have a parent."));
+                    return Err(reject(
+                        "intent_invalid_parent",
+                        "An original intent cannot have a parent.",
+                    ));
                 }
                 JournalRecord {
                     schema_version: JOURNAL_SCHEMA_VERSION,
@@ -182,14 +193,27 @@ impl IntentStore {
                 }
             }
             kind @ (IntentKind::Interpretation | IntentKind::Proposal) => {
-                let parent_id = request.parent_id.ok_or_else(|| reject("intent_invalid_parent", "Choose the original intent for this separate entry."))?;
-                let original = records.iter().find(|record| record.id == parent_id && record.kind == IntentKind::Original)
-                    .ok_or_else(|| reject("intent_invalid_parent", "The parent must be an existing original intent."))?;
+                let parent_id = request.parent_id.ok_or_else(|| {
+                    reject(
+                        "intent_invalid_parent",
+                        "Choose the original intent for this separate entry.",
+                    )
+                })?;
+                let original = records
+                    .iter()
+                    .find(|record| record.id == parent_id && record.kind == IntentKind::Original)
+                    .ok_or_else(|| {
+                        reject(
+                            "intent_invalid_parent",
+                            "The parent must be an existing original intent.",
+                        )
+                    })?;
                 if original.symbol != symbol
                     || original.snapshot.content_hash != content_hash(analyzed_source.as_bytes())
                     || original.snapshot.byte_length != analyzed_source.len()
                     || original.snapshot.worktree_digest != worktree_digest
-                    || original.snapshot.structural_snapshot != structural_snapshot {
+                    || original.snapshot.structural_snapshot != structural_snapshot
+                {
                     return Err(reject("intent_stale_source", "This original belongs to a different source snapshot or selection. It has been preserved; create a new original for the current source."));
                 }
                 JournalRecord {
@@ -210,9 +234,16 @@ impl IntentStore {
         // Compare the complete current analyzed set to ephemeral parser input.
         // Neither these bytes nor any extracted source text is serialized.
         ensure_current_analysis(analysis)?;
-        let mut line = serde_json::to_vec(&record).map_err(|_| reject("intent_serialization_failed", "The intent record could not be encoded."))?;
+        let mut line = serde_json::to_vec(&record).map_err(|_| {
+            reject(
+                "intent_serialization_failed",
+                "The intent record could not be encoded.",
+            )
+        })?;
         line.push(b'\n');
-        let existing_len = fs::metadata(&self.journal_path).map(|meta| meta.len()).unwrap_or(0);
+        let existing_len = fs::metadata(&self.journal_path)
+            .map(|meta| meta.len())
+            .unwrap_or(0);
         if existing_len + line.len() as u64 > MAX_JOURNAL_BYTES {
             return Err(reject("intent_store_full", "The prototype journal has reached its 128 MiB limit. Existing records are preserved."));
         }
@@ -240,20 +271,35 @@ impl IntentStore {
         source_root: &str,
         analysis: Option<&AnalyzedGraph>,
     ) -> Result<Vec<IntentRecordDto>, IntentError> {
-        let _gate = self.gate.lock().map_err(|_| reject("intent_store_unavailable", "The intent store lock is unavailable."))?;
+        let _gate = self.gate.lock().map_err(|_| {
+            reject(
+                "intent_store_unavailable",
+                "The intent store lock is unavailable.",
+            )
+        })?;
         let _file_lock = self.acquire_lock()?;
         let records = self.read_journal()?;
-        let originals: BTreeMap<_, _> = records.iter()
+        let originals: BTreeMap<_, _> = records
+            .iter()
             .filter(|record| record.kind == IntentKind::Original)
             .map(|record| (record.id.as_str(), record))
             .collect();
         let mut statuses = BTreeMap::new();
-        Ok(records.iter().filter(|record| record.symbol.source_root == source_root).map(|record| {
-            let status = statuses.entry(record.original_id.clone()).or_insert_with(|| {
-                originals.get(record.original_id.as_str()).map(|original| binding_status(original, analysis)).unwrap_or(BindingStatus::Unverified)
-            });
-            record.dto(status.clone())
-        }).collect())
+        Ok(records
+            .iter()
+            .filter(|record| record.symbol.source_root == source_root)
+            .map(|record| {
+                let status = statuses
+                    .entry(record.original_id.clone())
+                    .or_insert_with(|| {
+                        originals
+                            .get(record.original_id.as_str())
+                            .map(|original| binding_status(original, analysis))
+                            .unwrap_or(BindingStatus::Unverified)
+                    });
+                record.dto(status.clone())
+            })
+            .collect())
     }
 
     fn acquire_lock(&self) -> Result<JournalLock, IntentError> {
@@ -275,7 +321,9 @@ impl IntentStore {
                 write!(file, "{}", std::process::id())?;
                 Ok(guard)
             }
-            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => Err(IntentError::Locked),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                Err(IntentError::Locked)
+            }
             Err(error) => Err(error.into()),
         }
     }
@@ -298,21 +346,35 @@ impl IntentStore {
             Err(error) => return Err(error.into()),
         };
         if file.metadata()?.len() > MAX_JOURNAL_BYTES {
-            return Err(reject("intent_store_full", "The journal exceeds the prototype's 128 MiB limit."));
+            return Err(reject(
+                "intent_store_full",
+                "The journal exceeds the prototype's 128 MiB limit.",
+            ));
         }
         let mut bytes = Vec::new();
         file.take(MAX_JOURNAL_BYTES + 1).read_to_end(&mut bytes)?;
         if bytes.len() as u64 > MAX_JOURNAL_BYTES {
-            return Err(reject("intent_store_full", "The journal exceeds the prototype's 128 MiB limit."));
+            return Err(reject(
+                "intent_store_full",
+                "The journal exceeds the prototype's 128 MiB limit.",
+            ));
         }
         if bytes.last().is_some_and(|last| *last != b'\n') {
-            return Err(IntentError::Corrupt { line: bytes.iter().filter(|byte| **byte == b'\n').count() + 1 });
+            return Err(IntentError::Corrupt {
+                line: bytes.iter().filter(|byte| **byte == b'\n').count() + 1,
+            });
         }
-        if bytes.is_empty() { return Ok(Vec::new()); }
+        if bytes.is_empty() {
+            return Ok(Vec::new());
+        }
         let mut records: Vec<JournalRecord> = Vec::new();
         let mut originals = BTreeMap::<String, usize>::new();
-        for (index, line) in bytes[..bytes.len() - 1].split(|byte| *byte == b'\n').enumerate() {
-            let record: JournalRecord = serde_json::from_slice(line).map_err(|_| IntentError::Corrupt { line: index + 1 })?;
+        for (index, line) in bytes[..bytes.len() - 1]
+            .split(|byte| *byte == b'\n')
+            .enumerate()
+        {
+            let record: JournalRecord = serde_json::from_slice(line)
+                .map_err(|_| IntentError::Corrupt { line: index + 1 })?;
             let valid_base = record.schema_version == JOURNAL_SCHEMA_VERSION
                 && record.id == format!("intent:{}", index + 1)
                 && validate_text(&record.text).is_ok()
@@ -324,22 +386,27 @@ impl IntentStore {
                 && valid_structure(&record.symbol, &record.snapshot.structural_snapshot)
                 && record.snapshot.precision == PRECISION;
             let valid_reference = if record.kind == IntentKind::Original {
-                record.parent_id.is_none() && record.original_id == record.id
+                record.parent_id.is_none()
+                    && record.original_id == record.id
                     && record.source_files.as_ref().is_some_and(|files| {
                         valid_source_files(files)
                             && source_set_digest(files) == record.snapshot.worktree_digest
-                            && files.iter().any(|file| file.path == record.symbol.source_range.path
-                                && file.content_hash == record.snapshot.content_hash
-                                && file.byte_length == record.snapshot.byte_length)
+                            && files.iter().any(|file| {
+                                file.path == record.symbol.source_range.path
+                                    && file.content_hash == record.snapshot.content_hash
+                                    && file.byte_length == record.snapshot.byte_length
+                            })
                     })
             } else {
-                originals.get(&record.original_id).is_some_and(|original_index| {
-                    let original = &records[*original_index];
-                    record.parent_id.as_deref() == Some(original.id.as_str())
-                        && record.source_files.is_none()
-                        && record.symbol == original.symbol
-                        && record.snapshot == original.snapshot
-                })
+                originals
+                    .get(&record.original_id)
+                    .is_some_and(|original_index| {
+                        let original = &records[*original_index];
+                        record.parent_id.as_deref() == Some(original.id.as_str())
+                            && record.source_files.is_none()
+                            && record.symbol == original.symbol
+                            && record.snapshot == original.snapshot
+                    })
             };
             if !valid_base || !valid_reference {
                 return Err(IntentError::Corrupt { line: index + 1 });
@@ -356,10 +423,15 @@ impl IntentStore {
 impl JournalRecord {
     fn dto(&self, binding_status: BindingStatus) -> IntentRecordDto {
         IntentRecordDto {
-            id: self.id.clone(), kind: self.kind.clone(), text: self.text.clone(),
-            parent_id: self.parent_id.clone(), original_id: self.original_id.clone(),
-            created_at: self.created_at.clone(), symbol: self.symbol.clone(),
-            snapshot: self.snapshot.clone(), binding_status,
+            id: self.id.clone(),
+            kind: self.kind.clone(),
+            text: self.text.clone(),
+            parent_id: self.parent_id.clone(),
+            original_id: self.original_id.clone(),
+            created_at: self.created_at.clone(),
+            symbol: self.symbol.clone(),
+            snapshot: self.snapshot.clone(),
+            binding_status,
         }
     }
 }
@@ -373,38 +445,75 @@ impl Drop for JournalLock {
 
 fn ensure_regular_journal(path: &Path) -> Result<(), IntentError> {
     match fs::symlink_metadata(path) {
-        Ok(metadata) if !metadata.file_type().is_file() => Err(reject("intent_unsafe_store", "The intent journal must be a regular file, not a symlink or directory.")),
+        Ok(metadata) if !metadata.file_type().is_file() => Err(reject(
+            "intent_unsafe_store",
+            "The intent journal must be a regular file, not a symlink or directory.",
+        )),
         Ok(_) => Ok(()),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(error.into()),
     }
 }
 
-fn selection<'a>(analysis: &'a AnalyzedGraph, node_id: &str) -> Result<(IntentSymbolDto, &'a str), IntentError> {
-    let node = analysis.snapshot.nodes.iter().find(|node| node.id == node_id)
-        .ok_or_else(|| reject("intent_missing_selection", "The selected symbol is not present in this analysis."))?;
-    let range = node.source_range.clone().ok_or_else(|| reject("intent_missing_selection", "Select a source-backed Rust symbol."))?;
+fn selection<'a>(
+    analysis: &'a AnalyzedGraph,
+    node_id: &str,
+) -> Result<(IntentSymbolDto, &'a str), IntentError> {
+    let node = analysis
+        .snapshot
+        .nodes
+        .iter()
+        .find(|node| node.id == node_id)
+        .ok_or_else(|| {
+            reject(
+                "intent_missing_selection",
+                "The selected symbol is not present in this analysis.",
+            )
+        })?;
+    let range = node.source_range.clone().ok_or_else(|| {
+        reject(
+            "intent_missing_selection",
+            "Select a source-backed Rust symbol.",
+        )
+    })?;
     let symbol = IntentSymbolDto {
-        node_id: node.id.clone(), label: node.label.clone(), kind: node.kind.clone(),
-        source_range: range, source_root: analysis.snapshot.source_root.clone(),
+        node_id: node.id.clone(),
+        label: node.label.clone(),
+        kind: node.kind.clone(),
+        source_range: range,
+        source_root: analysis.snapshot.source_root.clone(),
     };
     if !valid_symbol(&symbol) {
-        return Err(reject("intent_invalid_selection", "Select a source-backed Rust symbol, not a file or workspace."));
+        return Err(reject(
+            "intent_invalid_selection",
+            "Select a source-backed Rust symbol, not a file or workspace.",
+        ));
     }
-    let source = analysis.sources.get(&symbol.source_range.path)
-        .ok_or_else(|| reject("intent_missing_snapshot", "The selected source was not captured during analysis. Analyze again."))?;
+    let source = analysis
+        .sources
+        .get(&symbol.source_range.path)
+        .ok_or_else(|| {
+            reject(
+                "intent_missing_snapshot",
+                "The selected source was not captured during analysis. Analyze again.",
+            )
+        })?;
     Ok((symbol, source.as_str()))
 }
 
 fn valid_symbol(symbol: &IntentSymbolDto) -> bool {
     use std::path::Component;
     let path = Path::new(&symbol.source_range.path);
-    !matches!(symbol.kind, GraphNodeKind::Workspace | GraphNodeKind::Crate | GraphNodeKind::File)
-        && !symbol.node_id.is_empty()
+    !matches!(
+        symbol.kind,
+        GraphNodeKind::Workspace | GraphNodeKind::Crate | GraphNodeKind::File
+    ) && !symbol.node_id.is_empty()
         && Path::new(&symbol.source_root).is_absolute()
         && !path.as_os_str().is_empty()
         && !path.is_absolute()
-        && !path.components().any(|component| matches!(component, Component::ParentDir | Component::Prefix(_)))
+        && !path
+            .components()
+            .any(|component| matches!(component, Component::ParentDir | Component::Prefix(_)))
 }
 
 fn ensure_current_analysis(analysis: &AnalyzedGraph) -> Result<(), IntentError> {
@@ -419,10 +528,17 @@ fn ensure_current_analysis(analysis: &AnalyzedGraph) -> Result<(), IntentError> 
 }
 
 fn validated_current_root(source_root: &str) -> Result<ValidatedRepoPath, IntentError> {
-    let root = ValidatedRepoPath::parse_existing_source_root(source_root)
-        .map_err(|_| reject("intent_missing_source", "The analyzed source root is unavailable. No intent was saved."))?;
+    let root = ValidatedRepoPath::parse_existing_source_root(source_root).map_err(|_| {
+        reject(
+            "intent_missing_source",
+            "The analyzed source root is unavailable. No intent was saved.",
+        )
+    })?;
     if root.display_path() != source_root {
-        return Err(reject("intent_stale_source", "The source root now resolves elsewhere. Analyze again."));
+        return Err(reject(
+            "intent_stale_source",
+            "The source root now resolves elsewhere. Analyze again.",
+        ));
     }
     Ok(root)
 }
@@ -434,12 +550,21 @@ fn read_current_file(root: &ValidatedRepoPath, path: &str) -> Result<String, Int
 
 fn ensure_current_fingerprints(original: &JournalRecord) -> Result<(), IntentError> {
     let root = validated_current_root(&original.symbol.source_root)?;
-    let files = original.source_files.as_ref()
-        .ok_or_else(|| reject("intent_journal_corrupt", "The original's source digest coverage is unavailable."))?;
+    let files = original.source_files.as_ref().ok_or_else(|| {
+        reject(
+            "intent_journal_corrupt",
+            "The original's source digest coverage is unavailable.",
+        )
+    })?;
     for file in files {
         let current = read_current_file(&root, &file.path)?;
-        if current.len() != file.byte_length || content_hash(current.as_bytes()) != file.content_hash {
-            return Err(reject("intent_stale_source", "An analyzed source digest no longer matches."));
+        if current.len() != file.byte_length
+            || content_hash(current.as_bytes()) != file.content_hash
+        {
+            return Err(reject(
+                "intent_stale_source",
+                "An analyzed source digest no longer matches.",
+            ));
         }
     }
     Ok(())
@@ -447,19 +572,33 @@ fn ensure_current_fingerprints(original: &JournalRecord) -> Result<(), IntentErr
 
 fn binding_status(original: &JournalRecord, analysis: Option<&AnalyzedGraph>) -> BindingStatus {
     if let Err(error) = ensure_current_fingerprints(original) {
-        return if error.code() == "intent_stale_source" { BindingStatus::Stale } else { BindingStatus::Missing };
+        return if error.code() == "intent_stale_source" {
+            BindingStatus::Stale
+        } else {
+            BindingStatus::Missing
+        };
     }
-    let Some(analysis) = analysis else { return BindingStatus::Unverified; };
+    let Some(analysis) = analysis else {
+        return BindingStatus::Unverified;
+    };
     if analysis.snapshot.source_root != original.symbol.source_root {
         return BindingStatus::Unverified;
     }
     let expected_node = GraphNodeDto {
-        id: original.symbol.node_id.clone(), kind: original.symbol.kind.clone(),
-        label: original.symbol.label.clone(), source_range: Some(original.symbol.source_range.clone()),
+        id: original.symbol.node_id.clone(),
+        kind: original.symbol.kind.clone(),
+        label: original.symbol.label.clone(),
+        source_range: Some(original.symbol.source_range.clone()),
     };
-    if analysis.snapshot.nodes.iter().any(|node| node == &expected_node)
+    if analysis
+        .snapshot
+        .nodes
+        .iter()
+        .any(|node| node == &expected_node)
         && source_set_digest(&source_fingerprints(analysis)) == original.snapshot.worktree_digest
-        && structural_snapshot(analysis, &original.symbol.source_range.path) == original.snapshot.structural_snapshot {
+        && structural_snapshot(analysis, &original.symbol.source_range.path)
+            == original.snapshot.structural_snapshot
+    {
         BindingStatus::Current
     } else {
         BindingStatus::Stale
@@ -467,9 +606,15 @@ fn binding_status(original: &JournalRecord, analysis: Option<&AnalyzedGraph>) ->
 }
 
 fn source_fingerprints(analysis: &AnalyzedGraph) -> Vec<SourceFingerprint> {
-    analysis.sources.iter().map(|(path, source)| SourceFingerprint {
-        path: path.clone(), content_hash: content_hash(source.as_bytes()), byte_length: source.len(),
-    }).collect()
+    analysis
+        .sources
+        .iter()
+        .map(|(path, source)| SourceFingerprint {
+            path: path.clone(),
+            content_hash: content_hash(source.as_bytes()),
+            byte_length: source.len(),
+        })
+        .collect()
 }
 
 /// Domain-separated, length-prefixed, sorted path + size + SHA-256 manifest.
@@ -487,15 +632,32 @@ fn source_set_digest(files: &[SourceFingerprint]) -> String {
 }
 
 fn structural_snapshot(analysis: &AnalyzedGraph, path: &str) -> StructuralSnapshotDto {
-    let mut nodes: Vec<_> = analysis.snapshot.nodes.iter().filter(|node| {
-        !matches!(node.kind, GraphNodeKind::Workspace | GraphNodeKind::Crate | GraphNodeKind::File)
-            && node.source_range.as_ref().is_some_and(|range| range.path == path)
-    }).cloned().collect();
+    let mut nodes: Vec<_> = analysis
+        .snapshot
+        .nodes
+        .iter()
+        .filter(|node| {
+            !matches!(
+                node.kind,
+                GraphNodeKind::Workspace | GraphNodeKind::Crate | GraphNodeKind::File
+            ) && node
+                .source_range
+                .as_ref()
+                .is_some_and(|range| range.path == path)
+        })
+        .cloned()
+        .collect();
     nodes.sort_by(|left, right| left.id.cmp(&right.id));
     let ids: std::collections::BTreeSet<_> = nodes.iter().map(|node| node.id.as_str()).collect();
-    let mut edges: Vec<_> = analysis.snapshot.edges.iter().filter(|edge| {
-        ids.contains(edge.source_id.as_str()) && ids.contains(edge.target_id.as_str())
-    }).cloned().collect();
+    let mut edges: Vec<_> = analysis
+        .snapshot
+        .edges
+        .iter()
+        .filter(|edge| {
+            ids.contains(edge.source_id.as_str()) && ids.contains(edge.target_id.as_str())
+        })
+        .cloned()
+        .collect();
     edges.sort_by(|left, right| left.id.cmp(&right.id));
     drop(ids);
     StructuralSnapshotDto { nodes, edges }
@@ -504,32 +666,56 @@ fn structural_snapshot(analysis: &AnalyzedGraph, path: &str) -> StructuralSnapsh
 fn valid_source_files(files: &[SourceFingerprint]) -> bool {
     !files.is_empty()
         && files.windows(2).all(|pair| pair[0].path < pair[1].path)
-        && files.iter().all(|file| safe_relative_path(&file.path)
-            && file.byte_length as u64 <= MAX_SOURCE_BYTES && valid_hash(&file.content_hash))
+        && files.iter().all(|file| {
+            safe_relative_path(&file.path)
+                && file.byte_length as u64 <= MAX_SOURCE_BYTES
+                && valid_hash(&file.content_hash)
+        })
 }
 
 fn safe_relative_path(raw: &str) -> bool {
     use std::path::Component;
     let path = Path::new(raw);
-    !path.as_os_str().is_empty() && !path.is_absolute()
-        && !path.components().any(|part| matches!(part, Component::ParentDir | Component::Prefix(_)))
+    !path.as_os_str().is_empty()
+        && !path.is_absolute()
+        && !path
+            .components()
+            .any(|part| matches!(part, Component::ParentDir | Component::Prefix(_)))
 }
 
 fn valid_structure(symbol: &IntentSymbolDto, structure: &StructuralSnapshotDto) -> bool {
-    let ids: std::collections::BTreeSet<_> = structure.nodes.iter().map(|node| node.id.as_str()).collect();
+    let ids: std::collections::BTreeSet<_> = structure
+        .nodes
+        .iter()
+        .map(|node| node.id.as_str())
+        .collect();
     ids.len() == structure.nodes.len()
-        && structure.nodes.iter().any(|node| node.id == symbol.node_id && node.label == symbol.label
-            && node.kind == symbol.kind && node.source_range.as_ref() == Some(&symbol.source_range))
-        && structure.nodes.iter().all(|node| {
-            !matches!(node.kind, GraphNodeKind::Workspace | GraphNodeKind::Crate | GraphNodeKind::File)
-                && node.source_range.as_ref().is_some_and(|range| range.path == symbol.source_range.path)
+        && structure.nodes.iter().any(|node| {
+            node.id == symbol.node_id
+                && node.label == symbol.label
+                && node.kind == symbol.kind
+                && node.source_range.as_ref() == Some(&symbol.source_range)
         })
-        && structure.edges.iter().all(|edge| ids.contains(edge.source_id.as_str()) && ids.contains(edge.target_id.as_str()))
+        && structure.nodes.iter().all(|node| {
+            !matches!(
+                node.kind,
+                GraphNodeKind::Workspace | GraphNodeKind::Crate | GraphNodeKind::File
+            ) && node
+                .source_range
+                .as_ref()
+                .is_some_and(|range| range.path == symbol.source_range.path)
+        })
+        && structure.edges.iter().all(|edge| {
+            ids.contains(edge.source_id.as_str()) && ids.contains(edge.target_id.as_str())
+        })
 }
 
 fn validate_text(text: &str) -> Result<(), IntentError> {
     if text.trim().is_empty() || text.len() > MAX_INTENT_BYTES {
-        return Err(reject("intent_invalid_text", "Intent text must be nonempty and no larger than 16 KiB."));
+        return Err(reject(
+            "intent_invalid_text",
+            "Intent text must be nonempty and no larger than 16 KiB.",
+        ));
     }
     Ok(())
 }
@@ -539,17 +725,27 @@ fn content_hash(bytes: &[u8]) -> String {
 }
 
 fn valid_hash(hash: &str) -> bool {
-    hash.strip_prefix("sha256:").is_some_and(|hex| hex.len() == 64
-        && hex.bytes().all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)))
+    hash.strip_prefix("sha256:").is_some_and(|hex| {
+        hex.len() == 64
+            && hex
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    })
 }
 
 fn timestamp() -> String {
-    let millis = SystemTime::now().duration_since(UNIX_EPOCH).map(|value| value.as_millis()).unwrap_or_default();
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_millis())
+        .unwrap_or_default();
     millis.to_string()
 }
 
 fn reject(code: &'static str, message: &str) -> IntentError {
-    IntentError::Rejected { code, message: message.to_owned() }
+    IntentError::Rejected {
+        code,
+        message: message.to_owned(),
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -580,7 +776,8 @@ mod tests {
     use super::*;
     use crate::graph::{GraphSnapshotDto, GRAPH_SCHEMA_VERSION};
 
-    const SOURCE: &str = "// snapshot-only secret: 蟹\r\npub fn ship() { println!(\"original\"); }\r\n";
+    const SOURCE: &str =
+        "// snapshot-only secret: 蟹\r\npub fn ship() { println!(\"original\"); }\r\n";
     const NODE_ID: &str = "function:fixture:src/lib.rs:ship";
 
     struct Fixture {
@@ -594,21 +791,41 @@ mod tests {
         fn new() -> Self {
             static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(1);
             let sequence = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            let base = std::env::temp_dir().join(format!("whip-intent-{}-{}-{sequence}", std::process::id(), timestamp()));
+            let base = std::env::temp_dir().join(format!(
+                "whip-intent-{}-{}-{sequence}",
+                std::process::id(),
+                timestamp()
+            ));
             let root = base.join("repo");
             fs::create_dir_all(root.join("src")).expect("create fixture");
             fs::write(root.join("src/lib.rs"), SOURCE).expect("write fixture source");
-            let source_root = ValidatedRepoPath::parse_existing_source_root(&root).expect("validate fixture").display_path();
+            let source_root = ValidatedRepoPath::parse_existing_source_root(&root)
+                .expect("validate fixture")
+                .display_path();
             let node = GraphNodeDto {
-                id: NODE_ID.to_owned(), kind: GraphNodeKind::Function, label: "ship".to_owned(),
-                source_range: Some(SourceRangeDto { path: "src/lib.rs".to_owned(), start_line: 2, start_column: 1, end_line: 2, end_column: 1 }),
+                id: NODE_ID.to_owned(),
+                kind: GraphNodeKind::Function,
+                label: "ship".to_owned(),
+                source_range: Some(SourceRangeDto {
+                    path: "src/lib.rs".to_owned(),
+                    start_line: 2,
+                    start_column: 1,
+                    end_line: 2,
+                    end_column: 1,
+                }),
             };
             Self {
-                store: IntentStore::new(base.join("app")), base, root,
+                store: IntentStore::new(base.join("app")),
+                base,
+                root,
                 analysis: AnalyzedGraph {
                     snapshot: GraphSnapshotDto {
-                        schema_version: GRAPH_SCHEMA_VERSION, source_root, generated_at: "analysis-1".to_owned(),
-                        nodes: vec![node], edges: Vec::new(), diagnostics: Vec::new(),
+                        schema_version: GRAPH_SCHEMA_VERSION,
+                        source_root,
+                        generated_at: "analysis-1".to_owned(),
+                        nodes: vec![node],
+                        edges: Vec::new(),
+                        diagnostics: Vec::new(),
                     },
                     sources: BTreeMap::from([("src/lib.rs".to_owned(), SOURCE.to_owned())]),
                     repository_revision: None,
@@ -618,22 +835,31 @@ mod tests {
 
         fn request(&self, kind: IntentKind, parent_id: Option<String>) -> AppendIntent {
             AppendIntent {
-                node_id: NODE_ID.to_owned(), text: "  Keep the user's original intent exactly.\n".to_owned(), kind, parent_id,
+                node_id: NODE_ID.to_owned(),
+                text: "  Keep the user's original intent exactly.\n".to_owned(),
+                kind,
+                parent_id,
                 expected_analysis_at: self.analysis.snapshot.generated_at.clone(),
             }
         }
 
         fn original(&self) -> IntentRecordDto {
-            self.store.append(&self.analysis, self.request(IntentKind::Original, None)).expect("append original")
+            self.store
+                .append(&self.analysis, self.request(IntentKind::Original, None))
+                .expect("append original")
         }
 
         fn list(&self) -> Vec<IntentRecordDto> {
-            self.store.list(&self.analysis.snapshot.source_root, Some(&self.analysis)).expect("list records")
+            self.store
+                .list(&self.analysis.snapshot.source_root, Some(&self.analysis))
+                .expect("list records")
         }
     }
 
     impl Drop for Fixture {
-        fn drop(&mut self) { let _ = fs::remove_dir_all(&self.base); }
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.base);
+        }
     }
 
     #[test]
@@ -641,18 +867,36 @@ mod tests {
         let fixture = Fixture::new();
         let original = fixture.original();
         let prefix = fs::read(&fixture.store.journal_path).expect("read first record");
-        let interpretation = fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Interpretation, Some(original.id.clone()))).expect("append interpretation");
-        let proposal = fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Proposal, Some(original.id.clone()))).expect("append proposal");
+        let interpretation = fixture
+            .store
+            .append(
+                &fixture.analysis,
+                fixture.request(IntentKind::Interpretation, Some(original.id.clone())),
+            )
+            .expect("append interpretation");
+        let proposal = fixture
+            .store
+            .append(
+                &fixture.analysis,
+                fixture.request(IntentKind::Proposal, Some(original.id.clone())),
+            )
+            .expect("append proposal");
         let bytes = fs::read(&fixture.store.journal_path).expect("read journal");
         assert!(bytes.starts_with(&prefix));
-        assert_eq!(fixture.list(), vec![original.clone(), interpretation.clone(), proposal.clone()]);
+        assert_eq!(
+            fixture.list(),
+            vec![original.clone(), interpretation.clone(), proposal.clone()]
+        );
         assert_eq!(interpretation.original_id, original.id);
         assert_eq!(proposal.parent_id, Some(original.id.clone()));
         assert_eq!(interpretation.snapshot, original.snapshot);
         assert_eq!(proposal.symbol, original.symbol);
         assert_ne!(proposal.id, interpretation.id);
         let stored = fixture.store.read_journal().expect("read private records");
-        let manifest = stored[0].source_files.as_ref().expect("private digest manifest");
+        let manifest = stored[0]
+            .source_files
+            .as_ref()
+            .expect("private digest manifest");
         assert_eq!(manifest[0].content_hash, content_hash(SOURCE.as_bytes()));
         assert_eq!(manifest[0].byte_length, SOURCE.len());
         assert!(stored[1].source_files.is_none());
@@ -661,7 +905,10 @@ mod tests {
         assert!(!on_disk.contains("snapshot-only secret"));
         assert!(!on_disk.contains("println!"));
         assert!(!on_disk.contains("蟹"));
-        assert_eq!(original.text, "  Keep the user's original intent exactly.\n");
+        assert_eq!(
+            original.text,
+            "  Keep the user's original intent exactly.\n"
+        );
     }
 
     #[test]
@@ -669,7 +916,9 @@ mod tests {
         let fixture = Fixture::new();
         let original = fixture.original();
         let restarted = IntentStore::new(fixture.base.join("app"));
-        let records = restarted.list(&fixture.analysis.snapshot.source_root, None).expect("read after restart");
+        let records = restarted
+            .list(&fixture.analysis.snapshot.source_root, None)
+            .expect("read after restart");
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].id, original.id);
         assert_eq!(records[0].text, original.text);
@@ -687,10 +936,23 @@ mod tests {
         let fixture = Fixture::new();
         fixture.original();
         let before = fs::read(&fixture.store.journal_path).expect("read journal");
-        fs::write(fixture.root.join("src/lib.rs"), "pub fn ship() { panic!(); }\n").expect("edit source");
-        let error = fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Original, None)).expect_err("reject stale source");
+        fs::write(
+            fixture.root.join("src/lib.rs"),
+            "pub fn ship() { panic!(); }\n",
+        )
+        .expect("edit source");
+        let error = fixture
+            .store
+            .append(
+                &fixture.analysis,
+                fixture.request(IntentKind::Original, None),
+            )
+            .expect_err("reject stale source");
         assert_eq!(error.code(), "intent_stale_source");
-        assert_eq!(before, fs::read(&fixture.store.journal_path).expect("unchanged journal"));
+        assert_eq!(
+            before,
+            fs::read(&fixture.store.journal_path).expect("unchanged journal")
+        );
         assert_eq!(fixture.list()[0].binding_status, BindingStatus::Stale);
     }
 
@@ -700,9 +962,18 @@ mod tests {
         let original = fixture.original();
         let changed = "pub fn ship() { println!(\"changed\"); }\n";
         fs::write(fixture.root.join("src/lib.rs"), changed).expect("edit source");
-        fixture.analysis.sources.insert("src/lib.rs".to_owned(), changed.to_owned());
+        fixture
+            .analysis
+            .sources
+            .insert("src/lib.rs".to_owned(), changed.to_owned());
         fixture.analysis.snapshot.generated_at = "analysis-2".to_owned();
-        let error = fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Proposal, Some(original.id))).expect_err("reject relink");
+        let error = fixture
+            .store
+            .append(
+                &fixture.analysis,
+                fixture.request(IntentKind::Proposal, Some(original.id)),
+            )
+            .expect_err("reject relink");
         assert_eq!(error.code(), "intent_stale_source");
         let next = fixture.original();
         assert_eq!(next.id, "intent:2");
@@ -715,12 +986,36 @@ mod tests {
         let mut fixture = Fixture::new();
         let mut old = fixture.request(IntentKind::Original, None);
         old.expected_analysis_at = "obsolete".to_owned();
-        assert_eq!(fixture.store.append(&fixture.analysis, old).expect_err("stale graph").code(), "intent_stale_selection");
+        assert_eq!(
+            fixture
+                .store
+                .append(&fixture.analysis, old)
+                .expect_err("stale graph")
+                .code(),
+            "intent_stale_selection"
+        );
         let mut unknown = fixture.request(IntentKind::Original, None);
         unknown.node_id = "unknown".to_owned();
-        assert_eq!(fixture.store.append(&fixture.analysis, unknown).expect_err("unknown node").code(), "intent_missing_selection");
+        assert_eq!(
+            fixture
+                .store
+                .append(&fixture.analysis, unknown)
+                .expect_err("unknown node")
+                .code(),
+            "intent_missing_selection"
+        );
         fixture.analysis.snapshot.nodes[0].kind = GraphNodeKind::File;
-        assert_eq!(fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Original, None)).expect_err("file selection").code(), "intent_invalid_selection");
+        assert_eq!(
+            fixture
+                .store
+                .append(
+                    &fixture.analysis,
+                    fixture.request(IntentKind::Original, None)
+                )
+                .expect_err("file selection")
+                .code(),
+            "intent_invalid_selection"
+        );
         assert!(!fixture.store.journal_path.exists());
     }
 
@@ -728,30 +1023,101 @@ mod tests {
     fn a_renamed_file_is_missing_without_automatic_relink() {
         let fixture = Fixture::new();
         fixture.original();
-        fs::rename(fixture.root.join("src/lib.rs"), fixture.root.join("src/renamed.rs")).expect("rename source");
+        fs::rename(
+            fixture.root.join("src/lib.rs"),
+            fixture.root.join("src/renamed.rs"),
+        )
+        .expect("rename source");
         assert_eq!(fixture.list()[0].binding_status, BindingStatus::Missing);
         assert_eq!(fixture.list()[0].symbol.source_range.path, "src/lib.rs");
-        assert_eq!(fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Original, None)).expect_err("missing source").code(), "intent_missing_source");
+        assert_eq!(
+            fixture
+                .store
+                .append(
+                    &fixture.analysis,
+                    fixture.request(IntentKind::Original, None)
+                )
+                .expect_err("missing source")
+                .code(),
+            "intent_missing_source"
+        );
     }
 
     #[test]
     fn parent_must_be_original_and_belong_to_same_selection() {
         let mut fixture = Fixture::new();
-        assert_eq!(fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Proposal, Some("intent:100".to_owned()))).expect_err("unknown parent").code(), "intent_invalid_parent");
+        assert_eq!(
+            fixture
+                .store
+                .append(
+                    &fixture.analysis,
+                    fixture.request(IntentKind::Proposal, Some("intent:100".to_owned()))
+                )
+                .expect_err("unknown parent")
+                .code(),
+            "intent_invalid_parent"
+        );
         let original = fixture.original();
-        let child = fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Interpretation, Some(original.id.clone()))).expect("append child");
-        assert_eq!(fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Proposal, Some(child.id))).expect_err("derived parent").code(), "intent_invalid_parent");
+        let child = fixture
+            .store
+            .append(
+                &fixture.analysis,
+                fixture.request(IntentKind::Interpretation, Some(original.id.clone())),
+            )
+            .expect("append child");
+        assert_eq!(
+            fixture
+                .store
+                .append(
+                    &fixture.analysis,
+                    fixture.request(IntentKind::Proposal, Some(child.id))
+                )
+                .expect_err("derived parent")
+                .code(),
+            "intent_invalid_parent"
+        );
         fixture.analysis.snapshot.nodes[0].label = "renamed".to_owned();
-        assert_eq!(fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Proposal, Some(original.id))).expect_err("different selection").code(), "intent_stale_source");
+        assert_eq!(
+            fixture
+                .store
+                .append(
+                    &fixture.analysis,
+                    fixture.request(IntentKind::Proposal, Some(original.id))
+                )
+                .expect_err("different selection")
+                .code(),
+            "intent_stale_source"
+        );
     }
 
     #[test]
     fn absolute_and_traversal_paths_are_rejected_even_in_analyzer_metadata() {
         let mut fixture = Fixture::new();
-        for path in ["../outside.rs".to_owned(), fixture.base.join("outside.rs").to_string_lossy().into_owned()] {
-            fixture.analysis.snapshot.nodes[0].source_range.as_mut().expect("range").path = path.clone();
+        for path in [
+            "../outside.rs".to_owned(),
+            fixture
+                .base
+                .join("outside.rs")
+                .to_string_lossy()
+                .into_owned(),
+        ] {
+            fixture.analysis.snapshot.nodes[0]
+                .source_range
+                .as_mut()
+                .expect("range")
+                .path = path.clone();
             fixture.analysis.sources.insert(path, SOURCE.to_owned());
-            assert_eq!(fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Original, None)).expect_err("unsafe path").code(), "intent_invalid_selection");
+            assert_eq!(
+                fixture
+                    .store
+                    .append(
+                        &fixture.analysis,
+                        fixture.request(IntentKind::Original, None)
+                    )
+                    .expect_err("unsafe path")
+                    .code(),
+                "intent_invalid_selection"
+            );
         }
         assert!(!fixture.store.journal_path.exists());
     }
@@ -765,7 +1131,17 @@ mod tests {
         fs::write(&outside, SOURCE).expect("write outside");
         fs::remove_file(fixture.root.join("src/lib.rs")).expect("remove source");
         symlink(&outside, fixture.root.join("src/lib.rs")).expect("symlink outside");
-        assert_eq!(fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Original, None)).expect_err("reject escape").code(), "intent_missing_source");
+        assert_eq!(
+            fixture
+                .store
+                .append(
+                    &fixture.analysis,
+                    fixture.request(IntentKind::Original, None)
+                )
+                .expect_err("reject escape")
+                .code(),
+            "intent_missing_source"
+        );
         assert!(!fixture.store.journal_path.exists());
     }
 
@@ -774,12 +1150,36 @@ mod tests {
         let fixture = Fixture::new();
         fixture.original();
         let prefix = fs::read(&fixture.store.journal_path).expect("read original");
-        for suffix in [b"{\"broken\":true}\n".as_slice(), b"{\"schemaVersion\":1".as_slice(), b"\n".as_slice()] {
+        for suffix in [
+            b"{\"broken\":true}\n".as_slice(),
+            b"{\"schemaVersion\":1".as_slice(),
+            b"\n".as_slice(),
+        ] {
             let bytes = [prefix.as_slice(), suffix].concat();
             fs::write(&fixture.store.journal_path, &bytes).expect("corrupt fixture journal");
-            assert_eq!(fixture.store.list(&fixture.analysis.snapshot.source_root, None).expect_err("reject corrupt list").code(), "intent_journal_corrupt");
-            assert_eq!(fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Original, None)).expect_err("reject corrupt append").code(), "intent_journal_corrupt");
-            assert_eq!(bytes, fs::read(&fixture.store.journal_path).expect("journal preserved"));
+            assert_eq!(
+                fixture
+                    .store
+                    .list(&fixture.analysis.snapshot.source_root, None)
+                    .expect_err("reject corrupt list")
+                    .code(),
+                "intent_journal_corrupt"
+            );
+            assert_eq!(
+                fixture
+                    .store
+                    .append(
+                        &fixture.analysis,
+                        fixture.request(IntentKind::Original, None)
+                    )
+                    .expect_err("reject corrupt append")
+                    .code(),
+                "intent_journal_corrupt"
+            );
+            assert_eq!(
+                bytes,
+                fs::read(&fixture.store.journal_path).expect("journal preserved")
+            );
         }
     }
 
@@ -787,19 +1187,35 @@ mod tests {
     fn changed_snapshot_hash_or_reference_is_reported_as_corrupt() {
         let fixture = Fixture::new();
         let original = fixture.original();
-        fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Proposal, Some(original.id))).expect("append proposal");
+        fixture
+            .store
+            .append(
+                &fixture.analysis,
+                fixture.request(IntentKind::Proposal, Some(original.id)),
+            )
+            .expect("append proposal");
         let records = fixture.store.read_journal().expect("read journal");
         let mut bad = records.clone();
         bad[1].original_id = "intent:999".to_owned();
         let mut lines = Vec::new();
-        for record in bad { lines.extend(serde_json::to_vec(&record).expect("encode")); lines.push(b'\n'); }
+        for record in bad {
+            lines.extend(serde_json::to_vec(&record).expect("encode"));
+            lines.push(b'\n');
+        }
         fs::write(&fixture.store.journal_path, lines).expect("replace fixture data");
-        assert!(matches!(fixture.store.read_journal(), Err(IntentError::Corrupt { line: 2 })));
+        assert!(matches!(
+            fixture.store.read_journal(),
+            Err(IntentError::Corrupt { line: 2 })
+        ));
         let mut bad = records[0].clone();
         bad.source_files.as_mut().expect("manifest")[0].content_hash = content_hash(b"changed");
-        let mut line = serde_json::to_vec(&bad).expect("encode"); line.push(b'\n');
+        let mut line = serde_json::to_vec(&bad).expect("encode");
+        line.push(b'\n');
         fs::write(&fixture.store.journal_path, line).expect("replace fixture data");
-        assert!(matches!(fixture.store.read_journal(), Err(IntentError::Corrupt { line: 1 })));
+        assert!(matches!(
+            fixture.store.read_journal(),
+            Err(IntentError::Corrupt { line: 1 })
+        ));
     }
 
     #[test]
@@ -809,19 +1225,49 @@ mod tests {
         let before = fs::read(&fixture.store.journal_path).expect("read bytes");
         let _guard = fixture.store.acquire_lock().expect("hold lock");
         let restarted = IntentStore::new(fixture.base.join("app"));
-        assert_eq!(restarted.list(&fixture.analysis.snapshot.source_root, None).expect_err("locked").code(), "intent_journal_locked");
-        assert_eq!(restarted.append(&fixture.analysis, fixture.request(IntentKind::Original, None)).expect_err("locked").code(), "intent_journal_locked");
-        assert_eq!(before, fs::read(&fixture.store.journal_path).expect("read unchanged"));
+        assert_eq!(
+            restarted
+                .list(&fixture.analysis.snapshot.source_root, None)
+                .expect_err("locked")
+                .code(),
+            "intent_journal_locked"
+        );
+        assert_eq!(
+            restarted
+                .append(
+                    &fixture.analysis,
+                    fixture.request(IntentKind::Original, None)
+                )
+                .expect_err("locked")
+                .code(),
+            "intent_journal_locked"
+        );
+        assert_eq!(
+            before,
+            fs::read(&fixture.store.journal_path).expect("read unchanged")
+        );
     }
 
     #[test]
     fn repo_scoping_and_text_limits_are_explicit() {
         let fixture = Fixture::new();
         fixture.original();
-        assert!(fixture.store.list("/different/repository", None).expect("list another root").is_empty());
+        assert!(fixture
+            .store
+            .list("/different/repository", None)
+            .expect("list another root")
+            .is_empty());
         for text in ["   ".to_owned(), "x".repeat(MAX_INTENT_BYTES + 1)] {
-            let mut request = fixture.request(IntentKind::Original, None); request.text = text;
-            assert_eq!(fixture.store.append(&fixture.analysis, request).expect_err("invalid text").code(), "intent_invalid_text");
+            let mut request = fixture.request(IntentKind::Original, None);
+            request.text = text;
+            assert_eq!(
+                fixture
+                    .store
+                    .append(&fixture.analysis, request)
+                    .expect_err("invalid text")
+                    .code(),
+                "intent_invalid_text"
+            );
         }
         assert_eq!(fixture.list().len(), 1);
     }
@@ -833,8 +1279,25 @@ mod tests {
         let legacy = fixture.base.join("app/intent-journal-v1.jsonl");
         let private_bytes = b"legacy source body and comment marker: NEVER_COPY_THIS";
         fs::write(&legacy, private_bytes).expect("write legacy fixture");
-        assert_eq!(fixture.store.list(&fixture.analysis.snapshot.source_root, None).expect_err("legacy read blocked").code(), "intent_legacy_journal");
-        assert_eq!(fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Original, None)).expect_err("legacy write blocked").code(), "intent_legacy_journal");
+        assert_eq!(
+            fixture
+                .store
+                .list(&fixture.analysis.snapshot.source_root, None)
+                .expect_err("legacy read blocked")
+                .code(),
+            "intent_legacy_journal"
+        );
+        assert_eq!(
+            fixture
+                .store
+                .append(
+                    &fixture.analysis,
+                    fixture.request(IntentKind::Original, None)
+                )
+                .expect_err("legacy write blocked")
+                .code(),
+            "intent_legacy_journal"
+        );
         assert_eq!(fs::read(&legacy).expect("legacy untouched"), private_bytes);
         assert!(!fixture.store.journal_path.exists());
         assert!(!fixture.store.journal_path.with_extension("lock").exists());
@@ -846,23 +1309,36 @@ mod tests {
         let mut fixture = Fixture::new();
         let other_id = "function:fixture:src/lib.rs:helper";
         let mut helper = fixture.analysis.snapshot.nodes[0].clone();
-        helper.id = other_id.to_owned(); helper.label = "helper".to_owned();
-        let edge = GraphEdgeDto { id: "calls:ship:helper".to_owned(), kind: GraphEdgeKind::Calls,
-            source_id: NODE_ID.to_owned(), target_id: other_id.to_owned(),
-            provenance: EdgeProvenanceDto::Syn, confidence: EdgeConfidenceDto::Inferred };
+        helper.id = other_id.to_owned();
+        helper.label = "helper".to_owned();
+        let edge = GraphEdgeDto {
+            id: "calls:ship:helper".to_owned(),
+            kind: GraphEdgeKind::Calls,
+            source_id: NODE_ID.to_owned(),
+            target_id: other_id.to_owned(),
+            provenance: EdgeProvenanceDto::Syn,
+            confidence: EdgeConfidenceDto::Inferred,
+        };
         fixture.analysis.snapshot.nodes.push(helper);
         fixture.analysis.snapshot.edges.push(edge.clone());
         fixture.analysis.repository_revision = Some("1".repeat(40));
         let original = fixture.original();
         fs::remove_file(fixture.root.join("src/lib.rs")).expect("remove source");
         let restarted = IntentStore::new(fixture.base.join("app"));
-        let records = restarted.list(&fixture.analysis.snapshot.source_root, None).expect("recover metadata history");
+        let records = restarted
+            .list(&fixture.analysis.snapshot.source_root, None)
+            .expect("recover metadata history");
         assert_eq!(records[0].binding_status, BindingStatus::Missing);
         assert_eq!(records[0].snapshot, original.snapshot);
         assert_eq!(records[0].snapshot.structural_snapshot.nodes.len(), 2);
         assert_eq!(records[0].snapshot.structural_snapshot.edges, vec![edge]);
-        assert_eq!(records[0].snapshot.repository_revision, Some("1".repeat(40)));
-        assert!(!fs::read_to_string(&restarted.journal_path).expect("journal").contains("snapshot-only secret"));
+        assert_eq!(
+            records[0].snapshot.repository_revision,
+            Some("1".repeat(40))
+        );
+        assert!(!fs::read_to_string(&restarted.journal_path)
+            .expect("journal")
+            .contains("snapshot-only secret"));
     }
 
     #[test]
@@ -870,14 +1346,32 @@ mod tests {
         let mut fixture = Fixture::new();
         let extra = "pub fn extra() {}\n";
         fs::write(fixture.root.join("src/extra.rs"), extra).expect("write extra Rust file");
-        fixture.analysis.sources.insert("src/extra.rs".to_owned(), extra.to_owned());
+        fixture
+            .analysis
+            .sources
+            .insert("src/extra.rs".to_owned(), extra.to_owned());
         let original = fixture.original();
-        assert_eq!(original.snapshot.worktree_digest_scope, "analyzed_rust_sources");
-        fs::write(fixture.root.join("asset.txt"), "unrelated asset").expect("write uncaptured asset");
+        assert_eq!(
+            original.snapshot.worktree_digest_scope,
+            "analyzed_rust_sources"
+        );
+        fs::write(fixture.root.join("asset.txt"), "unrelated asset")
+            .expect("write uncaptured asset");
         assert_eq!(fixture.list()[0].binding_status, BindingStatus::Current);
-        fs::write(fixture.root.join("src/extra.rs"), "pub fn changed() {}\n").expect("edit other captured source");
+        fs::write(fixture.root.join("src/extra.rs"), "pub fn changed() {}\n")
+            .expect("edit other captured source");
         assert_eq!(fixture.list()[0].binding_status, BindingStatus::Stale);
-        assert_eq!(fixture.store.append(&fixture.analysis, fixture.request(IntentKind::Proposal, Some(original.id))).expect_err("changed captured set").code(), "intent_stale_source");
+        assert_eq!(
+            fixture
+                .store
+                .append(
+                    &fixture.analysis,
+                    fixture.request(IntentKind::Proposal, Some(original.id))
+                )
+                .expect_err("changed captured set")
+                .code(),
+            "intent_stale_source"
+        );
     }
 
     #[test]
@@ -888,11 +1382,17 @@ mod tests {
         external.id = "function:other".to_owned();
         external.source_range.as_mut().expect("range").path = "src/other.rs".to_owned();
         let mut file = fixture.analysis.snapshot.nodes[0].clone();
-        file.id = "file:src/lib.rs".to_owned(); file.kind = GraphNodeKind::File;
+        file.id = "file:src/lib.rs".to_owned();
+        file.kind = GraphNodeKind::File;
         fixture.analysis.snapshot.nodes.extend([external, file]);
-        fixture.analysis.snapshot.edges.push(GraphEdgeDto { id: "calls:external".to_owned(), kind: GraphEdgeKind::Calls,
-            source_id: NODE_ID.to_owned(), target_id: "function:other".to_owned(),
-            provenance: EdgeProvenanceDto::Syn, confidence: EdgeConfidenceDto::Inferred });
+        fixture.analysis.snapshot.edges.push(GraphEdgeDto {
+            id: "calls:external".to_owned(),
+            kind: GraphEdgeKind::Calls,
+            source_id: NODE_ID.to_owned(),
+            target_id: "function:other".to_owned(),
+            provenance: EdgeProvenanceDto::Syn,
+            confidence: EdgeConfidenceDto::Inferred,
+        });
         let original = fixture.original();
         assert_eq!(original.snapshot.structural_snapshot.nodes.len(), 1);
         assert_eq!(original.snapshot.structural_snapshot.nodes[0].id, NODE_ID);
@@ -901,20 +1401,35 @@ mod tests {
 
     #[test]
     fn source_set_digest_is_path_sensitive_and_length_prefixed() {
-        let vector = [SourceFingerprint { path: "src/lib.rs".to_owned(), content_hash: content_hash(b"abc"), byte_length: 3 }];
-        assert_eq!(source_set_digest(&vector), "sha256:45e9fc5a539954e82932f21699e82817477627c1aa3131fe1201df9bc4a7826f");
+        let vector = [SourceFingerprint {
+            path: "src/lib.rs".to_owned(),
+            content_hash: content_hash(b"abc"),
+            byte_length: 3,
+        }];
+        assert_eq!(
+            source_set_digest(&vector),
+            "sha256:45e9fc5a539954e82932f21699e82817477627c1aa3131fe1201df9bc4a7826f"
+        );
         let fixture = Fixture::new();
         let files = source_fingerprints(&fixture.analysis);
         let digest = source_set_digest(&files);
-        let mut renamed = files.clone(); renamed[0].path = "src/renamed.rs".to_owned();
+        let mut renamed = files.clone();
+        renamed[0].path = "src/renamed.rs".to_owned();
         assert_ne!(digest, source_set_digest(&renamed));
-        let mut resized = files; resized[0].byte_length += 1;
+        let mut resized = files;
+        resized[0].byte_length += 1;
         assert_ne!(digest, source_set_digest(&resized));
     }
 
     #[test]
     fn sha256_known_vectors_are_stable() {
-        assert_eq!(content_hash(b""), "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
-        assert_eq!(content_hash(b"abc"), "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+        assert_eq!(
+            content_hash(b""),
+            "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+        assert_eq!(
+            content_hash(b"abc"),
+            "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
     }
 }

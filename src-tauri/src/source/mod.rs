@@ -10,22 +10,34 @@ pub fn read_bounded_source(
     root: &ValidatedRepoPath,
     relative_path: &str,
 ) -> Result<String, String> {
-    let path = root.resolve_existing_child(relative_path).map_err(|error| error.to_string())?;
+    let path = root
+        .resolve_existing_child(relative_path)
+        .map_err(|error| error.to_string())?;
     let metadata = std::fs::metadata(&path).map_err(|error| error.to_string())?;
     if !metadata.is_file() || metadata.len() > MAX_SOURCE_BYTES {
         return Err("source must be a regular UTF-8 file no larger than 2 MiB".to_owned());
     }
     let file = std::fs::File::open(&path).map_err(|error| error.to_string())?;
-    if !file.metadata().map_err(|error| error.to_string())?.is_file() {
+    if !file
+        .metadata()
+        .map_err(|error| error.to_string())?
+        .is_file()
+    {
         return Err("source changed to a non-regular file while opening".to_owned());
     }
     let mut bytes = Vec::new();
-    file.take(MAX_SOURCE_BYTES + 1).read_to_end(&mut bytes).map_err(|error| error.to_string())?;
+    file.take(MAX_SOURCE_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| error.to_string())?;
     if bytes.len() as u64 > MAX_SOURCE_BYTES {
         return Err("source exceeds the 2 MiB snapshot limit".to_owned());
     }
     // Resolve again so ordinary path replacement during the read cannot be silently accepted.
-    if root.resolve_existing_child(relative_path).map_err(|error| error.to_string())? != path {
+    if root
+        .resolve_existing_child(relative_path)
+        .map_err(|error| error.to_string())?
+        != path
+    {
         return Err("source path changed while reading; analyze again".to_owned());
     }
     String::from_utf8(bytes).map_err(|_| "source is not valid UTF-8".to_owned())
@@ -180,11 +192,17 @@ mod tests {
         let root = ValidatedRepoPath::parse_existing_source_root(&repo).expect("validate root");
         let source = "// 蟹\r\npub fn ship() {}\r\n";
         fs::write(repo.join("lib.rs"), source).expect("write source");
-        assert_eq!(super::read_bounded_source(&root, "lib.rs").expect("read source").as_bytes(), source.as_bytes());
+        assert_eq!(
+            super::read_bounded_source(&root, "lib.rs")
+                .expect("read source")
+                .as_bytes(),
+            source.as_bytes()
+        );
         fs::write(repo.join("lib.rs"), [0xff, 0xfe]).expect("write invalid UTF-8");
         assert!(super::read_bounded_source(&root, "lib.rs").is_err());
         let file = fs::File::create(repo.join("lib.rs")).expect("create oversized source");
-        file.set_len(super::MAX_SOURCE_BYTES + 1).expect("grow fixture");
+        file.set_len(super::MAX_SOURCE_BYTES + 1)
+            .expect("grow fixture");
         assert!(super::read_bounded_source(&root, "lib.rs").is_err());
         assert!(super::read_bounded_source(&root, ".").is_err());
         fs::remove_dir_all(repo).expect("cleanup root");

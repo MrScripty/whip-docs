@@ -9,8 +9,8 @@ use crate::analyzer::{AnalysisStatusDto, AnalyzedGraph, RustAnalyzerService, Rus
 use crate::config::{AppConfigDto, ConfigStore, SourceRepoStatusDto};
 use crate::graph::relations::{FileRelationGraphBuilder, FileRelationGraphSnapshotDto};
 use crate::graph::{DirectoryGraphBuilder, DirectoryGraphSnapshotDto, GraphSnapshotDto};
-use crate::source::ValidatedRepoPath;
 use crate::intent::{AppendIntent, IntentError, IntentKind, IntentRecordDto, IntentStore};
+use crate::source::ValidatedRepoPath;
 
 pub struct AppState {
     shutdown_requested: AtomicBool,
@@ -44,7 +44,10 @@ impl AppState {
         config: AppConfigDto,
         analyzer_service: RustAnalyzerService,
     ) -> Self {
-        let app_data_dir = config_store.config_path().parent().unwrap_or_else(|| std::path::Path::new("."));
+        let app_data_dir = config_store
+            .config_path()
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("."));
         let intent_store = Arc::new(IntentStore::new(app_data_dir));
         Self {
             shutdown_requested: AtomicBool::new(false),
@@ -74,31 +77,49 @@ impl AppState {
     }
 
     pub async fn graph_snapshot(&self) -> Option<GraphSnapshotDto> {
-        self.graph_snapshot.read().await.as_ref().map(|analysis| analysis.snapshot.clone())
+        self.graph_snapshot
+            .read()
+            .await
+            .as_ref()
+            .map(|analysis| analysis.snapshot.clone())
     }
 
-    pub async fn append_intent_record(&self, request: AppendIntent) -> Result<IntentRecordDto, CommandErrorDto> {
+    pub async fn append_intent_record(
+        &self,
+        request: AppendIntent,
+    ) -> Result<IntentRecordDto, CommandErrorDto> {
         let binding = Arc::clone(&self.binding_mutation_gate).lock_owned().await;
-        let analysis = self.graph_snapshot.read().await.clone()
-            .ok_or_else(|| CommandErrorDto::validation("Analyze a repository and select a symbol before recording intent."))?;
-        if self.app_config().await.source_repo_path.as_deref() != Some(analysis.snapshot.source_root.as_str()) {
-            return Err(CommandErrorDto::validation("The source root changed. Analyze again before recording intent."));
+        let analysis = self.graph_snapshot.read().await.clone().ok_or_else(|| {
+            CommandErrorDto::validation(
+                "Analyze a repository and select a symbol before recording intent.",
+            )
+        })?;
+        if self.app_config().await.source_repo_path.as_deref()
+            != Some(analysis.snapshot.source_root.as_str())
+        {
+            return Err(CommandErrorDto::validation(
+                "The source root changed. Analyze again before recording intent.",
+            ));
         }
         let store = Arc::clone(&self.intent_store);
         tokio::task::spawn_blocking(move || {
             // The blocking worker retains the gate even if its caller is cancelled.
             let _binding = binding;
             store.append(&analysis, request)
-        }).await
-            .map_err(|error| CommandErrorDto::internal(error.to_string()))?
-            .map_err(CommandErrorDto::from)
+        })
+        .await
+        .map_err(|error| CommandErrorDto::internal(error.to_string()))?
+        .map_err(CommandErrorDto::from)
     }
 
     pub async fn list_intent_records(&self) -> Result<Vec<IntentRecordDto>, CommandErrorDto> {
-        let Some(source_root) = self.app_config().await.source_repo_path else { return Ok(Vec::new()); };
+        let Some(source_root) = self.app_config().await.source_repo_path else {
+            return Ok(Vec::new());
+        };
         let analysis = self.graph_snapshot.read().await.clone();
         let store = Arc::clone(&self.intent_store);
-        tokio::task::spawn_blocking(move || store.list(&source_root, analysis.as_ref())).await
+        tokio::task::spawn_blocking(move || store.list(&source_root, analysis.as_ref()))
+            .await
             .map_err(|error| CommandErrorDto::internal(error.to_string()))?
             .map_err(CommandErrorDto::from)
     }
@@ -168,7 +189,10 @@ impl AppState {
             .map_err(|error| CommandErrorDto::internal(error.to_string()))?;
 
         let analyzed_root = source_repo.display_path();
-        let extraction_result = tokio::task::spawn_blocking(move || RustGraphExtractor.extract_with_sources(&source_repo)).await;
+        let extraction_result = tokio::task::spawn_blocking(move || {
+            RustGraphExtractor.extract_with_sources(&source_repo)
+        })
+        .await;
         let _ = self.analyzer_service.complete_analysis_job(job_id).await;
         let analysis = extraction_result
             .map_err(|error| CommandErrorDto::internal(error.to_string()))?
@@ -177,7 +201,9 @@ impl AppState {
         let _binding = self.binding_mutation_gate.lock().await;
         let config = self.config.read().await;
         if config.source_repo_path.as_deref() != Some(analyzed_root.as_str()) {
-            return Err(CommandErrorDto::validation("The source root changed during analysis. Analyze again."));
+            return Err(CommandErrorDto::validation(
+                "The source root changed during analysis. Analyze again.",
+            ));
         }
         let snapshot = analysis.snapshot.clone();
         let mut guard = self.graph_snapshot.write().await;
@@ -335,7 +361,15 @@ pub async fn append_intent_record(
     expected_analysis_at: String,
     state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<IntentRecordDto, CommandErrorDto> {
-    state.append_intent_record(AppendIntent { node_id, text, kind, parent_id, expected_analysis_at }).await
+    state
+        .append_intent_record(AppendIntent {
+            node_id,
+            text,
+            kind,
+            parent_id,
+            expected_analysis_at,
+        })
+        .await
 }
 
 #[tauri::command]
@@ -434,32 +468,66 @@ mod tests {
         ))
     }
 
-    async fn intent_fixture() -> (std::sync::Arc<AppState>, PathBuf, PathBuf, crate::intent::AppendIntent) {
+    async fn intent_fixture() -> (
+        std::sync::Arc<AppState>,
+        PathBuf,
+        PathBuf,
+        crate::intent::AppendIntent,
+    ) {
         use crate::analyzer::AnalyzedGraph;
-        use crate::graph::{GraphNodeDto, GraphNodeKind, GraphSnapshotDto, SourceRangeDto, GRAPH_SCHEMA_VERSION};
+        use crate::graph::{
+            GraphNodeDto, GraphNodeKind, GraphSnapshotDto, SourceRangeDto, GRAPH_SCHEMA_VERSION,
+        };
         let app_dir = unique_temp_dir("intent-app");
         let repo_dir = unique_temp_dir("intent-repo");
         fs::create_dir_all(repo_dir.join("src")).expect("create repo");
-        fs::write(repo_dir.join("Cargo.toml"), "[package]\nname = \"intent_fixture\"\nversion = \"0.1.0\"\n").expect("write manifest");
+        fs::write(
+            repo_dir.join("Cargo.toml"),
+            "[package]\nname = \"intent_fixture\"\nversion = \"0.1.0\"\n",
+        )
+        .expect("write manifest");
         let source = "pub fn ship() {}\n";
         fs::write(repo_dir.join("src/lib.rs"), source).expect("write source");
-        let state = std::sync::Arc::new(AppState::new(ConfigStore::new(&app_dir), AppConfigDto::default()));
-        let config = state.set_source_repo_path(repo_dir.to_string_lossy().into_owned()).await.expect("set root");
+        let state = std::sync::Arc::new(AppState::new(
+            ConfigStore::new(&app_dir),
+            AppConfigDto::default(),
+        ));
+        let config = state
+            .set_source_repo_path(repo_dir.to_string_lossy().into_owned())
+            .await
+            .expect("set root");
         *state.graph_snapshot.write().await = Some(AnalyzedGraph {
             snapshot: GraphSnapshotDto {
                 schema_version: GRAPH_SCHEMA_VERSION,
-                source_root: config.source_repo_path.expect("configured root"), generated_at: "analysis-1".to_owned(),
+                source_root: config.source_repo_path.expect("configured root"),
+                generated_at: "analysis-1".to_owned(),
                 nodes: vec![GraphNodeDto {
-                    id: "function:ship".to_owned(), kind: GraphNodeKind::Function, label: "ship".to_owned(),
-                    source_range: Some(SourceRangeDto { path: "src/lib.rs".to_owned(), start_line: 1, start_column: 1, end_line: 1, end_column: 1 }),
-                }], edges: Vec::new(), diagnostics: Vec::new(),
+                    id: "function:ship".to_owned(),
+                    kind: GraphNodeKind::Function,
+                    label: "ship".to_owned(),
+                    source_range: Some(SourceRangeDto {
+                        path: "src/lib.rs".to_owned(),
+                        start_line: 1,
+                        start_column: 1,
+                        end_line: 1,
+                        end_column: 1,
+                    }),
+                }],
+                edges: Vec::new(),
+                diagnostics: Vec::new(),
             },
-            sources: std::collections::BTreeMap::from([("src/lib.rs".to_owned(), source.to_owned())]),
+            sources: std::collections::BTreeMap::from([(
+                "src/lib.rs".to_owned(),
+                source.to_owned(),
+            )]),
             repository_revision: None,
         });
         let request = crate::intent::AppendIntent {
-            node_id: "function:ship".to_owned(), text: "Only ship after review.".to_owned(), kind: crate::intent::IntentKind::Original,
-            parent_id: None, expected_analysis_at: "analysis-1".to_owned(),
+            node_id: "function:ship".to_owned(),
+            text: "Only ship after review.".to_owned(),
+            kind: crate::intent::IntentKind::Original,
+            parent_id: None,
+            expected_analysis_at: "analysis-1".to_owned(),
         };
         (state, app_dir, repo_dir, request)
     }
@@ -467,13 +535,27 @@ mod tests {
     #[tokio::test]
     async fn app_state_reads_persisted_intent_after_restart_without_source_in_response() {
         let (state, app_dir, repo_dir, request) = intent_fixture().await;
-        let original = state.append_intent_record(request).await.expect("append intent");
+        let original = state
+            .append_intent_record(request)
+            .await
+            .expect("append intent");
         let store = ConfigStore::new(&app_dir);
-        let restarted = AppState::new(store.clone(), store.load_or_default().await.expect("read config"));
-        let records = restarted.list_intent_records().await.expect("list after restart");
+        let restarted = AppState::new(
+            store.clone(),
+            store.load_or_default().await.expect("read config"),
+        );
+        let records = restarted
+            .list_intent_records()
+            .await
+            .expect("list after restart");
         assert_eq!(records[0].id, original.id);
-        assert_eq!(records[0].binding_status, crate::intent::BindingStatus::Unverified);
-        assert!(!serde_json::to_string(&records).expect("encode DTO").contains("pub fn ship"));
+        assert_eq!(
+            records[0].binding_status,
+            crate::intent::BindingStatus::Unverified
+        );
+        assert!(!serde_json::to_string(&records)
+            .expect("encode DTO")
+            .contains("pub fn ship"));
         fs::remove_dir_all(app_dir).expect("cleanup app");
         fs::remove_dir_all(repo_dir).expect("cleanup repo");
     }
@@ -486,9 +568,19 @@ mod tests {
         let append = tokio::spawn(async move { task_state.append_intent_record(request).await });
         tokio::task::yield_now().await;
         assert!(!append.is_finished());
-        state.graph_snapshot.write().await.as_mut().expect("analysis").snapshot.generated_at = "analysis-2".to_owned();
+        state
+            .graph_snapshot
+            .write()
+            .await
+            .as_mut()
+            .expect("analysis")
+            .snapshot
+            .generated_at = "analysis-2".to_owned();
         drop(gate);
-        let error = append.await.expect("join append").expect_err("reject obsolete token");
+        let error = append
+            .await
+            .expect("join append")
+            .expect_err("reject obsolete token");
         assert_eq!(error.code, "intent_stale_selection");
         assert!(state.list_intent_records().await.expect("list").is_empty());
         fs::remove_dir_all(app_dir).expect("cleanup app");
@@ -498,9 +590,19 @@ mod tests {
     #[tokio::test]
     async fn setting_a_source_root_clears_selection_and_blocks_old_append() {
         let (state, app_dir, repo_dir, request) = intent_fixture().await;
-        state.set_source_repo_path(repo_dir.to_string_lossy().into_owned()).await.expect("reset configured root");
+        state
+            .set_source_repo_path(repo_dir.to_string_lossy().into_owned())
+            .await
+            .expect("reset configured root");
         assert!(state.graph_snapshot().await.is_none());
-        assert_eq!(state.append_intent_record(request).await.expect_err("selection cleared").code, "validation_error");
+        assert_eq!(
+            state
+                .append_intent_record(request)
+                .await
+                .expect_err("selection cleared")
+                .code,
+            "validation_error"
+        );
         fs::remove_dir_all(app_dir).expect("cleanup app");
         fs::remove_dir_all(repo_dir).expect("cleanup repo");
     }
