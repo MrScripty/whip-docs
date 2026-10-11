@@ -27,6 +27,7 @@ pub struct AnalyzedGraph {
     pub sources: BTreeMap<String, String>,
     /// HEAD observed at analysis completion; does not imply a clean worktree.
     pub repository_revision: Option<String>,
+    pub syntax: Option<crate::syntax::SourceAnalysisDto>,
 }
 
 #[derive(Debug, Default)]
@@ -147,6 +148,7 @@ impl RustGraphExtractor {
             snapshot: graph.finish(),
             sources,
             repository_revision,
+            syntax: None,
         })
     }
 
@@ -1140,8 +1142,7 @@ pub fn entry() { helper(); }
             .iter()
             .any(|edge| edge.kind == GraphEdgeKind::Calls));
         assert!(snapshot.edges.iter().any(|edge| {
-            edge.kind == GraphEdgeKind::Defines
-                && edge.provenance == EdgeProvenanceDto::RustAnalyzer
+            edge.kind == GraphEdgeKind::Defines && edge.provenance == EdgeProvenanceDto::Syn
         }));
 
         fs::remove_dir_all(repo).expect("cleanup fixture repo");
