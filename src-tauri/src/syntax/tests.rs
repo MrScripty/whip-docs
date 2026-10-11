@@ -129,9 +129,9 @@ fn all_language_families_extract_real_declarations() {
 fn pinned_modern_syntax_is_qualified_and_gaps_are_visible() {
     for (path, dialect, expected_acceptance) in [
         ("rust.rs", Dialect::Rust, true),
-        ("python.py", Dialect::Python, false),
-        ("kotlin.kt", Dialect::Kotlin, false),
-        ("c.c", Dialect::C, false),
+        ("python.py", Dialect::Python, true),
+        ("kotlin.kt", Dialect::Kotlin, true),
+        ("c.c", Dialect::C, true),
         ("cpp.cpp", Dialect::Cpp, true),
         ("csharp.cs", Dialect::CSharp, true),
         ("zig.zig", Dialect::Zig, true),
@@ -499,14 +499,9 @@ fn unix_backslash_paths_cannot_alias_a_different_source_or_duplicate_identity() 
 fn modern_acceptance_requires_expected_grammar_shapes() {
     for (path, dialect, expected_kind, supported) in [
         ("rust.rs", Dialect::Rust, "foreign_mod_item", true),
-        (
-            "python.py",
-            Dialect::Python,
-            "default_type_parameter",
-            false,
-        ),
-        ("kotlin.kt", Dialect::Kotlin, "context_parameter", false),
-        ("c.c", Dialect::C, "bitint_type", false),
+        ("python.py", Dialect::Python, "default_type_parameter", true),
+        ("kotlin.kt", Dialect::Kotlin, "context_parameter", true),
+        ("c.c", Dialect::C, "bitint_type", true),
         (
             "cpp.cpp",
             Dialect::Cpp,
@@ -607,6 +602,43 @@ fn parser_identities_and_provenance_match_exact_manifest_and_lock_pins() {
         }),
     );
     for identity in identities {
+        if let Some(local) = identity.strip_prefix("whip/") {
+            let (package, revision) = local.split_once('@').unwrap();
+            let (version, manifest_hash) = revision.split_once("+sha256:").unwrap();
+            let lang = match package {
+                "tree-sitter-python" => "python",
+                "tree-sitter-kotlin-ng" => "kotlin",
+                "tree-sitter-c" => "c",
+                _ => panic!("unknown owned grammar"),
+            };
+            assert!(manifest.contains(&format!(
+                "{package} = {{ path = \"../grammars/{lang}\", version = \"={version}\" }}"
+            )));
+            let owned_manifest = std::fs::read(
+                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join(format!("../grammars/{lang}/owned-provenance.json")),
+            )
+            .unwrap();
+            assert_eq!(
+                super::hash(owned_manifest).trim_start_matches("sha256:"),
+                manifest_hash
+            );
+            let pin = provenance["packages"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|p| p["package"] == package)
+                .unwrap();
+            assert_eq!(pin["identity"], identity);
+            assert_eq!(pin["ownedManifestSha256"], manifest_hash);
+            let block = lock
+                .split("[[package]]")
+                .find(|b| b.contains(&format!("name = \"{package}\"")))
+                .unwrap();
+            assert!(block.contains(&format!("version = \"{version}\"")));
+            assert!(!block.contains("source = "));
+            continue;
+        }
         let (origin, version_or_commit) = identity.split_once('@').unwrap();
         let package = origin.rsplit('/').next().unwrap();
         let pin = provenance["packages"]
@@ -678,17 +710,21 @@ fn svelte_template_calls_use_existing_grammars_with_exact_mapped_byte_ranges() {
     ] {
         assert!(calls.contains(&expected), "missing {expected}: {calls:?}");
     }
-    // Const bindings/each keys/snippet parameters are deliberately still partial.
-    assert!(!calls.contains(&"count"));
-    assert_eq!(calls.iter().filter(|name| **name == "key").count(), 1);
-    assert_eq!(file.identity.coverage, Coverage::Incomplete);
-    assert!(
-        file.diagnostics
-            .iter()
-            .all(|d| d.code == "template_expression_unanalyzed"),
+    assert!(calls.contains(&"count"));
+    assert_eq!(calls.iter().filter(|name| **name == "key").count(), 2);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
         "{:?}",
         file.diagnostics
     );
+    assert!(file.diagnostics.is_empty());
+    for name in ["row", "index", "result", "error", "value", "total"] {
+        assert!(
+            file.declarations.iter().any(|d| d.name == name),
+            "missing template binding {name}"
+        );
+    }
     for fact in &file.relations {
         assert!(fact.range.start_byte <= fact.target_range.start_byte);
         assert!(fact.target_range.end_byte <= fact.range.end_byte);
@@ -719,6 +755,10 @@ fn svelte_expression_wrappers_never_escape_or_invent_calls_from_recovery() {
             vec!["read", "(function() { return read(); })"],
         ),
         ("{read() // comment\n}", vec!["read"]),
+        (
+            "{#await read() then item}{show(item)}{/await}",
+            vec!["read", "show"],
+        ),
         ("{items?.map(x => read(x))}", vec!["items?.map", "read"]),
         (
             "<script lang='ts'></script>{read(value as Item)}",
@@ -740,11 +780,7 @@ fn svelte_expression_wrappers_never_escape_or_invent_calls_from_recovery() {
             assert!(actual.contains(&target), "{actual:?}");
         }
     }
-    for source in [
-        "{read(}",
-        "{a); injected(); (b}",
-        "{#await read() then item}{show(item)}{/await}",
-    ] {
+    for source in ["{read(}", "{a); injected(); (b}"] {
         let file = analyze_file("a.svelte", source, Dialect::Svelte5);
         assert_eq!(file.identity.coverage, Coverage::Incomplete);
         assert!(!file.relations.iter().any(|r| source
@@ -770,7 +806,7 @@ fn svelte_template_region_budget_remains_explicit() {
 }
 
 #[test]
-fn each_reported_registry_grammar_gap_is_qualified_individually() {
+fn each_owned_grammar_gap_is_now_qualified_individually() {
     for (dialect, source) in [
         (Dialect::Python, "class Box[T = int]:\n pass\n"),
         (
@@ -800,13 +836,13 @@ fn each_reported_registry_grammar_gap_is_qualified_individually() {
         let file = analyze_file("gap", source, dialect);
         assert_eq!(
             file.identity.coverage,
-            Coverage::Incomplete,
+            Coverage::SupportedSubset,
             "{dialect:?}: {source}"
         );
         assert!(
             file.diagnostics
                 .iter()
-                .any(|d| matches!(d.code.as_str(), "parse_error" | "unsupported_modern_syntax")),
+                .all(|d| !matches!(d.code.as_str(), "parse_error" | "unsupported_modern_syntax")),
             "{:?}",
             file.diagnostics
         );
@@ -1140,5 +1176,413 @@ fn official_git_grammars_are_abi_compatible_and_match_recorded_node_types() {
             ),
             pin["generatedParser"]["files"]["src/node-types.json"]
         );
+    }
+}
+
+#[test]
+fn owned_python_type_defaults_have_parameters_owners_and_written_ranges() {
+    let source = fixture("modern/default-type-parameters.py").replace('\n', "\r\n");
+    let file = analyze_file("a.py", &source, Dialect::Python);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_exact_ranges(&file, &source);
+    for (owner, name, default) in [
+        ("Box", "T", "int"),
+        ("Box", "U", "list[T]"),
+        ("unpack", "Ts", "*tuple[int, str]"),
+        ("unpack", "P", "[int, str]"),
+        ("Alias", "Rest", "*tuple[str, ...]"),
+        ("Callback", "P", "..."),
+    ] {
+        let owner = file.declarations.iter().find(|d| d.name == owner).unwrap();
+        let parameter = file
+            .declarations
+            .iter()
+            .find(|d| d.name == name && d.parent_id.as_ref() == Some(&owner.id))
+            .unwrap();
+        assert_eq!(parameter.kind, DeclarationKind::Parameter);
+        assert_eq!(parameter.syntax_kind, "default_type_parameter");
+        assert!(parameter.header_complete);
+        assert!(file
+            .relations
+            .iter()
+            .any(|r| r.owner_id.as_ref() == Some(&parameter.id)
+                && r.kind == RelationKind::WrittenType
+                && &source[r.target_range.start_byte..r.target_range.end_byte] == default));
+    }
+    assert!(file
+        .declarations
+        .iter()
+        .any(|d| d.name == "ordinary" && d.kind == DeclarationKind::Binding));
+    assert!(!file
+        .declarations
+        .iter()
+        .any(|d| d.name == "int" || d.name == "str"));
+}
+
+#[test]
+fn owned_kotlin_contexts_have_function_property_owners_and_anonymous_type_facts() {
+    let source = fixture("modern/context-parameters.kt").replace('\n', "\r\n");
+    let file = analyze_file("a.kt", &source, Dialect::Kotlin);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_exact_ranges(&file, &source);
+    for (owner, names) in [
+        ("read", vec!["user", "logger"]),
+        ("current", vec!["user"]),
+        ("emit", vec!["service", "callback"]),
+    ] {
+        let owner = file.declarations.iter().find(|d| d.name == owner).unwrap();
+        assert!(source[owner.range.start_byte..owner.range.end_byte].contains("context("));
+        for name in names {
+            let parameter = file
+                .declarations
+                .iter()
+                .find(|d| d.name == name && d.parent_id.as_ref() == Some(&owner.id))
+                .unwrap();
+            assert_eq!(parameter.kind, DeclarationKind::Parameter);
+            assert_eq!(parameter.syntax_kind, "context_parameter");
+            assert!(file
+                .relations
+                .iter()
+                .any(|r| r.owner_id.as_ref() == Some(&parameter.id)
+                    && r.kind == RelationKind::WrittenType));
+        }
+    }
+    assert!(!file.declarations.iter().any(|d| d.name == "_"));
+    let property = file
+        .declarations
+        .iter()
+        .find(|d| d.name == "current")
+        .unwrap();
+    assert!(file
+        .relations
+        .iter()
+        .any(|r| r.owner_id.as_ref() == Some(&property.id)
+            && &source[r.target_range.start_byte..r.target_range.end_byte] == "Clock"));
+    let legacy = file
+        .declarations
+        .iter()
+        .find(|d| d.name == "legacy")
+        .unwrap();
+    assert!(file
+        .relations
+        .iter()
+        .any(|r| r.owner_id.as_ref() == Some(&legacy.id)
+            && &source[r.target_range.start_byte..r.target_range.end_byte] == "Logger"));
+    assert!(file
+        .declarations
+        .iter()
+        .any(|d| d.name == "context" && d.kind == DeclarationKind::Function));
+}
+
+#[test]
+fn owned_c_bitint_preserves_signedness_widths_and_containment() {
+    let source = fixture("modern/bitint.c").replace('\n', "\r\n");
+    let file = analyze_file("a.c", &source, Dialect::C);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_exact_ranges(&file, &source);
+    for (name, kind, typ) in [
+        (
+            "Counter",
+            DeclarationKind::TypeAlias,
+            "unsigned _BitInt(17)",
+        ),
+        ("wide", DeclarationKind::Field, "unsigned _BitInt(32 + 1)"),
+        ("reverse", DeclarationKind::Field, "_BitInt(65) signed"),
+        ("value", DeclarationKind::Parameter, "_BitInt(17)"),
+    ] {
+        let declaration = file.declarations.iter().find(|d| d.name == name).unwrap();
+        assert_eq!(declaration.kind, kind);
+        assert!(file
+            .relations
+            .iter()
+            .any(|r| r.owner_id.as_ref() == Some(&declaration.id)
+                && &source[r.target_range.start_byte..r.target_range.end_byte] == typ));
+    }
+    let width = file
+        .relations
+        .iter()
+        .find(|r| {
+            r.qualification == "written_width_expression_unresolved"
+                && &source[r.target_range.start_byte..r.target_range.end_byte] == "32 + 1"
+        })
+        .unwrap();
+    assert_eq!(
+        &source[width.range.start_byte..width.range.end_byte],
+        "_BitInt(32 + 1)"
+    );
+}
+
+#[test]
+fn owned_grammars_do_not_turn_malformed_constructs_into_complete_inventory() {
+    for (dialect, source) in [
+        (Dialect::Python, "class Broken[T = ]:\n pass\n"),
+        (Dialect::Python, "class Broken[T = *tuple[int]]: pass\n"),
+        (Dialect::Python, "class Broken[**P = *tuple[int]]: pass\n"),
+        (Dialect::Python, "class Broken[T = (*tuple[int])]: pass\n"),
+        (Dialect::Python, "class Broken[T: (*tuple[int])]: pass\n"),
+        (Dialect::Python, "class Broken[**P = (*tuple[int])]: pass\n"),
+        (
+            Dialect::Python,
+            "class Broken[T = int | *tuple[int]]: pass\n",
+        ),
+        (Dialect::Python, "class Broken[T = not *tuple[int]]: pass\n"),
+        (
+            Dialect::Python,
+            "class Broken[T = (*tuple[int]).foo]: pass\n",
+        ),
+        (Dialect::Python, "class Broken[*Ts = **tuple[int]]: pass\n"),
+        (Dialect::Python, "class Broken[T = [int | *Ts]]: pass\n"),
+        (
+            Dialect::Python,
+            "class Broken[*Ts: int = *tuple[int]]: pass\n",
+        ),
+        (Dialect::Python, "type Broken[*Ts: int] = tuple[*Ts]\n"),
+        (Dialect::Python, "class Broken[T = int: str]: pass\n"),
+        (Dialect::Python, "type Broken[T == int] = T\n"),
+        (Dialect::Python, "item: list[T = int]\n"),
+        (Dialect::Python, "def broken[*Ts = *](x): pass\n"),
+        (Dialect::Kotlin, "context(user:) fun broken() {}\n"),
+        (
+            Dialect::Kotlin,
+            "context(: User) val broken: Int get() = 1\n",
+        ),
+        (Dialect::Kotlin, "context(user: User,,) fun broken() {}\n"),
+        (Dialect::C, "_BitInt() broken;"),
+        (Dialect::C, "unsigned _BitInt(17 +) broken;"),
+        (Dialect::C, "_BitInt(17 broken;"),
+    ] {
+        let file = analyze_file("broken", source, dialect);
+        assert_eq!(
+            file.identity.coverage,
+            Coverage::Incomplete,
+            "{dialect:?}: {source}"
+        );
+        assert!(file.diagnostics.iter().any(|d| matches!(
+            d.code.as_str(),
+            "parse_error" | "invalid_type_parameter_expression"
+        )));
+        assert_exact_ranges(&file, source);
+    }
+}
+
+#[test]
+fn svelte_context_bindings_defaults_annotations_and_shorthand_await_are_mapped() {
+    let source = fixture("modern/template-bindings.svelte").replace('\n', "\r\n");
+    let file = analyze_file("a.svelte", &source, Dialect::Svelte5);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_exact_ranges(&file, &source);
+    let snippet = file.declarations.iter().find(|d| d.name == "card").unwrap();
+    for name in [
+        "label", "alias", "first", "rest", "suffix", "id", "name", "index", "total", "amount",
+        "result", "message", "error",
+    ] {
+        let declaration = file
+            .declarations
+            .iter()
+            .find(|d| d.name == name)
+            .unwrap_or_else(|| panic!("missing {name}: {:?}", file.declarations));
+        assert_eq!(declaration.parent_id.as_ref(), Some(&snippet.id));
+        assert!(declaration.header_complete && declaration.body_complete);
+        assert_eq!(
+            declaration.kind,
+            if ["label", "alias", "first", "rest", "suffix"].contains(&name) {
+                DeclarationKind::Parameter
+            } else {
+                DeclarationKind::Binding
+            }
+        );
+    }
+    for target in [
+        "format",
+        "fallback",
+        "key",
+        "measure",
+        "show",
+        "pending",
+        "defaulted",
+        "render",
+        "report",
+    ] {
+        assert!(
+            file.relations
+                .iter()
+                .any(|r| r.kind == RelationKind::CallSyntax
+                    && &source[r.target_range.start_byte..r.target_range.end_byte] == target),
+            "missing call {target}"
+        );
+    }
+    for annotation in ["Props", "string[]"] {
+        assert!(file
+            .relations
+            .iter()
+            .any(|r| r.kind == RelationKind::WrittenType
+                && r.owner_id.as_ref() == Some(&snippet.id)
+                && &source[r.target_range.start_byte..r.target_range.end_byte] == annotation));
+    }
+    assert!(!file
+        .declarations
+        .iter()
+        .any(|d| ["value", "data", "count", "Props"].contains(&d.name.as_str())));
+}
+
+#[test]
+fn svelte_context_wrappers_reject_escapes_and_malformed_bindings() {
+    for source in [
+        "{@const value = read(); injected()}",
+        "{@const value}",
+        "{@debug injected()}",
+        "{#snippet card(value: )}{/snippet}",
+        "{#snippet card(...value)}{/snippet}",
+        "<script lang='ts'></script>{#snippet card(public value: number)}{/snippet}",
+        "<script lang='ts'></script>{#snippet card(readonly value: number)}{/snippet}",
+        "{#each rows as value = bad()}{/each}",
+        "{#await read() then value = bad()}{/await}",
+        "{#each rows as value (key()) (extra())}{/each}",
+        "{#await read() // then\n value}{/await}",
+        "{#await read() // catch\n value}{/await}",
+        "{#each rows as value // (\n key())}{/each}",
+        "{#await p\u{0300}then value}{/await}",
+        "{#await p\u{200d}catch value}{/await}",
+        "{#await read() then\u{0300}value}{/await}",
+        "{#snippet card(value)=>injected();(other)}{/snippet}",
+        "{#each rows as {name: }, index}{/each}",
+        "{#each rows as row, {badIndex}}{/each}",
+        "{#await pending() then {broken: }}{/await}",
+    ] {
+        let file = analyze_file("a.svelte", source, Dialect::Svelte5);
+        assert_eq!(
+            file.identity.coverage,
+            Coverage::Incomplete,
+            "{source}: {file:?}"
+        );
+        assert!(
+            !file.relations.iter().any(|r| source
+                [r.target_range.start_byte..r.target_range.end_byte]
+                .contains("injected")),
+            "{source}"
+        );
+        assert!(
+            !file
+                .declarations
+                .iter()
+                .any(|d| ["value", "other", "broken", "badIndex"].contains(&d.name.as_str())),
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn svelte_template_dialect_uses_script_language_and_context_limits_are_explicit() {
+    let module_only = "<script module lang='ts'>type A = number;</script>{read(value as A)}";
+    let file = analyze_file("a.svelte", module_only, Dialect::Svelte5);
+    assert_eq!(file.identity.coverage, Coverage::SupportedSubset);
+    assert!(file
+        .relations
+        .iter()
+        .any(|r| r.kind == RelationKind::CallSyntax));
+    let both = "<script module lang='ts'>type A = number;</script><script lang='ts'>let value: A;</script>{read(value as A)}";
+    let file = analyze_file("a.svelte", both, Dialect::Svelte5);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    let source = format!(
+        "{{#snippet many({})}}{{/snippet}}",
+        (0..5000)
+            .map(|i| format!("p{i}"))
+            .collect::<Vec<_>>()
+            .join(",")
+    );
+    let file = analyze_file("a.svelte", &source, Dialect::Svelte5);
+    assert_eq!(file.identity.coverage, Coverage::Incomplete);
+    assert!(file
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "template_binding_limit"));
+    assert!(file.declarations.len() <= 4096);
+}
+
+#[test]
+fn kotlin_context_destructuring_is_explicitly_unqualified_without_orphan_parameters() {
+    let file = analyze_file(
+        "a.kt",
+        "context(user: User) val (left, right) = pair()\n",
+        Dialect::Kotlin,
+    );
+    assert_eq!(file.identity.coverage, Coverage::Incomplete);
+    assert!(file
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "unsupported_context_property"));
+    assert!(file.declarations.is_empty());
+}
+
+#[test]
+fn python_type_default_unpacking_contexts_and_invalid_headers_are_qualified() {
+    for expression in [
+        "tuple[*Ts]",
+        "(*tuple[int],)",
+        "[*tuple[int]]",
+        "{*tuple[int]}",
+        "f(*tuple[int])",
+        "tuple[*Ts, *Us]",
+    ] {
+        let source = format!("class Box[T = {expression}]: pass\n");
+        let file = analyze_file("a.py", &source, Dialect::Python);
+        assert_eq!(
+            file.identity.coverage,
+            Coverage::SupportedSubset,
+            "{source}: {:?}",
+            file.diagnostics
+        );
+    }
+    let source = "class Broken[T = (*tuple[int])]: pass\n";
+    let file = analyze_file("a.py", source, Dialect::Python);
+    assert!(file
+        .declarations
+        .iter()
+        .any(|d| d.name == "Broken" && !d.header_complete));
+    assert!(!file.declarations.iter().any(|d| d.name == "T"));
+}
+
+#[test]
+fn svelte_region_and_label_limits_propagate_to_snippet_completeness() {
+    for source in [
+        format!(
+            "{}{{#snippet broken(value)}}{{/snippet}}",
+            "{x}".repeat(256)
+        ),
+        format!("{{#snippet broken({})}}{{/snippet}}", "x".repeat(257)),
+    ] {
+        let file = analyze_file("a.svelte", &source, Dialect::Svelte5);
+        assert_eq!(file.identity.coverage, Coverage::Incomplete);
+        let snippet = file
+            .declarations
+            .iter()
+            .find(|d| d.name == "broken")
+            .unwrap();
+        assert!(!snippet.header_complete && !snippet.body_complete);
     }
 }

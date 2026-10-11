@@ -142,6 +142,15 @@ fn parse_region(
             || file.declarations.len() >= MAX_DECLARATIONS
             || file.relations.len() >= MAX_FACTS
         {
+            mark_owner_damage(
+                file,
+                inherited_owner.as_deref(),
+                dialect == Dialect::Svelte5
+                    && matches!(
+                        super::template::context(node),
+                        Some(super::template::Context::Parameters)
+                    ),
+            );
             diagnostic(
                 file,
                 "extraction_limit",
@@ -237,30 +246,168 @@ fn parse_region(
             continue;
         }
         if dialect == Dialect::Svelte5 && node.kind() == "svelte_raw_text" {
-            if !super::template::is_expression(node) {
-                diagnostic(file, "template_expression_unanalyzed", Some(span(node, offset)), "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.");
-            } else if template_regions >= 256 {
+            if let Some(context) = super::template::context(node) {
+                if node.parent().is_some_and(|parent| parent.has_error()) {
+                    mark_owner_damage(
+                        file,
+                        inherited_owner.as_deref(),
+                        matches!(context, super::template::Context::Parameters),
+                    );
+                    diagnostic(
+                        file,
+                        "template_header_parse_error",
+                        Some(span(node, offset)),
+                        "Damaged native template header was not injected into another grammar.",
+                    );
+                    continue;
+                }
+                if template_regions >= 256 {
+                    mark_owner_damage(
+                        file,
+                        inherited_owner.as_deref(),
+                        matches!(context, super::template::Context::Parameters),
+                    );
+                    diagnostic(
+                        file,
+                        "template_region_limit",
+                        Some(span(node, offset)),
+                        "Template expression region limit reached.",
+                    );
+                } else {
+                    template_regions += 1;
+                    let grammar = GrammarIdentity {
+                        dialect: template_dialect,
+                        grammar: template_dialect.grammar_identity().to_owned(),
+                    };
+                    if !file.identity.grammars.contains(&grammar) {
+                        file.identity.grammars.push(grammar);
+                    }
+                    let request = super::template::Request {
+                        raw: text(node, source),
+                        start: offset + node.start_byte(),
+                        dialect: template_dialect,
+                        owner: inherited_owner.as_deref(),
+                        max_facts: MAX_FACTS.saturating_sub(file.relations.len()),
+                        max_bindings: MAX_DECLARATIONS.saturating_sub(file.declarations.len()),
+                        deadline: template_deadline,
+                    };
+                    match super::template::analyze(&request, context) {
+                        Ok(mut inventory) => {
+                            let mut range_counts = std::collections::BTreeMap::new();
+                            for binding in &inventory.bindings {
+                                *range_counts
+                                    .entry((binding.range.start_byte, binding.range.end_byte))
+                                    .or_insert(0usize) += 1;
+                            }
+                            for binding in inventory.bindings {
+                                let name = &source[binding.name_range.start_byte - offset
+                                    ..binding.name_range.end_byte - offset];
+                                if name.is_empty() || name.len() > 256 {
+                                    mark_owner_damage(
+                                        file,
+                                        inherited_owner.as_deref(),
+                                        matches!(context, super::template::Context::Parameters),
+                                    );
+                                    diagnostic(
+                                        file,
+                                        "declaration_name_limit",
+                                        Some(binding.name_range),
+                                        "Template binding name exceeds label bound.",
+                                    );
+                                    continue;
+                                }
+                                let id = declaration_id(
+                                    &file.identity.path,
+                                    Dialect::Svelte5,
+                                    &binding.kind,
+                                    name,
+                                    &binding.range,
+                                    &binding.name_range,
+                                );
+                                for fact in &mut inventory.facts {
+                                    if range_counts
+                                        .get(&(binding.range.start_byte, binding.range.end_byte))
+                                        == Some(&1)
+                                        && fact.kind == RelationKind::WrittenType
+                                        && fact.range.start_byte >= binding.range.start_byte
+                                        && fact.range.end_byte <= binding.range.end_byte
+                                    {
+                                        fact.owner_id = Some(id.clone());
+                                    }
+                                }
+                                file.declarations.push(Declaration {
+                                    id,
+                                    name: name.to_owned(),
+                                    kind: binding.kind,
+                                    syntax_kind: format!(
+                                        "svelte_{}_binding",
+                                        node.parent().unwrap().kind()
+                                    ),
+                                    dialect: Dialect::Svelte5,
+                                    parent_id: inherited_owner.clone(),
+                                    range: binding.range,
+                                    name_range: binding.name_range,
+                                    header_complete: true,
+                                    body_complete: true,
+                                });
+                            }
+                            file.relations.extend(inventory.facts);
+                        }
+                        Err(code) => {
+                            mark_owner_damage(
+                                file,
+                                inherited_owner.as_deref(),
+                                matches!(context, super::template::Context::Parameters),
+                            );
+                            diagnostic(file, code, Some(span(node, offset)), "Template region could not be safely qualified; no recovered declarations or facts were emitted.");
+                        }
+                    }
+                }
+            } else {
                 diagnostic(
                     file,
-                    "template_region_limit",
+                    "template_expression_unanalyzed",
                     Some(span(node, offset)),
-                    "Template expression region limit reached.",
+                    "This template region is outside the qualified structural subset.",
                 );
-            } else {
-                template_regions += 1;
-                let grammar = GrammarIdentity {
-                    dialect: template_dialect,
-                    grammar: template_dialect.grammar_identity().to_owned(),
-                };
-                if !file.identity.grammars.contains(&grammar) {
-                    file.identity.grammars.push(grammar);
-                }
-                match super::template::calls(text(node, source), offset + node.start_byte(), template_dialect,
-                    inherited_owner.as_deref(), MAX_FACTS.saturating_sub(file.relations.len()), template_deadline) {
-                    Ok(facts) => file.relations.extend(facts),
-                    Err(code) => diagnostic(file, code, Some(span(node, offset)), "Template expression could not be safely qualified; no recovered call facts were emitted for this region."),
-                }
             }
+            continue;
+        }
+        // The upstream Python primary-expression rule can nest a starred pattern
+        // under a subscript/call. PEP 696 permits a leading star only for a
+        // TypeVarTuple default, never an ordinary default or bound. Do not
+        // promote that permissive recovery to a complete declaration.
+        if dialect == Dialect::Python
+            && matches!(
+                node.kind(),
+                "default_type_parameter" | "type_parameter_declaration"
+            )
+        {
+            let tuple_parameter =
+                text(node, source).starts_with('*') && !text(node, source).starts_with("**");
+            let bad_bound = node
+                .child_by_field_name("bound")
+                .is_some_and(|n| !python_type_expression_qualified(n, source, false));
+            let bad_default = node
+                .child_by_field_name("default_type")
+                .is_some_and(|n| !python_type_expression_qualified(n, source, tuple_parameter));
+            if bad_bound || bad_default {
+                mark_owner_damage(file, inherited_owner.as_deref(), true);
+                diagnostic(
+                    file,
+                    "invalid_type_parameter_expression",
+                    Some(span(node, offset)),
+                    "The type-parameter expression contains an unqualified starred expression.",
+                );
+                continue;
+            }
+        }
+        if dialect == Dialect::Kotlin
+            && node.kind() == "property_declaration"
+            && child_kind(node, &["context_parameters", "context_receivers"]).is_some()
+            && child_kind(node, &["variable_declaration"]).is_none()
+        {
+            diagnostic(file, "unsupported_context_property", Some(span(node, offset)), "Context-qualified destructuring properties have no single declaration owner; region is unqualified.");
             continue;
         }
         let mut owner = inherited_owner;
@@ -277,6 +424,9 @@ fn parse_region(
                 break;
             }
             let name = text(name_node, source);
+            if dialect == Dialect::Kotlin && node.kind() == "context_parameter" && name == "_" {
+                continue;
+            }
             // Bound labels and accept identifier syntax only, never copied values/signatures.
             if name.len() > 256 || name.is_empty() {
                 diagnostic(
@@ -303,20 +453,13 @@ fn parse_region(
                 };
             let range = span(declaration_node, offset);
             let name_range = span(name_node, offset);
-            let id = format!(
-                "syntax:{}",
-                hash(
-                    serde_json::to_vec(&(
-                        &file.identity.path,
-                        dialect,
-                        &kind,
-                        name,
-                        &range,
-                        &name_range
-                    ))
-                    .unwrap()
-                )
-                .trim_start_matches("sha256:")
+            let id = declaration_id(
+                &file.identity.path,
+                dialect,
+                &kind,
+                name,
+                &range,
+                &name_range,
             );
             let body = declaration_node.child_by_field_name("body").or_else(|| {
                 child_kind(
@@ -377,7 +520,14 @@ fn parse_region(
                 qualification: "written_syntax_unresolved".to_owned(),
             });
         }
-        for field in ["type", "return_type", "returns", "trait"] {
+        for field in [
+            "type",
+            "return_type",
+            "returns",
+            "trait",
+            "bound",
+            "default_type",
+        ] {
             if dialect == Dialect::CSharp && node.kind() == "variable_declaration" {
                 continue;
             }
@@ -391,6 +541,17 @@ fn parse_region(
                         qualification: "written_annotation_unresolved".to_owned(),
                     });
                 }
+            }
+        }
+        if dialect == Dialect::C && node.kind() == "bitint_type" {
+            if let Some(width) = node.child_by_field_name("width") {
+                file.relations.push(RelationFact {
+                    owner_id: owner.clone(),
+                    kind: RelationKind::WrittenType,
+                    range: span(node, offset),
+                    target_range: span(width, offset),
+                    qualification: "written_width_expression_unresolved".to_owned(),
+                });
             }
         }
         if matches!(dialect, Dialect::Kotlin | Dialect::Odin)
@@ -417,6 +578,86 @@ fn parse_region(
             pending.push((child, owner.clone()));
         }
     }
+}
+
+// Python's upstream primary-expression rule admits starred patterns in invalid
+// expression positions. Validate every occurrence in the newly owned declaration
+// expressions, including nested containers; do not infer type/evaluation semantics.
+fn python_type_expression_qualified(root: Node<'_>, source: &str, tuple_default: bool) -> bool {
+    let mut pending = vec![root];
+    let mut visited = 0;
+    while let Some(node) = pending.pop() {
+        visited += 1;
+        if visited > MAX_NODES {
+            return false;
+        }
+        if node.kind() == "list_splat" {
+            // Upstream may parse *tuple[T] as subscript(value: list_splat).
+            // Walk only the expression's leading trailer/operator chain; a star
+            // on a right operand or inside bare parentheses cannot escape it.
+            let mut expression = node;
+            while expression != root {
+                let Some(parent) = expression.parent() else {
+                    break;
+                };
+                if parent.start_byte() == node.start_byte()
+                    && matches!(
+                        parent.kind(),
+                        "subscript" | "attribute" | "call" | "binary_operator"
+                    )
+                {
+                    expression = parent;
+                } else {
+                    break;
+                }
+            }
+            let leading_default = tuple_default
+                && node.start_byte() == root.start_byte()
+                && !text(root, source).starts_with("**");
+            let valid_container = expression != root
+                && expression.parent().is_some_and(|parent| {
+                    matches!(parent.kind(), "list" | "tuple" | "set" | "argument_list")
+                        || parent.kind() == "subscript"
+                            && parent.child_by_field_name("value") != Some(expression)
+                });
+            if !leading_default && !valid_container {
+                return false;
+            }
+        }
+        pending.extend(children(node));
+    }
+    true
+}
+
+fn mark_owner_damage(file: &mut FileAnalysis, owner: Option<&str>, header: bool) {
+    let mut current = owner.map(str::to_owned);
+    let mut first = true;
+    while let Some(id) = current {
+        let Some(declaration) = file.declarations.iter_mut().find(|d| d.id == id) else {
+            break;
+        };
+        declaration.body_complete = false;
+        if first && header {
+            declaration.header_complete = false;
+        }
+        first = false;
+        current = declaration.parent_id.clone();
+    }
+}
+
+fn declaration_id(
+    path: &str,
+    dialect: Dialect,
+    kind: &DeclarationKind,
+    name: &str,
+    range: &ByteRange,
+    name_range: &ByteRange,
+) -> String {
+    format!(
+        "syntax:{}",
+        hash(serde_json::to_vec(&(path, dialect, kind, name, range, name_range)).unwrap())
+            .trim_start_matches("sha256:")
+    )
 }
 
 fn damage_before(node: Node<'_>, end: usize) -> bool {
@@ -472,6 +713,25 @@ fn relation_kind(node: Node<'_>) -> Option<RelationKind> {
 fn declaration_names(node: Node<'_>, dialect: Dialect) -> Vec<(DeclarationKind, Node<'_>)> {
     use DeclarationKind as K;
     let typ = node.kind();
+    if dialect == Dialect::Kotlin {
+        if typ == "variable_declaration"
+            && node.parent().is_some_and(|p| {
+                p.kind() == "property_declaration"
+                    && child_kind(p, &["context_parameters", "context_receivers"]).is_some()
+            })
+        {
+            return Vec::new();
+        }
+        if typ == "property_declaration"
+            && child_kind(node, &["context_parameters", "context_receivers"]).is_some()
+        {
+            if let Some(binding) = child_kind(node, &["variable_declaration"]) {
+                if let Some(name) = child_kind(binding, &["identifier"]) {
+                    return vec![(K::Field, name)];
+                }
+            }
+        }
+    }
     // Anonymous extension containers and operators use exact written tokens as
     // labels. They are syntax identities, never invented compiler symbol names.
     if dialect == Dialect::CSharp {
@@ -588,6 +848,9 @@ fn declaration_names(node: Node<'_>, dialect: Dialect) -> Vec<(DeclarationKind, 
         | "default_parameter"
         | "parameter_declaration"
         | "receiver_parameter"
+        | "context_parameter"
+        | "default_type_parameter"
+        | "type_parameter_declaration"
         | "class_parameter" => K::Parameter,
         "snippet_statement" => K::Snippet,
         "declaration" if matches!(dialect, Dialect::C | Dialect::Cpp) => K::Binding,

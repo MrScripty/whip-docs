@@ -1,14 +1,19 @@
 {
-  "parserCommit": "2afd3c0a03d48ac05e9717d5dd6f727a44691fc3",
+  "parserCommit": "298e63fb11ac37c29f7a89d9a57f16a866f1d4b3",
   "graphCommit": "2a6b73da3fce1ce099e91fa386986c4b2f63a44e",
   "generator": "cargo run --no-default-features --example integration_fixture -- FIXTURE_ROOT DISPOSABLE_APP_DATA",
   "normalization": "Absolute root replaced with public fixture label; graph and journal timestamps fixed; identities, digests, ranges, facts and relationships unchanged.",
   "sourceSha256": {
     "README.md": "28929e8adbfbeacedb134c17335c559af2ed9cc31004109611bb1dfb1f295c35",
+    "api/default-type-parameters.py": "91da036db2b7e06b0c954556e7fbc9c86c5a4b25159ee46d0d4f490fb982520a",
     "api/handler.py": "17e9fae5dc26c9902674b3ea726858fb7556220ad4f7f023862a530328aaf5ec",
     "broken/bad.py": "6b8c8a725c23dc076d9a2c185ce4e02435746bc3b4f99906d13de360e56898c7",
+    "broken/context-property.kt": "6ef95b6bc78a9b535516e33ffb39bf0fb8f11f1006bf22c9e147577a0951500a",
+    "broken/snippet-header.svelte": "7c2726ce63b15a9d30c1c620a1635cd65a42407e10236a8d0c7d2fb3f0cfc478",
     "include/api.h": "a018ff632a2e649484c047bc38297246836f02033f9338e32c300acbb3a3933e",
     "mobile/Screen.kt": "cb5f66195218dc2b6c2ba67e4faa29adcd56e516b268d7e6d2d8ed12c0dd99e9",
+    "mobile/context-parameters.kt": "238e560fbc838df9408ecdceaaedf79c2c1a6585647f8b2fc572007563ba88e6",
+    "native/bitint.c": "c7d42c5a016cf666ea492ee878d9affff0fc46e453b837d96979368d9aa14b5c",
     "native/explicit-object.cpp": "7580030bf3aaa90150a899340929f7a6bd072d1000349497a06236cf79e1cb21",
     "native/extension-blocks.cs": "4311c5d4c480ff01cbdcfa3e5ae313f5422bd9a3be1b0ac297296f128be835bd",
     "native/math.c": "4825155d47a94bd0b4d39dffd324c9bfe1681f912dd9bfebafbf551a44e280b2",
@@ -26,6 +31,7 @@
     "web/Template.svelte": "b854fe6106a0f45e067ff13e71bbc4de55bbd075b64864621951599d82004d80",
     "web/View.js": "e2a79799f3ec63b92e0b32097c4f6291d765aa47df86b4d3eaaa341c896d5621",
     "web/app.ts": "e84b691cde7f455fedd141a259f1e806c45b5ad5746acbe809f79f10349d8177",
-    "web/plain.js": "15f5f7eaa0c225d249f45081e1e527520a80d1d1a229b67ad636461d23463adf"
+    "web/plain.js": "15f5f7eaa0c225d249f45081e1e527520a80d1d1a229b67ad636461d23463adf",
+    "web/template-bindings.svelte": "a7159cbadfb535acde4bfb0e8eb44b47572926b8257e3b2d20371152a4b2dfac"
   }
 }

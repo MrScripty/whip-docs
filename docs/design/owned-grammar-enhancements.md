@@ -1,6 +1,9 @@
 # Proposed Whip-owned grammar enhancements
 
-2026-10-11. Design only: none of these three grammar changes has been implemented
+Historical proposal; implemented later under [separate acceptance](owned-grammar-implementation.md).
+See the [qualification report](../../verification/owned-grammars.md) for current status.
+
+2026-10-11 initial proposal. Design only: none of these three grammar changes has been implemented
 or qualified. Existing negative fixtures and partial diagnostics remain in place.
 The [read-only audit](grammar-gap-audit.json) pins all source revisions/hashes.
 

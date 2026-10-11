@@ -1,0 +1,9 @@
+==================
+Whip modern syntax
+==================
+
+typedef unsigned _BitInt(32) Word;
+
+---
+
+(translation_unit (type_definition (signed_bitint_type (bitint_type (number_literal))) (type_identifier)))

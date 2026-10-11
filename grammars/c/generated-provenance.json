@@ -1,0 +1,19 @@
+{
+  "generator": "tree-sitter-cli@0.25.10",
+  "command": [
+    "tree-sitter",
+    "generate",
+    "--abi",
+    "15"
+  ],
+  "nodeVersion": "v24.19.0",
+  "identicalSecondGeneration": true,
+  "files": {
+    "src/parser.c": "f4d83356b4a259ce8399fc9005c52758c1d38b797d43e0f32fbffef352618e4a",
+    "src/grammar.json": "8b2e3b562f296d3b0610bfba1af98352bbdbe015554722cb15806eb779d07656",
+    "src/node-types.json": "1a2a2480bed375402b8b6bd92a9accbab145fac5cd7d4770de053b7e1ae64f63",
+    "src/tree_sitter/parser.h": "180b893c8734778fd32f372dfbc27bd6ad1cd2221f26150b31256ff6716320d2",
+    "src/tree_sitter/alloc.h": "b29c1c9fb7cc82f58c84b376df1297d6e2737a1d655fd356db0859e3c29c2fea",
+    "src/tree_sitter/array.h": "5bdf6ed1a78e3409fd443e085ca967a64c188a5d082aaf7f819bccd53a471c94"
+  }
+}

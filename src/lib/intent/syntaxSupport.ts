@@ -3,7 +3,7 @@ import type { GraphSnapshotDto } from '../../backends/TauriArchitectureBackend';
 
 export const SYNTAX_DIALECTS: SyntaxDialect[] = ['rust','typescript','tsx','javascript','jsx','python','lua','kotlin','zig','csharp','c','cpp','odin','svelte5'];
 export const SYNTAX_DECLARATIONS = new Set(['function','method','class','struct','enum','interface','trait','implementation','module','type_alias','binding','field','variant','parameter','component','snippet']);
-export const QUALIFICATION_GAPS = 'Known gaps: Python defaulted type parameters; Kotlin context parameters; C23 _BitInt; Svelte template binding/parameter scopes. Template call facts are an unresolved, bounded subset. Successful files cover a supported subset, not the complete language.';
+export const QUALIFICATION_GAPS = 'Supported subset only: no Python type/default evaluation, Kotlin context resolution, or C width evaluation. Kotlin context destructuring properties are excluded. Svelte file/snippet containment does not describe lexical visibility; anonymous expression declarations and newer generic snippets/directives are not fully qualified. Calls and types remain unresolved syntax evidence. Kotlin/Zig declaration and ownership results and C++/Odin callable inventories still have known extraction gaps. Complete language or Passeur parity is not claimed.';
 export function coverageLabel(value: string): string {
   return value === 'supported_subset' ? 'Supported subset' : value === 'incomplete' ? 'Incomplete' : value === 'unavailable' ? 'Unavailable' : 'Outside captured scope';
 }

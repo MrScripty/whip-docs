@@ -47,7 +47,7 @@ const exact='  Preserve multilingual responsibility — 蟹.\n\tProposals stay s
  await page.locator('[data-node-id="file:unsupported/plugin.go"]').click();assert.match(await page.locator('.syntax-metadata').innerText(),/Outside captured scope/);
  assert(await page.getByRole('button',{name:'Expand unsupported/plugin.go',exact:true}).isDisabled());
  await page.locator('[data-node-id="file:broken/bad.py"]').click();assert.match(await page.locator('.syntax-metadata').innerText(),/Incomplete/);
- await page.locator('.analysis-coverage summary').click();assert.match(await page.locator('.analysis-coverage').innerText(),/Python defaulted type parameters.*Kotlin context parameters.*C23 _BitInt.*Svelte template binding/s);
+ await page.locator('.analysis-coverage summary').click();assert.match(await page.locator('.analysis-coverage').innerText(),/no Python type\/default evaluation.*Kotlin context resolution.*C width evaluation.*Svelte file\/snippet containment/s);
  pass('Unsupported, damaged and known unqualified syntax remain explicit');
  await page.getByRole('button',{name:'Expand api/handler.py',exact:true}).click();await page.getByRole('button',{name:'Frame symbols',exact:true}).click();
  const symbol=page.locator('.symbol-list button').filter({has:page.locator('span').filter({hasText:/^Boxed$/})}).first();await symbol.click();

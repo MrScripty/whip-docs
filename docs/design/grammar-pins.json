@@ -11,11 +11,13 @@
     },
     {
       "package": "tree-sitter-c",
-      "version": "0.24.2",
-      "registry": "registry+https://github.com/rust-lang/crates.io-index",
-      "sha256": "a9b2eb57a55fed6b00812912e730b7a275cf4fe98bfd6a5d76263d4438371728",
+      "version": "0.24.2-whip.1",
+      "source": null,
+      "path": "grammars/c",
       "repository": "https://github.com/tree-sitter/tree-sitter-c",
-      "upstreamCommit": "b780e47fc780ddc8da13afa35a3f4ed5c157823d"
+      "upstreamCommit": "b780e47fc780ddc8da13afa35a3f4ed5c157823d",
+      "ownedManifestSha256": "78361947a4e727fa8a7f0ca4b49796efb24ddb9e874fd8d5d3a09d627c869911",
+      "identity": "whip/tree-sitter-c@0.24.2-whip.1+sha256:78361947a4e727fa8a7f0ca4b49796efb24ddb9e874fd8d5d3a09d627c869911"
     },
     {
       "package": "tree-sitter-c-sharp",
@@ -92,11 +94,13 @@
     },
     {
       "package": "tree-sitter-kotlin-ng",
-      "version": "1.1.0",
-      "registry": "registry+https://github.com/rust-lang/crates.io-index",
-      "sha256": "e800ebbda938acfbf224f4d2c34947a31994b1295ee6e819b65226c7b51b4450",
+      "version": "1.1.0-whip.1",
+      "source": null,
+      "path": "grammars/kotlin",
       "repository": "https://github.com/tree-sitter-grammars/tree-sitter-kotlin",
-      "upstreamCommit": "77dd60ea0a9003ce062c9728a513ffe1aaff8c82"
+      "upstreamCommit": "3dea6dfa9c0129deb7c4315afbda806c85c41667",
+      "ownedManifestSha256": "a2e41ac724ffe61e242e8cc983777b17b6d8a4d4eb159dbb94adb7ca46ed9ca5",
+      "identity": "whip/tree-sitter-kotlin-ng@1.1.0-whip.1+sha256:a2e41ac724ffe61e242e8cc983777b17b6d8a4d4eb159dbb94adb7ca46ed9ca5"
     },
     {
       "package": "tree-sitter-language",
@@ -124,11 +128,13 @@
     },
     {
       "package": "tree-sitter-python",
-      "version": "0.25.0",
-      "registry": "registry+https://github.com/rust-lang/crates.io-index",
-      "sha256": "6bf85fd39652e740bf60f46f4cda9492c3a9ad75880575bf14960f775cb74a1c",
+      "version": "0.25.0-whip.1",
+      "source": null,
+      "path": "grammars/python",
       "repository": "https://github.com/tree-sitter/tree-sitter-python",
-      "upstreamCommit": "293fdc02038ee2bf0e2e206711b69c90ac0d413f"
+      "upstreamCommit": "26855eabccb19c6abf499fbc5b8dc7cc9ab8bc64",
+      "ownedManifestSha256": "1a128e9eece3123fb198f4d6f2628a9773870d581acc0126ba744fd60135e103",
+      "identity": "whip/tree-sitter-python@0.25.0-whip.1+sha256:1a128e9eece3123fb198f4d6f2628a9773870d581acc0126ba744fd60135e103"
     },
     {
       "package": "tree-sitter-rust",

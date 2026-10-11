@@ -1,0 +1,9 @@
+==================
+Whip modern syntax
+==================
+
+context(user: User, _: Clock) fun read(): Value = lookup()
+
+---
+
+(source_file (function_declaration (context_parameters (context_parameter (identifier) (user_type (identifier))) (context_parameter (identifier) (user_type (identifier)))) (identifier) (function_value_parameters) (user_type (identifier)) (function_body (call_expression (identifier) (value_arguments)))))

@@ -1,0 +1,29 @@
+  declarations:
+      1. ✓ Imports
+      2. ✓ Loops
+      3. ✓ Modifiers
+      4. ✓ Enum Classes
+  expressions:
+      5. ✓ Simple Expressions
+      6. ✓ When expressions
+      7. ✓ Val and Var
+      8. ✓ Reserved Identifiers
+      9. ✓ Comments and Strings
+     10. ✓ More Complex Expressions
+     11. ✓ Keyword Operator Expressions
+     12. ✓ Annotations
+     13. ✓ Complex Types
+  semi:
+     14. ✓ Getter and Setter on a new line
+     15. ✓ Modifiers with Getter and Setter on a new line
+     16. ✓ A variable called set
+     17. ✓ A variable called constructor
+     18. ✓ Primary Constructor on a newline
+     19. ✓ Secondary Constructor on a newline
+     20. ✓ Comment after an annotation on the same line
+     21. ✓ Else after newline
+     22. ✓ ?. split by a newline
+  whip-modern:
+     23. ✓ Whip modern syntax
+
+Total parses: 23; successful parses: 23; failed parses: 0; success percentage: 100.00%; average speed: 3703 bytes/ms

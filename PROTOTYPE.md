@@ -40,7 +40,11 @@ Collapsing a selected symbol's parent preserves its draft for reopening.
 File overview is language-neutral. Source analysis uses the owned multilingual
 Tree-sitter parser without requiring Cargo. Rust file import/call aggregates keep
 the existing backend behavior; multilingual unresolved facts remain separate.
-Source coverage, dialect overrides and exact declaration ranges appear in the inspector. This remains a prototype, not a qualified native release.
+Source coverage, dialect overrides and exact declaration ranges appear in the inspector.
+The 14 dialect routes span 12 language families; route coverage does not establish
+extraction parity. Kotlin/Zig declaration and ownership discrepancies and C++/Odin
+callable inventory gaps remain under correction on the parser branch.
+This remains a prototype, not a qualified native release.
 
 ## Run natively
 
@@ -125,8 +129,8 @@ missing system libraries. Browser screenshots are explicitly fixture execution.
   files, assets and skipped files are excluded.
   The observed Git revision does not claim a clean worktree.
 - Schema-2 journal records remain unchanged; they become stale against the new
-  parser. Schema-3 records retain extractor identity; `@1` and `@2` records likewise
-  become stale against `@3`. Older binaries cannot read schema-3 lines; downgrade is unsupported.
+  parser. Schema-3 records retain extractor identity; `@1`, `@2` and `@3` records likewise
+  become stale against `@4`. Older binaries cannot read schema-3 lines; downgrade is unsupported.
 - Legacy V1 journals that retained source bodies block V2 reads/appends. They
   are never silently copied, deleted or migrated. Review them separately before
   using the new journal; this prototype offers no automatic migration.

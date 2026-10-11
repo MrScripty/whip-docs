@@ -12,7 +12,7 @@ test('real no-Cargo mixed parser output validates; nullable file ranges still co
   const analysis=validateGraphAnalysis(fixture.overriddenSymbols,fixture.overriddenAnalysis)!;
   assert.ok(new Set(analysis.files.map(file=>file.identity.dialect)).size>=12);
   const files=fileRelationSnapshotToRenderGraph(fixture.files),before=JSON.stringify(files);
-  for(const path of ['api/handler.py','web/app.ts','web/Panel.svelte','include/api.h','native/explicit-object.cpp','native/extension-blocks.cs']){
+  for(const path of ['api/handler.py','web/app.ts','web/Panel.svelte','include/api.h','native/explicit-object.cpp','native/extension-blocks.cs','api/default-type-parameters.py','mobile/context-parameters.kt','native/bitint.c','web/template-bindings.svelte']){
     for(let i=0;i<4;i++){
       const overlay=projectSymbolOverlay(files,fixture.files.sourceRoot,fixture.overriddenSymbols,new Set(['file:'+path]));
       assert.ok(overlay.nodes.length>1,path);assert.equal(overlay.fileIdByAnalysisId.get('file:'+path),'file:'+path);
@@ -23,10 +23,29 @@ test('real no-Cargo mixed parser output validates; nullable file ranges still co
     }
   }
   assert.ok(analysis.files.some(file=>file.relations.some(fact=>fact.kind==='call_syntax')));
-  assert.equal(analysis.identity.extractor,'whip-docs-syntax@3');
+  assert.equal(analysis.identity.extractor,'whip-docs-syntax@4');
   const extensions=analysis.files.find(file=>file.identity.path==='native/extension-blocks.cs')!;
   assert.ok(extensions.declarations.some(node=>node.kind==='implementation'&&node.name==='extension'));
   assert.ok(fixture.overriddenSymbols.nodes.some(node=>node.kind==='impl'&&node.label==='extension'));
+});
+test('owned grammar identities and mapped Svelte bindings fit existing neutral contracts without semantic edges',()=>{
+  const analysis=validateGraphAnalysis(fixture.overriddenSymbols,fixture.overriddenAnalysis)!;
+  for(const [path,name,kind] of [['api/default-type-parameters.py','T','parameter'],['mobile/context-parameters.kt','logger','parameter'],['native/bitint.c','Counter','type_alias'],['web/template-bindings.svelte','alias','parameter'],['web/template-bindings.svelte','index','binding']]){
+    const file=analysis.files.find(file=>file.identity.path===path)!;
+    assert.equal(file.identity.coverage,'supported_subset');
+    if(!path.endsWith('.svelte'))assert.ok(file.identity.grammars.some(grammar=>/^whip\/.+@.+\+sha256:[a-f0-9]{64}$/.test(grammar.grammar)));
+    const declaration=file.declarations.find(node=>node.name===name&&node.kind===kind)!;assert.ok(declaration);
+    const bytes=readFileSync(new URL('../../../fixtures/mixed-workspace/'+path,import.meta.url));
+    assert.equal(bytes.subarray(declaration.nameRange.startByte,declaration.nameRange.endByte).toString('utf8'),name);
+    assert.ok(fixture.overriddenSymbols.nodes.some(node=>node.id===declaration.id&&node.label===name&&node.kind===kind));
+    if(path.endsWith('.svelte'))assert.equal(file.declarations.find(node=>node.id===declaration.parentId)?.name,'card');
+    assert.ok(file.relations.every(fact=>fact.qualification.endsWith('_unresolved')));
+  }
+  for(const path of ['broken/context-property.kt','broken/snippet-header.svelte']){
+    const file=analysis.files.find(file=>file.identity.path===path)!;assert.equal(file.identity.coverage,'incomplete');assert.ok(file.diagnostics.length);
+    assert.ok(!fixture.overriddenSymbols.nodes.some(node=>node.sourceRange?.path===path));
+  }
+  assert.ok(analysis.files.find(file=>file.identity.path==='broken/context-property.kt')!.diagnostics.some(d=>d.code==='unsupported_context_property'));
 });
 test('schema drift, mismatched metadata and out-of-bounds ranges fail closed',()=>{
   assert.throws(()=>validateGraphAnalysis({...fixture.symbols,schemaVersion:99},fixture.analysis),/Unsupported graph schema/);

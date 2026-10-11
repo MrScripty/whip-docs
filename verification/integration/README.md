@@ -3,7 +3,8 @@
 The integration branch combines graph `2a6b73da3fce1ce099e91fa386986c4b2f63a44e`
 with parser `91b05b696ca4bd1121137fe2a78faac36e0f630d` and follow-up
 `1015275810f7574382fc641b15ed46e61f4106b6`, then
-`2afd3c0a03d48ac05e9717d5dd6f727a44691fc3` (extractor `whip-docs-syntax@3`). Neither source branch nor
+`2afd3c0a03d48ac05e9717d5dd6f727a44691fc3`, and now
+`298e63fb11ac37c29f7a89d9a57f16a866f1d4b3` (extractor `whip-docs-syntax@4`). Neither source branch nor
 main is changed by this work. Native Tauri IPC remains unverified.
 
 The original file graph and routing remain authoritative. Neutral declarations
@@ -25,31 +26,42 @@ existing v2 behavior/storage. A Rust-exported vector verifies the browser's
 multilingual digest encoding. Unknown or semantically corrupt records fail
 without rewriting storage; originals remain immutable and proposals separate.
 
-## Checks after parser follow-up and compact controls
+## Current @4 checkpoint
 
-- Frontend lint, TypeScript and 121 tests passed; production build passed with
-  the existing large Three.js chunk warning.
-- 112 Rust tests passed with desktop features disabled; strict Clippy and
-  formatting passed. The integration test covers stale graph/metadata association; the follow-up
-  also qualifies bounded Svelte template call facts, official C++ explicit object
-  parameters, C# extension blocks, and extractor-identity staleness.
-- Real Chromium UI replayed Rust outputs from a synthetic no-Cargo mixed root:
-  declaration expansion, coverage gaps, exact intent, source exclusion, proposal
-  separation, reload, corrupt storage refusal and unchanged base geometry/camera.
-- Nine mixed browser check groups and eleven original graph browser check groups passed.
-  Desktop (1680px) and narrow (768/390/360px) screenshots were inspected. Batch
-  disclosure checks preserve file objects, routes, visibility, camera and drafts.
-  A clipped narrow settings menu found by independent review was fixed and retested.
-- Original graph browser checks passed. Failure-path and dialect-restoration
-  checks use explicit IPC stubs, not native execution.
-- Independent review found and fixed permissive v3 preview record validation
-  and lost restored dialect choices. Final independent review passed 14 focused
-  tests, verified all 23 fixture hashes, and checked new neutral C++/C# kinds
-  through projection and journal append/read.
-- The host-filtered provenance verifier passed both exact official Git pins,
-  ABI 15 and 35 input hashes. Its original all-target offline metadata request
-  required an uncached WASI dependency; limiting metadata to the actual rustc
-  host avoids unrelated target downloads without changing source verification.
+- 123 Rust service tests passed, including the integration root/token association
+  check; strict all-targets Clippy and formatting passed with desktop disabled.
+- Frontend lint, TypeScript, 124 tests and production build passed. The existing
+  large Three.js chunk warning remains.
+- Five focused Chromium groups passed via `parser-v4-browser-check.cjs`: new
+  Python/Kotlin/C parameters and aliases, Svelte snippet parameters and template
+  bindings, exact byte ranges, verbatim intent, separate proposals, source/default
+  exclusion, reload, negative diagnostics, old @3 staleness and corrupt storage
+  refusal. This uses actual WebGL UI and Rust-exported data, not native IPC.
+- The fixture contains 29 public synthetic files, with 27 captured under the
+  recorded overrides. Graph schema 2, SourceAnalysis schema 1 and journal schema 3
+  are unchanged. Owned grammar identities fit the existing strict journal format.
+- Owned provenance verification passed all 87 hashes, Cargo path/version/identity
+  resolution and readable patch replay. Official C++/C# verification passed both
+  exact commits, ABI 15 and all 35 hashes. Both verifiers filter metadata to the
+  rustc host to avoid requiring unrelated offline target dependencies.
+- No grammar tools were installed here. The parser branch's 227 corpus cases and
+  reproducible generation are prior evidence at exact commit `298e63f`, documented
+  in [owned grammar verification](../owned-grammars.md); they were not repeated.
+
+## Reused visual qualification
+
+The shell, styles, original scene and symbol overlay code are unchanged from
+application commit `85c9cea426e7fc9abe55c0f4e7ba706cdea572c2` (published checkpoint
+`9b50879af774a1463ac5049ca1ce80a9fb2316d0`). The coverage explanation now describes
+@4's qualified subsets and known remaining gaps. Existing @3 screenshots remain
+accurately captioned and were not recaptured for this parser-only update.
+
+Prior evidence includes nine mixed browser groups, eleven original graph groups,
+desktop and 768/390/360px inspection, bounded disclosures, camera/route/object
+preservation, accessible settings, selection and drafts. Those unaffected visual
+checks were reused. Earlier independent review fixed permissive preview record
+validation, lost restored dialect choices and a clipped narrow settings menu;
+its final @3 review passed 14 focused checks and all 23 then-current fixture hashes.
 
 The compact shell removes the large fixture banner and redundant scene copy,
 keeps the honest Fixture Preview tooltip, and moves the toolbar to the scene top.
@@ -81,7 +93,8 @@ data, not native IPC. In an environment already configured for Tauri,
 `npm run dev:desktop` opens the native app; select a local directory, with or
 without Cargo.toml. No proposals are executed and no model inference is used.
 
-`verification/integration/browser-check.cjs` uses installed Playwright/Chromium;
+`verification/integration/parser-v4-browser-check.cjs` runs the current focused
+checks; `browser-check.cjs` retains the broader visual suite. Both use installed Playwright/Chromium;
 set `PLAYWRIGHT_MODULE`, `CHROMIUM_PATH`, `GRAPH_TEST_ORIGIN` and `EVIDENCE_DIR`
 for local paths/port. The fixture exporter is `src-tauri/examples/integration_fixture.rs`;
 run with desktop features disabled and a fresh disposable app-data directory.
@@ -93,8 +106,19 @@ remain unqualified. No native dependency-denial retries or package-source
 bypasses were attempted. See the parser qualification matrix for language gaps;
 supported_subset never means full-language support.
 
-The recorded fixture is regenerated at extractor `@3`. Saved real `@1` and `@2`
-journal vectors remain readable/stale without changing any stored byte; proposals
-against them are rejected. Svelte template call facts remain unresolved. Python/Kotlin/C
-grammar gaps and the Svelte binding/parameter scope exclusions remain explicit.
-The newly qualified C++/C# syntax uses existing neutral kinds and unresolved facts. Full parity is not claimed.
+The recorded fixture is regenerated at extractor `@4`. Saved real `@1`, `@2` and
+`@3` journal vectors remain readable/stale without changing stored bytes; proposals
+against them are rejected. The @3 vector equals the actual vector from published
+checkpoint `9b50879`, not a relabeled current record.
+
+Fourteen dialect routes span twelve language families. This is language-family
+coverage, not complete language or Passeur extraction parity. The qualified
+Python PEP 696, Kotlin context, C23 `_BitInt` and Svelte template-binding subset
+is described in the parser report. Kotlin context destructuring properties and
+damaged template headers remain explicit negative cases. Types/calls remain
+unresolved; file/snippet containment does not establish lexical visibility.
+Python types/defaults, Kotlin context resolution and C widths are not evaluated.
+
+A later comparison identified remaining Kotlin/Zig declaration and ownership
+discrepancies and C++/Odin callable-inventory gaps. Those extractor corrections
+remain separate work on the parser branch; they are not part of this @4 checkpoint.

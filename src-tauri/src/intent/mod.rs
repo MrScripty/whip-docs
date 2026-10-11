@@ -1055,6 +1055,78 @@ mod tests {
     }
 
     #[test]
+    fn owned_grammar_identities_append_and_reopen_without_source_in_journal() {
+        let mut fixture = Fixture::new();
+        let cases = [
+            (
+                "models.py",
+                "# PY_PRIVATE_COMMENT\nclass Box[T = int]: pass\n",
+                "Box",
+            ),
+            (
+                "context.kt",
+                "// KT_PRIVATE_COMMENT\ncontext(user: User) fun read() = user.load()\n",
+                "read",
+            ),
+            (
+                "width.c",
+                "/* C_PRIVATE_COMMENT */\ntypedef unsigned _BitInt(32) Word;\n",
+                "Word",
+            ),
+        ];
+        for (path, source, _) in cases {
+            fs::write(fixture.root.join(path), source).unwrap();
+        }
+        syntax_fixture(&mut fixture);
+        for (_, _, label) in cases {
+            let node = fixture
+                .analysis
+                .snapshot
+                .nodes
+                .iter()
+                .find(|n| n.label == label)
+                .unwrap();
+            fixture
+                .store
+                .append(&fixture.analysis, syntax_request(&fixture, &node.id, None))
+                .unwrap();
+        }
+        let reopened = IntentStore::new(fixture.base.join("app"));
+        let records = reopened
+            .list(
+                &fixture.analysis.snapshot.source_root,
+                Some(&fixture.analysis),
+            )
+            .unwrap();
+        assert_eq!(records.len(), 3);
+        assert!(records
+            .iter()
+            .all(|r| r.binding_status == BindingStatus::Current));
+        let saved = fs::read_to_string(&fixture.store.journal_path).unwrap();
+        for forbidden in [
+            "PY_PRIVATE_COMMENT",
+            "KT_PRIVATE_COMMENT",
+            "C_PRIVATE_COMMENT",
+            "class Box",
+            "context(user:",
+            "typedef unsigned",
+        ] {
+            assert!(!saved.contains(forbidden), "leaked {forbidden}");
+        }
+        let identity = records[0].snapshot.analysis_identity.as_ref().unwrap();
+        for dialect in [
+            crate::syntax::Dialect::Python,
+            crate::syntax::Dialect::Kotlin,
+            crate::syntax::Dialect::C,
+        ] {
+            assert!(identity.files.iter().any(|f| f
+                .grammars
+                .iter()
+                .any(|g| g.dialect == dialect && g.grammar == dialect.grammar_identity())));
+        }
+    }
+
+    #[test]
     fn parser_grammar_extractor_and_dialect_changes_stale_binding_without_relink() {
         let mut fixture = Fixture::new();
         let node_id = syntax_fixture(&mut fixture);
@@ -1090,7 +1162,11 @@ mod tests {
 
     #[test]
     fn previous_multilingual_extractor_records_remain_readable_and_stale() {
-        for previous_identity in ["whip-docs-syntax@1", "whip-docs-syntax@2"] {
+        for previous_identity in [
+            "whip-docs-syntax@1",
+            "whip-docs-syntax@2",
+            "whip-docs-syntax@3",
+        ] {
             let mut fixture = Fixture::new();
             let node_id = syntax_fixture(&mut fixture);
             fixture.analysis.syntax.as_mut().unwrap().identity.extractor =

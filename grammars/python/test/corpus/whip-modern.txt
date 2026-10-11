@@ -1,0 +1,9 @@
+==================
+Whip modern syntax
+==================
+
+class Box[T: Base = int, *Ts = *tuple[str], **P = [int, str]]: pass
+
+---
+
+(module (class_definition (identifier) (declaration_type_parameters (default_type_parameter (identifier) (identifier) (identifier)) (default_type_parameter (identifier) (subscript (list_splat (identifier)) (identifier))) (default_type_parameter (identifier) (list (identifier) (identifier)))) (block (pass_statement))))
