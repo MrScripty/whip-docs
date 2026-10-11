@@ -2,6 +2,12 @@
 
 Date: 2026-10-11 (UTC).
 
+This is the original publication record for `01edd062`. Later cloud validation
+compiled 79 backend tests in an isolated headless harness and captured real
+browser screenshots. See [the current graph restoration record](graph-restoration/README.md)
+for the approved correction on top of `5e9900a` and its remaining native blockers.
+The absent-toolchain and browser restrictions below describe the earlier environment.
+
 ## Passed
 
 - All 145 baseline Git blob hashes matched public upstream commit
@@ -59,5 +65,5 @@ Date: 2026-10-11 (UTC).
 9. Capture real application pixels and label fixture/native execution accurately.
 
 This record establishes local verification only. Publication status is reported
-separately with the remote branch and draft pull request. No merge or deployment
+separately with the remote branch. PR creation requires approval. No merge or deployment
 is part of this prototype.

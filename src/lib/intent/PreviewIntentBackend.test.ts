@@ -120,3 +120,19 @@ test('changed observed structure cannot relink a historical original', async () 
   assert.equal((await reopened.listRecords())[0].bindingStatus, 'stale');
   await assert.rejects(reopened.appendRecord({ ...input, kind: 'interpretation', parentId: first.id }), /Historical/);
 });
+
+test('multi-file preview hashes selected source separately and the entire captured source set', async () => {
+  const { storage, input, values }=fixture();
+  const graph=structuredClone(previewGraph);graph.nodes[1].sourceRange!.path='second.rs';
+  const first='// FIRST_SOURCE_BODY\npub fn first() {}\n',second='// SECOND_SOURCE_BODY\npub fn second() {}\n';
+  const sources=new Map([['src-tauri/src/source/mod.rs',first],['second.rs',second]]);
+  const backend=new PreviewIntentBackend(storage,graph,sources);
+  const record=await backend.appendRecord({...input,expectedAnalysisAt:graph.generatedAt});
+  assert.equal(record.snapshot.contentHash,await fingerprint(second));
+  for(const marker of ['FIRST_SOURCE_BODY','SECOND_SOURCE_BODY','pub fn first','pub fn second'])assert.equal(values.get(PREVIEW_STORAGE_KEY)!.includes(marker),false);
+  const changed=new PreviewIntentBackend(storage,graph,new Map([...sources,['src-tauri/src/source/mod.rs',first+'// change']]));
+  assert.equal((await changed.listRecords())[0].bindingStatus,'stale');
+  await assert.rejects(changed.appendRecord({...input,kind:'proposal',parentId:record.id}),/Historical/);
+  const other=structuredClone(graph);other.sourceRoot='other-repository';
+  assert.deepEqual(await new PreviewIntentBackend(storage,other,sources).listRecords(),[]);
+});

@@ -1,3 +1,5 @@
+import { SymbolSceneLayer } from '../intent-graph/SymbolSceneLayer';
+import type { SymbolOverlay } from '../intent-graph/symbolOverlay';
 import {
   AmbientLight,
   BoxGeometry,
@@ -223,6 +225,7 @@ const FILE_ICON_BY_EXTENSION = new Map<string, string>([
 
 export class DirectoryGraphScene {
   private readonly scene = new Scene();
+  private readonly symbols: SymbolSceneLayer;
   private readonly camera = new PerspectiveCamera(
     GRAPH_V0_CAMERA_DEFAULTS.fieldOfView,
     1,
@@ -284,6 +287,10 @@ export class DirectoryGraphScene {
     this.selectionTarget.texture.colorSpace = NoColorSpace;
     this.selectionScene.background = new Color(cssColorHex(this.container, '--scene-selection-background'));
     this.container.append(this.renderer.domElement);
+    this.renderer.domElement.tabIndex = 0;
+    this.renderer.domElement.setAttribute('aria-label', 'File graph. Drag to orbit, scroll to zoom; arrow keys navigate directories, Tab focuses a directory, period centers selection.');
+    this.symbols = new SymbolSceneLayer(container, id => this.nodeEntries.get(id)?.mesh);
+    this.scene.add(this.symbols.group);
     this.scene.add(this.edgeGroup, this.nodeGroup, this.labelGroup);
     this.selectionScene.add(this.selectionEdgeGroup, this.selectionNodeGroup);
     this.addLighting();
@@ -359,6 +366,42 @@ export class DirectoryGraphScene {
 
     this.applySceneState(options);
   }
+
+  updateSymbols(projection: SymbolOverlay, selectedId: string | null, onSelect: (id: string) => void): void {
+    this.symbols.update(projection, selectedId, onSelect);
+  }
+
+  clearGraph(): void {
+    this.symbols.clear();
+    for (const group of [this.edgeGroup, this.nodeGroup, this.labelGroup, this.selectionEdgeGroup, this.selectionNodeGroup]) this.clearGroup(group);
+    this.selectionTargetById.clear();
+    this.graphNodesById.clear();
+    this.graphEdgesById.clear();
+    this.bidirectionalRelationPairKeys.clear();
+    this.nodeEntries.clear();
+    this.edgeEntries.clear();
+    this.selectionNodeMeshesByNodeId.clear();
+    this.selectionEdgeMeshesByEdgeId.clear();
+    this.labelEntries.clear();
+    this.baseLabeledNodeIds.clear();
+    this.preferredChildDirectoryByParentId.clear();
+    this.currentGraph = null;
+    this.currentLayoutBounds = null;
+    this.activeSelectionState = emptySelectionState();
+    this.activeSelectedNodeId = this.activeSelectedEdgeId = null;
+    this.activeNodeDistanceById = this.activeVisibleEdgeIds = null;
+    this.focusedDirectoryView = this.cameraTransition = this.dragState = null;
+    this.selectionCallback = null;
+  }
+
+  fitGraph(): void { this.frameBounds(this.currentLayoutBounds); }
+  focusSelection(): void {
+    const symbol = this.symbols.selectedPosition();
+    if (symbol) this.frameBounds({ center: symbol, radius: 6 });
+    else this.frameNode(this.activeSelectedNodeId ?? this.currentGraph?.rootNodeId ?? '');
+  }
+  focusSymbols(): void { this.frameBounds(this.symbols.bounds()); }
+  toggleDirectoryFocus(): void { this.toggleFocusedDirectoryView(); }
 
   private rebuildGraph(
     graph: RenderGraph,
@@ -587,6 +630,7 @@ export class DirectoryGraphScene {
 
   dispose(): void {
     this.disposed = true;
+    this.symbols.dispose();
     if (this.animationFrame !== null) {
       window.cancelAnimationFrame(this.animationFrame);
       this.animationFrame = null;
@@ -1515,6 +1559,7 @@ export class DirectoryGraphScene {
     }
 
     this.updateCameraTransition(performance.now());
+    this.symbols.renderLabels(this.camera);
     this.renderer.render(this.scene, this.camera);
     this.animationFrame = window.requestAnimationFrame(this.render);
   };
@@ -2022,6 +2067,7 @@ export class DirectoryGraphScene {
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
     event.preventDefault();
+    this.renderer.domElement.focus({ preventScroll: true });
     this.cameraTransition = null;
     this.renderer.domElement.setPointerCapture(event.pointerId);
     this.dragState = {
@@ -2090,7 +2136,7 @@ export class DirectoryGraphScene {
   };
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
-    if (isEditableShortcutTarget(event.target)) {
+    if (event.target !== this.renderer.domElement || isEditableShortcutTarget(event.target)) {
       return;
     }
 
@@ -2102,11 +2148,13 @@ export class DirectoryGraphScene {
       }
 
       event.preventDefault();
-      this.frameNode(focusNodeId);
+      this.focusSelection();
       return;
     }
 
-    if (event.key === 'Tab') {
+    if (event.key.toLowerCase() === 'r') { event.preventDefault(); this.fitGraph(); return; }
+
+    if (event.key === 'Tab' && !event.shiftKey) {
       event.preventDefault();
       this.toggleFocusedDirectoryView();
       return;
@@ -2127,6 +2175,10 @@ export class DirectoryGraphScene {
     const pixelRatio = this.renderer.getPixelRatio();
     const x = Math.floor((event.clientX - rect.left) * pixelRatio);
     const y = Math.floor((rect.bottom - event.clientY) * pixelRatio);
+    this.raycaster.setFromCamera(new Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1), this.camera);
+    const symbolHit = this.symbols.hit(this.raycaster);
+    const fileHit = this.raycaster.intersectObjects(this.selectionNodeGroup.children, true).find(hit => visibleSelectionIdForObject(hit.object) !== null);
+    if (symbolHit && (!fileHit || symbolHit.distance < fileHit.distance)) { this.symbols.selectHit(symbolHit.id); return; }
     const hit = this.readSelectionHit(x, y);
     const target = hit
       ? this.selectionTargetById.get(hit.selectionId)

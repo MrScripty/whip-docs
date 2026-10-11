@@ -223,7 +223,7 @@ export type FileRelationGraphSnapshotDto = {
   nodes: FileRelationNodeDto[];
   edges: FileRelationEdgeDto[];
   analyzers: AnalyzerRunDto[];
-  diagnostics: AnalyzerDiagnosticDto[];
+  diagnostics: GraphDiagnosticDto[];
 };
 
 export type SourceSnippetDto = {

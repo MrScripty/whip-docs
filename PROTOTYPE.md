@@ -5,8 +5,13 @@ A bounded implementation based on public upstream commit
 
 ## What this slice adds
 
-- A focused Three.js workspace: expand a Rust file into typed symbol nodes,
-  select a symbol, and inspect existing relationship metadata.
+- The original file/repository/directory Three.js graph in the new intent shell,
+  using the authoritative file-relation snapshot and existing geometry, layouts,
+  selection, orbit/pan/zoom and directory focus. File aggregates retain their
+  direction, weight, confidence, provenance and evidence.
+- Optional symbol detail expands above its parent file in that same scene and
+  camera. Collapsing it removes only symbol detail; file nodes, routed edges and
+  camera remain intact. Symbols are not inserted into the directory layout tree.
 - Original human intent recorded verbatim against the selected graph node and
   SHA-256 digest of the exact file bytes used in analysis, observed ranges,
   and a same-file structural symbol snapshot. Source bodies are not journaled.
@@ -18,10 +23,16 @@ A bounded implementation based on public upstream commit
   source. Existing source-snippet backend APIs remain for compatibility.
 - An explicit browser fixture mode, isolated from native persistence.
 
-The existing graph/layout modules and backend APIs remain in the source tree.
-The application entrypoint now opens the focused intent workspace rather than
-its previous multi-mode explorer UI. This is a prototype branch, not a qualified
-replacement release.
+The entrypoint uses the new intent workspace shell around the original
+`DirectoryGraphScene`. Graph settings retain global/root/leaf edge shapes,
+focused file layouts and hierarchy/adjacency circular bundling. Shapes are
+layout settings, not encodings of relationship type. With the canvas focused,
+arrows navigate directories, Tab toggles directory focus, period centers the
+selection and R fits the graph. Shift+Tab leaves the canvas.
+
+File overview is language-neutral. Rust symbol/import/call enrichment uses the
+existing backend when available; failure of optional Cargo analysis leaves the
+file overview usable. This remains a prototype, not a qualified native release.
 
 ## Run natively
 
@@ -58,20 +69,28 @@ npm run dev
 Open the served URL with `?preview=1`. A plain browser without that opt-in shows
 a desktop-required message. The banner always identifies fixture mode.
 
-This mode uses curated graph metadata for the pinned public Whip Docs
-`src-tauri/src/source/mod.rs`; the exact original source is copied to
-`fixtures/intent-preview/source.rs`. It is not native analyzer output. Its
-append-only API writes metadata and intent to browser localStorage, so it can
-be reopened on the
-same browser origin. Clearing browser storage removes these demo records.
-Browser unit tests cannot establish Rust journal durability or Tauri behavior.
+This mode replays recorded output of the real Rust file-relation and symbol
+services for the synthetic MIT-licensed public sample in
+`fixtures/file-workspace`. Its nine files include nested directories, imports
+and weighted cross-file calls. See `fixtures/file-workspace.provenance.json` for
+source hashes and backend commit. The absolute root (including workspace IDs) and timestamps are normalized;
+file/symbol identities, relationships and evidence are otherwise retained. Analyzer-produced duplicate symbol
+labels remain distinct IDs; no UI deduplication invents identity.
+
+The browser does not run Tauri IPC or analysis. Its append-only API writes
+metadata and intent to localStorage on the same browser origin. Source bytes
+are loaded only for hashing and never included automatically in saved entries.
+Clearing browser storage removes demo records. Legacy preview source files are
+retained for existing tests; prior V2 records are preserved, with history scoped
+to the current fixture root. Browser checks cannot establish native durability.
 
 ## Evidence and limits
 
-See [verification/README.md](verification/README.md) for completed checks and
-remaining blockers. In this environment frontend checks/build passed; native
-Rust execution and visual UI verification did not run successfully. No actual
-application screenshot is claimed or included.
+See [graph restoration verification](verification/graph-restoration/README.md)
+for current frontend, headless Rust and actual browser checks, and
+[the original record](verification/README.md) for initial publication evidence.
+Native Tauri linking, IPC and desktop end-to-end acceptance remain blocked by
+missing system libraries. Browser screenshots are explicitly fixture execution.
 
 - Existing syntax extraction gives approximate symbol locations. Historical
   snapshots retain structural nodes/edges and digests, not source bodies; they
@@ -79,7 +98,8 @@ application screenshot is claimed or included.
 - Symbols have analysis-scoped identities. There is no universal identity or
   automatic matching across renames, repository relocation, or analyzer changes.
 - Existing observed edges retain their original type, confidence and provenance.
-  Partial/inferred edges are dashed. Unsupported and missing relationships are
+  Partial/inferred symbol edges are dashed. Original file-edge rendering and
+  directional focus colors remain unchanged. Unsupported and missing relationships are
   not invented. Calls remain partial; data flow and dynamic dispatch are not
   newly implemented.
 - Intent/proposal records annotate the selected symbol. They never become

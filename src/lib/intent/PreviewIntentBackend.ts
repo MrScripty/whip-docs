@@ -16,9 +16,9 @@ export async function fingerprint(source: string): Promise<string> {
 export class PreviewIntentBackend implements IntentBackend {
   private storage: StoragePort;
   private graph: GraphSnapshotDto;
-  private exactSource: string;
-  constructor(storage: StoragePort, graph: GraphSnapshotDto, exactSource: string) {
-    this.storage = storage; this.graph = structuredClone(graph); this.exactSource = exactSource;
+  private exactSources: ReadonlyMap<string, string>;
+  constructor(storage: StoragePort, graph: GraphSnapshotDto, exactSource: string | ReadonlyMap<string, string>) {
+    this.storage = storage; this.graph = structuredClone(graph); this.exactSources = typeof exactSource === 'string' ? new Map([[graph.nodes.find(node => node.kind === 'file')?.sourceRange?.path ?? '', exactSource]]) : new Map(exactSource);
   }
 
   private read(): StoredRecord[] {
@@ -42,13 +42,17 @@ export class PreviewIntentBackend implements IntentBackend {
     return rows;
   }
 
+  private fingerprints() {
+    return Promise.all([...this.exactSources].map(async ([path, source]) => ({ path, contentHash: await fingerprint(source), byteLength: new TextEncoder().encode(source).length })));
+  }
+
   async listRecords(): Promise<IntentRecord[]> {
-    const hash = await fingerprint(this.exactSource);
-    const path = this.graph.nodes.find(node => node.kind === 'file')?.sourceRange?.path ?? '';
-    const worktreeDigest = await sourceSetDigest([{ path, contentHash: hash, byteLength: new TextEncoder().encode(this.exactSource).length }]);
-    return this.read().map(({ record }) => {
+    const files = await this.fingerprints();
+    const worktreeDigest = await sourceSetDigest(files);
+    return this.read().filter(({ record }) => record.symbol.sourceRoot === this.graph.sourceRoot).map(({ record }) => {
+      const hash = files.find(file => file.path === record.symbol.sourceRange.path)?.contentHash;
       const node = this.graph.nodes.find(node => node.id === record.symbol.nodeId);
-      return { ...record, bindingStatus: !node ? 'missing' : record.snapshot.contentHash === hash && node.label === record.symbol.label && node.kind === record.symbol.kind && JSON.stringify(node.sourceRange) === JSON.stringify(record.symbol.sourceRange) && record.snapshot.worktreeDigest === worktreeDigest && JSON.stringify(record.snapshot.structuralSnapshot) === JSON.stringify(structureFor(this.graph, record.symbol.sourceRange.path)) ? 'current' : 'stale' };
+      return { ...record, bindingStatus: !node || !hash ? 'missing' : record.snapshot.contentHash === hash && node.label === record.symbol.label && node.kind === record.symbol.kind && JSON.stringify(node.sourceRange) === JSON.stringify(record.symbol.sourceRange) && record.snapshot.worktreeDigest === worktreeDigest && JSON.stringify(record.snapshot.structuralSnapshot) === JSON.stringify(structureFor(this.graph, record.symbol.sourceRange.path)) ? 'current' : 'stale' };
     });
   }
 
@@ -58,8 +62,10 @@ export class PreviewIntentBackend implements IntentBackend {
     if (!input.text.trim() || new TextEncoder().encode(input.text).length > 16 * 1024) throw new Error('Enter nonblank text within the 16 KiB limit.');
     const node = this.graph.nodes.find(node => node.id === input.nodeId);
     if (!node?.sourceRange || ['file', 'workspace', 'crate'].includes(node.kind)) throw new Error('Select a symbol first.');
-    const hash = await fingerprint(this.exactSource);
-    const worktreeDigest = await sourceSetDigest([{ path: node.sourceRange.path, contentHash: hash, byteLength: new TextEncoder().encode(this.exactSource).length }]);
+    const source = this.exactSources.get(node.sourceRange.path);
+    if (source === undefined) throw new Error('Source is unavailable for this fixture symbol.');
+    const hash = await fingerprint(source);
+    const worktreeDigest = await sourceSetDigest(await this.fingerprints());
     // Re-read after async hashing, then append without another asynchronous gap.
     const rows = this.read();
     const parent = rows.find(row => row.record.id === input.parentId)?.record;
@@ -74,9 +80,9 @@ export class PreviewIntentBackend implements IntentBackend {
       id, kind: input.kind, text: input.text, parentId: input.parentId, originalId: parent?.id ?? id, createdAt: now,
       symbol: parent?.symbol ?? symbol,
       snapshot: parent?.snapshot ?? {
-        contentHash: hash, hashAlgorithm: 'sha256', byteLength: new TextEncoder().encode(this.exactSource).length,
+        contentHash: hash, hashAlgorithm: 'sha256', byteLength: new TextEncoder().encode(source).length,
         capturedAt: now, analysisAt: this.graph.generatedAt, precision: 'structural_snapshot_symbol_range_unverified',
-        repositoryRevision: PREVIEW_UPSTREAM, worktreeDigest, worktreeDigestScope: 'analyzed_rust_sources',
+        repositoryRevision: this.graph.generatedAt === `fixture:${PREVIEW_UPSTREAM}` ? PREVIEW_UPSTREAM : null, worktreeDigest, worktreeDigestScope: 'analyzed_rust_sources',
         structuralSnapshot,
       },
       bindingStatus: 'current',

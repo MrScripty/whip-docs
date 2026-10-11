@@ -1,0 +1,134 @@
+// Run against npm run dev. Uses an installed Playwright module, without installing browser dependencies.
+const { chromium }=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const out=process.env.EVIDENCE_DIR || '/tmp/whip-graph-validation';fs.mkdirSync(out,{recursive:true});
+const origin=process.env.GRAPH_TEST_ORIGIN || 'http://127.0.0.1:1420';
+const checks=[],errors=[];
+const pass=s=>{checks.push(s);console.log('PASS',s)};
+const key='whip-docs.intent-preview.v2';
+const exact='  Preserve checkout responsibility — 蟹.\n\tKeep proposals separate.  ';
+(async()=>{
+ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',headless:true,args:['--enable-unsafe-swiftshader']});
+ const context=await browser.newContext({viewport:{width:1680,height:1050}});
+ const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(origin+'/?preview=1');await page.locator('[data-node-id="file:src/checkout.rs"]').waitFor();await page.waitForTimeout(350);
+ assert.equal(await page.locator('.graph-mount canvas').count(),1);
+ assert.match(await page.locator('.preview-banner').innerText(),/Native Tauri IPC is not running/);
+ assert.match(await page.locator('.section-heading').first().innerText(),/9 FILES/);
+ await page.screenshot({path:path.join(out,'browser-fixture-file-overview.png')});
+ const baseRows=await page.locator('[data-node-id]').evaluateAll(es=>es.map(e=>e.dataset.nodeId));
+ await page.locator('[data-node-id="file:src/checkout.rs"]').click();
+ const aggregate=page.locator('[data-edge-id="calls:file:src/checkout.rs:file:src/receipt.rs"]');
+ assert.match(await aggregate.innerText(),/syn · partial · 2 evidence/);
+ await aggregate.click();assert.match(await page.locator('.inspector').innerText(),/directed[\s\S]*partial[\s\S]*syn[\s\S]*2 \/ 2/);
+ pass('Actual fixture UI uses original file graph and exposes weighted directed relation evidence');
+ await page.getByRole('button',{name:'Expand src/checkout.rs',exact:true}).click();
+ assert.equal(await page.locator('.symbol-list button').count(),13);
+ await page.getByRole('button',{name:'Frame symbols',exact:true}).click();await page.waitForTimeout(350);
+ await page.screenshot({path:path.join(out,'browser-fixture-file-expanded.png')});
+ for(let i=0;i<4;i++){
+  await page.getByRole('button',{name:'Collapse src/checkout.rs',exact:true}).click();
+  assert.equal(await page.locator('.symbol-scene-label').count(),0);
+  await page.getByRole('button',{name:'Expand src/checkout.rs',exact:true}).click();
+  assert.equal(await page.locator('.symbol-scene-label').count(),13);
+ }
+ assert.deepEqual(await page.locator('[data-node-id]').evaluateAll(es=>es.map(e=>e.dataset.nodeId)),baseRows);
+ pass('Repeated same-scene expansion/collapse preserves all file rows and removes only symbol detail');
+ const symbol=page.locator('.symbol-list button').filter({hasText:/^checkout/}).first();await symbol.click();
+ await page.locator('#intent-text').fill(exact);await page.getByRole('button',{name:'Preserve original intent',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('.intent-record').length===1);
+ const original=await page.evaluate(k=>JSON.parse(localStorage.getItem(k))[0],key);
+ assert.equal(original.record.text,exact);
+ await page.locator('#intent-kind').selectOption('proposal');await page.locator('#intent-text').fill('Proposal: investigate a new reservation policy.');await page.getByRole('button',{name:'Append separate entry',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('.intent-record').length===2);
+ const stored=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
+ assert.deepEqual(stored[0],original);assert.equal(stored[1].record.parentId,original.record.id);
+ const serialized=JSON.stringify(stored);for(const marker of ['PUBLIC_RECEIPT_LITERAL','pricing source comments','pub fn checkout','pub struct Order'])assert(!serialized.includes(marker));
+ await page.locator('#intent-kind').selectOption('original');await page.locator('#intent-text').fill('Draft survives navigation.');
+ await page.getByRole('button',{name:'Collapse src/checkout.rs',exact:true}).click();await page.getByRole('button',{name:'Expand src/checkout.rs',exact:true}).click();await symbol.click();assert.equal(await page.locator('#intent-text').inputValue(),'Draft survives navigation.');
+ await page.reload();await page.locator('[data-node-id="file:src/checkout.rs"]').waitFor();await page.getByRole('checkbox',{name:'Show all repository history'}).check();
+ await page.waitForFunction(()=>document.querySelectorAll('.intent-record').length===2);
+ assert.equal(await page.locator('.intent-record[data-kind="original"] > p').textContent(),exact);
+ pass('Verbatim intent, separate proposal, draft navigation, source exclusion and history survive restored graph workflow');
+ await page.locator('[data-node-id="dir:src"]').click();await page.getByRole('button',{name:'Directory focus',exact:true}).click();await page.waitForTimeout(350);
+ await page.locator('[data-node-id="file:src/checkout.rs"]').click();await page.locator('.graph-settings summary').click();
+ await page.getByLabel('Circular bundles',{exact:true}).selectOption('adjacency-fanout');await page.locator('.graph-settings summary').click();await page.screenshot({path:path.join(out,'browser-fixture-directory-focus.png')});
+ const canvas=page.locator('.graph-mount canvas');await canvas.focus();await page.keyboard.press('Tab');await page.waitForTimeout(350);await page.keyboard.press('ArrowUp');await page.keyboard.press('ArrowDown');await page.keyboard.press('.');
+ await page.getByRole('button',{name:'Fit graph',exact:true}).click();await canvas.click({position:{x:12,y:180}});assert(await canvas.evaluate(c=>document.activeElement===c));
+ await page.keyboard.press('Shift+Tab');assert(!(await canvas.evaluate(c=>document.activeElement===c)));
+ pass('Original directory focus, adjacency bundling and graph keyboard controls run inside the new shell');
+ // Failure-path UI tests use an explicit IPC stub, never claim native execution.
+ const failurePage=await context.newPage();failurePage.on('pageerror',e=>errors.push(e.message));
+ const snapshot=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../fixtures/file-workspace.snapshot.json'),'utf8'));
+ await failurePage.addInitScript(({snapshot,record})=>{
+  window.isTauri=true;let root=snapshot.files.sourceRoot;
+  window.__TAURI_INTERNALS__={invoke:async(command,args)=>{
+   if(command==='get_app_config')return {schemaVersion:1,sourceRepoPath:root,sourceRepoStatus:'valid'};
+   if(command==='load_file_relation_graph'){if(args.path==='/fail')throw Error('Deliberate file load failure');return {...snapshot.files,sourceRoot:args.path};}
+   if(command==='get_graph_snapshot')return snapshot.symbols;
+   if(command==='set_source_repo_path'){root=args.path;return {schemaVersion:1,sourceRepoPath:root,sourceRepoStatus:'valid'};}
+   if(command==='analyze_source_repo')throw Error('Deliberate optional analysis failure');
+   if(command==='list_intent_records')return [{...record,bindingStatus:'unverified'}];
+   throw Error('Unexpected stub command '+command);
+  }};
+ },{snapshot,record:original.record});
+ await failurePage.goto(origin+'/');await failurePage.getByRole('button',{name:'Expand src/checkout.rs',exact:true}).click();assert.equal(await failurePage.locator('.symbol-scene-label').count(),13);
+ await failurePage.locator('#source-root').fill('/fail');await failurePage.getByRole('button',{name:'Open and analyze',exact:true}).click();await failurePage.getByText('Deliberate file load failure',{exact:true}).waitFor();
+ assert.equal(await failurePage.locator('.symbol-scene-label').count(),0);assert.equal(await failurePage.locator('[data-node-id]').count(),0);
+ await failurePage.locator('#source-root').fill('/symbol-failure');await failurePage.getByRole('button',{name:'Open and analyze',exact:true}).click();await failurePage.getByText(/Symbol analysis unavailable: Deliberate optional analysis failure/).waitFor();
+ assert.equal(await failurePage.locator('[data-node-id]').count(),13);assert(await failurePage.getByRole('button',{name:'Reload',exact:true}).isEnabled());
+ await failurePage.getByRole('checkbox',{name:'Show all repository history'}).check();assert.equal(await failurePage.locator('.intent-record > p').textContent(),exact);
+ pass('IPC-stub failure paths clear obsolete workspace detail and retain unverified history after optional analysis failure');
+ // Independently inspect actual Three.js objects in a second browser surface. No production hooks or mocked renderer.
+ const scenePage=await context.newPage();scenePage.on('pageerror',e=>errors.push(e.message));await scenePage.goto(origin+'/');
+ const sceneChecks=await scenePage.evaluate(async()=>{
+  const {DirectoryGraphScene}=await import('/src/lib/graph-v0/ThreeDirectoryGraphScene.ts');
+  const {fileRelationSnapshotToRenderGraph}=await import('/src/lib/graph-v0/adapters.ts');
+  const {projectSymbolOverlay}=await import('/src/lib/intent-graph/symbolOverlay.ts');
+  const {fixtureFiles,fixtureSymbols}=await import('/src/lib/intent/fileWorkspaceFixture.ts');
+  const mount=document.createElement('div');mount.style.cssText='position:fixed;inset:0';document.body.append(mount);
+  const scene=new DirectoryGraphScene(mount),graph=fileRelationSnapshotToRenderGraph(fixtureFiles),file='file:src/checkout.rs';
+  const options={layoutAlgorithm:'weighted-safe-radial-tree',edgeStyle:'c-curve',rootEdgeStyle:'elbow',leafDirectoryEdgeStyle:'straight',focusedFileLayoutAlgorithm:'circular',focusedCircularBundlingMode:'hierarchy',selectedNodeId:file,onSelect:s=>{options.selectedNodeId=s.kind==='node'?s.id:null;options.selectedEdgeId=s.kind==='edge'?s.id:null;scene.updateGraph(graph,options)}};
+  const ensure=(yes,message)=>{if(!yes)throw Error(message)},same=(a,b)=>JSON.stringify(a)===JSON.stringify(b),sleep=()=>new Promise(r=>setTimeout(r,350));
+  scene.updateGraph(graph,options);await sleep();
+  const base=()=>({nodes:[...scene.nodeEntries].map(([id,e])=>[id,e.mesh.uuid,e.mesh.position.toArray()]),edges:[...scene.edgeEntries].map(([id,e])=>[id,e.line.uuid,Array.from(e.line.geometry.attributes.position.array),e.line.visible]),camera:scene.camera.position.toArray(),target:scene.cameraTarget.toArray()});
+  const initial=base();const empty=projectSymbolOverlay(graph,fixtureFiles.sourceRoot,fixtureSymbols,new Set());
+  const opened=projectSymbolOverlay(graph,fixtureFiles.sourceRoot,fixtureSymbols,new Set([file]));
+  for(let i=0;i<6;i++){scene.updateSymbols(opened,null,()=>{});scene.updateGraph(graph,options);ensure(same(base(),initial),'Expansion changed base IDs/objects/positions/routing/camera');scene.updateSymbols(empty,null,()=>{});ensure(same(base(),initial),'Collapse changed base graph');}
+  const results=['Six expansions/collapses preserve exact file mesh identities, all edge paths, visibility, camera and target'];
+  options.selectedNodeId='dir:src';scene.updateGraph(graph,options);scene.toggleDirectoryFocus();await sleep();
+  ensure(scene.focusedDirectoryView?.directoryNodeId==='dir:src','Directory focus missing');
+  options.selectedNodeId=file;scene.updateGraph(graph,options);scene.updateSymbols(opened,null,()=>{});scene.symbols.synchronize();
+  const focused=base();scene.updateSymbols(empty,null,()=>{});scene.updateSymbols(opened,null,()=>{});ensure(same(base(),focused),'Symbol expansion reset focused directory');
+  const entry=[...scene.symbols.nodes.values()][0],parent=scene.nodeEntries.get(file).mesh;
+  ensure(entry.mesh.position.distanceTo(entry.offset.clone().applyQuaternion(parent.quaternion).add(parent.position))<1e-8,'Symbols detached from focused file');
+  const parentPosition=parent.position.clone(),symbolPosition=entry.mesh.position.clone();
+  const currentEdges=JSON.stringify(focused.edges);
+  options.focusedCircularBundlingMode='adjacency-fanout';scene.updateGraph(graph,options);
+  ensure(currentEdges!==JSON.stringify(base().edges),'Hierarchy and adjacency-fanout should produce distinct routed geometry');
+  ensure(same(base().camera,focused.camera),'Bundling changed camera');
+  const relation=scene.edgeEntries.get('calls:file:src/checkout.rs:file:src/receipt.rs');
+  ensure(relation.line.material.color.getHex()===0xf59e0b,'Outgoing directional coloring lost');
+  results.push('Focused hierarchy/adjacency routing, outgoing coloring and parent-anchored symbol positions survive toggles');
+  scene.toggleDirectoryFocus();scene.symbols.synchronize();
+  ensure(entry.mesh.position.distanceTo(symbolPosition)>1,'Overlay did not move back with parent');
+  ensure(parent.position.distanceTo(parentPosition)>1,'Parent focus restoration did not move');
+  ensure(entry.mesh.position.distanceTo(entry.offset.clone().applyQuaternion(parent.quaternion).add(parent.position))<1e-8,'Overlay anchor lost on focus exit');
+  const beforeSelection=base();options.selectedNodeId='file:src/receipt.rs';scene.updateGraph(graph,options);ensure(same(base().camera,beforeSelection.camera),'Selection reset camera');
+  results.push('Selection preserves camera and directory focus exit reanchors symbols to restored file positions');
+  const edit=document.createElement('input');mount.append(edit);edit.focus();edit.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));ensure(scene.focusedDirectoryView===null,'Form Tab triggered scene shortcut');
+  const c=scene.renderer.domElement;c.focus();c.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));ensure(scene.focusedDirectoryView!==null,'Canvas Tab failed');
+  const reverseTab=new KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true});c.dispatchEvent(reverseTab);ensure(!reverseTab.defaultPrevented,'Shift+Tab must leave canvas');
+  results.push('Graph shortcuts require canvas focus; form navigation remains usable');
+  scene.clearGraph();ensure(scene.nodeEntries.size===0&&scene.edgeEntries.size===0&&scene.symbols.nodes.size===0&&scene.nodeGroup.children.length===0&&scene.edgeGroup.children.length===0,'Clearing workspace retained base or symbol objects');
+  scene.updateGraph(graph,options);ensure(scene.nodeEntries.size===graph.nodes.length,'Workspace cannot reopen after clear');
+  results.push('Workspace clear removes all base and overlay objects and permits reopening');
+  scene.dispose();mount.remove();return results;
+ });
+ for(const result of sceneChecks)pass(result);
+ assert.deepEqual(errors,[]);pass('No browser page errors');
+ fs.writeFileSync(path.join(out,'browser-results.json'),JSON.stringify({backend:'Recorded fixture; no Tauri IPC',checks,errors},null,2));
+ await browser.close();
+})().catch(e=>{console.error(e);fs.writeFileSync(path.join(out,'browser-results.json'),JSON.stringify({checks,errors,failure:String(e)},null,2));process.exit(1)});

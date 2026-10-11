@@ -2,106 +2,170 @@
   import { onMount } from 'svelte';
   import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import { TauriArchitectureBackend } from '../../backends/TauriArchitectureBackend';
-  import type { GraphNodeDto, GraphSnapshotDto } from '../../backends/TauriArchitectureBackend';
+  import type { FileRelationGraphSnapshotDto, GraphSnapshotDto } from '../../backends/TauriArchitectureBackend';
   import { NativeIntentBackend } from './NativeIntentBackend';
   import { PreviewIntentBackend } from './PreviewIntentBackend';
-  import { previewGraph, PREVIEW_UPSTREAM } from './previewFixture';
-  import { IntentGraphScene } from '../intent-graph/IntentGraphScene';
+  import { fixtureFiles, fixtureSymbols, fixtureSources } from './fileWorkspaceFixture';
+  import { WorkspaceLoader } from './workspaceLoading';
+  import { DirectoryGraphScene } from '../graph-v0/ThreeDirectoryGraphScene';
+  import { fileRelationSnapshotToRenderGraph, buildSelectionIndex, selectionNeighborhood, emptyGraphNeighborhood, selectionDistanceByNodeId, visibleEdgeIdsForRelationDetails } from '../graph-v0';
+  import type { RenderGraph, RenderGraphNode, DirectoryGraphSceneSelection, LayoutAlgorithmId, FocusedFileLayoutAlgorithmId, FocusedCircularBundlingMode, DirectoryGraphEdgeStyle, DirectoryGraphLeafEdgeStyle, FileRelationDetail } from '../graph-v0';
+  import { projectSymbolOverlay } from '../intent-graph/symbolOverlay';
   import type { IntentBackend, IntentKind, IntentRecord } from './types';
 
   const native = new TauriArchitectureBackend();
   const nativeAvailable = native.isAvailable();
   const preview = !nativeAvailable && new URLSearchParams(window.location.search).get('preview') === '1';
+  const loader = new WorkspaceLoader();
+  let generation = 0;
+  let recordRequest = 0;
   let intentBackend: IntentBackend = new NativeIntentBackend();
-  let scene: IntentGraphScene | undefined;
+  let scene = $state<DirectoryGraphScene>();
   let mount: HTMLDivElement;
   let graph = $state<GraphSnapshotDto | null>(null);
+  let fileSnapshot = $state<FileRelationGraphSnapshotDto | null>(null);
+  let renderGraph = $state<RenderGraph | null>(null);
   let records = $state<IntentRecord[]>([]);
   let selectedId = $state<string | null>(null);
+  let baseSelectedId = $state<string | null>(null);
+  let edgeSelectedId = $state<string | null>(null);
   const expanded = new SvelteSet<string>();
+  const collapsedDirectories = new SvelteSet<string>();
   let sourcePath = $state('');
   let error = $state('');
   let notice = $state('');
   let busy = $state(false);
   let saving = $state(false);
+  let historyReady = $state(false);
   let kind = $state<IntentKind>('original');
   let parentId = $state('');
   let text = $state('');
   let showHistory = $state(false);
   let filter = $state('');
+  let layout = $state<LayoutAlgorithmId>('weighted-safe-radial-tree');
+  let focusedLayout = $state<FocusedFileLayoutAlgorithmId>('circular');
+  let bundling = $state<FocusedCircularBundlingMode>('hierarchy');
+  let edgeStyle = $state<DirectoryGraphEdgeStyle>('c-curve');
+  let rootEdgeStyle = $state<DirectoryGraphEdgeStyle>('elbow');
+  let leafEdgeStyle = $state<DirectoryGraphLeafEdgeStyle>('straight');
+  let relationDetail = $state('all');
   const drafts = new SvelteMap<string, { text: string; kind: IntentKind; parentId: string }>();
-  const files = $derived(graph?.nodes.filter(node => node.kind === 'file' && (node.sourceRange?.path ?? node.label).toLowerCase().includes(filter.toLowerCase())) ?? []);
   const selected = $derived(graph?.nodes.find(node => node.id === selectedId) ?? null);
-  const symbolSelected = $derived(selected && !['file', 'workspace', 'crate'].includes(selected.kind));
+  const selectedBase = $derived(renderGraph?.nodes.find(node => node.id === baseSelectedId) ?? null);
+  const selectedEdge = $derived(fileSnapshot?.edges.find(edge => edge.id === edgeSelectedId) ?? null);
   const selectedRecords = $derived(records.filter(record => showHistory || record.symbol.nodeId === selectedId));
   const originals = $derived(records.filter(record => record.kind === 'original' && record.symbol.nodeId === selectedId && record.bindingStatus === 'current'));
   const relations = $derived(graph?.edges.filter(edge => edge.sourceId === selectedId || edge.targetId === selectedId) ?? []);
-
-  $effect(() => { if (graph && scene) scene.update(graph, expanded, selectedId); });
-
-  onMount(() => {
-    try { scene = new IntentGraphScene(mount, selectNode); } catch (cause) { error = `3D view unavailable: ${message(cause)}. Use the symbol list to continue.`; }
-    void initialize();
-    return () => scene?.dispose();
+  const fileRelations = $derived(fileSnapshot?.edges.filter(edge => edge.kind !== 'contains' && (edge.fromNodeId === baseSelectedId || edge.toNodeId === baseSelectedId)) ?? []);
+  const details = $derived((relationDetail === 'all' ? ['structure','imports','calls','data','tests','configuration','contracts'] : relationDetail === 'calls' ? ['structure','imports','calls'] : ['structure', ...(relationDetail === 'imports' ? ['imports'] : [])]) as FileRelationDetail[]);
+  const visibleEdges = $derived(renderGraph ? visibleEdgeIdsForRelationDetails(renderGraph, details) : new Set<string>());
+  const index = $derived(renderGraph ? buildSelectionIndex(renderGraph, { visibleEdgeIds: visibleEdges }) : null);
+  const neighborhood = $derived(index && baseSelectedId ? selectionNeighborhood(index, baseSelectedId) : emptyGraphNeighborhood());
+  const distance = $derived(index && baseSelectedId ? selectionDistanceByNodeId(index, baseSelectedId) : null);
+  const overlay = $derived(renderGraph ? projectSymbolOverlay(renderGraph, fileSnapshot?.sourceRoot ?? '', graph, expanded) : null);
+  const rows = $derived.by(() => {
+    if (!renderGraph) return [];
+    const byId = new Map(renderGraph.nodes.map(node => [node.id,node]));
+    const result: { node: RenderGraphNode; depth: number }[] = []; const visited = new SvelteSet<string>();
+    function visit(id: string, depth: number) {
+      const node=byId.get(id); if(!node || visited.has(id))return;visited.add(id);
+      if(node.kind !== 'file' || node.path.toLowerCase().includes(filter.toLowerCase()))result.push({node,depth});
+      if(!collapsedDirectories.has(id) || filter)for(const child of node.childIds)visit(child,depth+1);
+    }
+    visit(renderGraph.rootNodeId,0);return result;
   });
 
+  $effect(() => {
+    if (!scene) return;
+    if (!renderGraph || !overlay) { scene.clearGraph(); return; }
+    scene.updateGraph(renderGraph, { layoutAlgorithm: layout, focusedFileLayoutAlgorithm: focusedLayout, focusedCircularBundlingMode: bundling, edgeStyle, rootEdgeStyle, leafDirectoryEdgeStyle: leafEdgeStyle, selectedNodeId: baseSelectedId, selectedEdgeId: edgeSelectedId, nodeDistanceById: distance, highlightedNodeIds: neighborhood.highlightedNodeIds, highlightedEdgeIds: neighborhood.highlightedEdgeIds, labeledNodeIds: neighborhood.labeledNodeIds, visibleEdgeIds: visibleEdges, onSelect: selectBase });
+    scene.updateSymbols(overlay, selectedId, selectNode);
+  });
+  $effect(() => { if(edgeSelectedId && !visibleEdges.has(edgeSelectedId)) edgeSelectedId=null; });
+
+  onMount(() => {
+    try { scene = new DirectoryGraphScene(mount); } catch(cause) { error = `3D view unavailable: ${message(cause)}. Use the navigator to continue.`; }
+    void initialize();
+    return () => { generation++; recordRequest++; loader.invalidate(); scene?.dispose(); };
+  });
   function message(cause: unknown): string { return cause instanceof Error ? cause.message : typeof cause === 'object' && cause !== null && 'message' in cause ? String(cause.message) : String(cause); }
-
+  function receiveFiles(snapshot: FileRelationGraphSnapshotDto) { fileSnapshot=snapshot;renderGraph=fileRelationSnapshotToRenderGraph(snapshot);sourcePath=snapshot.sourceRoot; }
   async function initialize() {
-    busy = true;
+    const current=++generation;busy=true;
     try {
-      if (preview) {
-        const { default: source } = await import('../../../fixtures/intent-preview/source.rs?raw');
-        intentBackend = new PreviewIntentBackend(localStorage, previewGraph, source);
-        graph = structuredClone(previewGraph);
-      } else if (nativeAvailable) {
-        const config = await native.getAppConfig();
-        sourcePath = config.sourceRepoPath ?? '';
-        graph = await native.getGraphSnapshot();
+      if(preview) {
+        const sources=await fixtureSources();if(current!==generation)return;
+        intentBackend=new PreviewIntentBackend(localStorage,fixtureSymbols,sources);
+        receiveFiles(structuredClone(fixtureFiles));graph=structuredClone(fixtureSymbols);historyReady=true;
+      } else if(nativeAvailable) {
+        const config=await native.getAppConfig();if(current!==generation)return;
+        sourcePath=config.sourceRepoPath ?? '';historyReady=Boolean(config.sourceRepoPath);
+        if(config.sourceRepoPath) {
+          try {
+            const files=await native.loadFileRelationGraph(config.sourceRepoPath);if(current!==generation)return;
+            receiveFiles(files);
+            // Restore history without reanalysis; adding new intent still requires a fresh analysis.
+            const existing=await native.getGraphSnapshot();if(current!==generation)return;
+            if(existing?.sourceRoot===files.sourceRoot)graph=existing;
+          } catch(cause) { if(current===generation)error=`File graph unavailable: ${message(cause)}`; }
+        }
       }
-      if (preview || nativeAvailable) records = await intentBackend.listRecords();
-      scene?.update(graph ?? { schemaVersion: 1, sourceRoot: '', generatedAt: '', nodes: [], edges: [], diagnostics: [] }, expanded, selectedId);
-    } catch (cause) { error = message(cause); } finally { busy = false; }
+      if(historyReady)await refreshRecords(current);
+    } catch(cause) {if(current===generation)error=message(cause);}
+    finally {if(current===generation)busy=false;}
   }
-
   async function analyze() {
-    if (busy || !sourcePath.trim()) return;
-    busy = true; error = ''; notice = ''; drafts.clear(); selectedId = null; text = ''; expanded.clear(); records = []; graph = null;
+    if(busy||saving||!sourcePath.trim())return;
+    const current=++generation;recordRequest++;historyReady=false;busy=true;error='';notice='';drafts.clear();selectedId=null;baseSelectedId=null;edgeSelectedId=null;text='';expanded.clear();collapsedDirectories.clear();records=[];graph=null;fileSnapshot=null;renderGraph=null;
+    await loader.open(native,sourcePath,{
+      files(snapshot){if(current===generation)receiveFiles(snapshot);},
+      configured(){if(current===generation)historyReady=true;},
+      symbols(snapshot){if(current===generation){graph=snapshot;notice='File graph loaded. Select a file to expand its symbols.';}},
+      error(cause){if(current===generation)error=`${renderGraph?'File graph available. Symbol analysis unavailable: ':''}${message(cause)}`;},
+      done(){if(current===generation)busy=false;},
+    });
+    if(current===generation&&historyReady)await refreshRecords(current);
+  }
+  function saveDraft(){if(selectedId)drafts.set(selectedId,{text,kind,parentId});}
+  function selectBase(selection: DirectoryGraphSceneSelection) {
+    if(saving)return;saveDraft();selectedId=null;text='';notice='';
+    baseSelectedId=selection.kind==='node'?selection.id:null;edgeSelectedId=selection.kind==='edge'?selection.id:null;
+  }
+  function selectNode(id:string) {
+    if(id===selectedId||saving||!overlay)return;
+    const fileId=overlay.fileIdBySymbolId.get(id);if(!fileId||!expanded.has(fileId))return;
+    saveDraft();selectedId=id;baseSelectedId=fileId;edgeSelectedId=null;
+    const draft=drafts.get(id);kind=draft?.kind??'original';parentId=draft?.parentId??'';text=draft?.text??'';notice='';
+  }
+  function symbolsFor(file:RenderGraphNode) {return graph?.sourceRoot===fileSnapshot?.sourceRoot?graph?.nodes.filter(node=>!['file','workspace','crate'].includes(node.kind)&&node.sourceRange?.path===file.path)??[]:[];}
+  function toggleFile(file:RenderGraphNode) {
+    if(saving)return;
+    const close=expanded.has(file.id);selectBase({kind:'node',id:file.id});expanded.clear();if(!close)expanded.add(file.id);
+  }
+  function toggleDirectory(id:string) {if(collapsedDirectories.has(id))collapsedDirectories.delete(id);else collapsedDirectories.add(id);}
+  async function refreshRecords(current=generation) {
+    const request=++recordRequest;
     try {
-      await native.setSourceRepoPath(sourcePath);
-      graph = await native.analyzeSourceRepo();
-      records = await intentBackend.listRecords();
-      notice = 'Analysis loaded. Expand a file to inspect its symbols.';
-    } catch (cause) { error = message(cause); } finally { busy = false; }
+      const next=await intentBackend.listRecords();
+      if(current!==generation||request!==recordRequest)return;
+      records=next;
+    } catch(cause) {if(current===generation&&request===recordRequest)error=message(cause);}
   }
-
-  function selectNode(id: string) {
-    if (id === selectedId || saving) return;
-    if (selectedId) drafts.set(selectedId, { text, kind, parentId });
-    selectedId = id;
-    const draft = drafts.get(id);
-    kind = draft?.kind ?? 'original'; parentId = draft?.parentId ?? ''; text = draft?.text ?? ''; notice = '';
-  }
-  function toggleFile(file: GraphNodeDto) {
-    if (expanded.has(file.id)) { expanded.delete(file.id); if (selected?.sourceRange?.path === file.sourceRange?.path) selectNode(file.id); }
-    else { expanded.add(file.id); selectNode(file.id); }
-  }
-  function symbolsFor(file: GraphNodeDto) { return graph?.nodes.filter(node => node.kind !== 'file' && node.sourceRange?.path === file.sourceRange?.path) ?? []; }
-  async function refreshRecords() { try { error = ''; records = await intentBackend.listRecords(); notice = 'Journal reloaded.'; } catch (cause) { error = message(cause); } }
   async function saveIntent() {
-    if (!graph || !selectedId || saving || !text.trim()) return;
-    const input = { nodeId: selectedId, text, kind, parentId: kind === 'original' ? null : parentId, expectedAnalysisAt: graph.generatedAt };
-    saving = true; error = ''; notice = '';
+    if(!graph||!selectedId||saving||busy||!text.trim())return;
+    const current=generation;const input={nodeId:selectedId,text,kind,parentId:kind==='original'?null:parentId,expectedAnalysisAt:graph.generatedAt};
+    saving=true;error='';notice='';
     try {
-      await intentBackend.appendRecord(input);
-      records = await intentBackend.listRecords();
-      if (selectedId === input.nodeId) text = '';
-      drafts.delete(input.nodeId);
-      notice = `${input.kind === 'original' ? 'Original intent' : input.kind === 'proposal' ? 'Proposal' : 'Interpretation'} saved as a new journal entry.`;
-    } catch (cause) { error = message(cause); } finally { saving = false; }
+      await intentBackend.appendRecord(input);if(current!==generation)return;
+      await refreshRecords(current);if(current!==generation)return;
+      if(selectedId===input.nodeId)text='';drafts.delete(input.nodeId);
+      notice=`${input.kind==='original'?'Original intent':input.kind==='proposal'?'Proposal':'Interpretation'} saved as a new journal entry.`;
+    } catch(cause) {if(current===generation)error=message(cause);}
+    finally {if(current===generation)saving=false;}
   }
-  function label(id: string) { return graph?.nodes.find(node => node.id === id)?.label ?? 'Unresolved symbol'; }
-  function when(value: string) { const date = new Date(/^\d+$/.test(value) ? Number(value) : value); return Number.isNaN(date.getTime()) ? value : date.toLocaleString(); }
+  function label(id:string){return graph?.nodes.find(node=>node.id===id)?.label??'Unresolved symbol';}
+  function fileLabel(id:string){return renderGraph?.nodes.find(node=>node.id===id)?.path??id;}
+  function when(value:string){const date=new Date(/^\d+$/.test(value)?Number(value):value);return Number.isNaN(date.getTime())?value:date.toLocaleString();}
 </script>
 
 <div class="intent-app">
@@ -111,51 +175,64 @@
   </header>
 
   {#if preview}
-    <div class="preview-banner"><strong>Browser fixture</strong> Curated symbols from public Whip Docs @{PREVIEW_UPSTREAM.slice(0, 7)}. Native analysis and disk persistence are not running here. Preview entries stay in this browser.</div>
+    <div class="preview-banner"><strong>Browser fixture</strong> Recorded multi-file graph from the Rust backend, replayed locally. Native Tauri IPC is not running. Intent entries stay in this browser.</div>
   {:else if !nativeAvailable}
-    <div class="preview-banner"><strong>Open the Tauri desktop app to analyze a local Rust repository.</strong> <a href="?preview=1">Open the clearly labelled browser fixture</a></div>
+    <div class="preview-banner"><strong>Open the Tauri desktop app to analyze a local Repository.</strong> <a href="?preview=1">Open the clearly labelled browser fixture</a></div>
   {/if}
 
   {#if nativeAvailable}
     <form class="repo-bar" onsubmit={(event) => { event.preventDefault(); void analyze(); }}>
-      <label for="source-root">Rust repository</label><input id="source-root" placeholder="Absolute path to a local Cargo workspace" bind:value={sourcePath} disabled={busy || saving} /><button class="primary" disabled={busy || saving || !sourcePath.trim()}>{busy ? 'Analyzing…' : 'Open and analyze'}</button>
+      <label for="source-root">Repository</label><input id="source-root" placeholder="Absolute path to a local repository" bind:value={sourcePath} disabled={busy || saving} /><button class="primary" disabled={busy || saving || !sourcePath.trim()}>{busy ? 'Analyzing…' : 'Open and analyze'}</button>
     </form>
   {/if}
 
   <main class="workspace">
     <aside class="navigator">
-      <div class="section-heading"><span>REPOSITORY</span><span>{graph?.nodes.filter(n => n.kind === 'file').length ?? 0} FILES</span></div>
-      <h1>{preview ? 'whip-docs' : graph?.sourceRoot.split(/[\\/]/).pop() ?? 'Open a workspace'}</h1>
-      <p class="muted small">Expand a file. Select a symbol. Preserve why it exists.</p>
+      <div class="section-heading"><span>REPOSITORY</span><span>{renderGraph?.nodes.filter(n=>n.kind==='file').length??0} FILES</span></div>
+      <h1>{preview?'Graph fixture':fileSnapshot?.sourceRoot.split(/[\\/]/).pop()??'Open a workspace'}</h1>
+      <p class="muted small">Explore files and their relationships. Expand a file to see its symbols.</p>
       <input class="search" aria-label="Find a file" placeholder="Find a file…" bind:value={filter} />
       <div class="file-list">
-        {#each files as file (file.id)}
-          <div class="file-row"><button class="expand" aria-label={`${expanded.has(file.id) ? 'Collapse' : 'Expand'} ${file.sourceRange?.path ?? file.label}`} aria-expanded={expanded.has(file.id)} onclick={() => toggleFile(file)}>{expanded.has(file.id) ? '−' : '+'}</button><button class:selected={selectedId === file.id} class="file-name" onclick={() => selectNode(file.id)} title={file.sourceRange?.path ?? file.label}>{(file.sourceRange?.path ?? file.label).split('/').pop()}</button></div>
-          {#if expanded.has(file.id)}
-            <div class="symbol-list">{#each symbolsFor(file) as symbol (symbol.id)}<button class:selected={selectedId === symbol.id} onclick={() => selectNode(symbol.id)}><span class="kind-dot" data-kind={symbol.kind}></span><span>{symbol.label}</span><small>{symbol.kind.replaceAll('_', ' ')}</small></button>{/each}</div>
-          {/if}
+        {#each rows as {node,depth} (node.id)}
+          <div class="file-row" style:padding-left={`${depth*9}px`}>
+            {#if node.kind==='file'}<button class="expand" aria-label={`${expanded.has(node.id)?'Collapse':'Expand'} ${node.path}`} aria-expanded={expanded.has(node.id)} disabled={saving||!symbolsFor(node).length} onclick={()=>toggleFile(node)}>{expanded.has(node.id)?'−':'+'}</button>
+            {:else}<button class="expand" aria-label={`Toggle directory ${node.path}`} aria-expanded={!collapsedDirectories.has(node.id)} onclick={()=>toggleDirectory(node.id)}>{collapsedDirectories.has(node.id)?'›':'⌄'}</button>{/if}
+            <button class:selected={baseSelectedId===node.id&&!selectedId} class="file-name" data-node-id={node.id} onclick={()=>selectBase({kind:'node',id:node.id})} title={node.path}>{node.name}<small>{node.kind==='directory'?' /':''}</small></button>
+          </div>
+          {#if expanded.has(node.id)}<div class="symbol-list">{#each symbolsFor(node) as symbol (symbol.id)}<button class:selected={selectedId===symbol.id} onclick={()=>selectNode(symbol.id)}><span class="kind-dot" data-kind={symbol.kind}></span><span>{symbol.label}</span><small>{symbol.kind.replaceAll('_',' ')}</small></button>{/each}</div>{/if}
         {/each}
       </div>
-      <div class="nav-bottom"><span class="eyebrow">EVIDENCE BOUNDARY</span><p>Syntax-derived symbols. Source locations are approximate; calls may be partial. Missing edges do not prove missing relationships.</p></div>
+      <div class="nav-bottom"><span class="eyebrow">EVIDENCE BOUNDARY</span><p>File relations retain direction, confidence and evidence. Symbol locations are approximate. Intent and proposals never change observed relationships.</p></div>
     </aside>
-
-    <section class="graph-area" aria-label="3D symbol graph">
-      <div class="graph-title"><span class="eyebrow">OBSERVED STRUCTURE</span><h2>Explore the shape of your code.</h2><p>Drag to orbit · Scroll to zoom · Click to inspect</p></div>
+    <section class="graph-area" aria-label="3D file and symbol graph">
+      <div class="graph-title"><span class="eyebrow">OBSERVED STRUCTURE</span><h2>Explore the shape of your code.</h2><p>Drag to orbit · Scroll to zoom · Select a file, then expand its symbols</p></div>
       <div class="graph-mount" bind:this={mount}></div>
-      {#if !graph && !busy}<div class="graph-empty">Choose a local Rust repository to begin.</div>{/if}
+      <div class="graph-toolbar">
+        <button onclick={()=>scene?.fitGraph()} disabled={!renderGraph}>Fit graph</button>
+        <button onclick={()=>scene?.focusSelection()} disabled={!renderGraph}>Center selection</button>
+        <button onclick={()=>scene?.toggleDirectoryFocus()} disabled={!renderGraph}>Directory focus</button>
+        <button onclick={()=>scene?.focusSymbols()} disabled={!expanded.size}>Frame symbols</button>
+        <details class="graph-settings"><summary>Graph settings</summary>
+          <label>File layout<select aria-label="File layout" bind:value={layout}><option value="weighted-safe-radial-tree">Weighted radial</option><option value="safe-radial-tree">Safe radial</option><option value="radial-tree">Radial</option><option value="layered-grid">Layered grid</option></select></label>
+          <label>Focused files<select aria-label="Focused files" bind:value={focusedLayout}>{#each ['circular','grid','flow-layered','dag-layered','force-directed'] as value (value)}<option {value}>{value}</option>{/each}</select></label>
+          <label>Circular bundles<select aria-label="Circular bundles" bind:value={bundling}><option value="hierarchy">Hierarchy</option><option value="adjacency-fanout">Adjacency fanout</option><option value="none">None</option></select></label>
+          <label>Relations<select aria-label="Relations" bind:value={relationDetail}><option value="all">All observed</option><option value="calls">Imports + calls</option><option value="imports">Imports</option><option value="structure">Structure</option></select></label>
+          <label>Global edges<select aria-label="Global edges" bind:value={edgeStyle}>{#each ['straight','bezier','c-curve','elbow'] as value (value)}<option {value}>{value}</option>{/each}</select></label>
+          <label>Root edges<select aria-label="Root edges" bind:value={rootEdgeStyle}>{#each ['straight','bezier','c-curve','elbow'] as value (value)}<option {value}>{value}</option>{/each}</select></label>
+          <label>Leaf edges<select aria-label="Leaf edges" bind:value={leafEdgeStyle}>{#each ['global','straight','bezier','c-curve','elbow'] as value (value)}<option {value}>{value}</option>{/each}</select></label>
+        </details>
+      </div>
+      {#if !renderGraph&&!busy}<div class="graph-empty">Choose a local repository to begin.</div>{/if}
       {#if busy}<div class="graph-empty">Loading workspace…</div>{/if}
-      <div class="graph-legend"><span><i class="legend-file"></i>File</span><span><i class="legend-type"></i>Type</span><span><i class="legend-callable"></i>Callable</span><span class="legend-line">━━ Structural</span><span class="legend-line">┄┄ Uncertain</span></div>
-      <div class="graph-note">Intent and proposals are annotations. They do not change the observed graph.</div>
+      <div class="graph-legend"><span><i class="legend-file"></i>File</span><span><i class="legend-type"></i>Directory / type</span><span><i class="legend-callable"></i>Callable</span><span>Focus: incoming / outgoing / mutual</span></div>
+      <div class="graph-note">Graph keys: arrows navigate directories · Tab toggles directory focus · . centers selection · R fits<br />File relations remain visible when symbols expand. Proposals are annotations.</div>
     </section>
-
     <aside class="inspector">
-      <div class="section-heading"><span>INSPECTOR</span><span>{selected?.kind.replaceAll('_', ' ') ?? 'NO SELECTION'}</span></div>
+      <div class="section-heading"><span>INSPECTOR</span><span>{selected?.kind.replaceAll('_',' ')??selectedBase?.kind??(selectedEdge?'RELATION':'NO SELECTION')}</span></div>
       {#if selected}
-        <h2 class="symbol-title">{selected.label.split('/').pop()}</h2>
-        <p class="source-path">{selected.sourceRange?.path}</p>
-        <div class="metadata"><span>Source location</span><strong>~ line {selected.sourceRange?.startLine ?? 'unknown'}</strong><span>Range precision</span><strong>Unverified</strong><span>Graph facts</span><strong>{relations.length} relationships</strong></div>
-        {#if selected.kind === 'file'}<button class="outline wide" onclick={() => toggleFile(selected)}>{expanded.has(selected.id) ? 'Collapse symbols' : 'Expand symbols'} · {symbolsFor(selected).length}</button>{/if}
-        {#if symbolSelected}
+        <h2 class="symbol-title">{selected.label}</h2><p class="source-path">{selected.sourceRange?.path}</p>
+        <button class="text-button" onclick={()=>selectBase({kind:'node',id:baseSelectedId!})}>Back to parent file</button>
+        <div class="metadata"><span>Source location</span><strong>~ line {selected.sourceRange?.startLine??'unknown'}</strong><span>Range precision</span><strong>Unverified</strong><span>Graph facts</span><strong>{relations.length} relationships</strong></div>
           <div class="intent-composer">
             <span class="eyebrow">CAPTURE THE WHY</span>
             <h3>What should this symbol mean?</h3>
@@ -166,9 +243,22 @@
             <button class="primary wide" disabled={saving || !text.trim() || (kind !== 'original' && !parentId)} onclick={() => void saveIntent()}>{saving ? 'Saving…' : kind === 'original' ? 'Preserve original intent' : 'Append separate entry'}</button>
             <p class="fine">Append-only · 16 KiB limit. Saves your words, source digests and structural metadata. Code bodies and comments are not copied. Historical structure cannot reconstruct source code.</p>
           </div>
-        {/if}
-      {:else}<h2>Select a symbol</h2><p class="muted">Expand a file in the navigator or the graph, then choose a symbol to record its intent.</p>{/if}
-      <div class="journal-heading"><h3>Intent journal <span>{selectedRecords.length}</span></h3><button class="text-button" disabled={saving || busy || (!preview && !nativeAvailable)} onclick={() => void refreshRecords()}>Reload</button></div>
+
+      {:else if selectedBase}
+        <h2 class="symbol-title">{selectedBase.name}</h2><p class="source-path">{selectedBase.path}</p>
+        <div class="metadata"><span>Graph context</span><strong>{selectedBase.kind}</strong><span>File relationships</span><strong>{fileRelations.length}</strong></div>
+        {#if selectedBase.kind==='file'}
+          <button class="outline wide" disabled={saving||!symbolsFor(selectedBase).length} onclick={()=>toggleFile(selectedBase)}>{expanded.has(selectedBase.id)?'Collapse symbols':'Expand symbols'} · {symbolsFor(selectedBase).length}</button>
+          {#if !graph}<p class="fine">The file graph is available. Analyze the repository to add symbol detail; current analysis supports Rust Cargo workspaces.</p>{/if}
+        {:else}<button class="outline wide" onclick={()=>scene?.toggleDirectoryFocus()}>Focus this directory’s files</button>{/if}
+      {:else if selectedEdge}
+        <h2>{selectedEdge.kind.replaceAll('_',' ')}</h2>
+        <p class="source-path">{fileLabel(selectedEdge.fromNodeId)} {selectedEdge.direction==='directed'?'→':'↔'} {fileLabel(selectedEdge.toNodeId)}</p>
+        <div class="metadata"><span>Direction</span><strong>{selectedEdge.direction}</strong><span>Confidence</span><strong>{selectedEdge.confidence}</strong><span>Provenance</span><strong>{selectedEdge.provenance}</strong><span>Weight / evidence</span><strong>{selectedEdge.weight} / {selectedEdge.evidenceCount}</strong></div>
+        <details class="relations" open><summary>Relationship evidence</summary>{#each selectedEdge.evidenceSample as evidence, i (i)}<p>{evidence.kind.replaceAll('_',' ')} · {evidence.analyzer}<br />{evidence.sourceRange.path} · ~ line {evidence.sourceRange.startLine}{#if evidence.targetRange}<br />→ {evidence.targetRange.path} · ~ line {evidence.targetRange.startLine}{/if}</p>{/each}</details>
+      {:else}<h2>Select a file</h2><p class="muted">Explore the repository graph, then expand a file to inspect symbols and preserve intent.</p>{/if}
+      {#if fileRelations.length}<details class="relations" open><summary>File relationships · {fileRelations.length}</summary>{#each fileRelations as edge (edge.id)}<button class="relation-row" data-edge-id={edge.id} onclick={()=>selectBase({kind:'edge',id:edge.id})}><strong>{edge.kind.replaceAll('_',' ')}</strong><br />{fileLabel(edge.fromNodeId)} {edge.direction==='directed'?'→':'↔'} {fileLabel(edge.toNodeId)}<br /><small>{edge.provenance} · {edge.confidence} · {edge.evidenceCount} evidence</small></button>{/each}</details>{/if}
+      <div class="journal-heading"><h3>Intent journal <span>{selectedRecords.length}</span></h3><button class="text-button" disabled={saving || busy || !historyReady} onclick={() => void refreshRecords()}>Reload</button></div>
       <label class="history-toggle"><input type="checkbox" bind:checked={showHistory} />Show all repository history</label>
       {#each selectedRecords as record (record.id)}
         <article class="intent-record" data-kind={record.kind}>
@@ -184,9 +274,10 @@
           <footer>{when(record.createdAt)}<br />{record.snapshot.byteLength.toLocaleString()} source bytes · {record.snapshot.contentHash}<br />Structure: {record.snapshot.structuralSnapshot.nodes.length} nodes · {record.snapshot.structuralSnapshot.edges.length} edges<br />Revision: {record.snapshot.repositoryRevision?.slice(0, 12) ?? 'unavailable'} · worktree may differ<br />Captured Rust source set: {record.snapshot.worktreeDigest.slice(0, 23)}…</footer>
         </article>
       {:else}<p class="empty-journal">No intent recorded here yet.</p>{/each}
-      {#if selected && relations.length}<details class="relations"><summary>Observed relationship metadata</summary>{#each relations as edge (edge.id)}<p><strong>{edge.kind.replaceAll('_', ' ')}</strong><br />{label(edge.sourceId)} → {label(edge.targetId)}<br /><small>{edge.provenance} · {edge.confidence}</small></p>{/each}</details>{/if}
-      {#if graph?.diagnostics.length}<details class="diagnostics"><summary>Analysis limits · {graph.diagnostics.length}</summary>{#each graph.diagnostics as diagnostic, index (index)}<p>{diagnostic.message}</p>{/each}</details>{/if}
+
+      {#if selected&&relations.length}<details class="relations"><summary>Observed symbol relationships</summary>{#each relations as edge (edge.id)}<p><strong>{edge.kind.replaceAll('_',' ')}</strong><br />{label(edge.sourceId)} → {label(edge.targetId)}<br /><small>{edge.provenance} · {edge.confidence}</small></p>{/each}</details>{/if}
+      {#if graph?.diagnostics.length||fileSnapshot?.diagnostics.length}<details class="diagnostics"><summary>Analysis limits</summary>{#each [...(fileSnapshot?.diagnostics??[]),...(graph?.diagnostics??[])] as diagnostic, i (i)}<p>{diagnostic.message}</p>{/each}</details>{/if}
     </aside>
   </main>
-  <footer class="statusbar" aria-live="polite"><span class:error={Boolean(error)}>{error || notice || 'Read structure. Preserve intent. Keep interpretations separate.'}</span><span>{preview ? 'BROWSER STORAGE' : 'LOCAL JOURNAL'} · {records.length} ENTRIES</span></footer>
+  <footer class="statusbar" aria-live="polite"><span class:error={Boolean(error)}>{error||notice||'Explore files. Expand symbols. Preserve intent.'}</span><span>{preview?'BROWSER FIXTURE':'LOCAL JOURNAL'} · {records.length} ENTRIES</span></footer>
 </div>
