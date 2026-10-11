@@ -1,5 +1,5 @@
 {
-  "parserCommit": "91b05b696ca4bd1121137fe2a78faac36e0f630d",
+  "parserCommit": "1015275810f7574382fc641b15ed46e61f4106b6",
   "graphCommit": "2a6b73da3fce1ce099e91fa386986c4b2f63a44e",
   "generator": "cargo run --no-default-features --example integration_fixture -- FIXTURE_ROOT DISPOSABLE_APP_DATA",
   "normalization": "Absolute root replaced with public fixture label; graph and journal timestamps fixed; identities, digests, ranges, facts and relationships unchanged.",
@@ -21,6 +21,7 @@
     "web/Card.jsx": "013e21ffaed23cb290235042ea279352ccab9ed6ba0366c827c11e1859d9b4f6",
     "web/Card.tsx": "1bed4061399e7b4b9bf053b3a3b44380449e34b4b379c2b670241cd49b9122b3",
     "web/Panel.svelte": "5d8bc28c6dbfef54b0e93f14d42e226592f28e49023bf84ab83509372fa5d77d",
+    "web/Template.svelte": "b854fe6106a0f45e067ff13e71bbc4de55bbd075b64864621951599d82004d80",
     "web/View.js": "e2a79799f3ec63b92e0b32097c4f6291d765aa47df86b4d3eaaa341c896d5621",
     "web/app.ts": "e84b691cde7f455fedd141a259f1e806c45b5ad5746acbe809f79f10349d8177",
     "web/plain.js": "15f5f7eaa0c225d249f45081e1e527520a80d1d1a229b67ad636461d23463adf"

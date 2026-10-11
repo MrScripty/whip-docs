@@ -50,3 +50,12 @@ test('semantic corruption and unexpected source fields reject reads/appends with
   for(const [path,value] of corruptions){const rows=JSON.parse(good);let item=rows[0] as Record<string,unknown>;for(const key of path.slice(0,-1))item=item[key] as Record<string,unknown>;item[path.at(-1)!]=value;const bad=JSON.stringify(rows);storage.setItem(SYNTAX_PREVIEW_STORAGE_KEY,bad);await assert.rejects(backend.listRecords(),/Invalid syntax preview journal/);await assert.rejects(backend.appendRecord({...input,kind:'proposal',parentId:original.id}),/Invalid syntax preview journal/);assert.equal(storage.getItem(SYNTAX_PREVIEW_STORAGE_KEY),bad);}
 
 });
+test('actual previous extractor journal vector remains unchanged and stale after the follow-up',async()=>{
+  const old=JSON.parse(readFileSync(new URL('../../../fixtures/mixed-workspace.previous-journal.json',import.meta.url),'utf8')) as IntentRecord;
+  assert.equal(old.snapshot.analysisIdentity?.extractor,'whip-docs-syntax@1');assert.equal(analysis.identity.extractor,'whip-docs-syntax@2');
+  const storage=new MemoryStorage(),originalBytes=JSON.stringify([{schemaVersion:3,record:old}]);storage.setItem(SYNTAX_PREVIEW_STORAGE_KEY,originalBytes);
+  const backend=new SyntaxPreviewIntentBackend(storage,graph,analysis,sources);
+  assert.equal((await backend.listRecords())[0].bindingStatus,'stale');
+  await assert.rejects(backend.appendRecord({...input,kind:'proposal',parentId:old.id}),/historical intent is not relinked/);
+  assert.equal(storage.getItem(SYNTAX_PREVIEW_STORAGE_KEY),originalBytes);
+});

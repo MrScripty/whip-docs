@@ -4,6 +4,7 @@ pub use registry::{route, Dialect};
 mod extract;
 mod model;
 mod repository;
+mod template;
 pub use extract::analyze_file;
 pub use model::*;
 pub use repository::{analyze_repository, AnalysisOptions};

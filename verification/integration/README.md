@@ -1,7 +1,8 @@
 # Combined graph and multilingual parser
 
 The integration branch combines graph `2a6b73da3fce1ce099e91fa386986c4b2f63a44e`
-with parser `91b05b696ca4bd1121137fe2a78faac36e0f630d`. Neither source branch nor
+with parser `91b05b696ca4bd1121137fe2a78faac36e0f630d` and follow-up
+`1015275810f7574382fc641b15ed46e61f4106b6` (extractor `whip-docs-syntax@2`). Neither source branch nor
 main is changed by this work. Native Tauri IPC remains unverified.
 
 The original file graph and routing remain authoritative. Neutral declarations
@@ -23,12 +24,13 @@ existing v2 behavior/storage. A Rust-exported vector verifies the browser's
 multilingual digest encoding. Unknown or semantically corrupt records fail
 without rewriting storage; originals remain immutable and proposals separate.
 
-## Checks at initial integration
+## Checks after parser follow-up
 
-- Frontend lint, TypeScript and 114 tests passed; production build passed with
+- Frontend lint, TypeScript and 115 tests passed; production build passed with
   the existing large Three.js chunk warning.
-- 103 Rust tests passed with desktop features disabled; strict Clippy and
-  formatting passed. The added test covers stale graph/metadata association.
+- 108 Rust tests passed with desktop features disabled; strict Clippy and
+  formatting passed. The integration test covers stale graph/metadata association; the follow-up
+  also qualifies bounded Svelte template call facts and extractor-identity staleness.
 - Real Chromium UI replayed Rust outputs from a synthetic no-Cargo mixed root:
   declaration expansion, coverage gaps, exact intent, source exclusion, proposal
   separation, reload, corrupt storage refusal and unchanged base geometry/camera.
@@ -66,3 +68,9 @@ Native linking, macros/IPC, desktop restart acceptance and non-Unix source races
 remain unqualified. No native dependency-denial retries or package-source
 bypasses were attempted. See the parser qualification matrix for language gaps;
 supported_subset never means full-language support.
+
+The recorded fixture is regenerated at extractor `@2`. A saved real `@1` journal
+vector remains readable/stale without changing any stored byte; proposals against
+it are rejected. Svelte template call facts remain unresolved. Python/Kotlin/C
+grammar gaps, C++ explicit object parameters, C# extension blocks, and the Svelte
+binding/parameter scope exclusions remain explicit. Full parity is not claimed.

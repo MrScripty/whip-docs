@@ -2744,47 +2744,11 @@
         "diagnostics": [
           {
             "code": "template_expression_unanalyzed",
-            "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
             "path": "web/Panel.svelte",
             "range": {
               "endByte": 196,
               "startByte": 191
-            }
-          },
-          {
-            "code": "template_expression_unanalyzed",
-            "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-            "path": "web/Panel.svelte",
-            "range": {
-              "endByte": 209,
-              "startByte": 202
-            }
-          },
-          {
-            "code": "template_expression_unanalyzed",
-            "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-            "path": "web/Panel.svelte",
-            "range": {
-              "endByte": 208,
-              "startByte": 203
-            }
-          },
-          {
-            "code": "template_expression_unanalyzed",
-            "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-            "path": "web/Panel.svelte",
-            "range": {
-              "endByte": 246,
-              "startByte": 225
-            }
-          },
-          {
-            "code": "template_expression_unanalyzed",
-            "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-            "path": "web/Panel.svelte",
-            "range": {
-              "endByte": 245,
-              "startByte": 234
             }
           }
         ],
@@ -2804,7 +2768,7 @@
           ],
           "path": "web/Panel.svelte",
           "sourceDigest": "sha256:5d8bc28c6dbfef54b0e93f14d42e226592f28e49023bf84ab83509372fa5d77d",
-          "structureDigest": "sha256:794dca98d6290489952a07ea53aee94dfd0d44923966d588160802a8e95fc156"
+          "structureDigest": "sha256:1c074ac4e1c1f673bf1499461d1bee30a8e41db2654712489482ada69418e28f"
         },
         "relations": [
           {
@@ -2883,6 +2847,439 @@
             "targetRange": {
               "endByte": 134,
               "startByte": 126
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 245,
+              "startByte": 234
+            },
+            "targetRange": {
+              "endByte": 238,
+              "startByte": 234
+            }
+          }
+        ]
+      },
+      {
+        "declarations": [
+          {
+            "bodyComplete": true,
+            "dialect": "typescript",
+            "headerComplete": true,
+            "id": "syntax:4f6a949b58d048209631776d7fc63523ea15e40d5437cb7c9db26bddf865f100",
+            "kind": "binding",
+            "name": "rows",
+            "nameRange": {
+              "endByte": 86,
+              "startByte": 82
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 99,
+              "startByte": 82
+            },
+            "syntaxKind": "variable_declarator"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "typescript",
+            "headerComplete": true,
+            "id": "syntax:592f6187fd172b6fa451236c385e883a69a65cd845db66c0c1b43b1c40789201",
+            "kind": "function",
+            "name": "ready",
+            "nameRange": {
+              "endByte": 117,
+              "startByte": 112
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 145,
+              "startByte": 103
+            },
+            "syntaxKind": "function_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "svelte5",
+            "headerComplete": true,
+            "id": "syntax:54090fc0448b85b4ac136fcb549daa29df7d2c145d7bacc29eb2b1b9eb4aa7ab",
+            "kind": "snippet",
+            "name": "card",
+            "nameRange": {
+              "endByte": 540,
+              "startByte": 536
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 573,
+              "startByte": 526
+            },
+            "syntaxKind": "snippet_statement"
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 364,
+              "startByte": 343
+            }
+          },
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 437,
+              "startByte": 431
+            }
+          },
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 467,
+              "startByte": 462
+            }
+          },
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 546,
+              "startByte": 541
+            }
+          },
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 622,
+              "startByte": 603
+            }
+          },
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 657,
+              "startByte": 653
+            }
+          }
+        ],
+        "identity": {
+          "byteLength": 659,
+          "coverage": "incomplete",
+          "dialect": "svelte5",
+          "grammars": [
+            {
+              "dialect": "svelte5",
+              "grammar": "crates.io/tree-sitter-svelte-ng@1.0.2"
+            },
+            {
+              "dialect": "typescript",
+              "grammar": "crates.io/tree-sitter-typescript@0.23.2/typescript"
+            }
+          ],
+          "path": "web/Template.svelte",
+          "sourceDigest": "sha256:b854fe6106a0f45e067ff13e71bbc4de55bbd075b64864621951599d82004d80",
+          "structureDigest": "sha256:bb851b1b598518be4aa14dde010a7e09507fabb027383fa5d664eb67f2a5c7a5"
+        },
+        "relations": [
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:4f6a949b58d048209631776d7fc63523ea15e40d5437cb7c9db26bddf865f100",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 99,
+              "startByte": 89
+            },
+            "targetRange": {
+              "endByte": 95,
+              "startByte": 89
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:592f6187fd172b6fa451236c385e883a69a65cd845db66c0c1b43b1c40789201",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 145,
+              "startByte": 103
+            },
+            "targetRange": {
+              "endByte": 128,
+              "startByte": 119
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 186,
+              "startByte": 180
+            },
+            "targetRange": {
+              "endByte": 184,
+              "startByte": 180
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 177,
+              "startByte": 167
+            },
+            "targetRange": {
+              "endByte": 171,
+              "startByte": 167
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 164,
+              "startByte": 157
+            },
+            "targetRange": {
+              "endByte": 162,
+              "startByte": 157
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 223,
+              "startByte": 211
+            },
+            "targetRange": {
+              "endByte": 217,
+              "startByte": 211
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 243,
+              "startByte": 232
+            },
+            "targetRange": {
+              "endByte": 237,
+              "startByte": 232
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 269,
+              "startByte": 262
+            },
+            "targetRange": {
+              "endByte": 267,
+              "startByte": 262
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 281,
+              "startByte": 271
+            },
+            "targetRange": {
+              "endByte": 275,
+              "startByte": 271
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 299,
+              "startByte": 292
+            },
+            "targetRange": {
+              "endByte": 297,
+              "startByte": 292
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 307,
+              "startByte": 301
+            },
+            "targetRange": {
+              "endByte": 305,
+              "startByte": 301
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 339,
+              "startByte": 321
+            },
+            "targetRange": {
+              "endByte": 332,
+              "startByte": 321
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 384,
+              "startByte": 366
+            },
+            "targetRange": {
+              "endByte": 372,
+              "startByte": 366
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 412,
+              "startByte": 401
+            },
+            "targetRange": {
+              "endByte": 410,
+              "startByte": 401
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 423,
+              "startByte": 414
+            },
+            "targetRange": {
+              "endByte": 421,
+              "startByte": 414
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 453,
+              "startByte": 439
+            },
+            "targetRange": {
+              "endByte": 445,
+              "startByte": 439
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 482,
+              "startByte": 469
+            },
+            "targetRange": {
+              "endByte": 475,
+              "startByte": 469
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 507,
+              "startByte": 498
+            },
+            "targetRange": {
+              "endByte": 501,
+              "startByte": 498
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 518,
+              "startByte": 509
+            },
+            "targetRange": {
+              "endByte": 516,
+              "startByte": 509
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:54090fc0448b85b4ac136fcb549daa29df7d2c145d7bacc29eb2b1b9eb4aa7ab",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 562,
+              "startByte": 549
+            },
+            "targetRange": {
+              "endByte": 555,
+              "startByte": 549
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 593,
+              "startByte": 583
+            },
+            "targetRange": {
+              "endByte": 587,
+              "startByte": 583
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 643,
+              "startByte": 631
+            },
+            "targetRange": {
+              "endByte": 637,
+              "startByte": 631
             }
           }
         ]
@@ -3519,7 +3916,7 @@
     ],
     "identity": {
       "discoveryComplete": false,
-      "extractor": "whip-docs-syntax@1",
+      "extractor": "whip-docs-syntax@2",
       "files": [
         {
           "byteLength": 277,
@@ -3719,7 +4116,25 @@
           ],
           "path": "web/Panel.svelte",
           "sourceDigest": "sha256:5d8bc28c6dbfef54b0e93f14d42e226592f28e49023bf84ab83509372fa5d77d",
-          "structureDigest": "sha256:794dca98d6290489952a07ea53aee94dfd0d44923966d588160802a8e95fc156"
+          "structureDigest": "sha256:1c074ac4e1c1f673bf1499461d1bee30a8e41db2654712489482ada69418e28f"
+        },
+        {
+          "byteLength": 659,
+          "coverage": "incomplete",
+          "dialect": "svelte5",
+          "grammars": [
+            {
+              "dialect": "svelte5",
+              "grammar": "crates.io/tree-sitter-svelte-ng@1.0.2"
+            },
+            {
+              "dialect": "typescript",
+              "grammar": "crates.io/tree-sitter-typescript@0.23.2/typescript"
+            }
+          ],
+          "path": "web/Template.svelte",
+          "sourceDigest": "sha256:b854fe6106a0f45e067ff13e71bbc4de55bbd075b64864621951599d82004d80",
+          "structureDigest": "sha256:bb851b1b598518be4aa14dde010a7e09507fabb027383fa5d664eb67f2a5c7a5"
         },
         {
           "byteLength": 67,
@@ -4086,6 +4501,18 @@
         "evidenceCount": 0,
         "evidenceSample": [],
         "fromNodeId": "dir:web",
+        "id": "contains:dir:web:file:web/Template.svelte",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:web/Template.svelte",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:web",
         "id": "contains:dir:web:file:web/View.js",
         "kind": "contains",
         "provenance": "normalized",
@@ -4441,6 +4868,15 @@
       },
       {
         "childIds": [],
+        "id": "file:web/Template.svelte",
+        "kind": "file",
+        "language": null,
+        "name": "Template.svelte",
+        "parentId": "dir:web",
+        "path": "web/Template.svelte"
+      },
+      {
+        "childIds": [],
         "id": "file:web/View.js",
         "kind": "file",
         "language": "javascript",
@@ -4471,6 +4907,7 @@
           "file:web/Card.jsx",
           "file:web/Card.tsx",
           "file:web/Panel.svelte",
+          "file:web/Template.svelte",
           "file:web/View.js",
           "file:web/app.ts",
           "file:web/plain.js"
@@ -4507,7 +4944,7 @@
       "analysisAt": "fixture:mixed-overriddenSymbols",
       "analysisIdentity": {
         "discoveryComplete": true,
-        "extractor": "whip-docs-syntax@1",
+        "extractor": "whip-docs-syntax@2",
         "files": [
           {
             "byteLength": 277,
@@ -4721,7 +5158,25 @@
             ],
             "path": "web/Panel.svelte",
             "sourceDigest": "sha256:5d8bc28c6dbfef54b0e93f14d42e226592f28e49023bf84ab83509372fa5d77d",
-            "structureDigest": "sha256:794dca98d6290489952a07ea53aee94dfd0d44923966d588160802a8e95fc156"
+            "structureDigest": "sha256:1c074ac4e1c1f673bf1499461d1bee30a8e41db2654712489482ada69418e28f"
+          },
+          {
+            "byteLength": 659,
+            "coverage": "incomplete",
+            "dialect": "svelte5",
+            "grammars": [
+              {
+                "dialect": "svelte5",
+                "grammar": "crates.io/tree-sitter-svelte-ng@1.0.2"
+              },
+              {
+                "dialect": "typescript",
+                "grammar": "crates.io/tree-sitter-typescript@0.23.2/typescript"
+              }
+            ],
+            "path": "web/Template.svelte",
+            "sourceDigest": "sha256:b854fe6106a0f45e067ff13e71bbc4de55bbd075b64864621951599d82004d80",
+            "structureDigest": "sha256:bb851b1b598518be4aa14dde010a7e09507fabb027383fa5d664eb67f2a5c7a5"
           },
           {
             "byteLength": 67,
@@ -4970,7 +5425,7 @@
           }
         ]
       },
-      "worktreeDigest": "sha256:c1986677a77b97469d454122e45d25316f07f0ad0a283c927843de2f5fc8b82f",
+      "worktreeDigest": "sha256:9ebe18f9cca2541950e269e56265e26f3d6ac437ffa1eb475920864e0d841320",
       "worktreeDigestScope": "captured_multilingual_sources_v1"
     },
     "symbol": {
@@ -7859,47 +8314,11 @@
         "diagnostics": [
           {
             "code": "template_expression_unanalyzed",
-            "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
             "path": "web/Panel.svelte",
             "range": {
               "endByte": 196,
               "startByte": 191
-            }
-          },
-          {
-            "code": "template_expression_unanalyzed",
-            "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-            "path": "web/Panel.svelte",
-            "range": {
-              "endByte": 209,
-              "startByte": 202
-            }
-          },
-          {
-            "code": "template_expression_unanalyzed",
-            "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-            "path": "web/Panel.svelte",
-            "range": {
-              "endByte": 208,
-              "startByte": 203
-            }
-          },
-          {
-            "code": "template_expression_unanalyzed",
-            "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-            "path": "web/Panel.svelte",
-            "range": {
-              "endByte": 246,
-              "startByte": 225
-            }
-          },
-          {
-            "code": "template_expression_unanalyzed",
-            "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-            "path": "web/Panel.svelte",
-            "range": {
-              "endByte": 245,
-              "startByte": 234
             }
           }
         ],
@@ -7919,7 +8338,7 @@
           ],
           "path": "web/Panel.svelte",
           "sourceDigest": "sha256:5d8bc28c6dbfef54b0e93f14d42e226592f28e49023bf84ab83509372fa5d77d",
-          "structureDigest": "sha256:794dca98d6290489952a07ea53aee94dfd0d44923966d588160802a8e95fc156"
+          "structureDigest": "sha256:1c074ac4e1c1f673bf1499461d1bee30a8e41db2654712489482ada69418e28f"
         },
         "relations": [
           {
@@ -7998,6 +8417,439 @@
             "targetRange": {
               "endByte": 134,
               "startByte": 126
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 245,
+              "startByte": 234
+            },
+            "targetRange": {
+              "endByte": 238,
+              "startByte": 234
+            }
+          }
+        ]
+      },
+      {
+        "declarations": [
+          {
+            "bodyComplete": true,
+            "dialect": "typescript",
+            "headerComplete": true,
+            "id": "syntax:4f6a949b58d048209631776d7fc63523ea15e40d5437cb7c9db26bddf865f100",
+            "kind": "binding",
+            "name": "rows",
+            "nameRange": {
+              "endByte": 86,
+              "startByte": 82
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 99,
+              "startByte": 82
+            },
+            "syntaxKind": "variable_declarator"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "typescript",
+            "headerComplete": true,
+            "id": "syntax:592f6187fd172b6fa451236c385e883a69a65cd845db66c0c1b43b1c40789201",
+            "kind": "function",
+            "name": "ready",
+            "nameRange": {
+              "endByte": 117,
+              "startByte": 112
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 145,
+              "startByte": 103
+            },
+            "syntaxKind": "function_declaration"
+          },
+          {
+            "bodyComplete": true,
+            "dialect": "svelte5",
+            "headerComplete": true,
+            "id": "syntax:54090fc0448b85b4ac136fcb549daa29df7d2c145d7bacc29eb2b1b9eb4aa7ab",
+            "kind": "snippet",
+            "name": "card",
+            "nameRange": {
+              "endByte": 540,
+              "startByte": 536
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 573,
+              "startByte": 526
+            },
+            "syntaxKind": "snippet_statement"
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 364,
+              "startByte": 343
+            }
+          },
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 437,
+              "startByte": 431
+            }
+          },
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 467,
+              "startByte": 462
+            }
+          },
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 546,
+              "startByte": 541
+            }
+          },
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 622,
+              "startByte": 603
+            }
+          },
+          {
+            "code": "template_expression_unanalyzed",
+            "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+            "path": "web/Template.svelte",
+            "range": {
+              "endByte": 657,
+              "startByte": 653
+            }
+          }
+        ],
+        "identity": {
+          "byteLength": 659,
+          "coverage": "incomplete",
+          "dialect": "svelte5",
+          "grammars": [
+            {
+              "dialect": "svelte5",
+              "grammar": "crates.io/tree-sitter-svelte-ng@1.0.2"
+            },
+            {
+              "dialect": "typescript",
+              "grammar": "crates.io/tree-sitter-typescript@0.23.2/typescript"
+            }
+          ],
+          "path": "web/Template.svelte",
+          "sourceDigest": "sha256:b854fe6106a0f45e067ff13e71bbc4de55bbd075b64864621951599d82004d80",
+          "structureDigest": "sha256:bb851b1b598518be4aa14dde010a7e09507fabb027383fa5d664eb67f2a5c7a5"
+        },
+        "relations": [
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:4f6a949b58d048209631776d7fc63523ea15e40d5437cb7c9db26bddf865f100",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 99,
+              "startByte": 89
+            },
+            "targetRange": {
+              "endByte": 95,
+              "startByte": 89
+            }
+          },
+          {
+            "kind": "written_type",
+            "ownerId": "syntax:592f6187fd172b6fa451236c385e883a69a65cd845db66c0c1b43b1c40789201",
+            "qualification": "written_annotation_unresolved",
+            "range": {
+              "endByte": 145,
+              "startByte": 103
+            },
+            "targetRange": {
+              "endByte": 128,
+              "startByte": 119
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 186,
+              "startByte": 180
+            },
+            "targetRange": {
+              "endByte": 184,
+              "startByte": 180
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 177,
+              "startByte": 167
+            },
+            "targetRange": {
+              "endByte": 171,
+              "startByte": 167
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 164,
+              "startByte": 157
+            },
+            "targetRange": {
+              "endByte": 162,
+              "startByte": 157
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 223,
+              "startByte": 211
+            },
+            "targetRange": {
+              "endByte": 217,
+              "startByte": 211
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 243,
+              "startByte": 232
+            },
+            "targetRange": {
+              "endByte": 237,
+              "startByte": 232
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 269,
+              "startByte": 262
+            },
+            "targetRange": {
+              "endByte": 267,
+              "startByte": 262
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 281,
+              "startByte": 271
+            },
+            "targetRange": {
+              "endByte": 275,
+              "startByte": 271
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 299,
+              "startByte": 292
+            },
+            "targetRange": {
+              "endByte": 297,
+              "startByte": 292
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 307,
+              "startByte": 301
+            },
+            "targetRange": {
+              "endByte": 305,
+              "startByte": 301
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 339,
+              "startByte": 321
+            },
+            "targetRange": {
+              "endByte": 332,
+              "startByte": 321
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 384,
+              "startByte": 366
+            },
+            "targetRange": {
+              "endByte": 372,
+              "startByte": 366
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 412,
+              "startByte": 401
+            },
+            "targetRange": {
+              "endByte": 410,
+              "startByte": 401
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 423,
+              "startByte": 414
+            },
+            "targetRange": {
+              "endByte": 421,
+              "startByte": 414
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 453,
+              "startByte": 439
+            },
+            "targetRange": {
+              "endByte": 445,
+              "startByte": 439
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 482,
+              "startByte": 469
+            },
+            "targetRange": {
+              "endByte": 475,
+              "startByte": 469
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 507,
+              "startByte": 498
+            },
+            "targetRange": {
+              "endByte": 501,
+              "startByte": 498
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 518,
+              "startByte": 509
+            },
+            "targetRange": {
+              "endByte": 516,
+              "startByte": 509
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": "syntax:54090fc0448b85b4ac136fcb549daa29df7d2c145d7bacc29eb2b1b9eb4aa7ab",
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 562,
+              "startByte": 549
+            },
+            "targetRange": {
+              "endByte": 555,
+              "startByte": 549
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 593,
+              "startByte": 583
+            },
+            "targetRange": {
+              "endByte": 587,
+              "startByte": 583
+            }
+          },
+          {
+            "kind": "call_syntax",
+            "ownerId": null,
+            "qualification": "written_syntax_unresolved",
+            "range": {
+              "endByte": 643,
+              "startByte": 631
+            },
+            "targetRange": {
+              "endByte": 637,
+              "startByte": 631
             }
           }
         ]
@@ -8624,7 +9476,7 @@
     ],
     "identity": {
       "discoveryComplete": true,
-      "extractor": "whip-docs-syntax@1",
+      "extractor": "whip-docs-syntax@2",
       "files": [
         {
           "byteLength": 277,
@@ -8838,7 +9690,25 @@
           ],
           "path": "web/Panel.svelte",
           "sourceDigest": "sha256:5d8bc28c6dbfef54b0e93f14d42e226592f28e49023bf84ab83509372fa5d77d",
-          "structureDigest": "sha256:794dca98d6290489952a07ea53aee94dfd0d44923966d588160802a8e95fc156"
+          "structureDigest": "sha256:1c074ac4e1c1f673bf1499461d1bee30a8e41db2654712489482ada69418e28f"
+        },
+        {
+          "byteLength": 659,
+          "coverage": "incomplete",
+          "dialect": "svelte5",
+          "grammars": [
+            {
+              "dialect": "svelte5",
+              "grammar": "crates.io/tree-sitter-svelte-ng@1.0.2"
+            },
+            {
+              "dialect": "typescript",
+              "grammar": "crates.io/tree-sitter-typescript@0.23.2/typescript"
+            }
+          ],
+          "path": "web/Template.svelte",
+          "sourceDigest": "sha256:b854fe6106a0f45e067ff13e71bbc4de55bbd075b64864621951599d82004d80",
+          "structureDigest": "sha256:bb851b1b598518be4aa14dde010a7e09507fabb027383fa5d664eb67f2a5c7a5"
         },
         {
           "byteLength": 67,
@@ -8908,28 +9778,38 @@
       },
       {
         "code": "template_expression_unanalyzed",
-        "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
         "sourcePath": "web/Panel.svelte"
       },
       {
         "code": "template_expression_unanalyzed",
-        "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-        "sourcePath": "web/Panel.svelte"
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
       },
       {
         "code": "template_expression_unanalyzed",
-        "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-        "sourcePath": "web/Panel.svelte"
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
       },
       {
         "code": "template_expression_unanalyzed",
-        "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-        "sourcePath": "web/Panel.svelte"
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
       },
       {
         "code": "template_expression_unanalyzed",
-        "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-        "sourcePath": "web/Panel.svelte"
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
+      },
+      {
+        "code": "template_expression_unanalyzed",
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
+      },
+      {
+        "code": "template_expression_unanalyzed",
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
       }
     ],
     "edges": [
@@ -9812,6 +10692,38 @@
         "provenance": "tree_sitter",
         "sourceId": "file:web/Panel.svelte",
         "targetId": "syntax:1560dcda5f06f91feb340b92e46d647bd8491b189438f9f29d5cb3aa522c2fd2"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:syntax:file:web/Template.svelte",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "workspace:syntax",
+        "targetId": "file:web/Template.svelte"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:web/Template.svelte:syntax:4f6a949b58d048209631776d7fc63523ea15e40d5437cb7c9db26bddf865f100",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:web/Template.svelte",
+        "targetId": "syntax:4f6a949b58d048209631776d7fc63523ea15e40d5437cb7c9db26bddf865f100"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:web/Template.svelte:syntax:592f6187fd172b6fa451236c385e883a69a65cd845db66c0c1b43b1c40789201",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:web/Template.svelte",
+        "targetId": "syntax:592f6187fd172b6fa451236c385e883a69a65cd845db66c0c1b43b1c40789201"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:web/Template.svelte:syntax:54090fc0448b85b4ac136fcb549daa29df7d2c145d7bacc29eb2b1b9eb4aa7ab",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:web/Template.svelte",
+        "targetId": "syntax:54090fc0448b85b4ac136fcb549daa29df7d2c145d7bacc29eb2b1b9eb4aa7ab"
       },
       {
         "confidence": "exact",
@@ -11261,6 +12173,48 @@
         }
       },
       {
+        "id": "file:web/Template.svelte",
+        "kind": "file",
+        "label": "web/Template.svelte",
+        "sourceRange": null
+      },
+      {
+        "id": "syntax:4f6a949b58d048209631776d7fc63523ea15e40d5437cb7c9db26bddf865f100",
+        "kind": "binding",
+        "label": "rows",
+        "sourceRange": {
+          "endColumn": 24,
+          "endLine": 3,
+          "path": "web/Template.svelte",
+          "startColumn": 7,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "syntax:592f6187fd172b6fa451236c385e883a69a65cd845db66c0c1b43b1c40789201",
+        "kind": "function",
+        "label": "ready",
+        "sourceRange": {
+          "endColumn": 45,
+          "endLine": 4,
+          "path": "web/Template.svelte",
+          "startColumn": 3,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "syntax:54090fc0448b85b4ac136fcb549daa29df7d2c145d7bacc29eb2b1b9eb4aa7ab",
+        "kind": "snippet",
+        "label": "card",
+        "sourceRange": {
+          "endColumn": 48,
+          "endLine": 12,
+          "path": "web/Template.svelte",
+          "startColumn": 1,
+          "startLine": 12
+        }
+      },
+      {
         "id": "file:web/View.js",
         "kind": "file",
         "label": "web/View.js",
@@ -11582,28 +12536,38 @@
       },
       {
         "code": "template_expression_unanalyzed",
-        "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
         "sourcePath": "web/Panel.svelte"
       },
       {
         "code": "template_expression_unanalyzed",
-        "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-        "sourcePath": "web/Panel.svelte"
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
       },
       {
         "code": "template_expression_unanalyzed",
-        "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-        "sourcePath": "web/Panel.svelte"
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
       },
       {
         "code": "template_expression_unanalyzed",
-        "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-        "sourcePath": "web/Panel.svelte"
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
       },
       {
         "code": "template_expression_unanalyzed",
-        "message": "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.",
-        "sourcePath": "web/Panel.svelte"
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
+      },
+      {
+        "code": "template_expression_unanalyzed",
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
+      },
+      {
+        "code": "template_expression_unanalyzed",
+        "message": "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.",
+        "sourcePath": "web/Template.svelte"
       },
       {
         "code": "jsx_requires_override",
@@ -12451,6 +13415,38 @@
         "provenance": "tree_sitter",
         "sourceId": "file:web/Panel.svelte",
         "targetId": "syntax:1560dcda5f06f91feb340b92e46d647bd8491b189438f9f29d5cb3aa522c2fd2"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:syntax:file:web/Template.svelte",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "workspace:syntax",
+        "targetId": "file:web/Template.svelte"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:web/Template.svelte:syntax:4f6a949b58d048209631776d7fc63523ea15e40d5437cb7c9db26bddf865f100",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:web/Template.svelte",
+        "targetId": "syntax:4f6a949b58d048209631776d7fc63523ea15e40d5437cb7c9db26bddf865f100"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:web/Template.svelte:syntax:592f6187fd172b6fa451236c385e883a69a65cd845db66c0c1b43b1c40789201",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:web/Template.svelte",
+        "targetId": "syntax:592f6187fd172b6fa451236c385e883a69a65cd845db66c0c1b43b1c40789201"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:web/Template.svelte:syntax:54090fc0448b85b4ac136fcb549daa29df7d2c145d7bacc29eb2b1b9eb4aa7ab",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:web/Template.svelte",
+        "targetId": "syntax:54090fc0448b85b4ac136fcb549daa29df7d2c145d7bacc29eb2b1b9eb4aa7ab"
       },
       {
         "confidence": "exact",
@@ -13843,6 +14839,48 @@
           "path": "web/Panel.svelte",
           "startColumn": 1,
           "startLine": 7
+        }
+      },
+      {
+        "id": "file:web/Template.svelte",
+        "kind": "file",
+        "label": "web/Template.svelte",
+        "sourceRange": null
+      },
+      {
+        "id": "syntax:4f6a949b58d048209631776d7fc63523ea15e40d5437cb7c9db26bddf865f100",
+        "kind": "binding",
+        "label": "rows",
+        "sourceRange": {
+          "endColumn": 24,
+          "endLine": 3,
+          "path": "web/Template.svelte",
+          "startColumn": 7,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "syntax:592f6187fd172b6fa451236c385e883a69a65cd845db66c0c1b43b1c40789201",
+        "kind": "function",
+        "label": "ready",
+        "sourceRange": {
+          "endColumn": 45,
+          "endLine": 4,
+          "path": "web/Template.svelte",
+          "startColumn": 3,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "syntax:54090fc0448b85b4ac136fcb549daa29df7d2c145d7bacc29eb2b1b9eb4aa7ab",
+        "kind": "snippet",
+        "label": "card",
+        "sourceRange": {
+          "endColumn": 48,
+          "endLine": 12,
+          "path": "web/Template.svelte",
+          "startColumn": 1,
+          "startLine": 12
         }
       },
       {

@@ -42,4 +42,7 @@ test('coverage and narrow dialect choices preserve unsupported and incomplete st
   assert.equal(fixture.analysis.files.find(f=>f.identity.path==='web/View.js')?.identity.coverage,'incomplete');
   assert.equal(fixture.overriddenAnalysis.files.find(f=>f.identity.path==='web/View.js')?.identity.dialect,'jsx');
   assert.deepEqual(Object.fromEntries(restoredDialectOverrides(fixture.overriddenAnalysis)),{'include/api.h':'cpp','web/View.js':'jsx'});
+  const template=fixture.overriddenAnalysis.files.find(file=>file.identity.path==='web/Template.svelte')!;
+  assert.ok(template.relations.some(fact=>fact.kind==='call_syntax'&&fact.qualification==='written_syntax_unresolved'));
+  assert.ok(fixture.overriddenSymbols.edges.every(edge=>edge.kind==='contains'));
 });

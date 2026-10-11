@@ -9,7 +9,7 @@ A bounded implementation based on public upstream commit
   using the authoritative file-relation snapshot and existing geometry, layouts,
   selection, orbit/pan/zoom and directory focus. File aggregates retain their
   direction, weight, confidence, provenance and evidence.
-- Optional symbol detail expands above its parent file in that same scene and
+- Multilingual syntax detail expands above its parent file in that same scene and
   camera. Collapsing it removes only symbol detail; file nodes, routed edges and
   camera remain intact. Symbols are not inserted into the directory layout tree.
 - Original human intent recorded verbatim against the selected graph node and
@@ -30,9 +30,10 @@ layout settings, not encodings of relationship type. With the canvas focused,
 arrows navigate directories, Tab toggles directory focus, period centers the
 selection and R fits the graph. Shift+Tab leaves the canvas.
 
-File overview is language-neutral. Rust symbol/import/call enrichment uses the
-existing backend when available; failure of optional Cargo analysis leaves the
-file overview usable. This remains a prototype, not a qualified native release.
+File overview is language-neutral. Source analysis uses the owned multilingual
+Tree-sitter parser without requiring Cargo. Rust file import/call aggregates keep
+the existing backend behavior; multilingual unresolved facts remain separate.
+Source coverage, dialect overrides and exact declaration ranges appear in the inspector. This remains a prototype, not a qualified native release.
 
 ## Run natively
 
@@ -48,9 +49,9 @@ npm run build
 npm run dev:desktop
 ```
 
-Open a local checkout of a public Rust Cargo repository using its absolute path.
+Open a local public source directory using its absolute path; Cargo.toml is optional.
 Whip Docs does not clone repositories or execute proposals in this slice.
-Expand a file in the left navigator, select a typed symbol, enter intent, and
+Expand a file in the left navigator, select a typed declaration, enter intent, and
 choose **Preserve original intent**. Later entries use **Later interpretation**
 or **Proposed change** and explicitly select an original.
 
@@ -66,7 +67,8 @@ npm ci
 npm run dev
 ```
 
-Open the served URL with `?preview=1`. A plain browser without that opt-in shows
+Open the served URL with `?preview=mixed` for recorded multilingual Rust-service
+output from a no-Cargo fixture, or `?preview=1` for the original Rust fixture. A plain browser without that opt-in shows
 a desktop-required message. The banner always identifies fixture mode.
 
 This mode replays recorded output of the real Rust file-relation and symbol
@@ -108,9 +110,13 @@ missing system libraries. Browser screenshots are explicitly fixture execution.
   not automatically copied source bodies, comments, or string literals. Intent
   you enter may itself contain sensitive information and is stored locally.
   The journal is not a tamper-proof audit log.
-- SHA-256 file digests detect source changes. The worktree digest covers only
-  the captured Rust source set, excluding manifests, assets and skipped files.
+- SHA-256 file digests detect source changes. The worktree digest explicitly distinguishes legacy captured Rust sources
+  from schema-3 captured multilingual sources and parser identity; unsupported
+  files, assets and skipped files are excluded.
   The observed Git revision does not claim a clean worktree.
+- Schema-2 journal records remain unchanged; they become stale against the new
+  parser. Schema-3 records retain extractor identity; `@1` records likewise become
+  stale against `@2`. Older binaries cannot read schema-3 lines; downgrade is unsupported.
 - Legacy V1 journals that retained source bodies block V2 reads/appends. They
   are never silently copied, deleted or migrated. Review them separately before
   using the new journal; this prototype offers no automatic migration.
