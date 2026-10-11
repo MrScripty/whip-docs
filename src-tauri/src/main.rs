@@ -6,6 +6,7 @@ mod app_setup;
 mod commands;
 mod config;
 mod graph;
+mod intent;
 mod source;
 
 fn main() {

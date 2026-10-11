@@ -4,6 +4,12 @@ Whip Docs is now a local desktop code-architecture explorer for Rust
 repositories. The previous static Studio Whip documentation website is archived
 as historical context and is no longer the active product surface.
 
+## Intent prototype
+
+This branch adds a bounded intent-and-symbol workspace. See [PROTOTYPE.md](PROTOTYPE.md)
+for scope, run instructions, privacy and verification limits. Native execution
+has not yet been qualified.
+
 ## Current Product
 
 The active application is a Tauri desktop app with:
@@ -55,8 +61,8 @@ cargo clippy --workspace --all-targets
 ```
 
 Analyze a repository from the app by setting a local Cargo workspace or crate
-directory and selecting `Analyze`. Source snippets are loaded by backend graph
-node ID, not by frontend-provided file paths.
+directory and selecting `Analyze`. The normal inspector shows metadata and append-only intent, not raw source.
+Snapshot capture is backend-owned and selected by graph node ID.
 
 ## Architecture
 

@@ -31,6 +31,8 @@ pub fn run_app() -> AppStartupResult<()> {
             commands::load_file_relation_graph,
             commands::get_graph_snapshot,
             commands::get_source_snippet,
+            commands::append_intent_record,
+            commands::list_intent_records,
             commands::set_source_repo_path
         ])
         .build(tauri::generate_context!())?

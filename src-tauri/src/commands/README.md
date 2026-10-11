@@ -106,3 +106,13 @@ pub async fn load_file_relation_graph(
   together.
 - Regeneration or migration: future schema generation must preserve existing
   command compatibility or document the break.
+
+## Intent prototype commands
+
+`append_intent_record` and `list_intent_records` adapt the private `intent`
+journal service. Only public metadata/intent DTOs cross IPC. Append requires an
+analysis token and node ID; paths and exact source bytes are backend-owned.
+A binding mutation gate linearizes appends with repository changes and graph
+commits. Expensive extraction stays outside this gate, and journal work runs in
+a blocking task without holding config/graph state locks. See
+`../intent/README.md` for the full DTO, persistence, limits, and failure contract.

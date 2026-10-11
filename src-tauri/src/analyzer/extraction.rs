@@ -1,5 +1,4 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -15,9 +14,20 @@ use crate::graph::{
     GraphEdgeDto, GraphEdgeKind, GraphNodeDto, GraphNodeKind, GraphSnapshotDto, SourceRangeDto,
     GRAPH_SCHEMA_VERSION,
 };
-use crate::source::ValidatedRepoPath;
+use crate::source::{read_bounded_source, ValidatedRepoPath};
 
 const SNAPSHOT_SIZE_WARNING_THRESHOLD: usize = 10_000;
+const MAX_ANALYZED_SOURCE_BYTES: usize = 64 * 1024 * 1024;
+
+/// Backend-only bytes from the very read used by the syntax extractor.
+/// This type is intentionally not serializable over IPC.
+#[derive(Clone)]
+pub struct AnalyzedGraph {
+    pub snapshot: GraphSnapshotDto,
+    pub sources: BTreeMap<String, String>,
+    /// HEAD observed at analysis completion; does not imply a clean worktree.
+    pub repository_revision: Option<String>,
+}
 
 #[derive(Debug, Default)]
 pub struct RustGraphExtractor;
@@ -27,6 +37,13 @@ impl RustGraphExtractor {
         &self,
         source_root: &ValidatedRepoPath,
     ) -> Result<GraphSnapshotDto, RustGraphExtractionError> {
+        self.extract_with_sources(source_root).map(|analysis| analysis.snapshot)
+    }
+
+    pub fn extract_with_sources(
+        &self,
+        source_root: &ValidatedRepoPath,
+    ) -> Result<AnalyzedGraph, RustGraphExtractionError> {
         let metadata = MetadataCommand::new()
             .manifest_path(source_root.as_path().join("Cargo.toml"))
             .exec()
@@ -72,7 +89,7 @@ impl RustGraphExtractor {
                     == Some("rs")
                 {
                     self.extract_source_file(
-                        source_root.as_path(),
+                        source_root,
                         &package_name,
                         &crate_id,
                         &source_path,
@@ -110,7 +127,7 @@ impl RustGraphExtractor {
                     .contains(&relative_path(source_root.as_path(), path));
                 if !already_seen {
                     self.extract_source_file(
-                        source_root.as_path(),
+                        source_root,
                         "workspace",
                         &workspace_id,
                         path,
@@ -123,21 +140,25 @@ impl RustGraphExtractor {
         graph.link_imports();
         graph.link_calls();
         graph.warn_if_large();
-        Ok(graph.finish())
+        let sources = std::mem::take(&mut graph.sources);
+        let repository_revision = observed_git_revision(source_root.as_path());
+        Ok(AnalyzedGraph { snapshot: graph.finish(), sources, repository_revision })
     }
 
     fn extract_source_file(
         &self,
-        source_root: &Path,
+        source_root: &ValidatedRepoPath,
         package_name: &str,
         owner_id: &str,
         source_path: &Path,
         graph: &mut GraphAccumulator,
     ) {
-        let relative_path = relative_path(source_root, source_path);
-        graph.file_paths.insert(relative_path.clone());
+        let relative_path = relative_path(source_root.as_path(), source_path);
+        if !graph.file_paths.insert(relative_path.clone()) {
+            return;
+        }
 
-        let source = match fs::read_to_string(source_path) {
+        let source = match read_bounded_source(source_root, &relative_path) {
             Ok(source) => source,
             Err(error) => {
                 graph.add_diagnostic(
@@ -149,6 +170,14 @@ impl RustGraphExtractor {
             }
         };
 
+        if graph.captured_source_bytes + source.len() > MAX_ANALYZED_SOURCE_BYTES {
+            graph.add_diagnostic(
+                "source_snapshot_limit",
+                "The prototype retains at most 64 MiB of analyzed source; remaining files were skipped.",
+                Some(relative_path),
+            );
+            return;
+        }
         let parsed = match syn::parse_file(&source) {
             Ok(parsed) => parsed,
             Err(error) => {
@@ -161,6 +190,8 @@ impl RustGraphExtractor {
             }
         };
 
+        graph.captured_source_bytes += source.len();
+        graph.sources.insert(relative_path.clone(), source.clone());
         let file_id = graph.add_node(
             GraphNodeKind::File,
             relative_path.clone(),
@@ -209,13 +240,15 @@ pub enum RustGraphExtractionError {
     CargoMetadata(String),
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct GraphAccumulator {
     source_root: String,
     nodes: BTreeMap<String, GraphNodeDto>,
     edges: BTreeMap<String, GraphEdgeDto>,
     diagnostics: Vec<AnalyzerDiagnosticDto>,
     file_paths: BTreeSet<String>,
+    sources: BTreeMap<String, String>,
+    captured_source_bytes: usize,
     functions_by_name: BTreeMap<String, String>,
     pending_imports: Vec<PendingImport>,
     pending_calls: Vec<PendingCall>,
@@ -952,12 +985,27 @@ fn find_line(source: &str, needle: &str) -> u32 {
         .unwrap_or(1)
 }
 
+fn observed_git_revision(root: &Path) -> Option<String> {
+    let output = Command::new("git").arg("-C").arg(root)
+        .args(["rev-parse", "--verify", "HEAD"])
+        .stdin(Stdio::null()).stderr(Stdio::null()).output().ok()?;
+    if !output.status.success() { return None; }
+    let revision = String::from_utf8(output.stdout).ok()?.trim().to_owned();
+    if matches!(revision.len(), 40 | 64) && revision.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        Some(revision)
+    } else {
+        None
+    }
+}
+
 fn generated_at_string() -> String {
-    let seconds = SystemTime::now()
+    static NEXT_ANALYSIS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+    let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs())
+        .map(|duration| duration.as_nanos())
         .unwrap_or_default();
-    format!("unix:{seconds}")
+    let sequence = NEXT_ANALYSIS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    format!("unix:{nanos}:{}:{sequence}", std::process::id())
 }
 
 #[cfg(test)]
@@ -991,6 +1039,25 @@ mod tests {
         fs::write(repo.join("src/lib.rs"), lib_rs).expect("write lib");
         let validated = ValidatedRepoPath::parse_existing_cargo_repo(&repo).expect("valid repo");
         (repo, validated)
+    }
+
+    #[test]
+    fn captured_source_is_the_exact_parser_input_and_duplicates_do_not_replace_it() {
+        let source = "// 蟹\r\npub fn ship() {}\r\n";
+        let (repo, root) = fixture_repo("exact-capture", source);
+        let mut graph = super::GraphAccumulator::new(root.display_path());
+        RustGraphExtractor.extract_source_file(&root, "fixture", "crate:fixture", &repo.join("src/lib.rs"), &mut graph);
+        assert_eq!(graph.sources.get("src/lib.rs").expect("captured source").as_bytes(), source.as_bytes());
+        fs::write(repo.join("src/lib.rs"), "pub fn changed() {}\n").expect("change source");
+        RustGraphExtractor.extract_source_file(&root, "fixture", "crate:fixture", &repo.join("src/lib.rs"), &mut graph);
+        assert_eq!(graph.sources.get("src/lib.rs").expect("first capture preserved"), source);
+        assert!(!graph.nodes.values().any(|node| node.label == "changed"));
+        fs::remove_dir_all(repo).expect("cleanup fixture");
+    }
+
+    #[test]
+    fn analysis_tokens_are_unique_even_for_adjacent_snapshots() {
+        assert_ne!(super::generated_at_string(), super::generated_at_string());
     }
 
     #[test]
