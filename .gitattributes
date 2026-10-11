@@ -1,0 +1,6 @@
+# Grammar provenance hashes require identical bytes on every checkout.
+grammars/** -text
+# Unified diffs use a single space for blank context lines.
+grammars/*/whip.patch whitespace=-blank-at-eol,-blank-at-eof
+# This upstream corpus case intentionally exercises literal CRLF bytes.
+grammars/c/test/corpus/crlf.txt whitespace=cr-at-eol

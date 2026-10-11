@@ -1,0 +1,126 @@
+  errors:
+      1. ✓ An error before a string literal
+      2. ✓ Error detected at globally reserved keyword
+  expressions:
+      3. ✓ Identifiers with Greek letters
+      4. ✓ Subscript expressions
+      5. ✓ Subscript slice expressions
+      6. ✓ Attribute references
+      7. ✓ Await expressions
+      8. ✓ Call expressions
+      9. ✓ Print used as an identifier
+     10. ✓ Print used as a parameter
+     11. ✓ Exec used as an identifier
+     12. ✓ Async / await used as identifiers
+     13. ✓ Calls with splats
+     14. ✓ Math operators
+     15. ✓ Binary Addition / Subtraction With Floats
+     16. ✓ Power Operator Precedence
+     17. ✓ Operator precedence
+     18. ✓ Bitwise operators
+     19. ✓ Boolean operators
+     20. ✓ Comparison operators
+     21. ✓ Assignments
+     22. ✓ Assignments with type annotations
+     23. ✓ Augmented assignments
+     24. ✓ Named expressions
+     25. ✓ Yield expressions
+     26. ✓ lambdas
+     27. ✓ Tuples with splats
+     28. ✓ Tuples with yield
+     29. ✓ Default Tuple Arguments
+     30. ✓ Conditional if expressions
+     31. ✓ Async context managers and iterators
+     32. ✓ Arbitrary indentation between brackets
+     33. ✓ Splat Inside of Expression List
+     34. ✓ A function called match
+     35. ✓ Type expressions
+  literals:
+     36. ✓ Integers
+     37. ✓ Floats
+     38. ✓ Scientific Notation Floats
+     39. ✓ Strings
+     40. ✓ Raw strings
+     41. ✓ Raw strings with escaped quotes
+     42. ✓ Format strings
+     43. ✓ Format strings with format specifiers
+     44. ✓ Template Strings
+     45. ✓ Unicode escape sequences
+     46. ✓ Other primitives
+     47. ✓ Concatenated strings
+     48. ✓ Multi-line strings
+     49. ✓ Lists
+     50. ✓ List comprehensions
+     51. ✓ Dictionaries
+     52. ✓ Dictionary comprehensions
+     53. ✓ Sets
+     54. ✓ Set comprehensions
+     55. ✓ Simple Tuples
+     56. ✓ Generator expression
+  pattern_matching:
+     57. ✓ Matching specific values
+     58. ✓ Matching multiple values
+     59. ✓ Adding a wild card
+     60. ✓ Or patterns
+     61. ✓ As patterns
+     62. ✓ Actually not match
+     63. ✓ Match is match but not pattern matching
+     64. ✓ Match kwargs
+     65. ✓ Match kwargs 2
+     66. ✓ Case used as identifier
+     67. ✓ If guards
+     68. ✓ Literals
+     69. ✓ Comma separated cases
+     70. ✓ Case terminating in comma
+     71. ✓ Multiple match patterns
+     72. ✓ Match match, case case
+     73. ✓ Walrus match (Issue #150)
+     74. ✓ Matching objects
+     75. ✓ Positional arguments
+     76. ✓ Constants and enums
+     77. ✓ Dict mappings
+     78. ✓ Builtin classes
+     79. ✓ Complex case patterns on classes
+     80. ✓ Complex case patterns on complex numbers
+     81. ✓ Maybe sequence pattern right hand side precedence validation
+  statements:
+     82. ✓ Import statements
+     83. ✓ Import-from statements
+     84. ✓ Future import statements
+     85. ✓ Print statements
+     86. ✓ Print statements with redirection
+     87. ✓ Assert statements
+     88. ✓ Expression statements
+     89. ✓ Delete statements
+     90. ✓ Control-flow statements
+     91. ✓ Return statements
+     92. ✓ If statements
+     93. ✓ If else statements
+     94. ✓ Nested if statements
+     95. ✓ While statements
+     96. ✓ For statements
+     97. ✓ Try statements
+     98. ✓ With statements
+     99. ✓ Async Function definitions
+    100. ✓ Function definitions
+    101. ✓ Empty blocks
+    102. ✓ Class definitions
+    103. ✓ Class definitions with superclasses
+    104. ✓ Decorated definitions
+    105. ✓ Raise statements
+    106. ✓ Comments
+    107. ✓ Comments at different indentation levels
+    108. ✓ Comments after dedents
+    109. ✓ Comments at the ends of indented blocks
+    110. ✓ Newline tokens followed by comments
+    111. ✓ Global statements
+    112. ✓ Exec statements -- Warning: Slow parse rate (339.398 bytes/ms)
+    113. ✓ Extra newlines
+    114. ✓ Escaped newline
+    115. ✓ Statements with semicolons
+    116. ✓ Type Alias Statements
+    117. ✓ Generic Function Definitions
+  whip-modern:
+    118. ✓ Whip modern syntax
+
+Total parses: 118; successful parses: 118; failed parses: 0; success percentage: 100.00%; average speed: 3768 bytes/ms

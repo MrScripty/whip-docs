@@ -108,3 +108,26 @@ operator-token label. C++ explicit receiver ranges include `this`. No new DTO
 fields, enums, graph edges or journal schema are introduced. @1/@2 records remain
 readable and preserved but become stale; the integration branch must deliberately
 include this backend follow-up. Native/combined-app testing remains separate.
+
+## Owned grammar and Svelte follow-up
+
+Extractor @4 adds Python PEP 696 parameters/bounds/defaults, Kotlin named context
+parameters and C `_BitInt` width facts. Grammar identities are `whip/<package>@<version>+sha256:<manifest>`;
+the manifest binds official base, local patch, compiled inputs and generated output.
+The original source scope, graph schema 2, SourceAnalysis schema 1 and journal
+schema 3 remain unchanged. @1/@2/@3 records remain byte-preserved, readable and stale.
+
+Svelte snippet parameters use `parameter`; each/await/const bindings use `binding`.
+Bindings carry exact source/name ranges and the nearest reported snippet/file
+containment; there is no synthetic each/await scope node. Destructuring siblings
+share the written pattern range but have different name ranges and IDs. A written
+type belongs to a single binding only when that pattern declares one name;
+destructured annotations remain owned by the containing snippet/file. Default/key
+calls remain unresolved syntax facts. Any script with `lang="ts"` selects template TypeScript parsing, including a
+module-only script, following Svelte's parser dialect selection.
+
+Graph integration requires no additional DTO/IPC migration for this follow-up.
+Display the existing completeness and diagnostics; damaged injected snippet headers
+are excluded from exact graph projection. Do not infer lexical visibility or
+resolved calls from file/snippet containment. Native/combined-app validation and
+frontend diagnostics presentation remain the graph integration worker's work.
