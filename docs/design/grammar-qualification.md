@@ -14,21 +14,21 @@ revision and generated-source input hashes, verified by
 upstream input hashes and regenerated output hashes checked offline by
 `scripts/verify-owned-grammars.py`. Crate and npm versions need not represent
 the same source commit. Exact versions/revisions are pinned in src-tauri/Cargo.toml. Tree-sitter engine: 0.25.10. The qualified
-extractor identity is `whip-docs-syntax@4`; update it on extraction behavior changes.
+extractor identity is `whip-docs-syntax@5`; update it on extraction behavior changes.
 
 | Family / dialect | Pinned grammar | Concrete fixture coverage | Known qualification gap |
 | --- | --- | --- | --- |
 | Rust | tree-sitter-rust 0.24.2 | structs, fields, aliases, impls, methods, nested functions, bindings, annotations, `unsafe extern` container and foreign function | No macro expansion or compiler semantics |
 | TypeScript / TSX | tree-sitter-typescript 0.23.2 | interfaces, aliases, classes, fields, methods, arrow bindings, typed parameters/results, JSX | No type resolution; selected declaration shapes only |
-| JavaScript / JSX | tree-sitter-javascript 0.25.0 | classes, fields, methods, arrow bindings, nested functions, JSX | JSX in .js requires override; no inferred types |
+| JavaScript / JSX | tree-sitter-javascript 0.25.0 | classes, fields, methods, arrow bindings, nested functions, JSX | JSX in .js requires override; private fields and default/rest/destructured parameter inventories explicitly diagnosed; no inferred types |
 | Python | Whip tree-sitter-python 0.25.0-whip.1 | classes, methods, aliases, annotated assignments, parameters/results, nested definitions, PEP 696 bound/default type parameters, TypeVarTuple and ParamSpec defaults | No evaluation, type checking or full CPython syntax validation; starred defaults/bounds have explicit extraction validation |
 | Lua | tree-sitter-lua 0.4.1 | local bindings, dotted functions, parameters, nested function bindings, calls | Table member inventories and comment-based type annotations not covered |
-| Kotlin | Whip tree-sitter-kotlin-ng 1.1.0-whip.1 | aliases, classes, constructor parameters, functions, local properties, named/anonymous context parameters on functions/properties, legacy context receivers, annotations | Context destructuring properties explicitly excluded; same-line class member termination can produce missing-token diagnostics; no compiler context resolution |
-| Zig | tree-sitter-zig 1.1.2 | bound struct containers, fields, methods, variables, comptime/anytype/noalias, error unions, optional/pointer/array syntax | Identifier constants remain bindings; no guessed type-alias or comptime semantics |
-| C# | official tree-sitter-c-sharp Git `8c0abe0b` | namespaces, aliases, classes/interfaces, methods/fields, extension containers, named/unnamed and generic receivers, extension properties/operators | Compiler placement, constraint/type resolution and complete declaration inventory not claimed |
-| C | Whip tree-sitter-c 0.24.2-whip.1 | typedefs, structs/fields, function prototypes/definitions, function-pointer bindings, parameters, locals, C23 `_BitInt` signedness/width expressions | No width evaluation, compiler validity or full declarator coverage |
-| C++ | official tree-sitter-cpp Git `c0092228` | aliases, namespaces, structs/fields, method declarations/definitions, explicit object parameters, locals | Complete template/declarator coverage and compiler receiver semantics not claimed |
-| Odin | tree-sitter-odin 1.3.0 | packages, structs/fields, distinct aliases, procedures, parameters, local declarations, type syntax | Complete overload/polymorphic construct inventory not claimed |
+| Kotlin | Whip tree-sitter-kotlin-ng 1.1.0-whip.1 | aliases, classes, constructor parameters and secondary constructors, functions, member/local properties and simple property-lambda parameters/locals, named/anonymous context parameters on functions/properties, legacy context receivers, annotations | Destructuring properties explicitly excluded; same-line class member termination can produce missing-token diagnostics; no compiler context resolution |
+| Zig | tree-sitter-zig 1.1.2 | bound struct containers, fields, methods, actual var/const bindings, enum cases, comptime/anytype/noalias, error unions, optional/pointer/array syntax | Assignment RHS identifiers are excluded; nonexhaustive enum marker is not a variant; identifier constants remain bindings; no guessed type-alias or comptime semantics |
+| C# | official tree-sitter-c-sharp Git `8c0abe0b` | namespaces, aliases, classes/interfaces, methods/fields, extension containers, named/unnamed and generic receivers, extension properties/operators | File-scoped namespace membership explicitly diagnosed; compiler placement, constraint/type resolution and complete declaration inventory not claimed |
+| C | Whip tree-sitter-c 0.24.2-whip.1 | typedefs, structs/fields, function prototypes/definitions, function-pointer bindings, parameters, locals, C23 `_BitInt` signedness/width expressions | Preprocessor alternatives explicitly unresolved; no width evaluation, compiler validity or full declarator coverage |
+| C++ | official tree-sitter-cpp Git `c0092228` | aliases, namespaces, structs/fields, method declarations/definitions, destructors and named operator members, explicit object parameters, locals | Conversion/literal operators and multiple callable declarators are excluded with diagnostics; preprocessor alternatives unresolved; complete template/declarator coverage and compiler receiver semantics not claimed |
+| Odin | tree-sitter-odin 1.3.0 | packages, structs/fields, distinct aliases, ordinary/qualified procedures and named procedure groups, parameters, local declarations, type syntax | Enum/union member inventory explicitly diagnosed; procedure groups have no resolved overload links; complete polymorphic inventory not claimed |
 | Svelte 5 | tree-sitter-svelte-ng 1.0.2 + packaged JS/TS grammars | JS/TS scripts, runes, typed props, functions, snippets, destructured/default snippet parameters, each bindings/index/key, await then/catch bindings and shorthand, const/debug, mapped calls/types | Selected syntax inventory only; no compiler scope/runtime validation or complete anonymous-expression declaration inventory; external/unsupported scripts excluded |
 
 The source suffix tests include .mts/.cts/.mjs/.cjs/.pyi/.kts/.cc/.cxx/.hpp/.hh/.hxx.
@@ -56,3 +56,6 @@ The later [official-source qualification](official-grammar-qualification.md)
 qualifies C++/C# candidates. The [owned implementation acceptance](owned-grammar-implementation.md)
 and [verification report](../../verification/owned-grammars.md) qualify the later
 Python/Kotlin/C patches and broader Svelte inventory.
+The [extractor correctness acceptance](extractor-correctness-followup.md) and
+[verification report](../../verification/extractor-correctness.md) record the
+later Kotlin/Zig ownership and C++/Odin callable fixes without grammar changes.

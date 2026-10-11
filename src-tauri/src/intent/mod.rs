@@ -1127,6 +1127,57 @@ mod tests {
     }
 
     #[test]
+    fn corrected_callable_labels_persist_without_source_or_journal_rewriting() {
+        let mut fixture = Fixture::new();
+        let cases = [
+            ("operators.cpp", "// PRIVATE_CORRECTNESS_COMMENT\nstruct Gear { ~Gear(); int operator()(int amount); };\n", "operator()"),
+            ("procedures.odin", "package sample\n(Parcel) .grow :: proc(amount: int) {}\n", "(Parcel) .grow"),
+            ("properties.kt", "class Ledger(val seed: Int) {\n val current: Int = seed\n}\n", "current"),
+        ];
+        for (path, source, _) in cases {
+            fs::write(fixture.root.join(path), source).unwrap();
+        }
+        syntax_fixture(&mut fixture);
+        for (_, _, label) in cases {
+            let id = fixture
+                .analysis
+                .snapshot
+                .nodes
+                .iter()
+                .find(|n| n.label == label)
+                .unwrap()
+                .id
+                .clone();
+            fixture
+                .store
+                .append(&fixture.analysis, syntax_request(&fixture, &id, None))
+                .unwrap();
+        }
+        let bytes = fs::read(&fixture.store.journal_path).unwrap();
+        let saved = String::from_utf8(bytes.clone()).unwrap();
+        for forbidden in [
+            "PRIVATE_CORRECTNESS_COMMENT",
+            "int amount",
+            "amount: int",
+            "val current:",
+        ] {
+            assert!(!saved.contains(forbidden));
+        }
+        let reopened = IntentStore::new(fixture.base.join("app"));
+        let records = reopened
+            .list(
+                &fixture.analysis.snapshot.source_root,
+                Some(&fixture.analysis),
+            )
+            .unwrap();
+        assert_eq!(records.len(), 3);
+        assert!(records
+            .iter()
+            .all(|r| r.binding_status == BindingStatus::Current));
+        assert_eq!(bytes, fs::read(&fixture.store.journal_path).unwrap());
+    }
+
+    #[test]
     fn parser_grammar_extractor_and_dialect_changes_stale_binding_without_relink() {
         let mut fixture = Fixture::new();
         let node_id = syntax_fixture(&mut fixture);
@@ -1166,6 +1217,7 @@ mod tests {
             "whip-docs-syntax@1",
             "whip-docs-syntax@2",
             "whip-docs-syntax@3",
+            "whip-docs-syntax@4",
         ] {
             let mut fixture = Fixture::new();
             let node_id = syntax_fixture(&mut fixture);

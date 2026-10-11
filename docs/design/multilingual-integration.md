@@ -131,3 +131,29 @@ Display the existing completeness and diagnostics; damaged injected snippet head
 are excluded from exact graph projection. Do not infer lexical visibility or
 resolved calls from file/snippet containment. Native/combined-app validation and
 frontend diagnostics presentation remain the graph integration worker's work.
+
+## Extractor correctness follow-up
+
+Extractor @5 corrects Kotlin property ownership, adds secondary constructors and
+simple property-lambda parameters, rejects Zig assignment RHS bindings, and uses
+`variant` for actual Zig enum cases. C++ destructors/operators use existing
+`method`/`function` kinds and exact written names such as `~Gear`, `operator()` and
+`operator[]`. Odin qualified procedures use their exact written member-expression
+name, such as `(Parcel) .grow`; named procedure groups use `function` with
+`overloaded_procedure_declaration` syntaxKind. No receiver or overload resolution
+is inferred. Lambda declarations remain contained by the nearest reported property
+or declaration; no anonymous lexical scope node is introduced.
+
+Unsupported, comment-bearing or overlong callable names and multi-callable
+declarators produce `unsupported_callable_declaration`; their descendants are
+excluded so parameters do not acquire another declaration's owner. Targeted
+diagnostics also expose omitted Kotlin destructuring properties, Odin enum/union
+members, JavaScript private fields/parameter patterns, C# file-scoped namespace
+membership and unresolved C/C++ preprocessor alternatives. Consumers should show
+the existing `incomplete` coverage and diagnostic fields, not assume an empty
+diagnostic list establishes complete language coverage.
+
+No grammar, dependency, DTO/IPC, graph schema, source-scope or journal-schema change
+is required. Existing @1–@4 journal records remain byte-preserved, readable and
+stale against @5. Include this follow-up deliberately with the parser branch;
+frontend/native integration remains untested here.

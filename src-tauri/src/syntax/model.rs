@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 pub const SOURCE_SCOPE: &str = "captured_multilingual_sources_v1";
 pub const PARSER_ID: &str = "tree-sitter@0.25.10";
-pub const EXTRACTOR_ID: &str = "whip-docs-syntax@4";
+pub const EXTRACTOR_ID: &str = "whip-docs-syntax@5";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
