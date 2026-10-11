@@ -236,18 +236,6 @@ fn parse_region(
             }
             continue;
         }
-        // This published C# grammar silently classifies extension blocks as constructors.
-        // Refuse that false acceptance instead of reporting a fabricated constructor.
-        if dialect == Dialect::CSharp
-            && node.kind() == "constructor_declaration"
-            && node
-                .child_by_field_name("name")
-                .is_some_and(|n| text(n, source) == "extension")
-            && !enclosing_type_named(node, source, "extension")
-        {
-            diagnostic(file, "unsupported_modern_syntax", Some(span(node, offset)), "Pinned C# grammar lacks extension_declaration support; extension region is unqualified.");
-            continue;
-        }
         if dialect == Dialect::Svelte5 && node.kind() == "svelte_raw_text" {
             if !super::template::is_expression(node) {
                 diagnostic(file, "template_expression_unanalyzed", Some(span(node, offset)), "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.");
@@ -306,6 +294,10 @@ fn parse_region(
                         .filter(|p| p.kind() == "field_declaration")
                         .or_else(|| node.parent().filter(|p| p.kind() == "variable_declaration"))
                         .unwrap_or(node)
+                } else if dialect == Dialect::Cpp && node.kind() == "parameter_declaration" {
+                    node.parent()
+                        .filter(|p| p.kind() == "explicit_object_parameter_declaration")
+                        .unwrap_or(node)
                 } else {
                     node
                 };
@@ -329,7 +321,13 @@ fn parse_region(
             let body = declaration_node.child_by_field_name("body").or_else(|| {
                 child_kind(
                     node,
-                    &["block", "function_body", "class_body", "declaration_list"],
+                    &[
+                        "block",
+                        "function_body",
+                        "class_body",
+                        "declaration_list",
+                        "extension_body",
+                    ],
                 )
             });
             let header_end = body
@@ -348,7 +346,7 @@ fn parse_region(
                 range,
                 name_range,
                 header_complete,
-                body_complete: !node.has_error(),
+                body_complete: !declaration_node.has_error(),
             });
             // A multi-binding declaration has sibling names, not a chain.
             if dialect == Dialect::CSharp && node.kind() == "variable_declarator" {
@@ -432,7 +430,12 @@ fn damage_before(node: Node<'_>, end: usize) -> bool {
         if visited > MAX_NODES {
             return true;
         }
-        if (n.is_error() || n.is_missing()) && n.start_byte() <= end {
+        // Some generated grammars hide missing tokens inside a public leaf
+        // (for example C# identifier -> MISSING _identifier_token). Such a leaf
+        // has_error() but exposes no missing child and is not itself is_missing().
+        if (n.is_error() || n.is_missing() || n.has_error() && n.child_count() == 0)
+            && n.start_byte() <= end
+        {
             return true;
         }
         if n.start_byte() <= end && n.has_error() {
@@ -469,6 +472,23 @@ fn relation_kind(node: Node<'_>) -> Option<RelationKind> {
 fn declaration_names(node: Node<'_>, dialect: Dialect) -> Vec<(DeclarationKind, Node<'_>)> {
     use DeclarationKind as K;
     let typ = node.kind();
+    // Anonymous extension containers and operators use exact written tokens as
+    // labels. They are syntax identities, never invented compiler symbol names.
+    if dialect == Dialect::CSharp {
+        if typ == "extension_declaration" {
+            return (0..node.child_count())
+                .filter_map(|i| node.child(i))
+                .find(|child| child.kind() == "extension")
+                .map(|keyword| vec![(K::Implementation, keyword)])
+                .unwrap_or_default();
+        }
+        if typ == "operator_declaration" {
+            return node
+                .child_by_field_name("operator")
+                .map(|operator| vec![(K::Method, operator)])
+                .unwrap_or_default();
+        }
+    }
     // C/C++ tagged type references are not new declarations.
     if matches!(
         typ,
@@ -567,6 +587,7 @@ fn declaration_names(node: Node<'_>, dialect: Dialect) -> Vec<(DeclarationKind, 
         | "typed_default_parameter"
         | "default_parameter"
         | "parameter_declaration"
+        | "receiver_parameter"
         | "class_parameter" => K::Parameter,
         "snippet_statement" => K::Snippet,
         "declaration" if matches!(dialect, Dialect::C | Dialect::Cpp) => K::Binding,
@@ -695,7 +716,7 @@ fn declaration_names(node: Node<'_>, dialect: Dialect) -> Vec<(DeclarationKind, 
         .map(|name| {
             let mut selected = kind.clone();
             if matches!(dialect, Dialect::C | Dialect::Cpp)
-                && typ == "declaration"
+                && (typ == "declaration" || dialect == Dialect::Cpp && typ == "field_declaration")
                 && name
                     .parent()
                     .is_some_and(|p| p.kind() == "function_declarator")
@@ -750,8 +771,16 @@ fn declarator_names(mut node: Node<'_>) -> Vec<Node<'_>> {
             .or_else(|| node.child_by_field_name("name"))
         {
             Some(child) => node = child,
-            None if node.kind() == "parenthesized_declarator" => {
-                if let Some(child) = node.named_child(0) {
+            None if matches!(
+                node.kind(),
+                "parenthesized_declarator" | "reference_declarator"
+            ) =>
+            {
+                let mut cursor = node.walk();
+                let child = node
+                    .named_children(&mut cursor)
+                    .find(|child| !child.is_extra());
+                if let Some(child) = child {
                     node = child;
                 } else {
                     break;
@@ -813,22 +842,6 @@ fn is_member(node: Node<'_>) -> bool {
             | "source_file" | "program" | "translation_unit" => return false,
             _ => parent = node.parent(),
         }
-    }
-    false
-}
-
-fn enclosing_type_named(node: Node<'_>, source: &str, name: &str) -> bool {
-    let mut parent = node.parent();
-    while let Some(node) = parent {
-        if matches!(
-            node.kind(),
-            "class_declaration" | "struct_declaration" | "record_declaration"
-        ) {
-            return node
-                .child_by_field_name("name")
-                .is_some_and(|n| text(n, source) == name);
-        }
-        parent = node.parent();
     }
     false
 }

@@ -8,7 +8,8 @@ Status: implemented backend; frontend/native integration pending, 2026-10-11. Ba
 Whip Docs owns an independent Rust Tree-sitter extractor. Passeur commit
 `725c45cfc1fcd9fae0980bceebe051debdc11cb2` is a language/qualification reference
 only. No Passeur runtime, Node process, code import, or agent platform is used.
-Registry grammar dependencies are exact-pinned and Cargo.lock checksummed.
+Registry grammars use exact versions/checksums; C++/C# use exact official Git
+revisions plus checked generated-source hashes. Cargo.lock records both.
 No patched Passeur grammar is installed. Grammar failures are observable gaps,
 not claims of modern-syntax parity.
 
@@ -29,7 +30,8 @@ claim resolved calls, types, or compiler semantics.
   byte ranges, coverage and structured diagnostics. Range columns are UTF-8 byte
   columns; all byte intervals are half-open. Source bodies are backend-only.
 - Version parser, grammar, dialect, extractor and source-scope identities. Grammar
-  identity includes exact registry version; engine and extractor are pinned too.
+  identity includes exact registry version or official Git revision; engine and
+  extractor are pinned too.
 - Retain schema-2 journal lines, analyzed_rust_sources scope and its digest domain
   exactly. Add schema-3 records with an explicit multilingual captured-source
   scope and identity in the existing append-only journal. Old lines are never
@@ -62,7 +64,7 @@ separate legacy Rust relation surface until explicitly integrated.
 
 ## Implementation outcome
 
-See [grammar qualification](grammar-qualification.md), [exact registry provenance](grammar-pins.json),
+See [grammar qualification](grammar-qualification.md), [exact grammar provenance](grammar-pins.json),
 [integration contract](multilingual-integration.md) and [verification](../../verification/multilingual-backend.md).
 The syntax payload is additive; exact byte ranges live there rather than adding
 fields to legacy SourceRangeDto. This preserves old journal structural records.

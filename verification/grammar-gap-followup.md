@@ -3,6 +3,9 @@
 Date: 2026-10-11 UTC. Baseline: `91b05b696ca4bd1121137fe2a78faac36e0f630d`.
 Feature branch: `feature/multilingual-tree-sitter`. Rust toolchain 1.92.0.
 
+Historical report for the first follow-up; see the later
+[official C++/C# qualification](official-grammars.md).
+
 ## Passed
 
 - `cargo test --no-default-features --workspace --all-targets --locked`:

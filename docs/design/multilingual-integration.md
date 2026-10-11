@@ -99,3 +99,12 @@ Headless backend tests do not establish combined application or visual correctne
 
 The [grammar-gap follow-up](grammar-gap-followup.md) adds a bounded Svelte template
 call-fact subset and bumps extractor identity to @2, without changing DTO shapes.
+
+The [official C++/C# qualification](official-grammar-qualification.md) advances
+extractor identity to @3 and adds exact Git grammar identities. C# extension
+containers use the existing `implementation` kind with the written `extension`
+keyword label; named receivers use `parameter`, operators use `method` with an
+operator-token label. C++ explicit receiver ranges include `this`. No new DTO
+fields, enums, graph edges or journal schema are introduced. @1/@2 records remain
+readable and preserved but become stale; the integration branch must deliberately
+include this backend follow-up. Native/combined-app testing remains separate.

@@ -53,9 +53,9 @@ impl Dialect {
             Self::Lua => "crates.io/tree-sitter-lua@0.4.1",
             Self::Kotlin => "crates.io/tree-sitter-kotlin-ng@1.1.0",
             Self::Zig => "crates.io/tree-sitter-zig@1.1.2",
-            Self::CSharp => "crates.io/tree-sitter-c-sharp@0.23.5",
+            Self::CSharp => "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5",
             Self::C => "crates.io/tree-sitter-c@0.24.2",
-            Self::Cpp => "crates.io/tree-sitter-cpp@0.23.4",
+            Self::Cpp => "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24",
             Self::Odin => "crates.io/tree-sitter-odin@1.3.0",
             Self::Svelte5 => "crates.io/tree-sitter-svelte-ng@1.0.2",
         }
