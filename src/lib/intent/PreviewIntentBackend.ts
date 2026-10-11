@@ -106,7 +106,7 @@ function validStoredRecord(value: unknown): value is StoredRecord {
   return Boolean(snapshot && snapshot.precision === 'structural_snapshot_symbol_range_unverified' && snapshot.hashAlgorithm === 'sha256' && /^sha256:[a-f0-9]{64}$/.test(snapshot.contentHash) && Number.isSafeInteger(snapshot.byteLength) && snapshot.byteLength >= 0 && /^sha256:[a-f0-9]{64}$/.test(snapshot.worktreeDigest) && snapshot.worktreeDigestScope === 'analyzed_rust_sources' && Array.isArray(snapshot.structuralSnapshot?.nodes) && Array.isArray(snapshot.structuralSnapshot?.edges));
 }
 
-async function digestBytes(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
+export async function digestBytes(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return 'sha256:' + Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
 }
@@ -130,7 +130,7 @@ export async function sourceSetDigest(files: { path: string; contentHash: string
   return digestBytes(bytes);
 }
 
-function structureFor(graph: GraphSnapshotDto, path: string): IntentRecord['snapshot']['structuralSnapshot'] {
+export function structureFor(graph: GraphSnapshotDto, path: string): IntentRecord['snapshot']['structuralSnapshot'] {
   const byId = (a: { id: string }, b: { id: string }) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   const nodes = graph.nodes.filter(node => !['workspace', 'crate', 'file'].includes(node.kind) && node.sourceRange?.path === path).sort(byId);
   const ids = new Set(nodes.map(node => node.id));

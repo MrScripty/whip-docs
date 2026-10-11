@@ -16,6 +16,7 @@ use sha2::{Digest, Sha256};
 use crate::analyzer::AnalyzedGraph;
 use crate::graph::{GraphEdgeDto, GraphNodeDto, GraphNodeKind, SourceRangeDto};
 use crate::source::{read_bounded_source, ValidatedRepoPath, MAX_SOURCE_BYTES};
+use crate::syntax::{AnalysisIdentity, SOURCE_SCOPE};
 
 const JOURNAL_SCHEMA_VERSION: u32 = 2;
 const MAX_INTENT_BYTES: usize = 16 * 1024;
@@ -63,6 +64,8 @@ pub struct IntentSnapshotDto {
     pub worktree_digest: String,
     pub worktree_digest_scope: String,
     pub structural_snapshot: StructuralSnapshotDto,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub analysis_identity: Option<AnalysisIdentity>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -148,7 +151,19 @@ impl IntentStore {
         }
         let (symbol, analyzed_source) = selection(analysis, &request.node_id)?;
         let source_files = source_fingerprints(analysis);
-        let worktree_digest = source_set_digest(&source_files);
+        let analysis_identity = analysis
+            .syntax
+            .as_ref()
+            .map(|syntax| syntax.identity.clone());
+        if !valid_source_files(&source_files)
+            || !valid_identity_files(&source_files, analysis_identity.as_ref())
+        {
+            return Err(reject(
+                "intent_invalid_analysis",
+                "The analysis source manifest is inconsistent. Analyze again; no intent was saved.",
+            ));
+        }
+        let worktree_digest = scoped_source_digest(&source_files, analysis_identity.as_ref());
         let structural_snapshot = structural_snapshot(analysis, &symbol.source_range.path);
         let _gate = self.gate.lock().map_err(|_| {
             reject(
@@ -169,7 +184,11 @@ impl IntentStore {
                     ));
                 }
                 JournalRecord {
-                    schema_version: JOURNAL_SCHEMA_VERSION,
+                    schema_version: if analysis_identity.is_some() {
+                        3
+                    } else {
+                        JOURNAL_SCHEMA_VERSION
+                    },
                     id: id.clone(),
                     kind: IntentKind::Original,
                     text: request.text,
@@ -183,11 +202,22 @@ impl IntentStore {
                         byte_length: analyzed_source.len(),
                         captured_at: created_at,
                         analysis_at: analysis.snapshot.generated_at.clone(),
-                        precision: PRECISION.to_owned(),
+                        precision: if analysis_identity.is_some() {
+                            "syntax_byte_ranges_v1"
+                        } else {
+                            PRECISION
+                        }
+                        .to_owned(),
                         repository_revision: analysis.repository_revision.clone(),
                         worktree_digest,
-                        worktree_digest_scope: WORKTREE_DIGEST_SCOPE.to_owned(),
+                        worktree_digest_scope: if analysis_identity.is_some() {
+                            SOURCE_SCOPE
+                        } else {
+                            WORKTREE_DIGEST_SCOPE
+                        }
+                        .to_owned(),
                         structural_snapshot,
+                        analysis_identity: analysis_identity.clone(),
                     },
                     source_files: Some(source_files),
                 }
@@ -212,12 +242,13 @@ impl IntentStore {
                     || original.snapshot.content_hash != content_hash(analyzed_source.as_bytes())
                     || original.snapshot.byte_length != analyzed_source.len()
                     || original.snapshot.worktree_digest != worktree_digest
+                    || original.snapshot.analysis_identity != analysis_identity
                     || original.snapshot.structural_snapshot != structural_snapshot
                 {
                     return Err(reject("intent_stale_source", "This original belongs to a different source snapshot or selection. It has been preserved; create a new original for the current source."));
                 }
                 JournalRecord {
-                    schema_version: JOURNAL_SCHEMA_VERSION,
+                    schema_version: original.schema_version,
                     id,
                     kind,
                     text: request.text,
@@ -375,22 +406,27 @@ impl IntentStore {
         {
             let record: JournalRecord = serde_json::from_slice(line)
                 .map_err(|_| IntentError::Corrupt { line: index + 1 })?;
-            let valid_base = record.schema_version == JOURNAL_SCHEMA_VERSION
+            let valid_base = valid_analysis_scope(&record)
                 && record.id == format!("intent:{}", index + 1)
                 && validate_text(&record.text).is_ok()
                 && valid_symbol(&record.symbol)
                 && record.snapshot.hash_algorithm == "sha256"
                 && valid_hash(&record.snapshot.content_hash)
                 && valid_hash(&record.snapshot.worktree_digest)
-                && record.snapshot.worktree_digest_scope == WORKTREE_DIGEST_SCOPE
-                && valid_structure(&record.symbol, &record.snapshot.structural_snapshot)
-                && record.snapshot.precision == PRECISION;
+                && valid_structure(&record.symbol, &record.snapshot.structural_snapshot);
             let valid_reference = if record.kind == IntentKind::Original {
                 record.parent_id.is_none()
                     && record.original_id == record.id
                     && record.source_files.as_ref().is_some_and(|files| {
                         valid_source_files(files)
-                            && source_set_digest(files) == record.snapshot.worktree_digest
+                            && valid_identity_files(
+                                files,
+                                record.snapshot.analysis_identity.as_ref(),
+                            )
+                            && scoped_source_digest(
+                                files,
+                                record.snapshot.analysis_identity.as_ref(),
+                            ) == record.snapshot.worktree_digest
                             && files.iter().any(|file| {
                                 file.path == record.symbol.source_range.path
                                     && file.content_hash == record.snapshot.content_hash
@@ -470,12 +506,10 @@ fn selection<'a>(
                 "The selected symbol is not present in this analysis.",
             )
         })?;
-    let range = node.source_range.clone().ok_or_else(|| {
-        reject(
-            "intent_missing_selection",
-            "Select a source-backed Rust symbol.",
-        )
-    })?;
+    let range = node
+        .source_range
+        .clone()
+        .ok_or_else(|| reject("intent_missing_selection", "Select a source-backed symbol."))?;
     let symbol = IntentSymbolDto {
         node_id: node.id.clone(),
         label: node.label.clone(),
@@ -486,7 +520,7 @@ fn selection<'a>(
     if !valid_symbol(&symbol) {
         return Err(reject(
             "intent_invalid_selection",
-            "Select a source-backed Rust symbol, not a file or workspace.",
+            "Select a source-backed symbol, not a file or workspace.",
         ));
     }
     let source = analysis
@@ -595,7 +629,12 @@ fn binding_status(original: &JournalRecord, analysis: Option<&AnalyzedGraph>) ->
         .nodes
         .iter()
         .any(|node| node == &expected_node)
-        && source_set_digest(&source_fingerprints(analysis)) == original.snapshot.worktree_digest
+        && analysis.syntax.as_ref().map(|syntax| &syntax.identity)
+            == original.snapshot.analysis_identity.as_ref()
+        && scoped_source_digest(
+            &source_fingerprints(analysis),
+            analysis.syntax.as_ref().map(|syntax| &syntax.identity),
+        ) == original.snapshot.worktree_digest
         && structural_snapshot(analysis, &original.symbol.source_range.path)
             == original.snapshot.structural_snapshot
     {
@@ -629,6 +668,69 @@ fn source_set_digest(files: &[SourceFingerprint]) -> String {
         digest.update(file.content_hash.as_bytes());
     }
     format!("sha256:{:x}", digest.finalize())
+}
+
+/// V2's source_set_digest is deliberately untouched. V3 is a separate domain.
+fn scoped_source_digest(
+    files: &[SourceFingerprint],
+    identity: Option<&AnalysisIdentity>,
+) -> String {
+    let Some(identity) = identity else {
+        return source_set_digest(files);
+    };
+    let mut digest = Sha256::new();
+    digest.update(b"whip-docs:captured-multilingual-sources:v1\0");
+    let bytes = serde_json::to_vec(&(files, identity)).expect("serializable digest metadata");
+    digest.update((bytes.len() as u64).to_be_bytes());
+    digest.update(bytes);
+    format!("sha256:{:x}", digest.finalize())
+}
+
+fn valid_analysis_scope(record: &JournalRecord) -> bool {
+    match (
+        record.schema_version,
+        record.snapshot.analysis_identity.as_ref(),
+    ) {
+        (2, None) => {
+            record.snapshot.worktree_digest_scope == WORKTREE_DIGEST_SCOPE
+                && record.snapshot.precision == PRECISION
+        }
+        (3, Some(identity)) => {
+            record.snapshot.worktree_digest_scope == SOURCE_SCOPE
+                && record.snapshot.precision == "syntax_byte_ranges_v1"
+                && identity.schema_version == 1
+                && identity.source_scope == SOURCE_SCOPE
+                && valid_version_id(&identity.parser)
+                && valid_version_id(&identity.extractor)
+        }
+        _ => false,
+    }
+}
+
+fn valid_version_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 200
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"-._/@:+".contains(&b))
+}
+
+fn valid_identity_files(files: &[SourceFingerprint], identity: Option<&AnalysisIdentity>) -> bool {
+    let Some(identity) = identity else {
+        return true;
+    };
+    identity.files.len() == files.len()
+        && files.len() <= 4096
+        && identity.files.iter().zip(files).all(|(entry, file)| {
+            entry.path == file.path
+                && entry.source_digest == file.content_hash
+                && entry.byte_length == file.byte_length
+                && valid_hash(&entry.structure_digest)
+                && !entry.grammars.is_empty()
+                && entry.grammars.len() <= 3
+                && entry.grammars[0].dialect == entry.dialect
+                && entry.grammars.iter().all(|g| valid_version_id(&g.grammar))
+        })
 }
 
 fn structural_snapshot(analysis: &AnalyzedGraph, path: &str) -> StructuralSnapshotDto {
@@ -829,6 +931,7 @@ mod tests {
                     },
                     sources: BTreeMap::from([("src/lib.rs".to_owned(), SOURCE.to_owned())]),
                     repository_revision: None,
+                    syntax: None,
                 },
             }
         }
@@ -860,6 +963,164 @@ mod tests {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.base);
         }
+    }
+
+    fn syntax_fixture(fixture: &mut Fixture) -> String {
+        fixture.analysis = crate::syntax::analyze_repository(
+            &ValidatedRepoPath::parse_existing_source_root(&fixture.root).unwrap(),
+            &crate::syntax::AnalysisOptions::default(),
+        );
+        fixture
+            .analysis
+            .snapshot
+            .nodes
+            .iter()
+            .find(|n| n.label == "ship")
+            .unwrap()
+            .id
+            .clone()
+    }
+
+    fn syntax_request(fixture: &Fixture, node_id: &str, parent_id: Option<String>) -> AppendIntent {
+        AppendIntent {
+            node_id: node_id.to_owned(),
+            text: "Keep original intent".to_owned(),
+            kind: if parent_id.is_some() {
+                IntentKind::Proposal
+            } else {
+                IntentKind::Original
+            },
+            parent_id,
+            expected_analysis_at: fixture.analysis.snapshot.generated_at.clone(),
+        }
+    }
+
+    #[test]
+    fn multilingual_journal_identity_is_separate_and_legacy_bytes_are_preserved() {
+        let mut fixture = Fixture::new();
+        let legacy = fixture.original();
+        let prefix = fs::read(&fixture.store.journal_path).unwrap();
+        let node_id = syntax_fixture(&mut fixture);
+        let current = fixture
+            .store
+            .append(&fixture.analysis, syntax_request(&fixture, &node_id, None))
+            .unwrap();
+        assert_eq!(current.snapshot.worktree_digest_scope, SOURCE_SCOPE);
+        assert_eq!(legacy.snapshot.worktree_digest_scope, WORKTREE_DIGEST_SCOPE);
+        assert_ne!(
+            legacy.snapshot.worktree_digest,
+            current.snapshot.worktree_digest
+        );
+        assert!(legacy.snapshot.analysis_identity.is_none());
+        assert!(current.snapshot.analysis_identity.is_some());
+        let bytes = fs::read(&fixture.store.journal_path).unwrap();
+        assert!(bytes.starts_with(&prefix));
+        let saved = String::from_utf8(bytes).unwrap();
+        for forbidden in [
+            "snapshot-only secret",
+            "println!",
+            "pub fn ship",
+            "\\r\\n",
+            "signature",
+            "sourceText",
+        ] {
+            assert!(!saved.contains(forbidden), "leaked {forbidden}");
+        }
+        let lines: Vec<serde_json::Value> = saved
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
+        assert_eq!(lines[0]["schemaVersion"], 2);
+        assert_eq!(lines[1]["schemaVersion"], 3);
+        assert_eq!(fixture.list()[0].binding_status, BindingStatus::Stale);
+        assert_eq!(fixture.list()[1].binding_status, BindingStatus::Current);
+        fixture
+            .store
+            .append(
+                &fixture.analysis,
+                syntax_request(&fixture, &node_id, Some(current.id)),
+            )
+            .unwrap();
+        let reopened = IntentStore::new(fixture.base.join("app"));
+        assert_eq!(
+            reopened
+                .list(
+                    &fixture.analysis.snapshot.source_root,
+                    Some(&fixture.analysis)
+                )
+                .unwrap()
+                .len(),
+            3
+        );
+    }
+
+    #[test]
+    fn parser_grammar_extractor_and_dialect_changes_stale_binding_without_relink() {
+        let mut fixture = Fixture::new();
+        let node_id = syntax_fixture(&mut fixture);
+        let original = fixture
+            .store
+            .append(&fixture.analysis, syntax_request(&fixture, &node_id, None))
+            .unwrap();
+        let identity = fixture.analysis.syntax.as_ref().unwrap().identity.clone();
+        for change in 0..5 {
+            let mutated = &mut fixture.analysis.syntax.as_mut().unwrap().identity;
+            *mutated = identity.clone();
+            match change {
+                0 => mutated.parser.push_str("-new"),
+                1 => mutated.extractor.push_str("-new"),
+                2 => mutated.files[0].grammars[0].grammar.push_str("-new"),
+                3 => {
+                    mutated.files[0].dialect = crate::syntax::Dialect::TypeScript;
+                    mutated.files[0].grammars[0].dialect = crate::syntax::Dialect::TypeScript;
+                }
+                _ => mutated.files[0].structure_digest = content_hash(b"new structure"),
+            }
+            assert_eq!(fixture.list()[0].binding_status, BindingStatus::Stale);
+            let error = fixture
+                .store
+                .append(
+                    &fixture.analysis,
+                    syntax_request(&fixture, &node_id, Some(original.id.clone())),
+                )
+                .unwrap_err();
+            assert_eq!(error.code(), "intent_stale_source");
+        }
+    }
+
+    #[test]
+    fn inconsistent_identity_manifest_is_rejected_before_journal_write() {
+        let mut fixture = Fixture::new();
+        let node_id = syntax_fixture(&mut fixture);
+        fixture.analysis.syntax.as_mut().unwrap().identity.files[0].path = "wrong.py".to_owned();
+        let error = fixture
+            .store
+            .append(&fixture.analysis, syntax_request(&fixture, &node_id, None))
+            .unwrap_err();
+        assert_eq!(error.code(), "intent_invalid_analysis");
+        assert!(!fixture.store.journal_path.exists());
+    }
+
+    #[test]
+    fn multilingual_missing_or_renamed_symbol_is_never_relinked() {
+        let mut fixture = Fixture::new();
+        let node_id = syntax_fixture(&mut fixture);
+        fixture
+            .store
+            .append(&fixture.analysis, syntax_request(&fixture, &node_id, None))
+            .unwrap();
+        fs::write(
+            fixture.root.join("src/lib.rs"),
+            SOURCE.replace("ship", "renamed"),
+        )
+        .unwrap();
+        fixture.analysis = crate::syntax::analyze_repository(
+            &ValidatedRepoPath::parse_existing_source_root(&fixture.root).unwrap(),
+            &crate::syntax::AnalysisOptions::default(),
+        );
+        assert_eq!(fixture.list()[0].binding_status, BindingStatus::Stale);
+        fs::remove_file(fixture.root.join("src/lib.rs")).unwrap();
+        assert_eq!(fixture.list()[0].binding_status, BindingStatus::Missing);
     }
 
     #[test]

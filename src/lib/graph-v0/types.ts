@@ -19,7 +19,7 @@ export type GraphEdgeDirection = 'directed' | 'undirected';
 
 export type GraphEdgeConfidence = 'exact' | 'inferred' | 'partial';
 
-export type GraphEdgeProvenance = 'rust_analyzer' | 'syn' | 'normalized';
+export type GraphEdgeProvenance = 'rust_analyzer' | 'syn' | 'normalized' | 'tree_sitter';
 
 export type FileRelationDetail =
   | 'structure'

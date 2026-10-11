@@ -4,7 +4,7 @@ import type { SymbolOverlay } from './symbolOverlay';
 
 type SymbolEntry = { node: GraphNodeDto; fileId: string; offset: Vector3; mesh: Mesh<BufferGeometry, MeshLambertMaterial>; label: HTMLButtonElement };
 type EdgeEntry = { sourceId: string; targetId: string; line: Line<BufferGeometry, LineBasicMaterial | LineDashedMaterial>; arrow: Mesh<ConeGeometry, MeshBasicMaterial> };
-const COLORS: Record<GraphNodeDto['kind'], number> = { workspace: 0x8395ab, crate: 0x8395ab, file: 0x8fa8d5, module: 0x7dd3b0, struct: 0x72aff4, enum: 0xb7a0ef, trait: 0xefbc73, impl: 0xc38fe4, function: 0x66d5c2, method: 0x7ddbcf, tauri_command: 0xf09192 };
+const COLORS: Record<GraphNodeDto['kind'], number> = { workspace: 0x8395ab, crate: 0x8395ab, file: 0x8fa8d5, module: 0x7dd3b0, struct: 0x72aff4, enum: 0xb7a0ef, trait: 0xefbc73, impl: 0xc38fe4, function: 0x66d5c2, method: 0x7ddbcf, tauri_command: 0xf09192, class: 0x72aff4, interface: 0xefbc73, type_alias: 0xb7a0ef, binding: 0xa4c4da, field: 0xc1b090, variant: 0xb7a0ef, parameter: 0x9bbdb5, component: 0xf09192, snippet: 0x7dd3b0 };
 
 /** An additive layer in DirectoryGraphScene's actual scene/camera, never a second renderer. */
 export class SymbolSceneLayer {
@@ -120,5 +120,5 @@ export class SymbolSceneLayer {
   dispose():void {this.clear();this.group.removeFromParent();this.labels.remove();}
 }
 function geometry(kind:GraphNodeDto['kind']):BufferGeometry {
-  switch(kind){case 'struct':return new BoxGeometry(.8,.8,.8);case 'enum':return new OctahedronGeometry(.6);case 'trait':return new TorusGeometry(.4,.12,8,20);case 'impl':return new DodecahedronGeometry(.5);case 'module':return new BoxGeometry(.6,.6,.6);case 'tauri_command':return new ConeGeometry(.5,.9,4);default:return new SphereGeometry(.33,16,12);}
+  switch(kind){case 'class':case 'struct':case 'component':return new BoxGeometry(.8,.8,.8);case 'type_alias':case 'variant':case 'enum':return new OctahedronGeometry(.6);case 'interface':case 'trait':return new TorusGeometry(.4,.12,8,20);case 'impl':return new DodecahedronGeometry(.5);case 'module':case 'snippet':return new BoxGeometry(.6,.6,.6);case 'tauri_command':return new ConeGeometry(.5,.9,4);default:return new SphereGeometry(.33,16,12);}
 }

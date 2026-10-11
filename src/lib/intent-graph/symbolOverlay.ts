@@ -18,7 +18,7 @@ export function projectSymbolOverlay(files: RenderGraph, sourceRoot: string, ana
   const fileIdByAnalysisId = new Map<string, string>();
   const fileIdBySymbolId = new Map<string, string>();
   for (const node of analysis.nodes) {
-    const path = node.sourceRange?.path;
+    const path = node.sourceRange?.path ?? (analysis.schemaVersion === 2 && node.kind === 'file' && node.id === `file:${node.label}` ? node.label : undefined);
     const matches = path ? byPath.get(path) : undefined;
     if (matches?.length !== 1) continue;
     if (node.kind === 'file') fileIdByAnalysisId.set(node.id, matches[0]);

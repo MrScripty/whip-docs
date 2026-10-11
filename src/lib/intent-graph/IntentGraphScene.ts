@@ -16,6 +16,8 @@ export const INTENT_NODE_COLORS: Record<GraphNodeKind, string> = {
   workspace: '#8395ab', crate: '#8395ab', file: '#8fa8d5', module: '#7dd3b0',
   struct: '#72aff4', enum: '#b7a0ef', trait: '#efbc73', impl: '#c38fe4',
   function: '#66d5c2', method: '#7ddbcf', tauri_command: '#f09192',
+  class: '#72aff4', interface: '#efbc73', type_alias: '#b7a0ef', binding: '#a4c4da',
+  field: '#c1b090', variant: '#b7a0ef', parameter: '#9bbdb5', component: '#f09192', snippet: '#7dd3b0',
 };
 
 type NodeEntry = {

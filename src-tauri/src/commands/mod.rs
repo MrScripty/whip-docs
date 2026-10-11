@@ -9,7 +9,9 @@ use crate::analyzer::{AnalysisStatusDto, AnalyzedGraph, RustAnalyzerService, Rus
 use crate::config::{AppConfigDto, ConfigStore, SourceRepoStatusDto};
 use crate::graph::relations::{FileRelationGraphBuilder, FileRelationGraphSnapshotDto};
 use crate::graph::{DirectoryGraphBuilder, DirectoryGraphSnapshotDto, GraphSnapshotDto};
-use crate::intent::{AppendIntent, IntentError, IntentKind, IntentRecordDto, IntentStore};
+#[cfg(feature = "desktop")]
+use crate::intent::IntentKind;
+use crate::intent::{AppendIntent, IntentError, IntentRecordDto, IntentStore};
 use crate::source::ValidatedRepoPath;
 
 pub struct AppState {
@@ -76,12 +78,39 @@ impl AppState {
         self.analyzer_service.status().await
     }
 
+    pub async fn source_analysis(&self) -> Option<crate::syntax::SourceAnalysisDto> {
+        self.graph_snapshot
+            .read()
+            .await
+            .as_ref()
+            .and_then(|analysis| analysis.syntax.clone())
+    }
+
     pub async fn graph_snapshot(&self) -> Option<GraphSnapshotDto> {
         self.graph_snapshot
             .read()
             .await
             .as_ref()
             .map(|analysis| analysis.snapshot.clone())
+    }
+
+    /// Bind a metadata read to the graph the caller actually received.
+    pub async fn source_analysis_for(
+        &self,
+        expected_source_root: Option<&str>,
+        expected_analysis_at: Option<&str>,
+    ) -> Result<Option<crate::syntax::SourceAnalysisDto>, CommandErrorDto> {
+        let guard = self.graph_snapshot.read().await;
+        let matches = guard.as_ref().is_some_and(|analysis| {
+            expected_source_root.map_or(true, |root| root == analysis.snapshot.source_root)
+                && expected_analysis_at.map_or(true, |at| at == analysis.snapshot.generated_at)
+        });
+        if (expected_source_root.is_some() || expected_analysis_at.is_some()) && !matches {
+            return Err(CommandErrorDto::validation(
+                "Analysis changed before reading syntax metadata. Analyze again.",
+            ));
+        }
+        Ok(guard.as_ref().and_then(|analysis| analysis.syntax.clone()))
     }
 
     pub async fn append_intent_record(
@@ -141,14 +170,10 @@ impl AppState {
             .source_range
             .as_ref()
             .ok_or_else(|| CommandErrorDto::validation("graph node has no source range"))?;
-        let source_repo = ValidatedRepoPath::parse_existing_cargo_repo(&snapshot.source_root)
+        let source_repo = ValidatedRepoPath::parse_existing_source_root(&snapshot.source_root)
             .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
-        let source_path = source_repo
-            .resolve_existing_child(&source_range.path)
-            .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
-        let source = tokio::fs::read_to_string(&source_path)
-            .await
-            .map_err(|error| CommandErrorDto::internal(error.to_string()))?;
+        let source = crate::source::read_bounded_source(&source_repo, &source_range.path)
+            .map_err(CommandErrorDto::validation)?;
         let start_line = source_range.start_line.saturating_sub(3).max(1);
         let end_line = source_range.end_line.saturating_add(3);
         let text = source
@@ -175,11 +200,19 @@ impl AppState {
     }
 
     pub async fn analyze_source_repo(&self) -> Result<GraphSnapshotDto, CommandErrorDto> {
+        self.analyze_source_repo_with_options(crate::syntax::AnalysisOptions::default())
+            .await
+    }
+
+    pub async fn analyze_source_repo_with_options(
+        &self,
+        options: crate::syntax::AnalysisOptions,
+    ) -> Result<GraphSnapshotDto, CommandErrorDto> {
         let config = self.app_config().await;
         let source_repo_path = config
             .source_repo_path
             .ok_or_else(|| CommandErrorDto::validation("source repository is not configured"))?;
-        let source_repo = ValidatedRepoPath::parse_existing_cargo_repo(&source_repo_path)
+        let source_repo = ValidatedRepoPath::parse_existing_source_root(&source_repo_path)
             .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
         let job_id = "analyze-source-repo";
 
@@ -190,13 +223,12 @@ impl AppState {
 
         let analyzed_root = source_repo.display_path();
         let extraction_result = tokio::task::spawn_blocking(move || {
-            RustGraphExtractor.extract_with_sources(&source_repo)
+            crate::syntax::analyze_repository(&source_repo, &options)
         })
         .await;
         let _ = self.analyzer_service.complete_analysis_job(job_id).await;
-        let analysis = extraction_result
-            .map_err(|error| CommandErrorDto::internal(error.to_string()))?
-            .map_err(|error| CommandErrorDto::internal(error.to_string()))?;
+        let analysis =
+            extraction_result.map_err(|error| CommandErrorDto::internal(error.to_string()))?;
 
         let _binding = self.binding_mutation_gate.lock().await;
         let config = self.config.read().await;
@@ -215,7 +247,7 @@ impl AppState {
         &self,
         raw_path: String,
     ) -> Result<DirectoryGraphSnapshotDto, CommandErrorDto> {
-        let source_repo = ValidatedRepoPath::parse_existing_cargo_repo(&raw_path)
+        let source_repo = ValidatedRepoPath::parse_existing_source_root(&raw_path)
             .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
 
         tokio::task::spawn_blocking(move || DirectoryGraphBuilder::build(&source_repo))
@@ -277,7 +309,7 @@ impl AppState {
         &self,
         raw_path: String,
     ) -> Result<AppConfigDto, CommandErrorDto> {
-        let validated_path = ValidatedRepoPath::parse_existing_cargo_repo(&raw_path)
+        let validated_path = ValidatedRepoPath::parse_existing_source_root(&raw_path)
             .map_err(|error| CommandErrorDto::validation(error.to_string()))?;
         let next_config = AppConfigDto {
             schema_version: crate::config::APP_CONFIG_SCHEMA_VERSION,
@@ -352,6 +384,7 @@ impl From<IntentError> for CommandErrorDto {
     }
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn append_intent_record(
     node_id: String,
@@ -372,6 +405,7 @@ pub async fn append_intent_record(
         .await
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn list_intent_records(
     state: tauri::State<'_, Arc<AppState>>,
@@ -379,6 +413,7 @@ pub async fn list_intent_records(
     state.list_intent_records().await
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub fn get_app_status(state: tauri::State<'_, std::sync::Arc<AppState>>) -> AppStatusDto {
     AppStatusDto {
@@ -388,6 +423,7 @@ pub fn get_app_status(state: tauri::State<'_, std::sync::Arc<AppState>>) -> AppS
     }
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn get_app_config(
     state: tauri::State<'_, std::sync::Arc<AppState>>,
@@ -395,6 +431,7 @@ pub async fn get_app_config(
     Ok(state.app_config().await)
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn get_analysis_status(
     state: tauri::State<'_, std::sync::Arc<AppState>>,
@@ -402,13 +439,35 @@ pub async fn get_analysis_status(
     Ok(state.analysis_status().await)
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn analyze_source_repo(
     state: tauri::State<'_, std::sync::Arc<AppState>>,
+    dialect_overrides: Option<std::collections::BTreeMap<String, crate::syntax::Dialect>>,
 ) -> Result<GraphSnapshotDto, CommandErrorDto> {
-    state.analyze_source_repo().await
+    let mut options = crate::syntax::AnalysisOptions::default();
+    if let Some(overrides) = dialect_overrides {
+        if overrides.len() > 4096 {
+            return Err(CommandErrorDto::validation("Too many dialect overrides."));
+        }
+        for (path, dialect) in &overrides {
+            if path.len() > 4096
+                || !std::path::Path::new(path)
+                    .components()
+                    .all(|p| matches!(p, std::path::Component::Normal(_)))
+            {
+                return Err(CommandErrorDto::validation(
+                    "Dialect overrides need normal relative paths.",
+                ));
+            }
+            crate::syntax::route(path, Some(*dialect)).map_err(CommandErrorDto::validation)?;
+        }
+        options.dialect_overrides = overrides;
+    }
+    state.analyze_source_repo_with_options(options).await
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn load_directory_graph(
     path: String,
@@ -417,6 +476,7 @@ pub async fn load_directory_graph(
     state.load_directory_graph(path).await
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn load_file_relation_graph(
     path: String,
@@ -425,6 +485,7 @@ pub async fn load_file_relation_graph(
     state.load_file_relation_graph(path).await
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn get_graph_snapshot(
     state: tauri::State<'_, std::sync::Arc<AppState>>,
@@ -432,6 +493,7 @@ pub async fn get_graph_snapshot(
     Ok(state.graph_snapshot().await)
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn get_source_snippet(
     node_id: String,
@@ -440,12 +502,28 @@ pub async fn get_source_snippet(
     state.source_snippet(node_id).await
 }
 
+#[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn set_source_repo_path(
     path: String,
     state: tauri::State<'_, std::sync::Arc<AppState>>,
 ) -> Result<AppConfigDto, CommandErrorDto> {
     state.set_source_repo_path(path).await
+}
+
+#[cfg(feature = "desktop")]
+#[tauri::command]
+pub async fn get_source_analysis(
+    expected_source_root: Option<String>,
+    expected_analysis_at: Option<String>,
+    state: tauri::State<'_, Arc<AppState>>,
+) -> Result<Option<crate::syntax::SourceAnalysisDto>, CommandErrorDto> {
+    state
+        .source_analysis_for(
+            expected_source_root.as_deref(),
+            expected_analysis_at.as_deref(),
+        )
+        .await
 }
 
 #[cfg(test)]
@@ -521,6 +599,7 @@ mod tests {
                 source.to_owned(),
             )]),
             repository_revision: None,
+            syntax: None,
         });
         let request = crate::intent::AppendIntent {
             node_id: "function:ship".to_owned(),
@@ -679,6 +758,81 @@ mod tests {
 
         assert_eq!(status.phase, AnalyzerLifecyclePhase::Idle);
         assert_eq!(status.active_job_id, None);
+    }
+
+    #[tokio::test]
+    async fn mixed_root_needs_no_cargo_or_rust_analyzer() {
+        let app_dir = unique_temp_dir("mixed-app");
+        let repo_dir = unique_temp_dir("mixed-repo");
+        fs::create_dir_all(&repo_dir).unwrap();
+        fs::write(repo_dir.join("a.py"), "def python_entry():\n pass\n").unwrap();
+        fs::write(repo_dir.join("b.ts"), "function ts_entry() {}\n").unwrap();
+        let settings =
+            crate::analyzer::RustAnalyzerSettings::for_executable("/no-such-rust-analyzer");
+        let state = AppState::with_analyzer(
+            ConfigStore::new(&app_dir),
+            AppConfigDto::default(),
+            crate::analyzer::RustAnalyzerService::new(settings),
+        );
+        state
+            .set_source_repo_path(repo_dir.to_string_lossy().into_owned())
+            .await
+            .unwrap();
+        let graph = state.analyze_source_repo().await.unwrap();
+        assert!(graph.nodes.iter().any(|n| n.label == "python_entry"));
+        assert!(graph.nodes.iter().any(|n| n.label == "ts_entry"));
+        assert_eq!(state.source_analysis().await.unwrap().files.len(), 2);
+        fs::remove_dir_all(repo_dir).unwrap();
+        fs::remove_dir_all(app_dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn syntax_metadata_read_is_bound_to_the_received_root_and_analysis_token() {
+        let app_dir = unique_temp_dir("syntax-read-app");
+        let repo_dir = unique_temp_dir("syntax-read-repo");
+        fs::create_dir_all(&repo_dir).unwrap();
+        fs::write(repo_dir.join("a.py"), "def first():\n    pass\n").unwrap();
+        let state = AppState::new(ConfigStore::new(&app_dir), AppConfigDto::default());
+        assert!(state
+            .source_analysis_for(None, None)
+            .await
+            .unwrap()
+            .is_none());
+        assert!(state
+            .source_analysis_for(Some("old"), Some("old"))
+            .await
+            .is_err());
+        state
+            .set_source_repo_path(repo_dir.to_string_lossy().into_owned())
+            .await
+            .unwrap();
+        let first = state.analyze_source_repo().await.unwrap();
+        let metadata = state
+            .source_analysis_for(Some(&first.source_root), Some(&first.generated_at))
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(metadata.files[0]
+            .declarations
+            .iter()
+            .any(|declaration| declaration.name == "first"));
+        assert!(state
+            .source_analysis_for(Some("wrong-root"), Some(&first.generated_at))
+            .await
+            .is_err());
+        fs::write(repo_dir.join("a.py"), "def second():\n    pass\n").unwrap();
+        let second = state.analyze_source_repo().await.unwrap();
+        assert!(state
+            .source_analysis_for(Some(&first.source_root), Some(&first.generated_at))
+            .await
+            .is_err());
+        assert!(state
+            .source_analysis_for(Some(&second.source_root), Some(&second.generated_at))
+            .await
+            .unwrap()
+            .is_some());
+        fs::remove_dir_all(repo_dir).unwrap();
+        fs::remove_dir_all(app_dir).unwrap();
     }
 
     #[tokio::test]

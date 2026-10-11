@@ -1,13 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod analyzer;
 mod app_lifecycle;
 mod app_setup;
-mod commands;
-mod config;
-mod graph;
-mod intent;
-mod source;
+use whip_docs::{commands, config};
 
 fn main() {
     if let Err(error) = app_setup::run_app() {

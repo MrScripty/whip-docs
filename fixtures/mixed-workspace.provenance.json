@@ -1,0 +1,28 @@
+{
+  "parserCommit": "91b05b696ca4bd1121137fe2a78faac36e0f630d",
+  "graphCommit": "2a6b73da3fce1ce099e91fa386986c4b2f63a44e",
+  "generator": "cargo run --no-default-features --example integration_fixture -- FIXTURE_ROOT DISPOSABLE_APP_DATA",
+  "normalization": "Absolute root replaced with public fixture label; graph and journal timestamps fixed; identities, digests, ranges, facts and relationships unchanged.",
+  "sourceSha256": {
+    "README.md": "28929e8adbfbeacedb134c17335c559af2ed9cc31004109611bb1dfb1f295c35",
+    "api/handler.py": "17e9fae5dc26c9902674b3ea726858fb7556220ad4f7f023862a530328aaf5ec",
+    "broken/bad.py": "6b8c8a725c23dc076d9a2c185ce4e02435746bc3b4f99906d13de360e56898c7",
+    "include/api.h": "a018ff632a2e649484c047bc38297246836f02033f9338e32c300acbb3a3933e",
+    "mobile/Screen.kt": "cb5f66195218dc2b6c2ba67e4faa29adcd56e516b268d7e6d2d8ed12c0dd99e9",
+    "native/math.c": "4825155d47a94bd0b4d39dffd324c9bfe1681f912dd9bfebafbf551a44e280b2",
+    "native/memory.zig": "d050d6f82249e54715358306059019756ed7af4f0e006e030d2852bf820f2e83",
+    "native/vector.cpp": "876570a8b7a6b406a5f76e83502b63649f16a7797bd744d2fcb5cdc495494c78",
+    "native/vector.odin": "202240015107c34c02039dda2d2461ef403058c569eeefd76a6fea2678dd4f48",
+    "scripts/task.lua": "d8bf2acff404f6e71438771bb3a3e0912b8442592c966a05f3692b741d693571",
+    "server/Service.cs": "70e6aac78ea0672e81b4c91ee74b5be962c96d23fc5434792195b917e970db8a",
+    "src/helper.rs": "ca810b054aa445bd02dc1b674ec49820b6bfe7add43e07ed2f5a9c00e6350072",
+    "src/lib.rs": "63f4a3b89fd69f08e38e36a84f719e4728d3bc80ba4489831b683f6af97b8a3b",
+    "unsupported/plugin.go": "7f2d6d74118519275a69eefff53330ab9e3605815ba2e0a9bd8de6959ee8445d",
+    "web/Card.jsx": "013e21ffaed23cb290235042ea279352ccab9ed6ba0366c827c11e1859d9b4f6",
+    "web/Card.tsx": "1bed4061399e7b4b9bf053b3a3b44380449e34b4b379c2b670241cd49b9122b3",
+    "web/Panel.svelte": "5d8bc28c6dbfef54b0e93f14d42e226592f28e49023bf84ab83509372fa5d77d",
+    "web/View.js": "e2a79799f3ec63b92e0b32097c4f6291d765aa47df86b4d3eaaa341c896d5621",
+    "web/app.ts": "e84b691cde7f455fedd141a259f1e806c45b5ad5746acbe809f79f10349d8177",
+    "web/plain.js": "15f5f7eaa0c225d249f45081e1e527520a80d1d1a229b67ad636461d23463adf"
+  }
+}

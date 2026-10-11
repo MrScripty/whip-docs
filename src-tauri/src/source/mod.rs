@@ -3,7 +3,7 @@
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 
-/// Bound retained exact file snapshots in this prototype (2 MiB per Rust file).
+/// Bound exact UTF-8 source snapshots (2 MiB per file).
 pub const MAX_SOURCE_BYTES: u64 = 2 * 1024 * 1024;
 
 pub fn read_bounded_source(
@@ -17,7 +17,7 @@ pub fn read_bounded_source(
     if !metadata.is_file() || metadata.len() > MAX_SOURCE_BYTES {
         return Err("source must be a regular UTF-8 file no larger than 2 MiB".to_owned());
     }
-    let file = std::fs::File::open(&path).map_err(|error| error.to_string())?;
+    let file = open_regular_child(root, relative_path)?;
     if !file
         .metadata()
         .map_err(|error| error.to_string())?
@@ -41,6 +41,60 @@ pub fn read_bounded_source(
         return Err("source path changed while reading; analyze again".to_owned());
     }
     String::from_utf8(bytes).map_err(|_| "source is not valid UTF-8".to_owned())
+}
+
+/// Open relative to directory handles without following symlinks. NONBLOCK avoids
+/// hanging if a regular file is replaced by a FIFO between discovery and open.
+#[cfg(unix)]
+fn open_regular_child(
+    root: &ValidatedRepoPath,
+    relative_path: &str,
+) -> Result<std::fs::File, String> {
+    use rustix::fs::{open, openat, Mode, OFlags};
+    let directory_flags = OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC;
+    let mut directory =
+        open(root.as_path(), directory_flags, Mode::empty()).map_err(|e| e.to_string())?;
+    let parts: Vec<_> = Path::new(relative_path).components().collect();
+    for (index, part) in parts.iter().enumerate() {
+        let Component::Normal(name) = part else {
+            return Err("source path must contain only normal relative components".to_owned());
+        };
+        if index + 1 == parts.len() {
+            let fd = openat(
+                &directory,
+                *name,
+                OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK,
+                Mode::empty(),
+            )
+            .map_err(|e| e.to_string())?;
+            return Ok(std::fs::File::from(fd));
+        }
+        directory =
+            openat(&directory, *name, directory_flags, Mode::empty()).map_err(|e| e.to_string())?;
+    }
+    Err("source path is empty".to_owned())
+}
+
+#[cfg(not(unix))]
+fn open_regular_child(
+    root: &ValidatedRepoPath,
+    relative_path: &str,
+) -> Result<std::fs::File, String> {
+    let mut path = root.as_path().to_path_buf();
+    for part in Path::new(relative_path).components() {
+        let Component::Normal(name) = part else {
+            return Err("source path must contain only normal relative components".to_owned());
+        };
+        path.push(name);
+        if std::fs::symlink_metadata(&path)
+            .map_err(|e| e.to_string())?
+            .file_type()
+            .is_symlink()
+        {
+            return Err("source symlinks are excluded".to_owned());
+        }
+    }
+    std::fs::File::open(path).map_err(|e| e.to_string())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

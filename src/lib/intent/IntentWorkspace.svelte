@@ -5,6 +5,9 @@
   import type { FileRelationGraphSnapshotDto, GraphSnapshotDto } from '../../backends/TauriArchitectureBackend';
   import { NativeIntentBackend } from './NativeIntentBackend';
   import { PreviewIntentBackend } from './PreviewIntentBackend';
+  import { SyntaxPreviewIntentBackend } from './SyntaxPreviewIntentBackend';
+  import type { SourceAnalysisDto, SyntaxDialect } from '../../backends/SyntaxAnalysis';
+  import { coverageLabel, dialectChoices, QUALIFICATION_GAPS, validateGraphAnalysis, restoredDialectOverrides } from './syntaxSupport';
   import { fixtureFiles, fixtureSymbols, fixtureSources } from './fileWorkspaceFixture';
   import { WorkspaceLoader } from './workspaceLoading';
   import { DirectoryGraphScene } from '../graph-v0/ThreeDirectoryGraphScene';
@@ -15,7 +18,9 @@
 
   const native = new TauriArchitectureBackend();
   const nativeAvailable = native.isAvailable();
-  const preview = !nativeAvailable && new URLSearchParams(window.location.search).get('preview') === '1';
+  const previewMode = new URLSearchParams(window.location.search).get('preview');
+  const mixedPreview = !nativeAvailable && previewMode === 'mixed';
+  const preview = !nativeAvailable && (previewMode === '1' || mixedPreview);
   const loader = new WorkspaceLoader();
   let generation = 0;
   let recordRequest = 0;
@@ -23,6 +28,8 @@
   let scene = $state<DirectoryGraphScene>();
   let mount: HTMLDivElement;
   let graph = $state<GraphSnapshotDto | null>(null);
+  let sourceAnalysis = $state<SourceAnalysisDto | null>(null);
+  const dialectOverrides = new SvelteMap<string, SyntaxDialect>();
   let fileSnapshot = $state<FileRelationGraphSnapshotDto | null>(null);
   let renderGraph = $state<RenderGraph | null>(null);
   let records = $state<IntentRecord[]>([]);
@@ -52,6 +59,10 @@
   const drafts = new SvelteMap<string, { text: string; kind: IntentKind; parentId: string }>();
   const selected = $derived(graph?.nodes.find(node => node.id === selectedId) ?? null);
   const selectedBase = $derived(renderGraph?.nodes.find(node => node.id === baseSelectedId) ?? null);
+  const selectedSyntaxFile = $derived(sourceAnalysis?.files.find(file => file.identity.path === selectedBase?.path) ?? null);
+  const selectedDeclaration = $derived(selectedSyntaxFile?.declarations.find(declaration => declaration.id === selectedId) ?? null);
+  const syntaxFacts = $derived(selectedSyntaxFile?.relations.filter(fact => !selectedId || fact.ownerId === selectedId) ?? []);
+  const fileSyntaxDiagnostics = $derived([...(sourceAnalysis?.diagnostics.filter(d => d.path === selectedBase?.path) ?? []), ...(selectedSyntaxFile?.diagnostics ?? [])]);
   const selectedEdge = $derived(fileSnapshot?.edges.find(edge => edge.id === edgeSelectedId) ?? null);
   const selectedRecords = $derived(records.filter(record => showHistory || record.symbol.nodeId === selectedId));
   const originals = $derived(records.filter(record => record.kind === 'original' && record.symbol.nodeId === selectedId && record.bindingStatus === 'current'));
@@ -93,7 +104,14 @@
   async function initialize() {
     const current=++generation;busy=true;
     try {
-      if(preview) {
+      if(mixedPreview) {
+        const {mixedFiles,mixedSymbols,mixedAnalysis,mixedSources}=await import('./mixedWorkspaceFixture');
+        const sources=await mixedSources();if(current!==generation)return;
+        sourceAnalysis=validateGraphAnalysis(mixedSymbols,mixedAnalysis);
+        intentBackend=new SyntaxPreviewIntentBackend(localStorage,mixedSymbols,mixedAnalysis,sources);
+        receiveFiles(structuredClone(mixedFiles));graph=structuredClone(mixedSymbols);historyReady=true;
+        dialectOverrides.set('include/api.h','cpp');dialectOverrides.set('web/View.js','jsx');
+      } else if(preview) {
         const sources=await fixtureSources();if(current!==generation)return;
         intentBackend=new PreviewIntentBackend(localStorage,fixtureSymbols,sources);
         receiveFiles(structuredClone(fixtureFiles));graph=structuredClone(fixtureSymbols);historyReady=true;
@@ -106,7 +124,11 @@
             receiveFiles(files);
             // Restore history without reanalysis; adding new intent still requires a fresh analysis.
             const existing=await native.getGraphSnapshot();if(current!==generation)return;
-            if(existing?.sourceRoot===files.sourceRoot)graph=existing;
+            if(existing?.sourceRoot===files.sourceRoot) {
+              const syntax=existing.schemaVersion===2?await native.getSourceAnalysis(existing.sourceRoot,existing.generatedAt):null;
+              if(current!==generation)return;sourceAnalysis=validateGraphAnalysis(existing,syntax);graph=existing;
+              dialectOverrides.clear();for(const [path,dialect] of restoredDialectOverrides(sourceAnalysis))dialectOverrides.set(path,dialect);
+            }
           } catch(cause) { if(current===generation)error=`File graph unavailable: ${message(cause)}`; }
         }
       }
@@ -116,15 +138,22 @@
   }
   async function analyze() {
     if(busy||saving||!sourcePath.trim())return;
-    const current=++generation;recordRequest++;historyReady=false;busy=true;error='';notice='';drafts.clear();selectedId=null;baseSelectedId=null;edgeSelectedId=null;text='';expanded.clear();collapsedDirectories.clear();records=[];graph=null;fileSnapshot=null;renderGraph=null;
+    const overrides=sourcePath.trim()===fileSnapshot?.sourceRoot?Object.fromEntries(dialectOverrides):{};
+    if(sourcePath.trim()!==fileSnapshot?.sourceRoot)dialectOverrides.clear();
+    const current=++generation;recordRequest++;historyReady=false;busy=true;error='';notice='';drafts.clear();selectedId=null;baseSelectedId=null;edgeSelectedId=null;text='';expanded.clear();collapsedDirectories.clear();records=[];graph=null;sourceAnalysis=null;fileSnapshot=null;renderGraph=null;
     await loader.open(native,sourcePath,{
       files(snapshot){if(current===generation)receiveFiles(snapshot);},
       configured(){if(current===generation)historyReady=true;},
-      symbols(snapshot){if(current===generation){graph=snapshot;notice='File graph loaded. Select a file to expand its symbols.';}},
+      symbols(snapshot,syntax){if(current===generation){graph=snapshot;sourceAnalysis=syntax;notice='File graph loaded. Select a file to expand its symbols.';}},
       error(cause){if(current===generation)error=`${renderGraph?'File graph available. Symbol analysis unavailable: ':''}${message(cause)}`;},
       done(){if(current===generation)busy=false;},
-    });
+    },overrides);
     if(current===generation&&historyReady)await refreshRecords(current);
+  }
+  function changeDialect(path:string,value:string) {
+    if(!nativeAvailable||busy||saving)return;
+    if(value)dialectOverrides.set(path,value as SyntaxDialect);else dialectOverrides.delete(path);
+    void analyze();
   }
   function saveDraft(){if(selectedId)drafts.set(selectedId,{text,kind,parentId});}
   function selectBase(selection: DirectoryGraphSceneSelection) {
@@ -175,9 +204,9 @@
   </header>
 
   {#if preview}
-    <div class="preview-banner"><strong>Browser fixture</strong> Recorded multi-file graph from the Rust backend, replayed locally. Native Tauri IPC is not running. Intent entries stay in this browser.</div>
+    <div class="preview-banner"><strong>Browser fixture</strong> Recorded multi-file graph from the Rust backend, replayed locally. Native Tauri IPC is not running. Intent entries stay in this browser. <a href={mixedPreview?"?preview=1":"?preview=mixed"}>{mixedPreview?"Legacy Rust fixture":"Mixed-language fixture"}</a></div>
   {:else if !nativeAvailable}
-    <div class="preview-banner"><strong>Open the Tauri desktop app to analyze a local Repository.</strong> <a href="?preview=1">Open the clearly labelled browser fixture</a></div>
+    <div class="preview-banner"><strong>Open the Tauri desktop app to analyze a local Repository.</strong> <a href="?preview=mixed">Open the mixed-language browser fixture</a> · <a href="?preview=1">Legacy Rust fixture</a></div>
   {/if}
 
   {#if nativeAvailable}
@@ -189,7 +218,7 @@
   <main class="workspace">
     <aside class="navigator">
       <div class="section-heading"><span>REPOSITORY</span><span>{renderGraph?.nodes.filter(n=>n.kind==='file').length??0} FILES</span></div>
-      <h1>{preview?'Graph fixture':fileSnapshot?.sourceRoot.split(/[\\/]/).pop()??'Open a workspace'}</h1>
+      <h1>{preview?(mixedPreview?'Mixed-language fixture':'Graph fixture'):fileSnapshot?.sourceRoot.split(/[\\/]/).pop()??'Open a workspace'}</h1>
       <p class="muted small">Explore files and their relationships. Expand a file to see its symbols.</p>
       <input class="search" aria-label="Find a file" placeholder="Find a file…" bind:value={filter} />
       <div class="file-list">
@@ -202,7 +231,7 @@
           {#if expanded.has(node.id)}<div class="symbol-list">{#each symbolsFor(node) as symbol (symbol.id)}<button class:selected={selectedId===symbol.id} onclick={()=>selectNode(symbol.id)}><span class="kind-dot" data-kind={symbol.kind}></span><span>{symbol.label}</span><small>{symbol.kind.replaceAll('_',' ')}</small></button>{/each}</div>{/if}
         {/each}
       </div>
-      <div class="nav-bottom"><span class="eyebrow">EVIDENCE BOUNDARY</span><p>File relations retain direction, confidence and evidence. Symbol locations are approximate. Intent and proposals never change observed relationships.</p></div>
+      <div class="nav-bottom">{#if sourceAnalysis}<details class="analysis-coverage"><summary>Source coverage · {sourceAnalysis.files.length} captured files</summary><p>{sourceAnalysis.identity.discoveryComplete?'Discovery completed; unsupported files excluded.':'Discovery incomplete. Some files were not captured.'}</p><p>{QUALIFICATION_GAPS}</p></details>{/if}<span class="eyebrow">EVIDENCE BOUNDARY</span><p>File relations retain direction, confidence and evidence. Symbol locations are approximate. Intent and proposals never change observed relationships.</p></div>
     </aside>
     <section class="graph-area" aria-label="3D file and symbol graph">
       <div class="graph-title"><span class="eyebrow">OBSERVED STRUCTURE</span><h2>Explore the shape of your code.</h2><p>Drag to orbit · Scroll to zoom · Select a file, then expand its symbols</p></div>
@@ -232,7 +261,7 @@
       {#if selected}
         <h2 class="symbol-title">{selected.label}</h2><p class="source-path">{selected.sourceRange?.path}</p>
         <button class="text-button" onclick={()=>selectBase({kind:'node',id:baseSelectedId!})}>Back to parent file</button>
-        <div class="metadata"><span>Source location</span><strong>~ line {selected.sourceRange?.startLine??'unknown'}</strong><span>Range precision</span><strong>Unverified</strong><span>Graph facts</span><strong>{relations.length} relationships</strong></div>
+        <div class="metadata"><span>Source location</span><strong>{sourceAnalysis?'':'~ '}line {selected.sourceRange?.startLine??'unknown'}</strong><span>Range precision</span><strong>{selectedDeclaration?'UTF-8 byte range':'Unverified'}</strong>{#if selectedDeclaration}<span>Bytes [start, end)</span><strong>{selectedDeclaration.range.startByte}–{selectedDeclaration.range.endByte}</strong><span>Header / body</span><strong>{selectedDeclaration.headerComplete?'complete':'incomplete'} / {selectedDeclaration.bodyComplete?'complete':'incomplete'}</strong>{/if}<span>Graph facts</span><strong>{relations.length} relationships</strong></div>
           <div class="intent-composer">
             <span class="eyebrow">CAPTURE THE WHY</span>
             <h3>What should this symbol mean?</h3>
@@ -257,7 +286,15 @@
         <div class="metadata"><span>Direction</span><strong>{selectedEdge.direction}</strong><span>Confidence</span><strong>{selectedEdge.confidence}</strong><span>Provenance</span><strong>{selectedEdge.provenance}</strong><span>Weight / evidence</span><strong>{selectedEdge.weight} / {selectedEdge.evidenceCount}</strong></div>
         <details class="relations" open><summary>Relationship evidence</summary>{#each selectedEdge.evidenceSample as evidence, i (i)}<p>{evidence.kind.replaceAll('_',' ')} · {evidence.analyzer}<br />{evidence.sourceRange.path} · ~ line {evidence.sourceRange.startLine}{#if evidence.targetRange}<br />→ {evidence.targetRange.path} · ~ line {evidence.targetRange.startLine}{/if}</p>{/each}</details>
       {:else}<h2>Select a file</h2><p class="muted">Explore the repository graph, then expand a file to inspect symbols and preserve intent.</p>{/if}
-      {#if fileRelations.length}<details class="relations" open><summary>File relationships · {fileRelations.length}</summary>{#each fileRelations as edge (edge.id)}<button class="relation-row" data-edge-id={edge.id} onclick={()=>selectBase({kind:'edge',id:edge.id})}><strong>{edge.kind.replaceAll('_',' ')}</strong><br />{fileLabel(edge.fromNodeId)} {edge.direction==='directed'?'→':'↔'} {fileLabel(edge.toNodeId)}<br /><small>{edge.provenance} · {edge.confidence} · {edge.evidenceCount} evidence</small></button>{/each}</details>{/if}
+      {#if sourceAnalysis&&selectedBase?.kind==='file'}
+        <section class="syntax-metadata" aria-label="Syntax coverage">
+          <div class="metadata"><span>Dialect</span><strong>{selectedSyntaxFile?.identity.dialect??'Not selected / unsupported'}</strong><span>Coverage</span><strong>{coverageLabel(selectedSyntaxFile?.identity.coverage??'outside')}</strong></div>
+          {#if dialectChoices(selectedBase.path).length}<label for="dialect-override">Dialect override{preview?' (recorded fixture)':''}</label><select id="dialect-override" value={dialectOverrides.get(selectedBase.path)??''} disabled={preview||busy||saving} onchange={event=>changeDialect(selectedBase!.path,event.currentTarget.value)}><option value="">Automatic</option>{#each dialectChoices(selectedBase.path) as choice (choice)}<option value={choice}>{choice}</option>{/each}</select>{/if}
+          {#each fileSyntaxDiagnostics as diagnostic, i (i)}<p class="fine" data-diagnostic={diagnostic.code}>{diagnostic.code}: {diagnostic.message}{#if diagnostic.range} · bytes [{diagnostic.range.startByte}, {diagnostic.range.endByte}){/if}</p>{/each}
+          {#if syntaxFacts.length}<details class="syntax-facts"><summary>Unresolved syntax evidence · {syntaxFacts.length}</summary><p class="fine">Written syntax only. Targets are byte ranges in this file, not resolved symbol identities.</p>{#each syntaxFacts as fact,i (i)}<p><strong>{fact.kind.replaceAll('_',' ')}</strong> · {fact.qualification}<br /><small>Evidence [{fact.range.startByte}, {fact.range.endByte}) · target [{fact.targetRange.startByte}, {fact.targetRange.endByte})</small></p>{/each}</details>{/if}
+        </section>
+      {/if}
+      {#if fileRelations.length}<details class="relations" open><summary>File relationships · {fileRelations.length}</summary><p class="fine">Legacy Rust-derived relations; multilingual syntax facts are separate.</p>{#each fileRelations as edge (edge.id)}<button class="relation-row" data-edge-id={edge.id} onclick={()=>selectBase({kind:'edge',id:edge.id})}><strong>{edge.kind.replaceAll('_',' ')}</strong><br />{fileLabel(edge.fromNodeId)} {edge.direction==='directed'?'→':'↔'} {fileLabel(edge.toNodeId)}<br /><small>{edge.provenance} · {edge.confidence} · {edge.evidenceCount} evidence</small></button>{/each}</details>{/if}
       <div class="journal-heading"><h3>Intent journal <span>{selectedRecords.length}</span></h3><button class="text-button" disabled={saving || busy || !historyReady} onclick={() => void refreshRecords()}>Reload</button></div>
       <label class="history-toggle"><input type="checkbox" bind:checked={showHistory} />Show all repository history</label>
       {#each selectedRecords as record (record.id)}
@@ -267,11 +304,11 @@
           <p>{record.text}</p>
           {#if record.parentId}<small>Original: {record.originalId.slice(0, 20)}…</small>{/if}
           <details class="retained-structure"><summary>Retained structural context</summary>
-            <p class="fine">Analysis-time metadata, with approximate ranges. This cannot reconstruct source code.</p>
+            <p class="fine">Analysis-time metadata, {record.snapshot.precision==='syntax_byte_ranges_v1'?'syntax ranges':'approximate ranges'}. This cannot reconstruct source code.</p>
             {#each record.snapshot.structuralSnapshot.nodes as node (node.id)}<p><strong>{node.label}</strong> · {node.kind.replaceAll('_', ' ')}<br /><small>{node.sourceRange?.path} · ~ line {node.sourceRange?.startLine}</small></p>{/each}
             {#each record.snapshot.structuralSnapshot.edges as edge (edge.id)}<p><strong>{edge.kind.replaceAll('_', ' ')}</strong><br /><small>{record.snapshot.structuralSnapshot.nodes.find(node => node.id === edge.sourceId)?.label ?? edge.sourceId} → {record.snapshot.structuralSnapshot.nodes.find(node => node.id === edge.targetId)?.label ?? edge.targetId}<br />{edge.provenance} · {edge.confidence}</small></p>{/each}
           </details>
-          <footer>{when(record.createdAt)}<br />{record.snapshot.byteLength.toLocaleString()} source bytes · {record.snapshot.contentHash}<br />Structure: {record.snapshot.structuralSnapshot.nodes.length} nodes · {record.snapshot.structuralSnapshot.edges.length} edges<br />Revision: {record.snapshot.repositoryRevision?.slice(0, 12) ?? 'unavailable'} · worktree may differ<br />Captured Rust source set: {record.snapshot.worktreeDigest.slice(0, 23)}…</footer>
+          <footer>{when(record.createdAt)}<br />{record.snapshot.byteLength.toLocaleString()} source bytes · {record.snapshot.contentHash}<br />Structure: {record.snapshot.structuralSnapshot.nodes.length} nodes · {record.snapshot.structuralSnapshot.edges.length} edges<br />Revision: {record.snapshot.repositoryRevision?.slice(0, 12) ?? 'unavailable'} · worktree may differ<br />{record.snapshot.worktreeDigestScope==='captured_multilingual_sources_v1'?'Captured multilingual source set':'Captured Rust source set'}: {record.snapshot.worktreeDigest.slice(0, 23)}…{#if record.snapshot.analysisIdentity}<br />{record.snapshot.analysisIdentity.parser} · {record.snapshot.analysisIdentity.extractor}<br />{record.snapshot.analysisIdentity.files.length} captured files · {record.snapshot.analysisIdentity.discoveryComplete?'discovery completed':'discovery incomplete'}{/if}</footer>
         </article>
       {:else}<p class="empty-journal">No intent recorded here yet.</p>{/each}
 
