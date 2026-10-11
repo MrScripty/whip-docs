@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 use crate::source::ValidatedRepoPath;
 
 pub const GRAPH_SCHEMA_VERSION: u32 = 1;
+/// Language-neutral syntax projection; legacy Rust snapshots retain version 1.
+pub const SYNTAX_GRAPH_SCHEMA_VERSION: u32 = 2;
 pub const DIRECTORY_GRAPH_SCHEMA_VERSION: u32 = 1;
 
 const DIRECTORY_GRAPH_ROOT_ID: &str = "repo:.";
@@ -73,6 +75,15 @@ pub enum GraphNodeKind {
     Function,
     Method,
     TauriCommand,
+    Class,
+    Interface,
+    TypeAlias,
+    Binding,
+    Field,
+    Variant,
+    Parameter,
+    Component,
+    Snippet,
 }
 
 impl GraphNodeKind {
@@ -89,6 +100,15 @@ impl GraphNodeKind {
             Self::Function => "function",
             Self::Method => "method",
             Self::TauriCommand => "tauri_command",
+            Self::Class => "class",
+            Self::Interface => "interface",
+            Self::TypeAlias => "type_alias",
+            Self::Binding => "binding",
+            Self::Field => "field",
+            Self::Variant => "variant",
+            Self::Parameter => "parameter",
+            Self::Component => "component",
+            Self::Snippet => "snippet",
         }
     }
 }
@@ -135,6 +155,7 @@ pub struct SourceRangeDto {
 #[serde(rename_all = "snake_case")]
 pub enum EdgeProvenanceDto {
     RustAnalyzer,
+    TreeSitter,
     Syn,
     Normalized,
 }

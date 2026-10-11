@@ -1,0 +1,237 @@
+{
+  "date": "2026-10-11",
+  "method": "Read-only official upstream/default-branch and registry inspection; no grammar dependency changes or upstream builds.",
+  "sources": [
+    {
+      "language": "python",
+      "repository": "tree-sitter/tree-sitter-python",
+      "commit": "26855eabccb19c6abf499fbc5b8dc7cc9ab8bc64",
+      "files": [
+        {
+          "path": "grammar.js",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-python/26855eabccb19c6abf499fbc5b8dc7cc9ab8bc64/grammar.js",
+          "sha256": "5071cb77def12a276ec71c2c584ef276b1266df720e16f642530bac35c5c2560"
+        },
+        {
+          "path": "src/node-types.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-python/26855eabccb19c6abf499fbc5b8dc7cc9ab8bc64/src/node-types.json",
+          "sha256": "6d26089d798b66b9a68dd5f6e278cf1ea00b31537ac48a7efbbe5bb63094c473"
+        },
+        {
+          "path": "Cargo.toml",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-python/26855eabccb19c6abf499fbc5b8dc7cc9ab8bc64/Cargo.toml",
+          "sha256": "b95f18430326426f37b00e812ced9374b4644ede19c91f7a6573fb69d40d4bdf"
+        },
+        {
+          "path": "package.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-python/26855eabccb19c6abf499fbc5b8dc7cc9ab8bc64/package.json",
+          "sha256": "cc682da95140c947fa0d67f9307e2017def0b4584c15b60386344ac78853d1a8"
+        }
+      ],
+      "registryPackage": "tree-sitter-python",
+      "latestRegistryVersion": "0.25.0",
+      "upstreamBuildExecuted": false,
+      "inspectionResult": "Current default-branch type_parameter accepts comma-separated types, with no default_type_parameter production."
+    },
+    {
+      "language": "kotlin",
+      "repository": "tree-sitter-grammars/tree-sitter-kotlin",
+      "commit": "3dea6dfa9c0129deb7c4315afbda806c85c41667",
+      "files": [
+        {
+          "path": "grammar.js",
+          "url": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-kotlin/3dea6dfa9c0129deb7c4315afbda806c85c41667/grammar.js",
+          "sha256": "1f6260635f96071fe1a164a3acbdaaf9d670dc2b35766e438c91f58ed2d50a7f"
+        },
+        {
+          "path": "src/node-types.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-kotlin/3dea6dfa9c0129deb7c4315afbda806c85c41667/src/node-types.json",
+          "sha256": "0f21509031ad37902dc05d5828f178fed3545c466ffcf38ef30d969cb64e8e9d"
+        },
+        {
+          "path": "Cargo.toml",
+          "url": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-kotlin/3dea6dfa9c0129deb7c4315afbda806c85c41667/Cargo.toml",
+          "sha256": "01257b59d82a946bd4a4ee7fd3e63ee80ecf405ed3df22f5ee1b0e7f1f2ccb23"
+        },
+        {
+          "path": "package.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-kotlin/3dea6dfa9c0129deb7c4315afbda806c85c41667/package.json",
+          "sha256": "ff2490d30dca448c049cf819ed99200fb61bce21cdb6dcba7382cab54002c531"
+        }
+      ],
+      "registryPackage": "tree-sitter-kotlin-ng",
+      "latestRegistryVersion": "1.1.0",
+      "upstreamBuildExecuted": false,
+      "inspectionResult": "Current default branch has neither context_parameter nor context_receiver production."
+    },
+    {
+      "language": "c",
+      "repository": "tree-sitter/tree-sitter-c",
+      "commit": "b780e47fc780ddc8da13afa35a3f4ed5c157823d",
+      "files": [
+        {
+          "path": "grammar.js",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c/b780e47fc780ddc8da13afa35a3f4ed5c157823d/grammar.js",
+          "sha256": "f362b9fe06db321464fc77f1e5ba2ce089baec9d18f4defddb0c9ca87885e546"
+        },
+        {
+          "path": "src/node-types.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c/b780e47fc780ddc8da13afa35a3f4ed5c157823d/src/node-types.json",
+          "sha256": "23e819ef1eefd357bb6eba844f47f8492f6a88da3e5046b06ec4acd4da8a9fd6"
+        },
+        {
+          "path": "Cargo.toml",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c/b780e47fc780ddc8da13afa35a3f4ed5c157823d/Cargo.toml",
+          "sha256": "3c60ec7c082b93dc65bde583a5532f3a5ff11e5cc26c41bde2895f110a02af87"
+        },
+        {
+          "path": "package.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c/b780e47fc780ddc8da13afa35a3f4ed5c157823d/package.json",
+          "sha256": "d4e92f1f5e15a75b84e22aee41afea8cec6c59a1f700a6423adfbabacce0e751"
+        }
+      ],
+      "registryPackage": "tree-sitter-c",
+      "latestRegistryVersion": "0.24.2",
+      "upstreamBuildExecuted": false,
+      "inspectionResult": "Current default branch has no _BitInt/bitint_type production."
+    },
+    {
+      "language": "cpp",
+      "repository": "tree-sitter/tree-sitter-cpp",
+      "commit": "c009222808634c1014f82438d4883753516a2c24",
+      "files": [
+        {
+          "path": "grammar.js",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-cpp/c009222808634c1014f82438d4883753516a2c24/grammar.js",
+          "sha256": "4545b6bf72e8a38d3e9a6c9a3deb9dbce37dfce357133c1b9e3a172831234622"
+        },
+        {
+          "path": "src/node-types.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-cpp/c009222808634c1014f82438d4883753516a2c24/src/node-types.json",
+          "sha256": "bc49c50d6b8af62df4cfda2675e5142bfba85bc1790ff2693aa0ca1286d5c7fe"
+        },
+        {
+          "path": "Cargo.toml",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-cpp/c009222808634c1014f82438d4883753516a2c24/Cargo.toml",
+          "sha256": "34e528507e5c2c3b38c1664e5ff8fab5f5593928d03bb0e4a89b472deef9548c"
+        },
+        {
+          "path": "package.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-cpp/c009222808634c1014f82438d4883753516a2c24/package.json",
+          "sha256": "3d4b375ec5fb59d7e95dfdf66d6cfe2366d7559dc670e73185606745c91c1cf0"
+        },
+        {
+          "path": "test/corpus/declarations.txt",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-cpp/c009222808634c1014f82438d4883753516a2c24/test/corpus/declarations.txt",
+          "sha256": "dadcd34ec18a834a6efc8c2b5e076b68bb64a2376e4482c051c2fca2f8f9ad8b"
+        },
+        {
+          "path": "test/corpus/definitions.txt",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-cpp/c009222808634c1014f82438d4883753516a2c24/test/corpus/definitions.txt",
+          "sha256": "631f40d3bbda661636c29867992990171ed04519c7f8e61947c4327dfe87e10c"
+        }
+      ],
+      "registryPackage": "tree-sitter-cpp",
+      "latestRegistryVersion": "0.23.4",
+      "upstreamBuildExecuted": false,
+      "inspectionResult": "Current default branch includes explicit_object_parameter_declaration and a corresponding corpus expectation.",
+      "generatedParserPrefix": {
+        "languageVersion": 15,
+        "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-cpp/c009222808634c1014f82438d4883753516a2c24/src/parser.c",
+        "verification": "Read-only prefix inspection; no compilation or execution."
+      }
+    },
+    {
+      "language": "csharp",
+      "repository": "tree-sitter/tree-sitter-c-sharp",
+      "commit": "8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5",
+      "files": [
+        {
+          "path": "grammar.js",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c-sharp/8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5/grammar.js",
+          "sha256": "63d357e04fdbe05f424463f365fb595f8f05866711cc279f85a7288638e753bd"
+        },
+        {
+          "path": "src/node-types.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c-sharp/8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5/src/node-types.json",
+          "sha256": "54bf9fa925bac6fcdc05e0221ae8d4a62c155eb43ccd72b5bc2a4bdbebb7997e"
+        },
+        {
+          "path": "Cargo.toml",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c-sharp/8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5/Cargo.toml",
+          "sha256": "64888f3cc5dc11f4bdb21580ace09ddadfb80596a9609dea4c6eb1feee9627c9"
+        },
+        {
+          "path": "package.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c-sharp/8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5/package.json",
+          "sha256": "a76d617869801ea0e9969a06725a776a3e94076311a45f072a30aaaa497f47ea"
+        },
+        {
+          "path": "test/corpus/type-methods.txt",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c-sharp/8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5/test/corpus/type-methods.txt",
+          "sha256": "bfc130d1525a1c6b119919e539d23346f18ec7a964f684540fd52a7db4139151"
+        },
+        {
+          "path": "test/corpus/contextual-keywords.txt",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c-sharp/8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5/test/corpus/contextual-keywords.txt",
+          "sha256": "8c2f58669b430f38e169c940b769c5ffd44bd6e614f47d27760ee98fe96e5a3c"
+        },
+        {
+          "path": "test/corpus/classes.txt",
+          "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c-sharp/8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5/test/corpus/classes.txt",
+          "sha256": "81bfd3e9d43e3d3c75916b40d4675b35954b557ec7322b409d60afd91ec91398"
+        }
+      ],
+      "registryPackage": "tree-sitter-c-sharp",
+      "latestRegistryVersion": "0.23.5",
+      "upstreamBuildExecuted": false,
+      "inspectionResult": "Current default branch includes extension_declaration, receiver_parameter, extension_body and corpus expectations.",
+      "generatedParserPrefix": {
+        "languageVersion": 15,
+        "url": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-c-sharp/8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5/src/parser.c",
+        "verification": "Read-only prefix inspection; no compilation or execution."
+      }
+    },
+    {
+      "language": "svelte",
+      "repository": "tree-sitter-grammars/tree-sitter-svelte",
+      "commit": "ae5199db47757f785e43a14b332118a5474de1a2",
+      "files": [
+        {
+          "path": "grammar.js",
+          "url": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-svelte/ae5199db47757f785e43a14b332118a5474de1a2/grammar.js",
+          "sha256": "837d47718383f01ae473e144c82be7a17de81f406269cfefd8f5d97a0926375c"
+        },
+        {
+          "path": "src/node-types.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-svelte/ae5199db47757f785e43a14b332118a5474de1a2/src/node-types.json",
+          "sha256": "18aecc6d00acda9369784b5d4054d4bc9b53dbe2d21533f4af90b0b6b1537a6c"
+        },
+        {
+          "path": "Cargo.toml",
+          "url": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-svelte/ae5199db47757f785e43a14b332118a5474de1a2/Cargo.toml",
+          "sha256": "5b5c11c6041d317f155270250477e70f2c654aa715611dcab6d7b36a15168cda"
+        },
+        {
+          "path": "package.json",
+          "url": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-svelte/ae5199db47757f785e43a14b332118a5474de1a2/package.json",
+          "sha256": "5675224391bc00948f37cce57b650b323899749532f7bbd132bc8df07b05f882"
+        },
+        {
+          "path": "test/corpus/snippets.txt",
+          "url": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-svelte/ae5199db47757f785e43a14b332118a5474de1a2/test/corpus/snippets.txt",
+          "sha256": "e6cd2527c045f2b03886eb1afafe75bfc1adbc45c6c651938ea4f691df0a4d9b"
+        },
+        {
+          "path": "queries/injections.scm",
+          "url": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-svelte/ae5199db47757f785e43a14b332118a5474de1a2/queries/injections.scm",
+          "sha256": "78cc392ede48e5dbc53e616372c395b35f143e7e9a4c48c6fc7b0dbc8a02d4d6"
+        }
+      ],
+      "registryPackage": "tree-sitter-svelte-ng",
+      "latestRegistryVersion": "1.0.2",
+      "upstreamBuildExecuted": false,
+      "inspectionResult": "Raw template regions are intentionally emitted for embedded-language parsing. Existing registry grammar already provides these ranges."
+    }
+  ]
+}

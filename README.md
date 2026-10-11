@@ -1,8 +1,14 @@
 # Whip Docs
 
-Whip Docs is now a local desktop code-architecture explorer for Rust
-repositories. The previous static Studio Whip documentation website is archived
+Whip Docs is a local desktop code-architecture explorer. This feature branch adds
+a Rust-owned multilingual Tree-sitter backend. The previous static Studio Whip documentation website is archived
 as historical context and is no longer the active product surface.
+
+## Intent prototype
+
+This branch adds a bounded intent-and-symbol workspace. See [PROTOTYPE.md](PROTOTYPE.md)
+for scope, run instructions, privacy and verification limits. Native execution
+has not yet been qualified.
 
 ## Current Product
 
@@ -28,7 +34,7 @@ Install frontend dependencies before running npm scripts:
 npm install
 ```
 
-Install the rust-analyzer runtime if it is not already available:
+Optional Rust-specific enrichment can use rust-analyzer:
 
 ```bash
 rustup component add rust-analyzer
@@ -54,9 +60,24 @@ cargo fmt --check
 cargo clippy --workspace --all-targets
 ```
 
-Analyze a repository from the app by setting a local Cargo workspace or crate
-directory and selecting `Analyze`. Source snippets are loaded by backend graph
-node ID, not by frontend-provided file paths.
+The backend accepts a local source directory without Cargo.toml. It supports
+Rust, TypeScript/TSX, JavaScript/JSX, Python, Lua, Kotlin, Zig, C#, C, C++, Odin
+and Svelte 5 source routes. See the [qualification matrix](docs/design/grammar-qualification.md)
+for tested constructs and grammar gaps, and the [integration handoff](docs/design/multilingual-integration.md)
+for required frontend work. The separate graph correction branch has not been
+integrated or visually qualified with this backend. The normal inspector shows metadata and append-only intent, not raw source.
+Snapshot capture is backend-owned and selected by graph node ID.
+
+Headless backend checks (without GTK/WebKit):
+
+```bash
+cargo test --no-default-features --workspace --all-targets --locked
+cargo clippy --no-default-features --workspace --all-targets --locked -- -D warnings
+cargo fmt --all --check
+```
+
+See [backend verification](verification/multilingual-backend.md) for evidence and
+native-integration limits.
 
 ## Architecture
 

@@ -1,4 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
+import type { SourceAnalysisDto, SyntaxDialect } from './SyntaxAnalysis';
 
 export type AppStatusDto = {
   appName: string;
@@ -53,7 +54,9 @@ export type GraphNodeKind =
   | 'impl'
   | 'function'
   | 'method'
-  | 'tauri_command';
+  | 'tauri_command'
+  | 'class' | 'interface' | 'type_alias' | 'binding' | 'field' | 'variant'
+  | 'parameter' | 'component' | 'snippet';
 
 export type GraphEdgeKind =
   | 'contains'
@@ -85,7 +88,7 @@ export type GraphEdgeDto = {
   kind: GraphEdgeKind;
   sourceId: string;
   targetId: string;
-  provenance: 'rust_analyzer' | 'syn' | 'normalized';
+  provenance: 'rust_analyzer' | 'syn' | 'normalized' | 'tree_sitter';
   confidence: 'exact' | 'inferred' | 'partial';
 };
 
@@ -223,7 +226,7 @@ export type FileRelationGraphSnapshotDto = {
   nodes: FileRelationNodeDto[];
   edges: FileRelationEdgeDto[];
   analyzers: AnalyzerRunDto[];
-  diagnostics: AnalyzerDiagnosticDto[];
+  diagnostics: GraphDiagnosticDto[];
 };
 
 export type SourceSnippetDto = {
@@ -257,8 +260,12 @@ export class TauriArchitectureBackend {
     return invokeTauri<AnalysisStatusDto>('get_analysis_status');
   }
 
-  async analyzeSourceRepo(): Promise<GraphSnapshotDto> {
-    return invokeTauri<GraphSnapshotDto>('analyze_source_repo');
+  async analyzeSourceRepo(dialectOverrides?: Record<string, SyntaxDialect>): Promise<GraphSnapshotDto> {
+    return invokeTauri<GraphSnapshotDto>('analyze_source_repo', { dialectOverrides });
+  }
+
+  async getSourceAnalysis(expectedSourceRoot: string, expectedAnalysisAt: string): Promise<SourceAnalysisDto | null> {
+    return invokeTauri<SourceAnalysisDto | null>('get_source_analysis', { expectedSourceRoot, expectedAnalysisAt });
   }
 
   async loadDirectoryGraph(path: string): Promise<DirectoryGraphSnapshotDto> {

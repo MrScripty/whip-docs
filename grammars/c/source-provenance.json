@@ -1,0 +1,31 @@
+{
+  "repository": "https://github.com/tree-sitter/tree-sitter-c",
+  "revision": "b780e47fc780ddc8da13afa35a3f4ed5c157823d",
+  "archiveUrl": "https://codeload.github.com/tree-sitter/tree-sitter-c/tar.gz/b780e47fc780ddc8da13afa35a3f4ed5c157823d",
+  "archiveSha256": "dc3979e40fce678c27273ba8ab93b48b5acd6b91d1dfde6a4451222d366d689f",
+  "files": {
+    "Cargo.toml": "3c60ec7c082b93dc65bde583a5532f3a5ff11e5cc26c41bde2895f110a02af87",
+    "LICENSE": "2e0110e07abef7c2548b26ec9d6969775617ca539a0dc8dbeeb14d6452c711d1",
+    "bindings/rust/build.rs": "111b403dd548b7024678668f4f5af0afd89ba62a549b6c42b46dc50b79082966",
+    "bindings/rust/lib.rs": "786c8ab81d2325234b60e5e321a74486875c88e11a15a9479e1d049911e343c1",
+    "grammar.js": "f362b9fe06db321464fc77f1e5ba2ce089baec9d18f4defddb0c9ca87885e546",
+    "package.json": "d4e92f1f5e15a75b84e22aee41afea8cec6c59a1f700a6423adfbabacce0e751",
+    "queries/highlights.scm": "3378d854dda695b2b282b9468247524ed4271ef74af691033d2e36883379409c",
+    "queries/tags.scm": "774ca67cfe23b0e0d1d3a4f01788049a822beb1311feee72b20a595a37be1e28",
+    "src/grammar.json": "d0bc53bfd8e9eff4d5e0c3ca2c8049bec2caa8a15f119807de68fd527f172368",
+    "src/node-types.json": "23e819ef1eefd357bb6eba844f47f8492f6a88da3e5046b06ec4acd4da8a9fd6",
+    "src/parser.c": "f2883ff9b21f4a5bd5553c1b10366c418947d17a7bc6bf256124a7542f079dd2",
+    "src/tree_sitter/alloc.h": "b29c1c9fb7cc82f58c84b376df1297d6e2737a1d655fd356db0859e3c29c2fea",
+    "src/tree_sitter/array.h": "31e60a1bff6f715afacce03b5b70efe42b58371b4f9595dd4af52a577ff9608c",
+    "src/tree_sitter/parser.h": "180b893c8734778fd32f372dfbc27bd6ad1cd2221f26150b31256ff6716320d2",
+    "test/corpus/ambiguities.txt": "2fe27786b9a37e2f0dac85bf3c8f22142c7f7750155a41239552605f0a29f9b1",
+    "test/corpus/crlf.txt": "af1ae2f0e22543842d752c5bce957be2a44472a16f39a4549bdcb81dc23dbd30",
+    "test/corpus/declarations.txt": "ca15427eaed2ea99e70b6e0973067fc696674882340065930f83ade3577da1cd",
+    "test/corpus/expressions.txt": "a26816240923ed492c6edef548de198b3914d36c55196d74df123d27a5c6613f",
+    "test/corpus/microsoft.txt": "4613757519b8e65756c33a6c1f9d44bf2de2a77ffbc931be723a88ce89ee7623",
+    "test/corpus/preprocessor.txt": "cd00f02fb3459168702f65ed3f9956bfe8c230fc3449acf9f7bb26e83637d0f7",
+    "test/corpus/statements.txt": "7fb8446e0bc16158b3664af3377b248e36ddcf1def7b868cf13d04d62a3a0c44",
+    "test/corpus/types.txt": "48db2fe617d0b72e463827ce784ae637a8854b6fea49b8242eddddcef7222d1b",
+    "tree-sitter.json": "9a823f24385fbb5fa06e52c258c726449c4e417a4476306589b6dcfaf9b831ee"
+  }
+}

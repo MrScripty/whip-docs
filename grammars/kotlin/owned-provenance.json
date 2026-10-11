@@ -1,0 +1,49 @@
+{
+  "formatVersion": 1,
+  "package": "tree-sitter-kotlin-ng",
+  "version": "1.1.0-whip.1",
+  "upstreamRepository": "https://github.com/tree-sitter-grammars/tree-sitter-kotlin",
+  "upstreamCommit": "3dea6dfa9c0129deb7c4315afbda806c85c41667",
+  "upstreamArchiveSha256": "a3f14d9574c788b09f8ed9057f48a6a153a016b642647318457fe2d3adced7a9",
+  "generator": {
+    "package": "tree-sitter-cli",
+    "version": "0.25.10",
+    "registry": "https://crates.io",
+    "crateSha256": "63d63b8177c1596c5dff1b5468c67c11d5d7d13ea04d83bab181505c91b3eff4",
+    "upstreamCommit": "da6fe9beb4f7f67beb75914ca8e0d48ae48d6406",
+    "command": [
+      "tree-sitter",
+      "generate",
+      "--abi",
+      "15"
+    ],
+    "nodeVersion": "v24.19.0"
+  },
+  "files": {
+    "Cargo.toml": "9d9353e31a8c583e90ae2048d608357e7ba0671d02a953a640a7f594a12ca8af",
+    "LICENSE": "0eea8dc45e89deeb03c7799bbbc7b4688f365fb274562f4540ecfebdea82e727",
+    "README.whip.md": "be0ab31197225922f3070bfe6c6217f64d6fc1e28d3344f7f6c9f4bf98cfc76e",
+    "bindings/rust/build.rs": "8f497bb1459c09529efecfb9ae0dbc6e6f3c5892911e535f6551e15337d2cd6c",
+    "bindings/rust/lib.rs": "1e3ede5fbdb4106d84452424d796facd175b130e0c55d6b3887809e9642d0fcc",
+    "generated-provenance.json": "ee87fe9d82e9c84606ed333ea22da5e34eef36a6bedf8a98379faa54a812877d",
+    "grammar.js": "ee132c86b69cbd7b5627ff3644d02e95906796f34e5aaf677f1420b989d894ae",
+    "package.json": "ff2490d30dca448c049cf819ed99200fb61bce21cdb6dcba7382cab54002c531",
+    "source-provenance.json": "8fe19fb565aca07308cbe3494a170c3519e9cdb2cff2685cbd84f6d1efb2fda6",
+    "src/grammar.json": "5fae6fa28aa755d5c9078efea4d335ad614144452db66e16a26c6bece36a6bdc",
+    "src/node-types.json": "3e4ccbfcad91ba6ab580ac5cbf18a0fe3a9b1471a26b0e1cc2d3f52acef10d50",
+    "src/parser.c": "4c4e97cfae09117329b734482edbd5ba4a1ec5e550fe177258572562c8cef9f5",
+    "src/scanner.c": "164c2bb928d23765ed38c3a322deaef9b52d6e147cec7cdf45add90d4fa6101c",
+    "src/tree_sitter/alloc.h": "b29c1c9fb7cc82f58c84b376df1297d6e2737a1d655fd356db0859e3c29c2fea",
+    "src/tree_sitter/array.h": "5bdf6ed1a78e3409fd443e085ca967a64c188a5d082aaf7f819bccd53a471c94",
+    "src/tree_sitter/parser.h": "180b893c8734778fd32f372dfbc27bd6ad1cd2221f26150b31256ff6716320d2",
+    "test/corpus/declarations.txt": "0be32b2b517c2f60b4b5f71e62142706c99cfe179319fed52448c873a7615b4d",
+    "test/corpus/expressions.txt": "01496546f1d2cadfe1e32d979c083544717781e8ac25405287be4420058a48fd",
+    "test/corpus/semi.txt": "a3d2fa88fa330956755a0a88a2473e2d42fea0e54e4fe32df8dc7ed0c61d5895",
+    "test/corpus/whip-modern.txt": "a58bbea8c1e8815c3a19a052d50204045e2b4867ef9b85b43a39831cf71b413a",
+    "tree-sitter.json": "d4f3dd0850836457ede7ee82e3f1b8803bd40343b9b17af7e02741ff4daf6fcb",
+    "upstream/Cargo.toml": "01257b59d82a946bd4a4ee7fd3e63ee80ecf405ed3df22f5ee1b0e7f1f2ccb23",
+    "upstream/grammar.js": "1f6260635f96071fe1a164a3acbdaaf9d670dc2b35766e438c91f58ed2d50a7f",
+    "upstream/tree-sitter.json": "d4f3dd0850836457ede7ee82e3f1b8803bd40343b9b17af7e02741ff4daf6fcb",
+    "whip.patch": "07a6ff2054b80e80dd07a736be10909ae93e8deaf1d1b0e23b225ad946d92ae4"
+  }
+}

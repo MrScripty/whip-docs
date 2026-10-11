@@ -1,0 +1,15 @@
+{
+  "backendCommit": "5e9900a8baf3ac599a63532e7dd16d90a1ec0892",
+  "generator": "AppState::load_file_relation_graph + AppState::analyze_source_repo in headless validation harness",
+  "rustAnalyzer": "1.92.0",
+  "normalization": "Absolute sourceRoot replaced with public fixture label everywhere, including workspace IDs and their containment-edge references; generatedAt fixed to source-set hash",
+  "sourceSha256": {
+    "tests/order.rs": "b1f8b42ea9f31e0ee5a756d0a6de51c8a38e111c9362b4e7c83ad45cb0ab2ef7",
+    "src/checkout.rs": "1124319c870033d6be09eee1a8e9ede35a54140b85470fc850a2a3c7fa49c49e",
+    "src/lib.rs": "472cb9a4543850c30488ffc51dddd057fc1d8f86f1499d904b65d723f001bba2",
+    "src/receipt.rs": "18be43ee2cfdcaee08d6832e848776b9ecab96db1923f0de536e484b7db0d9da",
+    "src/inventory.rs": "a5435812041c950795f305a5c0cccde6f4001770fc14fc9236a636db4048d3f8",
+    "src/domain/pricing.rs": "d7b0a65cb7727ceab5abefb37654a49de7322cd1dcd7d8757fe75fb7018557d2",
+    "src/domain/mod.rs": "a2730bc5b8092f7a450369a65582404dbb83895caf104941af12d8a39024e534"
+  }
+}

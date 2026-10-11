@@ -1,0 +1,12 @@
+{
+  "backend": "Real WebGL UI; Rust-exported fixture; no native IPC",
+  "extractor": "whip-docs-syntax@5",
+  "checks": [
+    "Existing overlay and inspector show corrected Kotlin/Zig ownership and exact C++/Odin callable names/ranges; duplicate operator labels retain distinct IDs and each accepts verbatim intent",
+    "Corrected callable names and neutral kinds persist after reload, preserve original bytes, keep proposals separate and exclude source/default/comment text",
+    "Six negative fixtures show precise remaining diagnostics without phantom or orphan declarations; scope and semantic limitations stay visible",
+    "Actual @4 journal survives byte-for-byte as stale under @5 and cannot receive a derivative from the UI",
+    "Invalid journal remains unchanged; no browser page errors"
+  ],
+  "errors": []
+}

@@ -1,0 +1,1777 @@
+{
+  "files": {
+    "analyzers": [
+      {
+        "analyzer": "syn-rust-import-relations",
+        "language": "rust",
+        "version": null
+      },
+      {
+        "analyzer": "syn-rust-call-relations",
+        "language": "rust",
+        "version": null
+      }
+    ],
+    "diagnostics": [
+      {
+        "code": "unresolved_call",
+        "message": "unresolved call target 'Some'",
+        "sourcePath": "src/checkout.rs"
+      },
+      {
+        "code": "unresolved_call",
+        "message": "unresolved call target 'Price'",
+        "sourcePath": "src/domain/pricing.rs"
+      }
+    ],
+    "edges": [
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:src/domain",
+        "id": "contains:dir:src/domain:file:src/domain/mod.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:src/domain/mod.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:src/domain",
+        "id": "contains:dir:src/domain:file:src/domain/pricing.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:src/domain/pricing.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:src",
+        "id": "contains:dir:src:dir:src/domain",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "dir:src/domain",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:src",
+        "id": "contains:dir:src:file:src/checkout.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:src/checkout.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:src",
+        "id": "contains:dir:src:file:src/inventory.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:src/inventory.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:src",
+        "id": "contains:dir:src:file:src/lib.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:src/lib.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:src",
+        "id": "contains:dir:src:file:src/receipt.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:src/receipt.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "repo:.",
+        "id": "contains:repo:.:dir:src",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "dir:src",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:tests",
+        "id": "contains:dir:tests:file:tests/order.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:tests/order.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "repo:.",
+        "id": "contains:repo:.:dir:tests",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "dir:tests",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "repo:.",
+        "id": "contains:repo:.:file:Cargo.lock",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:Cargo.lock",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "repo:.",
+        "id": "contains:repo:.:file:Cargo.toml",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:Cargo.toml",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 1,
+        "evidenceSample": [
+          {
+            "access": null,
+            "analyzer": "syn-rust-import-relations",
+            "kind": "import",
+            "sourceLabel": "crate::inventory",
+            "sourceRange": {
+              "endColumn": 1,
+              "endLine": 1,
+              "path": "src/checkout.rs",
+              "startColumn": 1,
+              "startLine": 1
+            },
+            "targetLabel": "src/inventory.rs",
+            "targetRange": null
+          }
+        ],
+        "fromNodeId": "file:src/checkout.rs",
+        "id": "imports:file:src/checkout.rs:file:src/inventory.rs",
+        "kind": "imports",
+        "provenance": "syn",
+        "toNodeId": "file:src/inventory.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 1,
+        "evidenceSample": [
+          {
+            "access": null,
+            "analyzer": "syn-rust-import-relations",
+            "kind": "import",
+            "sourceLabel": "crate::receipt",
+            "sourceRange": {
+              "endColumn": 1,
+              "endLine": 2,
+              "path": "src/checkout.rs",
+              "startColumn": 1,
+              "startLine": 2
+            },
+            "targetLabel": "src/receipt.rs",
+            "targetRange": null
+          }
+        ],
+        "fromNodeId": "file:src/checkout.rs",
+        "id": "imports:file:src/checkout.rs:file:src/receipt.rs",
+        "kind": "imports",
+        "provenance": "syn",
+        "toNodeId": "file:src/receipt.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 1,
+        "evidenceSample": [
+          {
+            "access": null,
+            "analyzer": "syn-rust-import-relations",
+            "kind": "import",
+            "sourceLabel": "crate::domain::pricing",
+            "sourceRange": {
+              "endColumn": 1,
+              "endLine": 3,
+              "path": "src/checkout.rs",
+              "startColumn": 1,
+              "startLine": 3
+            },
+            "targetLabel": "src/domain/pricing.rs",
+            "targetRange": null
+          }
+        ],
+        "fromNodeId": "file:src/checkout.rs",
+        "id": "imports:file:src/checkout.rs:file:src/domain/pricing.rs",
+        "kind": "imports",
+        "provenance": "syn",
+        "toNodeId": "file:src/domain/pricing.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 1,
+        "evidenceSample": [
+          {
+            "access": null,
+            "analyzer": "syn-rust-import-relations",
+            "kind": "import",
+            "sourceLabel": "crate::domain::pricing",
+            "sourceRange": {
+              "endColumn": 1,
+              "endLine": 1,
+              "path": "src/receipt.rs",
+              "startColumn": 1,
+              "startLine": 1
+            },
+            "targetLabel": "src/domain/pricing.rs",
+            "targetRange": null
+          }
+        ],
+        "fromNodeId": "file:src/receipt.rs",
+        "id": "imports:file:src/receipt.rs:file:src/domain/pricing.rs",
+        "kind": "imports",
+        "provenance": "syn",
+        "toNodeId": "file:src/domain/pricing.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "partial",
+        "direction": "directed",
+        "evidenceCount": 1,
+        "evidenceSample": [
+          {
+            "access": null,
+            "analyzer": "syn-rust-call-relations",
+            "kind": "function_call",
+            "sourceLabel": "checkout",
+            "sourceRange": {
+              "endColumn": 1,
+              "endLine": 9,
+              "path": "src/checkout.rs",
+              "startColumn": 1,
+              "startLine": 9
+            },
+            "targetLabel": "reserve",
+            "targetRange": {
+              "endColumn": 1,
+              "endLine": 5,
+              "path": "src/inventory.rs",
+              "startColumn": 1,
+              "startLine": 5
+            }
+          }
+        ],
+        "fromNodeId": "file:src/checkout.rs",
+        "id": "calls:file:src/checkout.rs:file:src/inventory.rs",
+        "kind": "calls",
+        "provenance": "syn",
+        "toNodeId": "file:src/inventory.rs",
+        "weight": 1
+      },
+      {
+        "confidence": "partial",
+        "direction": "directed",
+        "evidenceCount": 2,
+        "evidenceSample": [
+          {
+            "access": null,
+            "analyzer": "syn-rust-call-relations",
+            "kind": "function_call",
+            "sourceLabel": "checkout",
+            "sourceRange": {
+              "endColumn": 1,
+              "endLine": 9,
+              "path": "src/checkout.rs",
+              "startColumn": 1,
+              "startLine": 9
+            },
+            "targetLabel": "render",
+            "targetRange": {
+              "endColumn": 1,
+              "endLine": 2,
+              "path": "src/receipt.rs",
+              "startColumn": 1,
+              "startLine": 2
+            }
+          },
+          {
+            "access": null,
+            "analyzer": "syn-rust-call-relations",
+            "kind": "function_call",
+            "sourceLabel": "preview",
+            "sourceRange": {
+              "endColumn": 1,
+              "endLine": 12,
+              "path": "src/checkout.rs",
+              "startColumn": 1,
+              "startLine": 12
+            },
+            "targetLabel": "render",
+            "targetRange": {
+              "endColumn": 1,
+              "endLine": 2,
+              "path": "src/receipt.rs",
+              "startColumn": 1,
+              "startLine": 2
+            }
+          }
+        ],
+        "fromNodeId": "file:src/checkout.rs",
+        "id": "calls:file:src/checkout.rs:file:src/receipt.rs",
+        "kind": "calls",
+        "provenance": "syn",
+        "toNodeId": "file:src/receipt.rs",
+        "weight": 2
+      },
+      {
+        "confidence": "partial",
+        "direction": "directed",
+        "evidenceCount": 1,
+        "evidenceSample": [
+          {
+            "access": null,
+            "analyzer": "syn-rust-call-relations",
+            "kind": "function_call",
+            "sourceLabel": "quote",
+            "sourceRange": {
+              "endColumn": 1,
+              "endLine": 7,
+              "path": "src/checkout.rs",
+              "startColumn": 1,
+              "startLine": 7
+            },
+            "targetLabel": "total",
+            "targetRange": {
+              "endColumn": 1,
+              "endLine": 4,
+              "path": "src/domain/pricing.rs",
+              "startColumn": 1,
+              "startLine": 4
+            }
+          }
+        ],
+        "fromNodeId": "file:src/checkout.rs",
+        "id": "calls:file:src/checkout.rs:file:src/domain/pricing.rs",
+        "kind": "calls",
+        "provenance": "syn",
+        "toNodeId": "file:src/domain/pricing.rs",
+        "weight": 1
+      }
+    ],
+    "generatedAt": "fixture:c7b6ba9437c7b30ade4436c7529dbdae612c274b8dcae97cf298b1f5aedffc63",
+    "nodes": [
+      {
+        "childIds": [
+          "dir:src",
+          "dir:tests",
+          "file:Cargo.lock",
+          "file:Cargo.toml"
+        ],
+        "id": "repo:.",
+        "kind": "repo",
+        "language": null,
+        "name": "file-workspace",
+        "parentId": null,
+        "path": "."
+      },
+      {
+        "childIds": [],
+        "id": "file:src/domain/mod.rs",
+        "kind": "file",
+        "language": "rust",
+        "name": "mod.rs",
+        "parentId": "dir:src/domain",
+        "path": "src/domain/mod.rs"
+      },
+      {
+        "childIds": [],
+        "id": "file:src/domain/pricing.rs",
+        "kind": "file",
+        "language": "rust",
+        "name": "pricing.rs",
+        "parentId": "dir:src/domain",
+        "path": "src/domain/pricing.rs"
+      },
+      {
+        "childIds": [
+          "file:src/domain/mod.rs",
+          "file:src/domain/pricing.rs"
+        ],
+        "id": "dir:src/domain",
+        "kind": "directory",
+        "language": null,
+        "name": "domain",
+        "parentId": "dir:src",
+        "path": "src/domain"
+      },
+      {
+        "childIds": [],
+        "id": "file:src/checkout.rs",
+        "kind": "file",
+        "language": "rust",
+        "name": "checkout.rs",
+        "parentId": "dir:src",
+        "path": "src/checkout.rs"
+      },
+      {
+        "childIds": [],
+        "id": "file:src/inventory.rs",
+        "kind": "file",
+        "language": "rust",
+        "name": "inventory.rs",
+        "parentId": "dir:src",
+        "path": "src/inventory.rs"
+      },
+      {
+        "childIds": [],
+        "id": "file:src/lib.rs",
+        "kind": "file",
+        "language": "rust",
+        "name": "lib.rs",
+        "parentId": "dir:src",
+        "path": "src/lib.rs"
+      },
+      {
+        "childIds": [],
+        "id": "file:src/receipt.rs",
+        "kind": "file",
+        "language": "rust",
+        "name": "receipt.rs",
+        "parentId": "dir:src",
+        "path": "src/receipt.rs"
+      },
+      {
+        "childIds": [
+          "dir:src/domain",
+          "file:src/checkout.rs",
+          "file:src/inventory.rs",
+          "file:src/lib.rs",
+          "file:src/receipt.rs"
+        ],
+        "id": "dir:src",
+        "kind": "directory",
+        "language": null,
+        "name": "src",
+        "parentId": "repo:.",
+        "path": "src"
+      },
+      {
+        "childIds": [],
+        "id": "file:tests/order.rs",
+        "kind": "file",
+        "language": "rust",
+        "name": "order.rs",
+        "parentId": "dir:tests",
+        "path": "tests/order.rs"
+      },
+      {
+        "childIds": [
+          "file:tests/order.rs"
+        ],
+        "id": "dir:tests",
+        "kind": "directory",
+        "language": null,
+        "name": "tests",
+        "parentId": "repo:.",
+        "path": "tests"
+      },
+      {
+        "childIds": [],
+        "id": "file:Cargo.lock",
+        "kind": "file",
+        "language": null,
+        "name": "Cargo.lock",
+        "parentId": "repo:.",
+        "path": "Cargo.lock"
+      },
+      {
+        "childIds": [],
+        "id": "file:Cargo.toml",
+        "kind": "file",
+        "language": null,
+        "name": "Cargo.toml",
+        "parentId": "repo:.",
+        "path": "Cargo.toml"
+      }
+    ],
+    "rootNodeId": "repo:.",
+    "schemaVersion": 1,
+    "sourceRoot": "public-fixture:whip-graph-fixture"
+  },
+  "symbols": {
+    "diagnostics": [
+      {
+        "code": "unresolved_call",
+        "message": "unresolved call target 'Some'",
+        "sourcePath": "src/checkout.rs"
+      },
+      {
+        "code": "unresolved_call",
+        "message": "unresolved call target 'Price'",
+        "sourcePath": "src/domain/pricing.rs"
+      }
+    ],
+    "edges": [
+      {
+        "confidence": "partial",
+        "id": "calls:function:workspace:src/checkout.rs:checkout:function:workspace:src/inventory.rs:reserve",
+        "kind": "calls",
+        "provenance": "syn",
+        "sourceId": "function:workspace:src/checkout.rs:checkout",
+        "targetId": "function:workspace:src/inventory.rs:reserve"
+      },
+      {
+        "confidence": "partial",
+        "id": "calls:function:workspace:src/checkout.rs:checkout:function:workspace:src/receipt.rs:render",
+        "kind": "calls",
+        "provenance": "syn",
+        "sourceId": "function:workspace:src/checkout.rs:checkout",
+        "targetId": "function:workspace:src/receipt.rs:render"
+      },
+      {
+        "confidence": "partial",
+        "id": "calls:function:workspace:src/checkout.rs:preview:function:workspace:src/receipt.rs:render",
+        "kind": "calls",
+        "provenance": "syn",
+        "sourceId": "function:workspace:src/checkout.rs:preview",
+        "targetId": "function:workspace:src/receipt.rs:render"
+      },
+      {
+        "confidence": "partial",
+        "id": "calls:function:workspace:src/domain/pricing.rs:total:function:workspace:src/domain/pricing.rs:unit_price",
+        "kind": "calls",
+        "provenance": "syn",
+        "sourceId": "function:workspace:src/domain/pricing.rs:total",
+        "targetId": "function:workspace:src/domain/pricing.rs:unit_price"
+      },
+      {
+        "confidence": "partial",
+        "id": "calls:function:workspace:src/inventory.rs:reserve:method:workspace:src/inventory.rs:Stock:available",
+        "kind": "calls",
+        "provenance": "syn",
+        "sourceId": "function:workspace:src/inventory.rs:reserve",
+        "targetId": "method:workspace:src/inventory.rs:Stock:available"
+      },
+      {
+        "confidence": "partial",
+        "id": "calls:method:workspace:src/checkout.rs:Order:quote:function:workspace:src/domain/pricing.rs:total",
+        "kind": "calls",
+        "provenance": "syn",
+        "sourceId": "method:workspace:src/checkout.rs:Order:quote",
+        "targetId": "function:workspace:src/domain/pricing.rs:total"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:crate:whip-graph-fixture:file:src/lib.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "sourceId": "crate:whip-graph-fixture",
+        "targetId": "file:src/lib.rs"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:crate:whip-graph-fixture:file:tests/order.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "sourceId": "crate:whip-graph-fixture",
+        "targetId": "file:tests/order.rs"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:module:whip-graph-fixture:lib:module:whip-graph-fixture:src/lib.rs:checkout",
+        "kind": "contains",
+        "provenance": "syn",
+        "sourceId": "module:whip-graph-fixture:lib",
+        "targetId": "module:whip-graph-fixture:src/lib.rs:checkout"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:module:whip-graph-fixture:lib:module:whip-graph-fixture:src/lib.rs:domain",
+        "kind": "contains",
+        "provenance": "syn",
+        "sourceId": "module:whip-graph-fixture:lib",
+        "targetId": "module:whip-graph-fixture:src/lib.rs:domain"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:module:whip-graph-fixture:lib:module:whip-graph-fixture:src/lib.rs:inventory",
+        "kind": "contains",
+        "provenance": "syn",
+        "sourceId": "module:whip-graph-fixture:lib",
+        "targetId": "module:whip-graph-fixture:src/lib.rs:inventory"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:module:whip-graph-fixture:lib:module:whip-graph-fixture:src/lib.rs:receipt",
+        "kind": "contains",
+        "provenance": "syn",
+        "sourceId": "module:whip-graph-fixture:lib",
+        "targetId": "module:whip-graph-fixture:src/lib.rs:receipt"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:module:workspace:domain:module:workspace:src/domain/mod.rs:pricing",
+        "kind": "contains",
+        "provenance": "syn",
+        "sourceId": "module:workspace:domain",
+        "targetId": "module:workspace:src/domain/mod.rs:pricing"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:public-fixture:whip-graph-fixture:crate:whip-graph-fixture",
+        "kind": "contains",
+        "provenance": "normalized",
+        "sourceId": "workspace:public-fixture:whip-graph-fixture",
+        "targetId": "crate:whip-graph-fixture"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:public-fixture:whip-graph-fixture:file:src/checkout.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "sourceId": "workspace:public-fixture:whip-graph-fixture",
+        "targetId": "file:src/checkout.rs"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:public-fixture:whip-graph-fixture:file:src/domain/mod.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "sourceId": "workspace:public-fixture:whip-graph-fixture",
+        "targetId": "file:src/domain/mod.rs"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:public-fixture:whip-graph-fixture:file:src/domain/pricing.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "sourceId": "workspace:public-fixture:whip-graph-fixture",
+        "targetId": "file:src/domain/pricing.rs"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:public-fixture:whip-graph-fixture:file:src/inventory.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "sourceId": "workspace:public-fixture:whip-graph-fixture",
+        "targetId": "file:src/inventory.rs"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:public-fixture:whip-graph-fixture:file:src/receipt.rs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "sourceId": "workspace:public-fixture:whip-graph-fixture",
+        "targetId": "file:src/receipt.rs"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/checkout.rs:function:workspace:src/checkout.rs:rust-analyzer:checkout",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "function:workspace:src/checkout.rs:rust-analyzer:checkout"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/checkout.rs:function:workspace:src/checkout.rs:rust-analyzer:preview",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "function:workspace:src/checkout.rs:rust-analyzer:preview"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/checkout.rs:method:workspace:src/checkout.rs:rust-analyzer:quote",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "method:workspace:src/checkout.rs:rust-analyzer:quote"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/checkout.rs:module:workspace:checkout",
+        "kind": "defines",
+        "provenance": "normalized",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "module:workspace:checkout"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/checkout.rs:struct:workspace:src/checkout.rs:rust-analyzer:Order",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "struct:workspace:src/checkout.rs:rust-analyzer:Order"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/domain/mod.rs:module:workspace:domain",
+        "kind": "defines",
+        "provenance": "normalized",
+        "sourceId": "file:src/domain/mod.rs",
+        "targetId": "module:workspace:domain"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/domain/mod.rs:module:workspace:src/domain/mod.rs:rust-analyzer:pricing",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/domain/mod.rs",
+        "targetId": "module:workspace:src/domain/mod.rs:rust-analyzer:pricing"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/domain/pricing.rs:function:workspace:src/domain/pricing.rs:rust-analyzer:total",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/domain/pricing.rs",
+        "targetId": "function:workspace:src/domain/pricing.rs:rust-analyzer:total"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/domain/pricing.rs:function:workspace:src/domain/pricing.rs:rust-analyzer:unit_price",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/domain/pricing.rs",
+        "targetId": "function:workspace:src/domain/pricing.rs:rust-analyzer:unit_price"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/domain/pricing.rs:module:workspace:domain::pricing",
+        "kind": "defines",
+        "provenance": "normalized",
+        "sourceId": "file:src/domain/pricing.rs",
+        "targetId": "module:workspace:domain::pricing"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/domain/pricing.rs:struct:workspace:src/domain/pricing.rs:rust-analyzer:Price",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/domain/pricing.rs",
+        "targetId": "struct:workspace:src/domain/pricing.rs:rust-analyzer:Price"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/inventory.rs:function:workspace:src/inventory.rs:rust-analyzer:reserve",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/inventory.rs",
+        "targetId": "function:workspace:src/inventory.rs:rust-analyzer:reserve"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/inventory.rs:method:workspace:src/inventory.rs:rust-analyzer:available",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/inventory.rs",
+        "targetId": "method:workspace:src/inventory.rs:rust-analyzer:available"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/inventory.rs:module:workspace:inventory",
+        "kind": "defines",
+        "provenance": "normalized",
+        "sourceId": "file:src/inventory.rs",
+        "targetId": "module:workspace:inventory"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/inventory.rs:struct:workspace:src/inventory.rs:rust-analyzer:Stock",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/inventory.rs",
+        "targetId": "struct:workspace:src/inventory.rs:rust-analyzer:Stock"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/lib.rs:module:whip-graph-fixture:lib",
+        "kind": "defines",
+        "provenance": "normalized",
+        "sourceId": "file:src/lib.rs",
+        "targetId": "module:whip-graph-fixture:lib"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/lib.rs:module:whip-graph-fixture:src/lib.rs:rust-analyzer:checkout",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/lib.rs",
+        "targetId": "module:whip-graph-fixture:src/lib.rs:rust-analyzer:checkout"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/lib.rs:module:whip-graph-fixture:src/lib.rs:rust-analyzer:domain",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/lib.rs",
+        "targetId": "module:whip-graph-fixture:src/lib.rs:rust-analyzer:domain"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/lib.rs:module:whip-graph-fixture:src/lib.rs:rust-analyzer:inventory",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/lib.rs",
+        "targetId": "module:whip-graph-fixture:src/lib.rs:rust-analyzer:inventory"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/lib.rs:module:whip-graph-fixture:src/lib.rs:rust-analyzer:receipt",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/lib.rs",
+        "targetId": "module:whip-graph-fixture:src/lib.rs:rust-analyzer:receipt"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/receipt.rs:function:workspace:src/receipt.rs:rust-analyzer:render",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:src/receipt.rs",
+        "targetId": "function:workspace:src/receipt.rs:rust-analyzer:render"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:src/receipt.rs:module:workspace:receipt",
+        "kind": "defines",
+        "provenance": "normalized",
+        "sourceId": "file:src/receipt.rs",
+        "targetId": "module:workspace:receipt"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:tests/order.rs:function:whip-graph-fixture:tests/order.rs:rust-analyzer:order_has_receipt",
+        "kind": "defines",
+        "provenance": "rust_analyzer",
+        "sourceId": "file:tests/order.rs",
+        "targetId": "function:whip-graph-fixture:tests/order.rs:rust-analyzer:order_has_receipt"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:file:tests/order.rs:module:whip-graph-fixture:tests::order",
+        "kind": "defines",
+        "provenance": "normalized",
+        "sourceId": "file:tests/order.rs",
+        "targetId": "module:whip-graph-fixture:tests::order"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:whip-graph-fixture:tests::order:function:whip-graph-fixture:tests/order.rs:order_has_receipt",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:whip-graph-fixture:tests::order",
+        "targetId": "function:whip-graph-fixture:tests/order.rs:order_has_receipt"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:checkout:function:workspace:src/checkout.rs:checkout",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:checkout",
+        "targetId": "function:workspace:src/checkout.rs:checkout"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:checkout:function:workspace:src/checkout.rs:preview",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:checkout",
+        "targetId": "function:workspace:src/checkout.rs:preview"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:checkout:impl:workspace:src/checkout.rs:impl_Order",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:checkout",
+        "targetId": "impl:workspace:src/checkout.rs:impl_Order"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:checkout:struct:workspace:src/checkout.rs:Order",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:checkout",
+        "targetId": "struct:workspace:src/checkout.rs:Order"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:domain::pricing:function:workspace:src/domain/pricing.rs:total",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:domain::pricing",
+        "targetId": "function:workspace:src/domain/pricing.rs:total"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:domain::pricing:function:workspace:src/domain/pricing.rs:unit_price",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:domain::pricing",
+        "targetId": "function:workspace:src/domain/pricing.rs:unit_price"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:domain::pricing:struct:workspace:src/domain/pricing.rs:Price",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:domain::pricing",
+        "targetId": "struct:workspace:src/domain/pricing.rs:Price"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:inventory:function:workspace:src/inventory.rs:reserve",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:inventory",
+        "targetId": "function:workspace:src/inventory.rs:reserve"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:inventory:impl:workspace:src/inventory.rs:impl_Stock",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:inventory",
+        "targetId": "impl:workspace:src/inventory.rs:impl_Stock"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:inventory:struct:workspace:src/inventory.rs:Stock",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:inventory",
+        "targetId": "struct:workspace:src/inventory.rs:Stock"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines:module:workspace:receipt:function:workspace:src/receipt.rs:render",
+        "kind": "defines",
+        "provenance": "syn",
+        "sourceId": "module:workspace:receipt",
+        "targetId": "function:workspace:src/receipt.rs:render"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines_method:impl:workspace:src/checkout.rs:impl_Order:method:workspace:src/checkout.rs:Order:quote",
+        "kind": "defines_method",
+        "provenance": "syn",
+        "sourceId": "impl:workspace:src/checkout.rs:impl_Order",
+        "targetId": "method:workspace:src/checkout.rs:Order:quote"
+      },
+      {
+        "confidence": "exact",
+        "id": "defines_method:impl:workspace:src/inventory.rs:impl_Stock:method:workspace:src/inventory.rs:Stock:available",
+        "kind": "defines_method",
+        "provenance": "syn",
+        "sourceId": "impl:workspace:src/inventory.rs:impl_Stock",
+        "targetId": "method:workspace:src/inventory.rs:Stock:available"
+      },
+      {
+        "confidence": "inferred",
+        "id": "imports:file:src/checkout.rs:file:src/domain/pricing.rs",
+        "kind": "imports",
+        "provenance": "syn",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "file:src/domain/pricing.rs"
+      },
+      {
+        "confidence": "inferred",
+        "id": "imports:file:src/checkout.rs:file:src/inventory.rs",
+        "kind": "imports",
+        "provenance": "syn",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "file:src/inventory.rs"
+      },
+      {
+        "confidence": "inferred",
+        "id": "imports:file:src/checkout.rs:file:src/receipt.rs",
+        "kind": "imports",
+        "provenance": "syn",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "file:src/receipt.rs"
+      },
+      {
+        "confidence": "partial",
+        "id": "imports:file:src/checkout.rs:module:import:crate::domain::pricing",
+        "kind": "imports",
+        "provenance": "syn",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "module:import:crate::domain::pricing"
+      },
+      {
+        "confidence": "partial",
+        "id": "imports:file:src/checkout.rs:module:import:crate::inventory",
+        "kind": "imports",
+        "provenance": "syn",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "module:import:crate::inventory"
+      },
+      {
+        "confidence": "partial",
+        "id": "imports:file:src/checkout.rs:module:import:crate::receipt",
+        "kind": "imports",
+        "provenance": "syn",
+        "sourceId": "file:src/checkout.rs",
+        "targetId": "module:import:crate::receipt"
+      },
+      {
+        "confidence": "inferred",
+        "id": "imports:file:src/receipt.rs:file:src/domain/pricing.rs",
+        "kind": "imports",
+        "provenance": "syn",
+        "sourceId": "file:src/receipt.rs",
+        "targetId": "file:src/domain/pricing.rs"
+      },
+      {
+        "confidence": "partial",
+        "id": "imports:file:src/receipt.rs:module:import:crate::domain::pricing",
+        "kind": "imports",
+        "provenance": "syn",
+        "sourceId": "file:src/receipt.rs",
+        "targetId": "module:import:crate::domain::pricing"
+      },
+      {
+        "confidence": "partial",
+        "id": "imports:file:tests/order.rs:module:import:whip_graph_fixture::checkout::Order",
+        "kind": "imports",
+        "provenance": "syn",
+        "sourceId": "file:tests/order.rs",
+        "targetId": "module:import:whip_graph_fixture::checkout::Order"
+      },
+      {
+        "confidence": "partial",
+        "id": "imports:file:tests/order.rs:module:import:whip_graph_fixture::checkout::checkout",
+        "kind": "imports",
+        "provenance": "syn",
+        "sourceId": "file:tests/order.rs",
+        "targetId": "module:import:whip_graph_fixture::checkout::checkout"
+      }
+    ],
+    "generatedAt": "fixture:c7b6ba9437c7b30ade4436c7529dbdae612c274b8dcae97cf298b1f5aedffc63",
+    "nodes": [
+      {
+        "id": "crate:whip-graph-fixture",
+        "kind": "crate",
+        "label": "whip-graph-fixture",
+        "sourceRange": null
+      },
+      {
+        "id": "file:src/checkout.rs",
+        "kind": "file",
+        "label": "src/checkout.rs",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "file:src/domain/mod.rs",
+        "kind": "file",
+        "label": "src/domain/mod.rs",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/domain/mod.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "file:src/domain/pricing.rs",
+        "kind": "file",
+        "label": "src/domain/pricing.rs",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/domain/pricing.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "file:src/inventory.rs",
+        "kind": "file",
+        "label": "src/inventory.rs",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/inventory.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "file:src/lib.rs",
+        "kind": "file",
+        "label": "src/lib.rs",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/lib.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "file:src/receipt.rs",
+        "kind": "file",
+        "label": "src/receipt.rs",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/receipt.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "file:tests/order.rs",
+        "kind": "file",
+        "label": "tests/order.rs",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "tests/order.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "function:whip-graph-fixture:tests/order.rs:order_has_receipt",
+        "kind": "function",
+        "label": "order_has_receipt",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 3,
+          "path": "tests/order.rs",
+          "startColumn": 1,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "function:whip-graph-fixture:tests/order.rs:rust-analyzer:order_has_receipt",
+        "kind": "function",
+        "label": "order_has_receipt",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 3,
+          "path": "tests/order.rs",
+          "startColumn": 1,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "function:workspace:src/checkout.rs:checkout",
+        "kind": "function",
+        "label": "checkout",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 9,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 9
+        }
+      },
+      {
+        "id": "function:workspace:src/checkout.rs:preview",
+        "kind": "function",
+        "label": "preview",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 12,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 12
+        }
+      },
+      {
+        "id": "function:workspace:src/checkout.rs:rust-analyzer:checkout",
+        "kind": "function",
+        "label": "checkout",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 9,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 9
+        }
+      },
+      {
+        "id": "function:workspace:src/checkout.rs:rust-analyzer:preview",
+        "kind": "function",
+        "label": "preview",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 12,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 12
+        }
+      },
+      {
+        "id": "function:workspace:src/domain/pricing.rs:rust-analyzer:total",
+        "kind": "function",
+        "label": "total",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 4,
+          "path": "src/domain/pricing.rs",
+          "startColumn": 1,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "function:workspace:src/domain/pricing.rs:rust-analyzer:unit_price",
+        "kind": "function",
+        "label": "unit_price",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 3,
+          "path": "src/domain/pricing.rs",
+          "startColumn": 1,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "function:workspace:src/domain/pricing.rs:total",
+        "kind": "function",
+        "label": "total",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 4,
+          "path": "src/domain/pricing.rs",
+          "startColumn": 1,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "function:workspace:src/domain/pricing.rs:unit_price",
+        "kind": "function",
+        "label": "unit_price",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 3,
+          "path": "src/domain/pricing.rs",
+          "startColumn": 1,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "function:workspace:src/inventory.rs:reserve",
+        "kind": "function",
+        "label": "reserve",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 5,
+          "path": "src/inventory.rs",
+          "startColumn": 1,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "function:workspace:src/inventory.rs:rust-analyzer:reserve",
+        "kind": "function",
+        "label": "reserve",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 5,
+          "path": "src/inventory.rs",
+          "startColumn": 1,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "function:workspace:src/receipt.rs:render",
+        "kind": "function",
+        "label": "render",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 2,
+          "path": "src/receipt.rs",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "function:workspace:src/receipt.rs:rust-analyzer:render",
+        "kind": "function",
+        "label": "render",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 2,
+          "path": "src/receipt.rs",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "impl:workspace:src/checkout.rs:impl_Order",
+        "kind": "impl",
+        "label": "impl Order",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 6,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 6
+        }
+      },
+      {
+        "id": "impl:workspace:src/inventory.rs:impl_Stock",
+        "kind": "impl",
+        "label": "impl Stock",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 2,
+          "path": "src/inventory.rs",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "method:workspace:src/checkout.rs:Order:quote",
+        "kind": "method",
+        "label": "quote",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 7,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 7
+        }
+      },
+      {
+        "id": "method:workspace:src/checkout.rs:rust-analyzer:quote",
+        "kind": "method",
+        "label": "quote",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 7,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 7
+        }
+      },
+      {
+        "id": "method:workspace:src/inventory.rs:Stock:available",
+        "kind": "method",
+        "label": "available",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 3,
+          "path": "src/inventory.rs",
+          "startColumn": 1,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "method:workspace:src/inventory.rs:rust-analyzer:available",
+        "kind": "method",
+        "label": "available",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 3,
+          "path": "src/inventory.rs",
+          "startColumn": 1,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "module:import:crate::domain::pricing",
+        "kind": "module",
+        "label": "crate::domain::pricing",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:import:crate::inventory",
+        "kind": "module",
+        "label": "crate::inventory",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:import:crate::receipt",
+        "kind": "module",
+        "label": "crate::receipt",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:import:whip_graph_fixture::checkout::Order",
+        "kind": "module",
+        "label": "whip_graph_fixture::checkout::Order",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "tests/order.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:import:whip_graph_fixture::checkout::checkout",
+        "kind": "module",
+        "label": "whip_graph_fixture::checkout::checkout",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "tests/order.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:whip-graph-fixture:lib",
+        "kind": "module",
+        "label": "lib",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/lib.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:whip-graph-fixture:src/lib.rs:checkout",
+        "kind": "module",
+        "label": "checkout",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 2,
+          "path": "src/lib.rs",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "module:whip-graph-fixture:src/lib.rs:domain",
+        "kind": "module",
+        "label": "domain",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 5,
+          "path": "src/lib.rs",
+          "startColumn": 1,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "module:whip-graph-fixture:src/lib.rs:inventory",
+        "kind": "module",
+        "label": "inventory",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 3,
+          "path": "src/lib.rs",
+          "startColumn": 1,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "module:whip-graph-fixture:src/lib.rs:receipt",
+        "kind": "module",
+        "label": "receipt",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 4,
+          "path": "src/lib.rs",
+          "startColumn": 1,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "module:whip-graph-fixture:src/lib.rs:rust-analyzer:checkout",
+        "kind": "module",
+        "label": "checkout",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 2,
+          "path": "src/lib.rs",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "module:whip-graph-fixture:src/lib.rs:rust-analyzer:domain",
+        "kind": "module",
+        "label": "domain",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 5,
+          "path": "src/lib.rs",
+          "startColumn": 1,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "module:whip-graph-fixture:src/lib.rs:rust-analyzer:inventory",
+        "kind": "module",
+        "label": "inventory",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 3,
+          "path": "src/lib.rs",
+          "startColumn": 1,
+          "startLine": 3
+        }
+      },
+      {
+        "id": "module:whip-graph-fixture:src/lib.rs:rust-analyzer:receipt",
+        "kind": "module",
+        "label": "receipt",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 4,
+          "path": "src/lib.rs",
+          "startColumn": 1,
+          "startLine": 4
+        }
+      },
+      {
+        "id": "module:whip-graph-fixture:tests::order",
+        "kind": "module",
+        "label": "tests::order",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "tests/order.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:workspace:checkout",
+        "kind": "module",
+        "label": "checkout",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:workspace:domain",
+        "kind": "module",
+        "label": "domain",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/domain/mod.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:workspace:domain::pricing",
+        "kind": "module",
+        "label": "domain::pricing",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/domain/pricing.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:workspace:inventory",
+        "kind": "module",
+        "label": "inventory",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/inventory.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:workspace:receipt",
+        "kind": "module",
+        "label": "receipt",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/receipt.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:workspace:src/domain/mod.rs:pricing",
+        "kind": "module",
+        "label": "pricing",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/domain/mod.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "module:workspace:src/domain/mod.rs:rust-analyzer:pricing",
+        "kind": "module",
+        "label": "pricing",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/domain/mod.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "struct:workspace:src/checkout.rs:Order",
+        "kind": "struct",
+        "label": "Order",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 5,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "struct:workspace:src/checkout.rs:rust-analyzer:Order",
+        "kind": "struct",
+        "label": "Order",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 5,
+          "path": "src/checkout.rs",
+          "startColumn": 1,
+          "startLine": 5
+        }
+      },
+      {
+        "id": "struct:workspace:src/domain/pricing.rs:Price",
+        "kind": "struct",
+        "label": "Price",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 2,
+          "path": "src/domain/pricing.rs",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "struct:workspace:src/domain/pricing.rs:rust-analyzer:Price",
+        "kind": "struct",
+        "label": "Price",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 2,
+          "path": "src/domain/pricing.rs",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "struct:workspace:src/inventory.rs:Stock",
+        "kind": "struct",
+        "label": "Stock",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/inventory.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "struct:workspace:src/inventory.rs:rust-analyzer:Stock",
+        "kind": "struct",
+        "label": "Stock",
+        "sourceRange": {
+          "endColumn": 1,
+          "endLine": 1,
+          "path": "src/inventory.rs",
+          "startColumn": 1,
+          "startLine": 1
+        }
+      },
+      {
+        "id": "workspace:public-fixture:whip-graph-fixture",
+        "kind": "workspace",
+        "label": "workspace",
+        "sourceRange": null
+      }
+    ],
+    "schemaVersion": 1,
+    "sourceRoot": "public-fixture:whip-graph-fixture"
+  }
+}

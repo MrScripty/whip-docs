@@ -75,3 +75,15 @@ let status = service.start_for_workspace(&repo).await?;
 - Enum semantics: lifecycle states describe process ownership.
 - Compatibility: analyzer fact changes must preserve graph contract behavior.
 - Regeneration or migration: no persisted analyzer artifacts are produced yet.
+
+## Source capture for intent
+
+`extract_with_sources` returns a backend-only `AnalyzedGraph` containing the
+public graph and the exact UTF-8 file bytes read by the syntax parser. It is not
+serializable or debug-printable. Source reads are validated against the selected
+canonical root and bounded to 2 MiB per file and 64 MiB per analysis. Duplicate
+paths retain their first parser input. Reported symbol ranges remain unverified;
+intent v2 persistence retains only SHA-256 digests and graph structure, never
+raw file bodies or comments. An optional Git HEAD is observed at analysis
+completion, without claiming a clean worktree. The ordinary `extract` method
+still returns the graph DTO alone.

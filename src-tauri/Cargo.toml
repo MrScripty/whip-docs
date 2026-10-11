@@ -1,7 +1,7 @@
 [package]
 name = "whip-docs"
 version.workspace = true
-description = "Local Rust code architecture explorer"
+description = "Local multilingual code architecture explorer"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -12,16 +12,43 @@ default-run = "whip-docs"
 workspace = true
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2", features = [], optional = true }
 
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 log.workspace = true
 cargo_metadata.workspace = true
 syn.workspace = true
 walkdir.workspace = true
-tauri = { version = "2.9.0", features = [] }
-tauri-plugin-dialog = "2"
+tauri = { version = "2.9.0", features = [], optional = true }
+tauri-plugin-dialog = { version = "2", optional = true }
+
+tree-sitter = "=0.25.10"
+tree-sitter-rust = "=0.24.2"
+tree-sitter-typescript = "=0.23.2"
+tree-sitter-javascript = "=0.25.0"
+tree-sitter-python = { path = "../grammars/python", version = "=0.25.0-whip.1" }
+tree-sitter-lua = "=0.4.1"
+tree-sitter-kotlin-ng = { path = "../grammars/kotlin", version = "=1.1.0-whip.1" }
+tree-sitter-zig = "=1.1.2"
+tree-sitter-c-sharp = { git = "https://github.com/tree-sitter/tree-sitter-c-sharp", rev = "8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5" }
+tree-sitter-c = { path = "../grammars/c", version = "=0.24.2-whip.1" }
+tree-sitter-cpp = { git = "https://github.com/tree-sitter/tree-sitter-cpp", rev = "c009222808634c1014f82438d4883753516a2c24" }
+tree-sitter-odin = "=1.3.0"
+tree-sitter-svelte-ng = "=1.0.2"
+
+[features]
+default = ["desktop"]
+desktop = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-dialog"]
+
+[[bin]]
+name = "whip-docs"
+path = "src/main.rs"
+required-features = ["desktop"]
+
+[target.'cfg(unix)'.dependencies]
+rustix = { version = "=1.1.5", features = ["fs"] }

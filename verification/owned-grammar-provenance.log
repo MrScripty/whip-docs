@@ -1,0 +1,5 @@
+Warning: unnecessary conflicts
+  `type_alias_statement`, `primary_expression`
+python: 30 hashes, Cargo identity and source patch verified; regenerated outputs identical
+kotlin: 25 hashes, Cargo identity and source patch verified; regenerated outputs identical
+c: 32 hashes, Cargo identity and source patch verified; regenerated outputs identical

@@ -1,0 +1,134 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> whip-docs@0.1.0 check
+> npm run lint && npm run typecheck && npm run test:frontend
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> whip-docs@0.1.0 lint
+> eslint src vite.config.ts svelte.config.js eslint.config.mjs --max-warnings 0
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> whip-docs@0.1.0 typecheck
+> tsc --project tsconfig.json --noEmit --pretty false
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> whip-docs@0.1.0 test:frontend
+> node --experimental-strip-types --test
+
+✔ TauriArchitectureBackend rejects commands outside the Tauri runtime (1.609052ms)
+✔ directorySnapshotToRenderGraph preserves backend graph identity (3.491528ms)
+✔ fileRelationSnapshotToRenderGraph preserves cross-file relation metadata (0.501342ms)
+✔ straight edge path connects source bottom to target top (2.22936ms)
+✔ bezier edge path leaves source bottom and enters target top vertically (0.660378ms)
+✔ c curve edge path leaves source bottom horizontally and enters target top vertically (0.299543ms)
+✔ elbow edge path uses a hard horizontal then vertical 90 degree turn (0.166236ms)
+✔ focused circular bundle path connects node centers and bends toward the bundle center (1.808617ms)
+✔ focused circular bundle path smooths through interior controls (0.253325ms)
+✔ focusedFileOffsets falls back to a centered grid without relation edges (2.443967ms)
+✔ focusedFileOffsets supports explicit grid layout options (0.244813ms)
+✔ focusedFileOffsets places related files closer than unrelated files (10.599307ms)
+✔ focusedFileOffsets force-directed layout keeps related files closer than unrelated files (1.912521ms)
+✔ focusedFileOffsets flow-layered layout places high-output files above high-input files (2.631735ms)
+✔ focusedFileOffsets dag-layered layout orders dependencies top to bottom (1.284982ms)
+✔ focusedFileOffsets circular layout places files on a ring (0.907743ms)
+✔ focusedFileOffsets circular layout clusters related files around the ring (1.071416ms)
+✔ focusedFileOffsets circular layout can use file name hierarchy for ring clusters (0.989654ms)
+✔ focusedFileHierarchyPath uses shallow ancestors for local edges and root for distant edges (0.63538ms)
+✔ buildFocusedFileHierarchy uses path groups when file metadata is available (0.396146ms)
+✔ focusedFileHierarchyRadiusRatio keeps small clusters near the outer ring (0.40516ms)
+✔ radial layout is deterministic for the same graph and options (2.789468ms)
+✔ safe radial layout is deterministic for the same graph and options (0.754948ms)
+✔ weighted safe radial layout is deterministic for the same graph and options (0.370438ms)
+✔ layered grid layout is deterministic for the same graph and options (0.765753ms)
+✔ layouts sort directories before files at the same depth (0.312603ms)
+✔ layouts place root at the origin (0.709791ms)
+✔ radial layout places child groups on local parent radii (7.829498ms)
+✔ radial layout places child groups on parent-local circles instead of fan arcs (0.30356ms)
+✔ radial branch radius grows to fit wide local child groups (2.862947ms)
+✔ radial branch spacing option separates sibling branch footprints (1.197592ms)
+✔ radial level spacing option separates parent and child levels vertically (0.298892ms)
+✔ radial root level spacing separates root children from deeper levels (0.126527ms)
+✔ radial layout stacks a single subdirectory directly under its parent (0.126878ms)
+✔ radial layout still places multiple subdirectories around the parent (0.173557ms)
+✔ radial layout separates adjacent sibling branch descendant footprints (0.850379ms)
+✔ radial layout does not propagate nested branch footprint into every ancestor ring (2.106317ms)
+✔ safe radial layout propagates nested branch footprints to prevent sibling subtree overlap (6.493891ms)
+✔ safe radial layout uses actual subtree shape instead of circular padding (1.566118ms)
+✔ safe radial layout keeps the single subdirectory vertical stacking rule (0.134409ms)
+✔ weighted safe radial layout places smaller sibling branches closer to their parent (0.483065ms)
+✔ weighted safe radial layout keeps the single subdirectory vertical stacking rule (0.291732ms)
+✔ layered grid centers parents over their descendant branch spans (0.200296ms)
+✔ layered grid uses z rows for local branch grids (0.207877ms)
+✔ layered grid branch spacing option separates sibling branch footprints (0.185214ms)
+✔ layered grid level spacing option separates parent and child levels vertically (0.110704ms)
+✔ layered grid root level spacing separates root children from deeper levels (0.082172ms)
+✔ graphNeighborhood highlights immediate nodes and labels two levels (2.151104ms)
+✔ graphNeighborhood returns empty sets without a selected node (0.353232ms)
+✔ visibleEdgeIdsForRelationDetails maps selected detail categories to edge IDs (1.955725ms)
+✔ visibleEdgeIdsForRelationDetails accepts detail sets (1.257642ms)
+✔ isEdgeVisibleAtRelationDetails defaults containment edges to structure (0.295427ms)
+✔ shouldRenderSceneEdge keeps directory containment edges visible (2.901414ms)
+✔ shouldRenderSceneEdge hides file containment edges (0.199215ms)
+✔ shouldRenderSceneEdge keeps file relation edges visible (0.146327ms)
+✔ selection IDs round-trip node and edge indices (1.231803ms)
+✔ selection chooses nodes over edges inside the sampled radius (0.347614ms)
+✔ selection chooses nearest depth when candidate kinds match (0.173116ms)
+✔ selection returns null when no encoded IDs are sampled (0.116192ms)
+✔ buildSelectionIndex indexes nodes, edges, incident edges, adjacency, and node pairs (1.942215ms)
+✔ buildSelectionIndex excludes hidden edges from neighborhoods and distance (0.524727ms)
+✔ selectionNeighborhood resolves bidirectional first and second level node sets (0.285543ms)
+✔ selectionDistanceByNodeId resolves graph distance from the selected node (0.258893ms)
+✔ selectionDistanceByNodeId returns an empty map for null or unknown nodes (0.183602ms)
+✔ selectionNeighborhood returns empty sets for null or unknown nodes (0.215459ms)
+✔ diffSelectionState reports only entered and exited selected graph IDs (0.356428ms)
+✔ diffSelectionState reports none-to-node and unchanged state transitions (0.275307ms)
+✔ initial view shows only file nodes and original file edges (1.733626ms)
+✔ expansion includes typed symbols by path and nested structural membership (0.33117ms)
+✔ collapse restores file projection and leaves file positions unchanged (0.489093ms)
+✔ keeps uncertain edges and every original evidence field unchanged (0.227346ms)
+✔ ignores unknown expansion IDs, dangling refs, and unrelated source paths (0.177322ms)
+✔ ownership cycles terminate and ambiguous missing-range owners stay hidden (0.193256ms)
+✔ layout is deterministic independent of snapshot ordering (0.211693ms)
+✔ handles empty snapshots and does not invent structural edges for path membership (0.914113ms)
+✔ verbatim intent and structural history survive reopening without retained source (12.23644ms)
+✔ interpretations and proposals append separately without changing original (3.607098ms)
+✔ digest changes and renamed symbols never silently relink historical records (4.221798ms)
+✔ structural metadata changes are stale even when source digest is unchanged (1.145746ms)
+✔ stale selections and invalid inputs never append (1.151955ms)
+✔ corrupt journal fails closed and remains unchanged (0.758943ms)
+✔ legacy source-retaining journal is never silently copied, erased or migrated (0.794546ms)
+✔ fingerprint uses SHA-256 over exact UTF-8 bytes (1.644834ms)
+✔ missing metadata cannot silently extend a damaged preview journal (0.593248ms)
+✔ captured-source digest matches native domain separation and byte framing (0.82405ms)
+✔ changed observed structure cannot relink a historical original (1.457988ms)
+✔ commandErrorMessage preserves backend validation message (0.916467ms)
+✔ commandErrorMessage handles unknown transport failure (0.213827ms)
+✔ loadDirectoryGraph trims the path before delegating to backend (0.887443ms)
+✔ loadFileRelationGraph trims the path before delegating to backend (0.255288ms)
+✔ filterGraphNodes searches labels and source paths (1.168859ms)
+✔ filterGraphNodes filters by kind and limit (0.140638ms)
+✔ graphNodeKinds returns stable sorted kinds (0.13512ms)
+✔ projectGraph collapses symbol relationships into file architecture edges (0.286825ms)
+✔ buildGraphLayout renders visible nodes and edges only (8.231874ms)
+✔ graphLabel truncates long SVG labels (0.130293ms)
+ℹ tests 96
+ℹ suites 0
+ℹ pass 96
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 486.103619
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

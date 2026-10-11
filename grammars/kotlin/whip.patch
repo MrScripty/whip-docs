@@ -1,0 +1,65 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,10 +1,9 @@
+ [package]
+ name = "tree-sitter-kotlin-ng"
+ description = "Kotlin grammar for tree-sitter"
+-version = "1.1.0"
++version = "1.1.0-whip.1"
+ authors = ["Amaan Qureshi <amaanq12@gmail.com>"]
+ license = "MIT"
+-readme = "README.md"
+ keywords = ["incremental", "parsing", "tree-sitter", "kotlin"]
+ categories = ["parsing", "text-editors"]
+ repository = "https://github.com/tree-sitter-grammars/tree-sitter-kotlin"
+@@ -31,3 +30,5 @@
+ 
+ [dev-dependencies]
+ tree-sitter = "0.24"
++
++[workspace]
+--- a/grammar.js
++++ b/grammar.js
+@@ -174,6 +174,7 @@
+     )),
+ 
+     property_declaration: $ => prec.right(seq(
++      optional($._context_prefix),
+       optional($.modifiers),
+       choice('val', 'var'),
+       optional($.type_parameters),
+@@ -265,6 +266,7 @@
+     constructor_invocation: $ => seq($.type, $.value_arguments),
+ 
+     function_declaration: $ => prec.right(1, seq(
++      optional($._context_prefix),
+       optional($.modifiers),
+       'fun',
+       optional($.type_parameters),
+@@ -285,6 +287,26 @@
+       )),
+       ')',
+     ),
++
++    // Whip: declaration-only contexts; context remains a callable identifier.
++    _context_prefix: $ => seq(
++      optional($.modifiers),
++      choice($.context_parameters, $.context_receivers),
++    ),
++
++    context_parameters: $ => seq(
++      'context', '(', commaSep1($.context_parameter), optional(','), ')',
++    ),
++
++    context_parameter: $ => seq(
++      repeat($.annotation), field('name', $._identifier), ':', field('type', $.type),
++    ),
++
++    context_receivers: $ => seq(
++      'context', '(', commaSep1($.context_receiver), optional(','), ')',
++    ),
++
++    context_receiver: $ => seq(repeat($.annotation), field('type', $.type)),
+ 
+     parameter: $ => seq($._identifier, ':', $.type),
+ 

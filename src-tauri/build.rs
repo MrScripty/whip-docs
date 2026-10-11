@@ -1,4 +1,4 @@
 fn main() {
-    println!("cargo:rerun-if-changed=icons/icon.png");
+    #[cfg(feature = "desktop")]
     tauri_build::build();
 }

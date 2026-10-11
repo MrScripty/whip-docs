@@ -1,0 +1,97 @@
+  ambiguities:
+      1. ✓ pointer declarations vs expressions
+      2. ✓ casts vs multiplications
+      3. ✓ function-like type macros vs function calls
+      4. ✓ function calls vs parenthesized declarators vs macro types
+      5. ✓ Call expressions vs empty declarations w/ macros as types
+      6. ✓ Comments after for loops with ambiguities
+      7. ✓ Top-level macro invocations
+  crlf:
+      8. ✓ Line comments with escaped CRLF line endings
+  declarations:
+      9. ✓ Struct declarations
+     10. ✓ Union declarations
+     11. ✓ Enum declarations
+     12. ✓ Struct declarations containing preprocessor directives
+     13. ✓ Primitive-typed variable declarations
+     14. ✓ Variable storage classes
+     15. ✓ Composite-typed variable declarations
+     16. ✓ Pointer variable declarations
+     17. ✓ Typedefs
+     18. ✓ Function declarations
+     19. ✓ Function definitions
+     20. ✓ Function specifiers after types
+     21. ✓ Function definitions with macro attributes
+     22. ✓ Linkage specifications
+     23. ✓ Type qualifiers
+     24. ✓ Local array declarations
+     25. ✓ Attributes
+     26. ✓ More Assembly
+     27. ✓ Static in Array Declarations
+  expressions:
+     28. ✓ Number literals
+     29. ✓ Identifiers
+     30. ✓ Unicode Identifiers
+     31. ✓ Common constants
+     32. ✓ Function calls
+     33. ✓ GNU inline assembly
+     34. ✓ Function call with compound statement
+     35. ✓ String literals
+     36. ✓ Character literals
+     37. ✓ Field access
+     38. ✓ Boolean operators
+     39. ✓ Math operators
+     40. ✓ The comma operator
+     41. ✓ Assignments
+     42. ✓ Pointer operations
+     43. ✓ Type-casts
+     44. ✓ Sizeof expressions
+     45. ✓ Alignof expressions
+     46. ✓ Offsetof expressions
+     47. ✓ Compound literals
+     48. ✓ Compound literals with trailing commas
+     49. ✓ Comments with escaped newlines
+     50. ✓ Comments with escaped chars and newlines
+     51. ✓ Generic Expressions
+     52. ✓ Noreturn Type Qualifier
+     53. ✓ Restrict Type Qualifier
+     54. ✓ Ternary
+     55. ✓ Concatenated strings
+     56. ✓ Nonnull Type Qualifier
+     57. ✓ Top Level Empty Expression Statement
+     58. ✓ Sized Type Specifier With Type Qualifiers
+  microsoft:
+     59. ✓ declaration specs
+     60. ✓ pointers
+     61. ✓ call modifiers
+     62. ✓ SEH exception handling
+  preprocessor:
+     63. ✓ Include directives
+     64. ✓ Object-like macro definitions
+     65. ✓ Function-like macro definitions
+     66. ✓ Ifdefs
+     67. ✓ Elifdefs
+     68. ✓ Mixing #elif and #elifdef
+     69. ✓ General if blocks
+     70. ✓ Preprocessor conditionals in functions
+     71. ✓ Preprocessor conditionals in struct/union bodies
+     72. ✓ Unknown preprocessor directives
+     73. ✓ Preprocessor expressions
+  statements:
+     74. ✓ If statements
+     75. ✓ For loops
+     76. ✓ While loops
+     77. ✓ Labeled statements
+     78. ✓ Switch statements -- Warning: Slow parse rate (693.022 bytes/ms)
+     79. ✓ Case statements separate from switch statements
+     80. ✓ Return statements
+     81. ✓ Comments with asterisks
+     82. ✓ Comment with multiple backslashes
+     83. ✓ Attributes
+  types:
+     84. ✓ Primitive types
+     85. ✓ Type modifiers
+  whip-modern:
+     86. ✓ Whip modern syntax
+
+Total parses: 86; successful parses: 86; failed parses: 0; success percentage: 100.00%; average speed: 5124 bytes/ms

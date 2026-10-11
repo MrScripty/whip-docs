@@ -1,0 +1,510 @@
+{
+  "bindingStatus": "current",
+  "createdAt": "2026-10-11T00:00:00.000Z",
+  "id": "intent:1",
+  "kind": "original",
+  "originalId": "intent:1",
+  "parentId": null,
+  "snapshot": {
+    "analysisAt": "fixture:mixed-overriddenSymbols",
+    "analysisIdentity": {
+      "discoveryComplete": true,
+      "extractor": "whip-docs-syntax@2",
+      "files": [
+        {
+          "byteLength": 277,
+          "coverage": "supported_subset",
+          "dialect": "python",
+          "grammars": [
+            {
+              "dialect": "python",
+              "grammar": "crates.io/tree-sitter-python@0.25.0"
+            }
+          ],
+          "path": "api/handler.py",
+          "sourceDigest": "sha256:17e9fae5dc26c9902674b3ea726858fb7556220ad4f7f023862a530328aaf5ec",
+          "structureDigest": "sha256:e670ce40ea356070e101c62c6a206fd8e63babd7a1337c0cdba4bc2c473c8a43"
+        },
+        {
+          "byteLength": 22,
+          "coverage": "incomplete",
+          "dialect": "python",
+          "grammars": [
+            {
+              "dialect": "python",
+              "grammar": "crates.io/tree-sitter-python@0.25.0"
+            }
+          ],
+          "path": "broken/bad.py",
+          "sourceDigest": "sha256:6b8c8a725c23dc076d9a2c185ce4e02435746bc3b4f99906d13de360e56898c7",
+          "structureDigest": "sha256:35fd0700a8d00b2352563fecd6e23a01bf8659b6ad99badd9453e6f98c92a609"
+        },
+        {
+          "byteLength": 56,
+          "coverage": "supported_subset",
+          "dialect": "cpp",
+          "grammars": [
+            {
+              "dialect": "cpp",
+              "grammar": "crates.io/tree-sitter-cpp@0.23.4"
+            }
+          ],
+          "path": "include/api.h",
+          "sourceDigest": "sha256:a018ff632a2e649484c047bc38297246836f02033f9338e32c300acbb3a3933e",
+          "structureDigest": "sha256:1161d44068bfad23b9be58badadda9cc9ced496c1bd7241e8f4832b78d4738f1"
+        },
+        {
+          "byteLength": 188,
+          "coverage": "supported_subset",
+          "dialect": "kotlin",
+          "grammars": [
+            {
+              "dialect": "kotlin",
+              "grammar": "crates.io/tree-sitter-kotlin-ng@1.1.0"
+            }
+          ],
+          "path": "mobile/Screen.kt",
+          "sourceDigest": "sha256:cb5f66195218dc2b6c2ba67e4faa29adcd56e516b268d7e6d2d8ed12c0dd99e9",
+          "structureDigest": "sha256:bc68ad1795e79158b9e9b64981432b414b1b51288c59f8c138be1f0bac0f5a7b"
+        },
+        {
+          "byteLength": 138,
+          "coverage": "supported_subset",
+          "dialect": "c",
+          "grammars": [
+            {
+              "dialect": "c",
+              "grammar": "crates.io/tree-sitter-c@0.24.2"
+            }
+          ],
+          "path": "native/math.c",
+          "sourceDigest": "sha256:4825155d47a94bd0b4d39dffd324c9bfe1681f912dd9bfebafbf551a44e280b2",
+          "structureDigest": "sha256:ec3be93512f6de5c3a8757ded4dc8b5c3ec8502b356f9a0963fa28a91af9ab4d"
+        },
+        {
+          "byteLength": 204,
+          "coverage": "supported_subset",
+          "dialect": "zig",
+          "grammars": [
+            {
+              "dialect": "zig",
+              "grammar": "crates.io/tree-sitter-zig@1.1.2"
+            }
+          ],
+          "path": "native/memory.zig",
+          "sourceDigest": "sha256:d050d6f82249e54715358306059019756ed7af4f0e006e030d2852bf820f2e83",
+          "structureDigest": "sha256:9bdd5355c8bcfd08ec39db708af1d567997eebb829184e936a958b31953433c0"
+        },
+        {
+          "byteLength": 167,
+          "coverage": "supported_subset",
+          "dialect": "cpp",
+          "grammars": [
+            {
+              "dialect": "cpp",
+              "grammar": "crates.io/tree-sitter-cpp@0.23.4"
+            }
+          ],
+          "path": "native/vector.cpp",
+          "sourceDigest": "sha256:876570a8b7a6b406a5f76e83502b63649f16a7797bd744d2fcb5cdc495494c78",
+          "structureDigest": "sha256:9155d8ce1f78f1d19d5e1469d3c86b469657905953979e0bcbd8a730fb5d7eb5"
+        },
+        {
+          "byteLength": 144,
+          "coverage": "supported_subset",
+          "dialect": "odin",
+          "grammars": [
+            {
+              "dialect": "odin",
+              "grammar": "crates.io/tree-sitter-odin@1.3.0"
+            }
+          ],
+          "path": "native/vector.odin",
+          "sourceDigest": "sha256:202240015107c34c02039dda2d2461ef403058c569eeefd76a6fea2678dd4f48",
+          "structureDigest": "sha256:1a955be5727586118be8d9f3f1e6f05cdbe32550410cd07a71e526e27f38ec02"
+        },
+        {
+          "byteLength": 136,
+          "coverage": "supported_subset",
+          "dialect": "lua",
+          "grammars": [
+            {
+              "dialect": "lua",
+              "grammar": "crates.io/tree-sitter-lua@0.4.1"
+            }
+          ],
+          "path": "scripts/task.lua",
+          "sourceDigest": "sha256:d8bf2acff404f6e71438771bb3a3e0912b8442592c966a05f3692b741d693571",
+          "structureDigest": "sha256:c5f780370e13bcfcdc6f3d7436f25f76c70addb6acb9974ae94a3c2400670407"
+        },
+        {
+          "byteLength": 206,
+          "coverage": "supported_subset",
+          "dialect": "csharp",
+          "grammars": [
+            {
+              "dialect": "csharp",
+              "grammar": "crates.io/tree-sitter-c-sharp@0.23.5"
+            }
+          ],
+          "path": "server/Service.cs",
+          "sourceDigest": "sha256:70e6aac78ea0672e81b4c91ee74b5be962c96d23fc5434792195b917e970db8a",
+          "structureDigest": "sha256:c7626675a1929f86b0a0900bbf4781f45f13ae94c30355c1be62fc88e377bdce"
+        },
+        {
+          "byteLength": 187,
+          "coverage": "supported_subset",
+          "dialect": "rust",
+          "grammars": [
+            {
+              "dialect": "rust",
+              "grammar": "crates.io/tree-sitter-rust@0.24.2"
+            }
+          ],
+          "path": "src/helper.rs",
+          "sourceDigest": "sha256:ca810b054aa445bd02dc1b674ec49820b6bfe7add43e07ed2f5a9c00e6350072",
+          "structureDigest": "sha256:dba1e46c7990f52ad7562e203ade47b2d0c56944ac21c4a386e77eb54feb25d1"
+        },
+        {
+          "byteLength": 38,
+          "coverage": "supported_subset",
+          "dialect": "rust",
+          "grammars": [
+            {
+              "dialect": "rust",
+              "grammar": "crates.io/tree-sitter-rust@0.24.2"
+            }
+          ],
+          "path": "src/lib.rs",
+          "sourceDigest": "sha256:63f4a3b89fd69f08e38e36a84f719e4728d3bc80ba4489831b683f6af97b8a3b",
+          "structureDigest": "sha256:b6593b752d0ba442c3503ee4258f0bef101f65c6b3338eef16a5744a710f70db"
+        },
+        {
+          "byteLength": 55,
+          "coverage": "supported_subset",
+          "dialect": "jsx",
+          "grammars": [
+            {
+              "dialect": "jsx",
+              "grammar": "crates.io/tree-sitter-javascript@0.25.0"
+            }
+          ],
+          "path": "web/Card.jsx",
+          "sourceDigest": "sha256:013e21ffaed23cb290235042ea279352ccab9ed6ba0366c827c11e1859d9b4f6",
+          "structureDigest": "sha256:08ddf0674cf2a413f6c91997da75fb4098b7ea158f4060da97d98ee9f3712d07"
+        },
+        {
+          "byteLength": 96,
+          "coverage": "supported_subset",
+          "dialect": "tsx",
+          "grammars": [
+            {
+              "dialect": "tsx",
+              "grammar": "crates.io/tree-sitter-typescript@0.23.2/tsx"
+            }
+          ],
+          "path": "web/Card.tsx",
+          "sourceDigest": "sha256:1bed4061399e7b4b9bf053b3a3b44380449e34b4b379c2b670241cd49b9122b3",
+          "structureDigest": "sha256:29a6d85cb0782352775bb22733cf9edfb500b161bdfd3250e4d65ebe7e348afc"
+        },
+        {
+          "byteLength": 247,
+          "coverage": "incomplete",
+          "dialect": "svelte5",
+          "grammars": [
+            {
+              "dialect": "svelte5",
+              "grammar": "crates.io/tree-sitter-svelte-ng@1.0.2"
+            },
+            {
+              "dialect": "typescript",
+              "grammar": "crates.io/tree-sitter-typescript@0.23.2/typescript"
+            }
+          ],
+          "path": "web/Panel.svelte",
+          "sourceDigest": "sha256:5d8bc28c6dbfef54b0e93f14d42e226592f28e49023bf84ab83509372fa5d77d",
+          "structureDigest": "sha256:1c074ac4e1c1f673bf1499461d1bee30a8e41db2654712489482ada69418e28f"
+        },
+        {
+          "byteLength": 659,
+          "coverage": "incomplete",
+          "dialect": "svelte5",
+          "grammars": [
+            {
+              "dialect": "svelte5",
+              "grammar": "crates.io/tree-sitter-svelte-ng@1.0.2"
+            },
+            {
+              "dialect": "typescript",
+              "grammar": "crates.io/tree-sitter-typescript@0.23.2/typescript"
+            }
+          ],
+          "path": "web/Template.svelte",
+          "sourceDigest": "sha256:b854fe6106a0f45e067ff13e71bbc4de55bbd075b64864621951599d82004d80",
+          "structureDigest": "sha256:bb851b1b598518be4aa14dde010a7e09507fabb027383fa5d664eb67f2a5c7a5"
+        },
+        {
+          "byteLength": 67,
+          "coverage": "supported_subset",
+          "dialect": "jsx",
+          "grammars": [
+            {
+              "dialect": "jsx",
+              "grammar": "crates.io/tree-sitter-javascript@0.25.0"
+            }
+          ],
+          "path": "web/View.js",
+          "sourceDigest": "sha256:e2a79799f3ec63b92e0b32097c4f6291d765aa47df86b4d3eaaa341c896d5621",
+          "structureDigest": "sha256:c65cb4e956eda6962e3002a5189c372604f196f704fdf7d28c7180022ab437b5"
+        },
+        {
+          "byteLength": 277,
+          "coverage": "supported_subset",
+          "dialect": "typescript",
+          "grammars": [
+            {
+              "dialect": "typescript",
+              "grammar": "crates.io/tree-sitter-typescript@0.23.2/typescript"
+            }
+          ],
+          "path": "web/app.ts",
+          "sourceDigest": "sha256:e84b691cde7f455fedd141a259f1e806c45b5ad5746acbe809f79f10349d8177",
+          "structureDigest": "sha256:4c697b26064f05c54ecbcdb2b91e363c78ca433fb05419ae115d5513b5c92238"
+        },
+        {
+          "byteLength": 168,
+          "coverage": "supported_subset",
+          "dialect": "javascript",
+          "grammars": [
+            {
+              "dialect": "javascript",
+              "grammar": "crates.io/tree-sitter-javascript@0.25.0"
+            }
+          ],
+          "path": "web/plain.js",
+          "sourceDigest": "sha256:15f5f7eaa0c225d249f45081e1e527520a80d1d1a229b67ad636461d23463adf",
+          "structureDigest": "sha256:520b3c95d00c4bfa22d2fd2a9068457d3aa1a1b97c1caca5ee15d28ce65d3b21"
+        }
+      ],
+      "parser": "tree-sitter@0.25.10",
+      "schemaVersion": 1,
+      "sourceScope": "captured_multilingual_sources_v1"
+    },
+    "byteLength": 277,
+    "capturedAt": "2026-10-11T00:00:00.000Z",
+    "contentHash": "sha256:17e9fae5dc26c9902674b3ea726858fb7556220ad4f7f023862a530328aaf5ec",
+    "hashAlgorithm": "sha256",
+    "precision": "syntax_byte_ranges_v1",
+    "repositoryRevision": null,
+    "structuralSnapshot": {
+      "edges": [
+        {
+          "confidence": "exact",
+          "id": "contains:syntax:25a82ca2dcf009cc6c718d0655f14ab44ed47134933f5310c9438c7ba705deda:syntax:3cffbcd11ac8f4a0130bc473b4e9c132118902a3d52a1507f76d112554de4e0f",
+          "kind": "contains",
+          "provenance": "tree_sitter",
+          "sourceId": "syntax:25a82ca2dcf009cc6c718d0655f14ab44ed47134933f5310c9438c7ba705deda",
+          "targetId": "syntax:3cffbcd11ac8f4a0130bc473b4e9c132118902a3d52a1507f76d112554de4e0f"
+        },
+        {
+          "confidence": "exact",
+          "id": "contains:syntax:25a82ca2dcf009cc6c718d0655f14ab44ed47134933f5310c9438c7ba705deda:syntax:b8bafeaaa2e48889d2d732e000ee037b4815eb2177ed9285d4818d00bd53c056",
+          "kind": "contains",
+          "provenance": "tree_sitter",
+          "sourceId": "syntax:25a82ca2dcf009cc6c718d0655f14ab44ed47134933f5310c9438c7ba705deda",
+          "targetId": "syntax:b8bafeaaa2e48889d2d732e000ee037b4815eb2177ed9285d4818d00bd53c056"
+        },
+        {
+          "confidence": "exact",
+          "id": "contains:syntax:25a82ca2dcf009cc6c718d0655f14ab44ed47134933f5310c9438c7ba705deda:syntax:d6b439be49ad2152eb61bffb5449d42f285e7b03a14ab1e2f8dbbb18c620728f",
+          "kind": "contains",
+          "provenance": "tree_sitter",
+          "sourceId": "syntax:25a82ca2dcf009cc6c718d0655f14ab44ed47134933f5310c9438c7ba705deda",
+          "targetId": "syntax:d6b439be49ad2152eb61bffb5449d42f285e7b03a14ab1e2f8dbbb18c620728f"
+        },
+        {
+          "confidence": "exact",
+          "id": "contains:syntax:753d0eb1dbad14375dbdb7faa8f02916ef4f7c2d9b1c53a3c7fa14d9fe2fec82:syntax:3df90c5daf0fc56d2d7e20a13b9d7086e9788ca80f99d114cbc37f2edc0769e3",
+          "kind": "contains",
+          "provenance": "tree_sitter",
+          "sourceId": "syntax:753d0eb1dbad14375dbdb7faa8f02916ef4f7c2d9b1c53a3c7fa14d9fe2fec82",
+          "targetId": "syntax:3df90c5daf0fc56d2d7e20a13b9d7086e9788ca80f99d114cbc37f2edc0769e3"
+        },
+        {
+          "confidence": "exact",
+          "id": "contains:syntax:753d0eb1dbad14375dbdb7faa8f02916ef4f7c2d9b1c53a3c7fa14d9fe2fec82:syntax:8cb75e6ea38308a3a31e932f14cf2cf25c491b225071d4acbaf07372aa0233a5",
+          "kind": "contains",
+          "provenance": "tree_sitter",
+          "sourceId": "syntax:753d0eb1dbad14375dbdb7faa8f02916ef4f7c2d9b1c53a3c7fa14d9fe2fec82",
+          "targetId": "syntax:8cb75e6ea38308a3a31e932f14cf2cf25c491b225071d4acbaf07372aa0233a5"
+        },
+        {
+          "confidence": "exact",
+          "id": "contains:syntax:96fca0e4fd1d0f63f7241056ea2412d94d8d3b91120ba8dc7519e3221c0efaba:syntax:25a82ca2dcf009cc6c718d0655f14ab44ed47134933f5310c9438c7ba705deda",
+          "kind": "contains",
+          "provenance": "tree_sitter",
+          "sourceId": "syntax:96fca0e4fd1d0f63f7241056ea2412d94d8d3b91120ba8dc7519e3221c0efaba",
+          "targetId": "syntax:25a82ca2dcf009cc6c718d0655f14ab44ed47134933f5310c9438c7ba705deda"
+        },
+        {
+          "confidence": "exact",
+          "id": "contains:syntax:96fca0e4fd1d0f63f7241056ea2412d94d8d3b91120ba8dc7519e3221c0efaba:syntax:3ba0cdb42769544482e6f8639a0b93e14e9f9662a2c1a4d4326fd7b237afd7c3",
+          "kind": "contains",
+          "provenance": "tree_sitter",
+          "sourceId": "syntax:96fca0e4fd1d0f63f7241056ea2412d94d8d3b91120ba8dc7519e3221c0efaba",
+          "targetId": "syntax:3ba0cdb42769544482e6f8639a0b93e14e9f9662a2c1a4d4326fd7b237afd7c3"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "syntax:25a82ca2dcf009cc6c718d0655f14ab44ed47134933f5310c9438c7ba705deda",
+          "kind": "function",
+          "label": "read",
+          "sourceRange": {
+            "endColumn": 21,
+            "endLine": 8,
+            "path": "api/handler.py",
+            "startColumn": 5,
+            "startLine": 6
+          }
+        },
+        {
+          "id": "syntax:2f8653e3b920b1f1a3a5d86b831b5b4b5a75da203028518800cc2e35fe07005c",
+          "kind": "binding",
+          "label": "PUBLIC_TOKEN",
+          "sourceRange": {
+            "endColumn": 38,
+            "endLine": 14,
+            "path": "api/handler.py",
+            "startColumn": 1,
+            "startLine": 14
+          }
+        },
+        {
+          "id": "syntax:3ba0cdb42769544482e6f8639a0b93e14e9f9662a2c1a4d4326fd7b237afd7c3",
+          "kind": "binding",
+          "label": "value",
+          "sourceRange": {
+            "endColumn": 19,
+            "endLine": 5,
+            "path": "api/handler.py",
+            "startColumn": 5,
+            "startLine": 5
+          }
+        },
+        {
+          "id": "syntax:3cffbcd11ac8f4a0130bc473b4e9c132118902a3d52a1507f76d112554de4e0f",
+          "kind": "parameter",
+          "label": "self",
+          "sourceRange": {
+            "endColumn": 18,
+            "endLine": 6,
+            "path": "api/handler.py",
+            "startColumn": 14,
+            "startLine": 6
+          }
+        },
+        {
+          "id": "syntax:3df90c5daf0fc56d2d7e20a13b9d7086e9788ca80f99d114cbc37f2edc0769e3",
+          "kind": "function",
+          "label": "nested",
+          "sourceRange": {
+            "endColumn": 13,
+            "endLine": 11,
+            "path": "api/handler.py",
+            "startColumn": 5,
+            "startLine": 10
+          }
+        },
+        {
+          "id": "syntax:753d0eb1dbad14375dbdb7faa8f02916ef4f7c2d9b1c53a3c7fa14d9fe2fec82",
+          "kind": "function",
+          "label": "outer",
+          "sourceRange": {
+            "endColumn": 13,
+            "endLine": 12,
+            "path": "api/handler.py",
+            "startColumn": 1,
+            "startLine": 9
+          }
+        },
+        {
+          "id": "syntax:8cb75e6ea38308a3a31e932f14cf2cf25c491b225071d4acbaf07372aa0233a5",
+          "kind": "parameter",
+          "label": "x",
+          "sourceRange": {
+            "endColumn": 17,
+            "endLine": 9,
+            "path": "api/handler.py",
+            "startColumn": 11,
+            "startLine": 9
+          }
+        },
+        {
+          "id": "syntax:96fca0e4fd1d0f63f7241056ea2412d94d8d3b91120ba8dc7519e3221c0efaba",
+          "kind": "class",
+          "label": "Boxed",
+          "sourceRange": {
+            "endColumn": 21,
+            "endLine": 8,
+            "path": "api/handler.py",
+            "startColumn": 1,
+            "startLine": 4
+          }
+        },
+        {
+          "id": "syntax:ab6a187b509cf36487b2fe8d3c3b841683cb5b37f93bb6c1f44b286c884736f8",
+          "kind": "type_alias",
+          "label": "Alias",
+          "sourceRange": {
+            "endColumn": 23,
+            "endLine": 3,
+            "path": "api/handler.py",
+            "startColumn": 1,
+            "startLine": 3
+          }
+        },
+        {
+          "id": "syntax:b8bafeaaa2e48889d2d732e000ee037b4815eb2177ed9285d4818d00bd53c056",
+          "kind": "parameter",
+          "label": "x",
+          "sourceRange": {
+            "endColumn": 26,
+            "endLine": 6,
+            "path": "api/handler.py",
+            "startColumn": 20,
+            "startLine": 6
+          }
+        },
+        {
+          "id": "syntax:d6b439be49ad2152eb61bffb5449d42f285e7b03a14ab1e2f8dbbb18c620728f",
+          "kind": "binding",
+          "label": "local",
+          "sourceRange": {
+            "endColumn": 18,
+            "endLine": 7,
+            "path": "api/handler.py",
+            "startColumn": 9,
+            "startLine": 7
+          }
+        }
+      ]
+    },
+    "worktreeDigest": "sha256:9ebe18f9cca2541950e269e56265e26f3d6ac437ffa1eb475920864e0d841320",
+    "worktreeDigestScope": "captured_multilingual_sources_v1"
+  },
+  "symbol": {
+    "kind": "class",
+    "label": "Boxed",
+    "nodeId": "syntax:96fca0e4fd1d0f63f7241056ea2412d94d8d3b91120ba8dc7519e3221c0efaba",
+    "sourceRange": {
+      "endColumn": 21,
+      "endLine": 8,
+      "path": "api/handler.py",
+      "startColumn": 1,
+      "startLine": 4
+    },
+    "sourceRoot": "public-fixture:whip-mixed-workspace"
+  },
+  "text": "  Preserve this public fixture intent \u2014 \u87f9.\n\tKeep proposals separate.  "
+}

@@ -1,0 +1,74 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,13 +1,12 @@
+ [package]
+ name = "tree-sitter-c"
+ description = "C grammar for tree-sitter"
+-version = "0.24.2"
++version = "0.24.2-whip.1"
+ authors = [
+   "Max Brunsfeld <maxbrunsfeld@gmail.com>",
+   "Amaan Qureshi <amaanq12@gmail.com>",
+ ]
+ license = "MIT"
+-readme = "README.md"
+ keywords = ["incremental", "parsing", "tree-sitter", "c"]
+ categories = ["parsing", "text-editors"]
+ repository = "https://github.com/tree-sitter/tree-sitter-c"
+@@ -28,3 +27,5 @@
+ 
+ [dev-dependencies]
+ tree-sitter = "0.25.4"
++
++[workspace]
+--- a/bindings/rust/build.rs
++++ b/bindings/rust/build.rs
+@@ -32,11 +32,15 @@
+     c_config.compile("tree-sitter-c");
+ 
+     println!("cargo:rustc-check-cfg=cfg(with_highlights_query)");
+-    if !"queries/highlights.scm".is_empty() && std::path::Path::new("queries/highlights.scm").exists() {
++    if !"queries/highlights.scm".is_empty()
++        && std::path::Path::new("queries/highlights.scm").exists()
++    {
+         println!("cargo:rustc-cfg=with_highlights_query");
+     }
+     println!("cargo:rustc-check-cfg=cfg(with_injections_query)");
+-    if !"queries/injections.scm".is_empty() && std::path::Path::new("queries/injections.scm").exists() {
++    if !"queries/injections.scm".is_empty()
++        && std::path::Path::new("queries/injections.scm").exists()
++    {
+         println!("cargo:rustc-cfg=with_injections_query");
+     }
+     println!("cargo:rustc-check-cfg=cfg(with_locals_query)");
+--- a/grammar.js
++++ b/grammar.js
+@@ -36,6 +36,8 @@
+   name: 'c',
+ 
+   conflicts: $ => [
++    [$.signed_bitint_type, $.sized_type_specifier],
++    [$.type_specifier, $.signed_bitint_type],
+     [$.type_specifier, $._declarator],
+     [$.type_specifier, $._declarator, $.macro_type_specifier],
+     [$.type_specifier, $.expression],
+@@ -592,9 +594,19 @@
+       $.union_specifier,
+       $.enum_specifier,
+       $.macro_type_specifier,
++      $.bitint_type,
++      $.signed_bitint_type,
+       $.sized_type_specifier,
+       $.primitive_type,
+       $._type_identifier,
++    ),
++
++    // Whip: preserve the written width expression; evaluation belongs to C.
++    bitint_type: $ => seq('_BitInt', '(', field('width', $.expression), ')'),
++
++    signed_bitint_type: $ => choice(
++      seq(choice('signed', 'unsigned'), repeat($.type_qualifier), field('type', $.bitint_type)),
++      seq(field('type', $.bitint_type), repeat($.type_qualifier), choice('signed', 'unsigned')),
+     ),
+ 
+     sized_type_specifier: $ => choice(

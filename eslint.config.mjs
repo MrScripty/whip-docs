@@ -8,6 +8,10 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   ...svelte.configs.recommended,
   {
+    files: ['**/*.svelte'],
+    languageOptions: { parserOptions: { parser: tseslint.parser } },
+  },
+  {
     ignores: ['dist/', 'src-tauri/target/', 'node_modules/', 'archive/'],
   },
   {

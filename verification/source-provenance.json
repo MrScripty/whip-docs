@@ -1,0 +1,7 @@
+{
+  "upstreamRepository": "MrScripty/whip-docs",
+  "upstreamCommit": "3e299d6bf1e7495d80377b8e2ba47ba48366a5a3",
+  "localBaseline": "9976d25fd436e1e68dac235f65214a8399abde82",
+  "verifiedBlobCount": 145,
+  "method": "All 145 baseline Git blob hashes equal pinned upstream tree. Materialized through connected GitHub reads; upstream git history is not present."
+}

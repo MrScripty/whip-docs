@@ -1,0 +1,11 @@
+{
+  "backend": "Actual Chromium/WebGL UI; public Rust-exported fixture; no native IPC",
+  "extractor": "whip-docs-syntax@6",
+  "checks": [
+    "C# and C++ unsafe namespace names are explicitly diagnosed, rejected descendants stay absent, and safe classes retain compact header/range/intent controls",
+    "Four @6 records survive reload unchanged, keep proposals separate, and persist neither namespace comments nor rejected names/source fragments",
+    "Real pre-repair @5 journal remains readable, stale and byte-preserved; UI rejects new derivatives against it",
+    "Invalid storage still fails without rewriting bytes; no browser page errors"
+  ],
+  "errors": []
+}

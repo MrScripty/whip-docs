@@ -75,3 +75,11 @@ let source_file = repo.resolve_existing_child("src/lib.rs")?;
 - Enum semantics: validation status labels are frontend-visible.
 - Compatibility: source DTO changes require frontend adapter updates.
 - Regeneration or migration: no generated artifacts are produced here.
+
+## Bounded parser and intent reads
+
+`read_bounded_source` preserves exact UTF-8 bytes (including CRLF), resolves only
+children of a validated root, requires a regular file, caps reads at 2 MiB, and
+re-resolves the path after reading. The intent journal compares complete file
+bytes immediately before append. This is a point-in-time local filesystem check,
+not an atomic filesystem transaction against adversarial directory replacement.
