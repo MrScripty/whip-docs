@@ -1089,6 +1089,40 @@ mod tests {
     }
 
     #[test]
+    fn previous_multilingual_extractor_records_remain_readable_and_stale() {
+        let mut fixture = Fixture::new();
+        let node_id = syntax_fixture(&mut fixture);
+        fixture.analysis.syntax.as_mut().unwrap().identity.extractor =
+            "whip-docs-syntax@1".to_owned();
+        let previous = fixture
+            .store
+            .append(&fixture.analysis, syntax_request(&fixture, &node_id, None))
+            .unwrap();
+        let bytes = fs::read(&fixture.store.journal_path).unwrap();
+        fixture.analysis.syntax.as_mut().unwrap().identity.extractor =
+            crate::syntax::EXTRACTOR_ID.to_owned();
+        assert_eq!(fixture.list()[0].binding_status, BindingStatus::Stale);
+        let error = fixture
+            .store
+            .append(
+                &fixture.analysis,
+                syntax_request(&fixture, &node_id, Some(previous.id)),
+            )
+            .unwrap_err();
+        assert_eq!(error.code(), "intent_stale_source");
+        assert_eq!(bytes, fs::read(&fixture.store.journal_path).unwrap());
+        assert_eq!(
+            fixture.list()[0]
+                .snapshot
+                .analysis_identity
+                .as_ref()
+                .unwrap()
+                .extractor,
+            "whip-docs-syntax@1"
+        );
+    }
+
+    #[test]
     fn inconsistent_identity_manifest_is_rejected_before_journal_write() {
         let mut fixture = Fixture::new();
         let node_id = syntax_fixture(&mut fixture);

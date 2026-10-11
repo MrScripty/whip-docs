@@ -3,6 +3,9 @@
 Date: 2026-10-11 UTC. Base: `5e9900a8baf3ac599a63532e7dd16d90a1ec0892`.
 Feature branch: `feature/multilingual-tree-sitter`. Rust toolchain 1.92.0.
 
+This is the baseline report. The later Svelte template-expression subset and
+107-test qualification are recorded in the [follow-up](grammar-gap-followup.md).
+
 ## Passed
 
 - `cargo test --no-default-features --workspace --all-targets --locked`:

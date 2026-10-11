@@ -631,3 +631,176 @@ fn parser_identities_and_provenance_match_exact_manifest_and_lock_pins() {
         )));
     }
 }
+
+#[test]
+fn svelte_template_calls_use_existing_grammars_with_exact_mapped_byte_ranges() {
+    let source = fixture("modern/template-expressions.svelte").replace('\n', "\r\n");
+    let file = analyze_file("template.svelte", &source, Dialect::Svelte5);
+    let calls: Vec<_> = file
+        .relations
+        .iter()
+        .filter(|r| r.kind == RelationKind::CallSyntax)
+        .map(|r| &source[r.target_range.start_byte..r.target_range.end_byte])
+        .collect();
+    for expected in [
+        "ready",
+        "show",
+        "hide",
+        "select",
+        "label",
+        "retry",
+        "rows.filter",
+        "format",
+        "fetchRows",
+        "pending",
+        "render",
+        "report",
+        "key",
+        "refresh",
+        "card",
+        "markup",
+    ] {
+        assert!(calls.contains(&expected), "missing {expected}: {calls:?}");
+    }
+    // Const bindings/each keys/snippet parameters are deliberately still partial.
+    assert!(!calls.contains(&"count"));
+    assert_eq!(calls.iter().filter(|name| **name == "key").count(), 1);
+    assert_eq!(file.identity.coverage, Coverage::Incomplete);
+    assert!(
+        file.diagnostics
+            .iter()
+            .all(|d| d.code == "template_expression_unanalyzed"),
+        "{:?}",
+        file.diagnostics
+    );
+    for fact in &file.relations {
+        assert!(fact.range.start_byte <= fact.target_range.start_byte);
+        assert!(fact.target_range.end_byte <= fact.range.end_byte);
+        assert!(fact.range.end_byte <= source.len());
+        assert!(source.is_char_boundary(fact.range.start_byte));
+        assert!(source.is_char_boundary(fact.range.end_byte));
+    }
+    let snippet = file.declarations.iter().find(|d| d.name == "card").unwrap();
+    let inner = file
+        .relations
+        .iter()
+        .find(|r| source[r.range.start_byte..r.range.end_byte] == *"format(value)")
+        .unwrap();
+    assert_eq!(inner.owner_id.as_ref(), Some(&snippet.id));
+    assert!(file
+        .identity
+        .grammars
+        .iter()
+        .any(|g| g.dialect == Dialect::TypeScript));
+}
+
+#[test]
+fn svelte_expression_wrappers_never_escape_or_invent_calls_from_recovery() {
+    for (source, targets) in [
+        ("<!-- 蟹 -->{({ value: read() })}", vec!["read"]),
+        (
+            "{(function() { return read(); })()}",
+            vec!["read", "(function() { return read(); })"],
+        ),
+        ("{read() // comment\n}", vec!["read"]),
+        ("{items?.map(x => read(x))}", vec!["items?.map", "read"]),
+        (
+            "<script lang='ts'></script>{read(value as Item)}",
+            vec!["read"],
+        ),
+    ] {
+        let file = analyze_file("a.svelte", source, Dialect::Svelte5);
+        assert!(
+            file.diagnostics.is_empty(),
+            "{source}: {:?}",
+            file.diagnostics
+        );
+        let actual: Vec<_> = file
+            .relations
+            .iter()
+            .map(|r| &source[r.target_range.start_byte..r.target_range.end_byte])
+            .collect();
+        for target in targets {
+            assert!(actual.contains(&target), "{actual:?}");
+        }
+    }
+    for source in [
+        "{read(}",
+        "{a); injected(); (b}",
+        "{#await read() then item}{show(item)}{/await}",
+    ] {
+        let file = analyze_file("a.svelte", source, Dialect::Svelte5);
+        assert_eq!(file.identity.coverage, Coverage::Incomplete);
+        assert!(!file.relations.iter().any(|r| source
+            [r.target_range.start_byte..r.target_range.end_byte]
+            .contains("injected")));
+        assert!(!file
+            .relations
+            .iter()
+            .any(|r| &source[r.target_range.start_byte..r.target_range.end_byte] == "read"));
+    }
+}
+
+#[test]
+fn svelte_template_region_budget_remains_explicit() {
+    let source = "{read()}\n".repeat(260);
+    let file = analyze_file("a.svelte", &source, Dialect::Svelte5);
+    assert_eq!(file.relations.len(), 256);
+    assert!(file
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "template_region_limit"));
+    assert_eq!(file.identity.coverage, Coverage::Incomplete);
+}
+
+#[test]
+fn each_reported_registry_grammar_gap_is_qualified_individually() {
+    for (dialect, source) in [
+        (Dialect::Python, "class Box[T = int]:\n pass\n"),
+        (
+            Dialect::Python,
+            "def read[T = int](x: T) -> T:\n return x\n",
+        ),
+        (Dialect::Python, "type Alias[T = int] = list[T]\n"),
+        (
+            Dialect::Python,
+            "class Pack[*Ts = tuple[int, ...], **P = None]:\n pass\n",
+        ),
+        (
+            Dialect::Kotlin,
+            "context(user: User) fun read(): String = user.name\n",
+        ),
+        (
+            Dialect::Kotlin,
+            "context(user: User) val current: String get() = user.name\n",
+        ),
+        (
+            Dialect::Kotlin,
+            "context(User) fun read(): String = \"x\"\n",
+        ),
+        (Dialect::C, "unsigned _BitInt(17) bits;"),
+        (Dialect::C, "void read(_BitInt(17) value) {}"),
+        (
+            Dialect::Cpp,
+            "struct Item { int read(this Item const& self) { return 1; } };",
+        ),
+        (
+            Dialect::CSharp,
+            "static class Ext { extension(string text) { public int Length() => text.Length; } }",
+        ),
+    ] {
+        let file = analyze_file("gap", source, dialect);
+        assert_eq!(
+            file.identity.coverage,
+            Coverage::Incomplete,
+            "{dialect:?}: {source}"
+        );
+        assert!(
+            file.diagnostics
+                .iter()
+                .any(|d| matches!(d.code.as_str(), "parse_error" | "unsupported_modern_syntax")),
+            "{:?}",
+            file.diagnostics
+        );
+    }
+}

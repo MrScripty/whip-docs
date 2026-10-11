@@ -66,6 +66,8 @@ Older binaries cannot read schema-3 lines; journal downgrade is not supported.
 2 MiB per UTF-8 file; 64 MiB total; 4,096 files; 100,000 discovered entries;
 128 directory levels; 250,000 visited syntax nodes per parsed region; 4,096
 declarations and 8,192 facts per file; two seconds parser budget per region.
+Svelte template expressions share an additional two-second budget and a
+256-region cap per file.
 Repository inventory stops after a file crosses 100,000 declarations/facts (at
 most one file's bounded inventory beyond that threshold). Diagnostics are capped
 at 128/file and 512/discovery with explicit incompleteness on truncation.
@@ -94,3 +96,6 @@ change during sampling; journal appends compare captured bytes before writing.
    journal restart/staleness, and graph interactions using actual application pixels.
 
 Headless backend tests do not establish combined application or visual correctness.
+
+The [grammar-gap follow-up](grammar-gap-followup.md) adds a bounded Svelte template
+call-fact subset and bumps extractor identity to @2, without changing DTO shapes.

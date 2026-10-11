@@ -130,6 +130,9 @@ fn parse_region(
             "Grammar reported syntax errors or missing tokens; inventory is partial.",
         );
     }
+    let template_dialect = super::template::dialect(tree.root_node(), source);
+    let template_deadline = Instant::now() + Duration::from_secs(2);
+    let mut template_regions = 0;
     // Iterative traversal avoids stack overflow on adversarial nesting.
     let mut pending = vec![(tree.root_node(), parent)];
     let mut visited = 0;
@@ -245,10 +248,32 @@ fn parse_region(
             diagnostic(file, "unsupported_modern_syntax", Some(span(node, offset)), "Pinned C# grammar lacks extension_declaration support; extension region is unqualified.");
             continue;
         }
-        if dialect == Dialect::Svelte5
-            && matches!(node.kind(), "expression" | "render_tag" | "svelte_raw_text")
-        {
-            diagnostic(file, "template_expression_unanalyzed", Some(span(node, offset)), "Svelte script declarations and snippets are extracted; template expression semantics are unavailable.");
+        if dialect == Dialect::Svelte5 && node.kind() == "svelte_raw_text" {
+            if !super::template::is_expression(node) {
+                diagnostic(file, "template_expression_unanalyzed", Some(span(node, offset)), "Template bindings, snippet parameters and non-expression regions are outside the extracted subset.");
+            } else if template_regions >= 256 {
+                diagnostic(
+                    file,
+                    "template_region_limit",
+                    Some(span(node, offset)),
+                    "Template expression region limit reached.",
+                );
+            } else {
+                template_regions += 1;
+                let grammar = GrammarIdentity {
+                    dialect: template_dialect,
+                    grammar: template_dialect.grammar_identity().to_owned(),
+                };
+                if !file.identity.grammars.contains(&grammar) {
+                    file.identity.grammars.push(grammar);
+                }
+                match super::template::calls(text(node, source), offset + node.start_byte(), template_dialect,
+                    inherited_owner.as_deref(), MAX_FACTS.saturating_sub(file.relations.len()), template_deadline) {
+                    Ok(facts) => file.relations.extend(facts),
+                    Err(code) => diagnostic(file, code, Some(span(node, offset)), "Template expression could not be safely qualified; no recovered call facts were emitted for this region."),
+                }
+            }
+            continue;
         }
         let mut owner = inherited_owner;
         let names = declaration_names(node, dialect);

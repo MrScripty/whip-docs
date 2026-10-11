@@ -9,7 +9,7 @@ patched grammar, runtime or agent coordination machinery is incorporated.
 versions, Cargo.lock SHA-256 checksums and `.cargo_vcs_info.json` upstream commits.
 Crate and npm versions need not represent the same source commit. Exact versions
 are pinned in src-tauri/Cargo.toml. Tree-sitter engine: 0.25.10. The qualified
-extractor identity is `whip-docs-syntax@1`; update it on extraction behavior changes.
+extractor identity is `whip-docs-syntax@2`; update it on extraction behavior changes.
 
 | Family / dialect | Registry grammar | Concrete fixture coverage | Known qualification gap |
 | --- | --- | --- | --- |
@@ -24,7 +24,7 @@ extractor identity is `whip-docs-syntax@1`; update it on extraction behavior cha
 | C | tree-sitter-c 0.24.2 | typedefs, structs/fields, function prototypes/definitions, function-pointer bindings, parameters, locals | C23 `_BitInt` fails qualification |
 | C++ | tree-sitter-cpp 0.23.4 | aliases, namespaces, structs/fields, methods, parameters, locals | Explicit object parameters fail qualification; complete template/declarator coverage not claimed |
 | Odin | tree-sitter-odin 1.3.0 | packages, structs/fields, distinct aliases, procedures, parameters, local declarations, type syntax | Complete overload/polymorphic construct inventory not claimed |
-| Svelte 5 | tree-sitter-svelte-ng 1.0.2 | JS/TS scripts, rune bindings, typed props, functions, snippets, embedded offsets | Template expressions/render expressions not extracted; external/unsupported scripts excluded with diagnostics |
+| Svelte 5 | tree-sitter-svelte-ng 1.0.2 | JS/TS scripts, rune bindings, typed props, functions, snippets, mapped template call facts | Template bindings/parameters/keyed-each tails and shorthand await remain partial; external/unsupported scripts excluded with diagnostics |
 
 The source suffix tests include .mts/.cts/.mjs/.cjs/.pyi/.kts/.cc/.cxx/.hpp/.hh/.hxx.
 .h must be explicitly assigned C or C++. HTML is not an independent source route.
@@ -44,3 +44,7 @@ bodies have separate completeness flags. Graph projection omits damaged headers
 and descendants of damaged containers. Unresolved facts contain evidence ranges,
 not fabricated cross-file target IDs. Parser acceptance does not imply that a
 compiler would accept the program.
+
+The [bounded gap follow-up](grammar-gap-followup.md) distinguishes grammar
+limitations from extraction omissions and records exact official upstream
+C++/C# candidates without claiming runtime qualification of those sources.
