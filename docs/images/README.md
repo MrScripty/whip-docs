@@ -1,26 +1,41 @@
-# Current multilingual fixture screenshots
+# Current compact inspector screenshots
 
-Actual Chromium captures of code commit
-`85c9cea426e7fc9abe55c0f4e7ba706cdea572c2` on the integration branch, with
-extractor `whip-docs-syntax@3`. These replay real Rust service output from the
-23-file synthetic public fixture (21 source files captured). Native Tauri IPC
-is not running or validated. No private source or model inference is involved.
+Fresh, unedited Chromium captures of the compact inspector follow-up to
+`0efd5e8e7aab8c525f98839a9466685bcb98c731`, using extractor
+`whip-docs-syntax@5` and the 39-file public synthetic fixture (37 sources captured).
+[Capture provenance](compact-inspector-provenance.json) records the timestamp,
+viewports and exact SHA-256 hashes of the UI component, stylesheet and fixture.
+Native Tauri IPC is not running or validated. No private source or model inference
+is involved. These replace the previous @3 captures of the earlier inspector.
 
 ![Compact file overview](mixed-fixture-file-overview.png)
 
-Compact file overview: original file/directory geometry and routing, top toolbar,
-small disclosure, concise inspector, and an honest Fixture Preview indicator.
+The original file/directory geometry and routing remain authoritative.
 
 ![Expanded multilingual symbols](mixed-fixture-file-expanded.png)
 
-Expanded Python symbols share the same scene/camera and parent file. Exact byte
-ranges, original intent and separate proposals are available in the inspector.
-Normal disclosure toggles one file; Ctrl-click / Ctrl+Enter / Ctrl+Space applies the
-new state to eligible repository files, bounded to 24 files and 4,096 symbols.
+Expanded Python symbols share the original scene and camera. The selected symbol,
+kind and parent-file link share one compact row. Full paths remain available to
+assistive technology and through tooltips; exact ranges and coverage remain visible.
+Original intent and proposals remain separate. The disabled append button follows
+successful submission and the cleared input.
 
-The browser checks also exercise 768px, 390px and 360px layouts and settings
-reachability. These two published images are the desktop overview and expansion.
-See [integration verification](../../verification/integration/README.md).
+![Compact selection inspector](compact-inspector.png)
+
+This is a direct screenshot of the rendered inspector element, without image editing.
+Requested heading/help prose is removed; provenance, binding status and original
+text remain visible. The panel scrolls to further journal entries and metadata.
+
+[768px layout](compact-expanded-768.png) · [390px layout](compact-expanded-390.png) ·
+[360px layout](compact-expanded-360.png). Narrow layouts retain the existing stacked
+scene/inspector arrangement and independently scrollable inspector. Browser checks
+verify control reachability, keyboard order and no horizontal overflow at every width.
+
+See [compact inspector verification](../../verification/integration/inspector-compact.md).
+Reproduce with `verification/integration/capture-inspector.cjs` and installed
+Playwright/Chromium, setting `PLAYWRIGHT_MODULE`, `CHROMIUM_PATH`, `GRAPH_TEST_ORIGIN`
+and `EVIDENCE_DIR` for local paths. No sandbox permission override was needed for
+these captures.
 
 # Historical Rust fixture screenshots
 

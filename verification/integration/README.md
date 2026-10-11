@@ -50,20 +50,29 @@ without rewriting storage; originals remain immutable and proposals separate.
   reproducible generation are prior evidence at exact commit `298e63f`, documented
   in [owned grammar verification](../owned-grammars.md); they were not repeated.
 
-## Reused visual qualification
+## Current UI qualification
 
-The shell, styles, original scene and symbol overlay code are unchanged from
-application commit `85c9cea426e7fc9abe55c0f4e7ba706cdea572c2` (published checkpoint
-`9b50879af774a1463ac5049ca1ce80a9fb2316d0`). The coverage explanation now describes
-@5's qualified subsets and precise remaining gaps. Existing @3 screenshots remain
-accurately captioned and were not recaptured for this parser-only update.
+The compact inspector follow-up removes the requested heading/help prose and
+replaces stacked selection labels with one compact name/kind/parent-file row.
+Inspector/form/journal spacing is tighter; precision, coverage, errors, binding
+status and provenance remain available. The original graph, scene, parser @5,
+intent backends and fixture are unchanged from `0efd5e8`.
 
-Prior evidence includes nine mixed browser groups, eleven original graph groups,
-desktop and 768/390/360px inspection, bounded disclosures, camera/route/object
-preservation, accessible settings, selection and drafts. Those unaffected visual
-checks were reused. Earlier independent review fixed permissive preview record
-validation, lost restored dialect choices and a clipped narrow settings menu;
-its final @3 review passed 14 focused checks and all 23 then-current fixture hashes.
+The frontend's 128 tests, lint, types and build were rerun successfully. Nine
+mixed-browser regression groups and five focused inspector groups passed, including
+1680/768/390/360px layout and keyboard checks, original/proposal byte preservation,
+reload, stale/corrupt journals, metadata association and original graph/camera
+invariants. Fresh actual @5 screenshots replace the earlier @3 captures. See
+[compact inspector verification](inspector-compact.md) for evidence, measured
+spacing and exact screenshot source hashes. Rust checks were not repeated for
+this markup/CSS-only follow-up; the 135-test service result above is prior evidence
+on the unchanged Rust code.
+
+Earlier independent review fixed permissive preview record validation, lost
+restored dialect choices and a clipped narrow settings menu. The original file
+scene and symbol overlay implementation remain unchanged from application commit
+`85c9cea426e7fc9abe55c0f4e7ba706cdea572c2`; the inspector markup and styling have
+now been compacted separately.
 
 The compact shell removes the large fixture banner and redundant scene copy,
 keeps the honest Fixture Preview tooltip, and moves the toolbar to the scene top.

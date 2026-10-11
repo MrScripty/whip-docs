@@ -1,0 +1,15 @@
+{
+  "backend": "Recorded Rust fixture; no native Tauri IPC",
+  "checks": [
+    "Actual mixed UI expands parsed symbols across Python, TypeScript, Svelte, C++, Lua, Zig and C#",
+    "Normal and Control disclosures preserve selection/drafts, honor filtered/collapsed repository scope, and support Enter/Space in tree and inspector",
+    "Unsupported, damaged and known unqualified syntax remain explicit",
+    "Compact UI has no horizontal overflow at 768/390/360px, keeps the toolbar at scene top, and allows scrolling to all settings",
+    "Schema3 exact intent, immutable original, separate proposal, explicit digest scope and source exclusion survive reload",
+    "Future/corrupt preview journals fail safely without changing their bytes",
+    "IPC-stub restoration retains effective C++/JSX overrides, explicit clear removes a key, and syntax reads use exact root/token",
+    "Fifteen single and ten batch disclosures preserve original file mesh IDs, routes, visibility, camera and target",
+    "No browser page errors"
+  ],
+  "errors": []
+}

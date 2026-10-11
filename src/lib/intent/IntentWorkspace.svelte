@@ -261,26 +261,25 @@
       <div class="graph-legend"><span><i class="legend-file"></i>File</span><span><i class="legend-type"></i>Directory / type</span><span><i class="legend-callable"></i>Callable</span><span>Focus: incoming / outgoing / mutual</span></div>
       <div class="graph-note">Graph keys: arrows navigate directories · Tab toggles directory focus · . centers selection · R fits</div>
     </section>
-    <aside class="inspector">
-      <div class="section-heading"><span>INSPECTOR</span><span>{selected?.kind.replaceAll('_',' ')??selectedBase?.kind??(selectedEdge?'RELATION':'NO SELECTION')}</span></div>
+    <aside class="inspector" aria-label="Selection inspector">
       {#if selected}
-        <h2 class="symbol-title">{selected.label}</h2><p class="source-path">{selected.sourceRange?.path}</p>
-        <button class="text-button" onclick={()=>selectBase({kind:'node',id:baseSelectedId!})}>Back to parent file</button>
+        <div class="selection-header">
+          <h2 class="symbol-title">{selected.label}</h2><span class="selection-kind">{selected.kind.replaceAll('_',' ')}</span>
+          <button class="text-button selection-file" title={selected.sourceRange?.path} aria-label={`Back to parent file: ${selected.sourceRange?.path}`} onclick={()=>selectBase({kind:'node',id:baseSelectedId!})}>{selectedBase?.name??'Parent file'}</button>
+        </div>
         <div class="metadata"><span>Source location</span><strong>{sourceAnalysis?'':'~ '}line {selected.sourceRange?.startLine??'unknown'}</strong><span>Range precision</span><strong>{selectedDeclaration?'UTF-8 byte range':'Unverified'}</strong>{#if selectedDeclaration}<span>Bytes [start, end)</span><strong>{selectedDeclaration.range.startByte}–{selectedDeclaration.range.endByte}</strong><span>Header / body</span><strong>{selectedDeclaration.headerComplete?'complete':'incomplete'} / {selectedDeclaration.bodyComplete?'complete':'incomplete'}</strong>{/if}<span>Graph facts</span><strong>{relations.length} relationships</strong></div>
           <div class="intent-composer">
-            <span class="eyebrow">CAPTURE THE WHY</span>
-            <h3>What should this symbol mean?</h3>
             <label for="intent-kind">Record type</label><select id="intent-kind" bind:value={kind} onchange={() => { parentId = originals[0]?.id ?? ''; }} disabled={saving}><option value="original">Original intent</option><option value="interpretation">Later interpretation</option><option value="proposal">Proposed change</option></select>
             {#if kind !== 'original'}<label for="original-intent">Based on original intent</label><select id="original-intent" bind:value={parentId} disabled={saving}><option value="">Choose an original</option>{#each originals as original (original.id)}<option value={original.id}>{original.text.slice(0, 72)}</option>{/each}</select>{/if}
-            <label for="intent-text">{kind === 'original' ? 'Your exact words, preserved' : kind === 'proposal' ? 'A proposal, not an observed fact' : 'A separate reading of the original'}</label>
+            <label for="intent-text">{kind === 'original' ? 'Intent' : kind === 'proposal' ? 'Proposal' : 'Interpretation'}</label>
             <textarea id="intent-text" rows="4" maxlength="16384" placeholder="Describe the responsibility, constraint, or reason…" bind:value={text} disabled={saving}></textarea>
             <button class="primary wide" disabled={saving || !text.trim() || (kind !== 'original' && !parentId)} onclick={() => void saveIntent()}>{saving ? 'Saving…' : kind === 'original' ? 'Preserve original intent' : 'Append separate entry'}</button>
-            <p class="fine">Append-only · 16 KiB limit. Saves your words, source digests and structural metadata. Code bodies and comments are not copied. Historical structure cannot reconstruct source code.</p>
           </div>
 
       {:else if selectedBase}
-        <h2 class="symbol-title">{selectedBase.name}</h2><p class="source-path">{selectedBase.path}</p>
-        <div class="metadata-inline"><span>Graph context <strong>{selectedBase.kind}</strong></span><span>File relationships <strong>{fileRelations.length}</strong></span></div>
+        <div class="selection-header"><h2 class="symbol-title" title={selectedBase.path} aria-describedby="selection-path">{selectedBase.name}</h2><span class="selection-kind">{selectedBase.kind}</span></div>
+        <span id="selection-path" class="sr-only">{selectedBase.path}</span>
+        <div class="metadata-inline"><span>File relationships <strong>{fileRelations.length}</strong></span></div>
         {#if selectedBase.kind==='file'}
           <button class="symbol-disclosure" aria-label={`Toggle symbols for ${selectedBase.path}`} aria-expanded={expanded.has(selectedBase.id)} title={EXPANSION_HELP} disabled={saving||busy||!symbolsFor(selectedBase).length} onclick={event=>toggleFile(selectedBase!,event.ctrlKey)} onkeydown={event=>toggleKey(event,selectedBase!)}><span aria-hidden="true">{expanded.has(selectedBase.id)?'−':'+'}</span> Symbols · {symbolsFor(selectedBase).length}</button>{#if symbolsFor(selectedBase).length>MAX_EXPANDED_SYMBOLS}<p class="fine">This file exceeds the {MAX_EXPANDED_SYMBOLS.toLocaleString()}-symbol expansion limit.</p>{/if}
           {#if !graph}<p class="fine">The file graph is available. Analyze the repository to add symbol detail for supported source languages.</p>{/if}
@@ -290,7 +289,7 @@
         <p class="source-path">{fileLabel(selectedEdge.fromNodeId)} {selectedEdge.direction==='directed'?'→':'↔'} {fileLabel(selectedEdge.toNodeId)}</p>
         <div class="metadata"><span>Direction</span><strong>{selectedEdge.direction}</strong><span>Confidence</span><strong>{selectedEdge.confidence}</strong><span>Provenance</span><strong>{selectedEdge.provenance}</strong><span>Weight / evidence</span><strong>{selectedEdge.weight} / {selectedEdge.evidenceCount}</strong></div>
         <details class="relations" open><summary>Relationship evidence</summary>{#each selectedEdge.evidenceSample as evidence, i (i)}<p>{evidence.kind.replaceAll('_',' ')} · {evidence.analyzer}<br />{evidence.sourceRange.path} · ~ line {evidence.sourceRange.startLine}{#if evidence.targetRange}<br />→ {evidence.targetRange.path} · ~ line {evidence.targetRange.startLine}{/if}</p>{/each}</details>
-      {:else}<h2>Select a file</h2><p class="muted">Explore the repository graph, then expand a file to inspect symbols and preserve intent.</p>{/if}
+      {:else}<h2>Select a file</h2>{/if}
       {#if sourceAnalysis&&selectedBase?.kind==='file'}
         <section class="syntax-metadata" aria-label="Syntax coverage">
           <div class="metadata"><span>Dialect</span><strong>{selectedSyntaxFile?.identity.dialect??'Not selected / unsupported'}</strong><span>Coverage</span><strong>{coverageLabel(selectedSyntaxFile?.identity.coverage??'outside')}</strong></div>

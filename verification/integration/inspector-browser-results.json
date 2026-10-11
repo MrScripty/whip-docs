@@ -1,0 +1,238 @@
+{
+  "backend": "Actual Chromium/WebGL UI; recorded public @5 fixture; no native IPC",
+  "checks": [
+    "One compact selection row retains symbol/kind and accessible parent path; requested copy is absent and precision/completeness/coverage remain visible",
+    "Keyboard parent navigation and original/proposal tab order work; Enter appends verbatim originals and separate proposals with visible binding/provenance",
+    "1680/768/390/360px layouts retain readable headers, no horizontal overflow, reachable 28px-plus controls and logical keyboard order",
+    "Qualified callable spelling wraps without overflow and meaningful unsupported-region diagnostics remain visible",
+    "Reload retains original bytes; stale originals stay unchanged and cannot receive proposals; corrupt journal errors remain visible without rewriting storage"
+  ],
+  "metrics": [
+    {
+      "viewport": 1680,
+      "emptyOriginal": {
+        ".inspector": {
+          "x": 1285,
+          "y": 56,
+          "width": 395,
+          "height": 970,
+          "top": 56,
+          "right": 1680,
+          "bottom": 1026,
+          "left": 1285
+        },
+        ".symbol-title": {
+          "x": 1298,
+          "y": 71.5,
+          "width": 45.796875,
+          "height": 21,
+          "top": 71.5,
+          "right": 1343.796875,
+          "bottom": 92.5,
+          "left": 1298
+        },
+        ".intent-composer": {
+          "x": 1298,
+          "y": 207,
+          "width": 370,
+          "height": 224,
+          "top": 207,
+          "right": 1668,
+          "bottom": 431,
+          "left": 1298
+        },
+        "#intent-text": {
+          "x": 1298,
+          "y": 302,
+          "width": 370,
+          "height": 84,
+          "top": 302,
+          "right": 1668,
+          "bottom": 386,
+          "left": 1298
+        },
+        ".intent-composer .primary": {
+          "x": 1298,
+          "y": 394,
+          "width": 370,
+          "height": 37,
+          "top": 394,
+          "right": 1668,
+          "bottom": 431,
+          "left": 1298
+        },
+        ".journal-heading": {
+          "x": 1298,
+          "y": 496,
+          "width": 370,
+          "height": 37,
+          "top": 496,
+          "right": 1668,
+          "bottom": 533,
+          "left": 1298
+        }
+      }
+    },
+    {
+      "viewport": 1680,
+      "geometry": {
+        "viewport": 1680,
+        "document": 1680,
+        "inspector": {
+          "x": 1285,
+          "y": 56,
+          "width": 395,
+          "height": 970,
+          "top": 56,
+          "right": 1680,
+          "bottom": 1026,
+          "left": 1285
+        },
+        "header": {
+          "x": 1298,
+          "y": 68,
+          "width": 370,
+          "height": 28,
+          "top": 68,
+          "right": 1668,
+          "bottom": 96,
+          "left": 1298
+        },
+        "title": {
+          "x": 1298,
+          "y": 71.5,
+          "width": 45.796875,
+          "height": 21,
+          "top": 71.5,
+          "right": 1343.796875,
+          "bottom": 92.5,
+          "left": 1298
+        },
+        "scrollWidth": 394,
+        "clientWidth": 394,
+        "fontSize": 15
+      }
+    },
+    {
+      "viewport": 768,
+      "geometry": {
+        "viewport": 768,
+        "document": 768,
+        "inspector": {
+          "x": 508,
+          "y": 56,
+          "width": 260,
+          "height": 920,
+          "top": 56,
+          "right": 768,
+          "bottom": 976,
+          "left": 508
+        },
+        "header": {
+          "x": 521,
+          "y": 68,
+          "width": 235,
+          "height": 28,
+          "top": 68,
+          "right": 756,
+          "bottom": 96,
+          "left": 521
+        },
+        "title": {
+          "x": 521,
+          "y": 71.5,
+          "width": 45.796875,
+          "height": 21,
+          "top": 71.5,
+          "right": 566.796875,
+          "bottom": 92.5,
+          "left": 521
+        },
+        "scrollWidth": 259,
+        "clientWidth": 259,
+        "fontSize": 15
+      }
+    },
+    {
+      "viewport": 390,
+      "geometry": {
+        "viewport": 390,
+        "document": 390,
+        "inspector": {
+          "x": 0,
+          "y": 613.5625,
+          "width": 390,
+          "height": 362.421875,
+          "top": 613.5625,
+          "right": 390,
+          "bottom": 975.984375,
+          "left": 0
+        },
+        "header": {
+          "x": 12,
+          "y": 626.5625,
+          "width": 366,
+          "height": 28,
+          "top": 626.5625,
+          "right": 378,
+          "bottom": 654.5625,
+          "left": 12
+        },
+        "title": {
+          "x": 12,
+          "y": 630.0625,
+          "width": 45.796875,
+          "height": 21,
+          "top": 630.0625,
+          "right": 57.796875,
+          "bottom": 651.0625,
+          "left": 12
+        },
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "fontSize": 15
+      }
+    },
+    {
+      "viewport": 360,
+      "geometry": {
+        "viewport": 360,
+        "document": 360,
+        "inspector": {
+          "x": 0,
+          "y": 613.5625,
+          "width": 360,
+          "height": 362.421875,
+          "top": 613.5625,
+          "right": 360,
+          "bottom": 975.984375,
+          "left": 0
+        },
+        "header": {
+          "x": 12,
+          "y": 626.5625,
+          "width": 336,
+          "height": 28,
+          "top": 626.5625,
+          "right": 348,
+          "bottom": 654.5625,
+          "left": 12
+        },
+        "title": {
+          "x": 12,
+          "y": 630.0625,
+          "width": 45.796875,
+          "height": 21,
+          "top": 630.0625,
+          "right": 57.796875,
+          "bottom": 651.0625,
+          "left": 12
+        },
+        "scrollWidth": 360,
+        "clientWidth": 360,
+        "fontSize": 15
+      }
+    }
+  ],
+  "errors": []
+}

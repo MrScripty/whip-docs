@@ -1,4 +1,4 @@
-// Focused @5 contract replay. Layout evidence remains at UI commit 85c9cea.
+// Focused @5 contract replay. Separate inspector/browser checks qualify layout.
 // Uses actual Chromium/WebGL with Rust-exported fixture data, not native IPC.
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');

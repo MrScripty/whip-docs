@@ -31,7 +31,8 @@ const exact='  Preserve multilingual responsibility — 蟹.\n\tProposals stay s
  await page.getByRole('button',{name:'Expand scripts/task.lua',exact:true}).click();assert.equal(await openCount(),2);assert.equal(await page.locator('.symbol-title').innerText(),'Boxed');
  await page.getByRole('button',{name:'Collapse scripts/task.lua',exact:true}).click();assert.equal(await openCount(),1);assert.equal(await page.locator('#intent-text').inputValue(),'Unsaved draft survives disclosures.');
  await page.getByRole('button',{name:'Expand scripts/task.lua',exact:true}).click({modifiers:['Control']});assert.equal(await openCount(),eligibleCount);assert.equal(await page.locator('.symbol-title').innerText(),'Boxed');
- await page.getByRole('textbox',{name:'Find a file'}).fill('web/app.ts');await page.getByRole('button',{name:'Collapse web/app.ts',exact:true}).click({modifiers:['Control']});
+ // The explicit batch target is retained even when the larger @5 fixture reaches the 24-file cap.
+ await page.getByRole('textbox',{name:'Find a file'}).fill('scripts/task.lua');await page.getByRole('button',{name:'Collapse scripts/task.lua',exact:true}).click({modifiers:['Control']});
  await page.getByRole('textbox',{name:'Find a file'}).fill('');assert.equal(await openCount(),0);
  await page.getByRole('button',{name:'Expand api/handler.py',exact:true}).click();await box.click();assert.equal(await page.locator('#intent-text').inputValue(),'Unsaved draft survives disclosures.');
  await page.getByRole('button',{name:'Collapse api/handler.py',exact:true}).click({modifiers:['Control']});
