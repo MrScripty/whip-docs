@@ -25,7 +25,7 @@ const exact='  Preserve multilingual responsibility — 蟹.\n\tProposals stay s
  }
  pass('Actual mixed UI expands parsed symbols across Python, TypeScript, Svelte, C++, Lua, Zig and C#');
  const openCount=()=>page.locator('.file-row .expand[aria-label^="Collapse "]').count();
- const eligibleCount=await page.locator('.file-row .expand[aria-label^="Expand "]:enabled').count();
+ const eligibleCount=Math.min(24,await page.locator('.file-row .expand[aria-label^="Expand "]:enabled').count());
  await page.getByRole('button',{name:'Expand api/handler.py',exact:true}).click();
  const box=page.locator('.symbol-list button').filter({has:page.locator('span').filter({hasText:/^Boxed$/})}).first();await box.click();await page.locator('#intent-text').fill('Unsaved draft survives disclosures.');
  await page.getByRole('button',{name:'Expand scripts/task.lua',exact:true}).click();assert.equal(await openCount(),2);assert.equal(await page.locator('.symbol-title').innerText(),'Boxed');

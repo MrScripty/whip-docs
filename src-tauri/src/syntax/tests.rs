@@ -1586,3 +1586,421 @@ fn svelte_region_and_label_limits_propagate_to_snippet_completeness() {
         assert!(!snippet.header_complete && !snippet.body_complete);
     }
 }
+
+fn assert_inventory(file: &FileAnalysis, expected: &[(&str, DeclarationKind, Option<&str>)]) {
+    let actual: Vec<_> = file
+        .declarations
+        .iter()
+        .map(|d| {
+            let parent = d.parent_id.as_ref().map(|id| {
+                file.declarations
+                    .iter()
+                    .find(|p| &p.id == id)
+                    .unwrap()
+                    .name
+                    .as_str()
+            });
+            (d.name.as_str(), d.kind.clone(), parent)
+        })
+        .collect();
+    assert_eq!(actual, expected, "{:?}", file.diagnostics);
+}
+
+#[test]
+fn kotlin_properties_own_their_written_names_and_constructor_parameters() {
+    use DeclarationKind::*;
+    let source = fixture("correctness/properties.kt").replace('\n', "\r\n");
+    let file = analyze_file("a.kt", &source, Dialect::Kotlin);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_inventory(
+        &file,
+        &[
+            ("Ledger", Class, None),
+            ("seed", Parameter, Some("Ledger")),
+            ("current", Field, Some("Ledger")),
+            ("cached", Field, Some("Ledger")),
+            ("balance", Field, Some("Ledger")),
+            ("constructor", Method, Some("Ledger")),
+            ("size", Parameter, Some("constructor")),
+            ("read", Method, Some("Ledger")),
+            ("local", Binding, Some("read")),
+            ("headline", Binding, None),
+        ],
+    );
+    assert_exact_ranges(&file, &source);
+    let current = file
+        .declarations
+        .iter()
+        .find(|d| d.name == "current")
+        .unwrap();
+    assert_eq!(
+        &source[current.range.start_byte..current.range.end_byte],
+        "val current: Int = seed"
+    );
+    assert!(file
+        .relations
+        .iter()
+        .any(|r| r.owner_id.as_ref() == Some(&current.id)
+            && r.kind == RelationKind::WrittenType
+            && &source[r.target_range.start_byte..r.target_range.end_byte] == "Int"));
+}
+
+#[test]
+fn zig_assignments_never_create_rhs_bindings_and_enum_cases_are_variants() {
+    use DeclarationKind::*;
+    let source = fixture("correctness/assignments.zig").replace('\n', "\r\n");
+    let file = analyze_file("a.zig", &source, Dialect::Zig);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_inventory(
+        &file,
+        &[
+            ("Meter", Struct, None),
+            ("total", Field, Some("Meter")),
+            ("bump", Method, Some("Meter")),
+            ("self", Parameter, Some("bump")),
+            ("step", Parameter, Some("bump")),
+            ("spare", Binding, Some("bump")),
+            ("Mode", Enum, None),
+            ("idle", Variant, Some("Mode")),
+            ("active", Variant, Some("Mode")),
+        ],
+    );
+    assert_exact_ranges(&file, &source);
+    let open = analyze_file(
+        "open.zig",
+        "const State = enum(u8) { ready, _ };",
+        Dialect::Zig,
+    );
+    assert!(!open.declarations.iter().any(|d| d.name == "_"));
+}
+
+#[test]
+fn cpp_special_members_keep_own_parameters_and_duplicate_scopes() {
+    use DeclarationKind::*;
+    let source = fixture("correctness/special-members.cpp").replace('\n', "\r\n");
+    let file = analyze_file("a.cpp", &source, Dialect::Cpp);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_inventory(
+        &file,
+        &[
+            ("Gear", Struct, None),
+            ("Gear", Method, Some("Gear")),
+            ("seed", Parameter, Some("Gear")),
+            ("~Gear", Method, Some("Gear")),
+            ("operator()", Method, Some("Gear")),
+            ("value", Parameter, Some("operator()")),
+            ("operator[]", Method, Some("Gear")),
+            ("slot", Parameter, Some("operator[]")),
+            ("Switch", Struct, None),
+            ("operator()", Method, Some("Switch")),
+            ("code", Parameter, Some("operator()")),
+        ],
+    );
+    assert_exact_ranges(&file, &source);
+    let operators: Vec<_> = file
+        .declarations
+        .iter()
+        .filter(|d| d.name == "operator()")
+        .collect();
+    assert_ne!(operators[0].id, operators[1].id);
+    for (parameter, owner) in [("value", operators[0]), ("code", operators[1])] {
+        let child = file
+            .declarations
+            .iter()
+            .find(|d| d.name == parameter)
+            .unwrap();
+        assert_eq!(child.parent_id.as_ref(), Some(&owner.id));
+        assert!(
+            child.range.start_byte >= owner.range.start_byte
+                && child.range.end_byte <= owner.range.end_byte
+        );
+    }
+}
+
+#[test]
+fn odin_qualified_procedures_and_groups_have_source_backed_names_and_owners() {
+    use DeclarationKind::*;
+    let source = fixture("correctness/callable-groups.odin").replace('\n', "\r\n");
+    let file = analyze_file("a.odin", &source, Dialect::Odin);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_inventory(
+        &file,
+        &[
+            ("sample", Module, None),
+            ("Parcel", Struct, None),
+            ("size", Field, Some("Parcel")),
+            ("(Parcel) .grow", Function, None),
+            ("self", Parameter, Some("(Parcel) .grow")),
+            ("amount", Parameter, Some("(Parcel) .grow")),
+            ("render", Function, None),
+            ("value", Parameter, Some("render")),
+            ("render_text", Function, None),
+            ("value", Parameter, Some("render_text")),
+            ("render_any", Function, None),
+        ],
+    );
+    assert_exact_ranges(&file, &source);
+    let group = file
+        .declarations
+        .iter()
+        .find(|d| d.name == "render_any")
+        .unwrap();
+    assert_eq!(group.syntax_kind, "overloaded_procedure_declaration");
+    assert!(!file
+        .declarations
+        .iter()
+        .any(|d| d.parent_id.as_ref() == Some(&group.id)));
+    assert!(file
+        .relations
+        .iter()
+        .all(|r| r.qualification.contains("unresolved")));
+}
+
+#[test]
+fn unsupported_callable_regions_never_orphan_parameters_or_copy_name_comments() {
+    for (dialect, source) in [
+        (Dialect::Cpp, "struct Flag { operator bool() const { return true; } };"),
+        (Dialect::Cpp, "struct Flag { int operator /* NAME_PRIVATE_COMMENT */ ()(int orphan); };"),
+        (Dialect::Cpp, "struct Flag { int first(int orphan), second(int other); };"),
+        (Dialect::Cpp, "int operator \"PRIVATE_LITERAL\" _suffix(int orphan);"),
+        (Dialect::Odin, "package sample\n(Container /* NAME_PRIVATE_COMMENT */) .shift :: proc(orphan: int) {}\n"),
+    ] {
+        let file = analyze_file("unsupported", source, dialect);
+        assert_eq!(file.identity.coverage, Coverage::Incomplete, "{source}: {file:?}");
+        assert!(file.diagnostics.iter().any(|d| d.code == "unsupported_callable_declaration"), "{source}: {:?}", file.diagnostics);
+        assert!(!file.declarations.iter().any(|d| ["orphan", "other"].contains(&d.name.as_str())), "{source}");
+        assert!(!serde_json::to_string(&file).unwrap().contains("NAME_PRIVATE_COMMENT"));
+        assert!(!serde_json::to_string(&file).unwrap().contains("PRIVATE_LITERAL"));
+    }
+}
+
+#[test]
+fn unrepresentable_callable_names_suppress_descendants() {
+    let long = "n".repeat(257);
+    for (dialect, source) in [
+        (
+            Dialect::Kotlin,
+            format!("class Box {{ fun {long}(orphan: Int) {{ val nested = orphan }} }}"),
+        ),
+        (
+            Dialect::Cpp,
+            format!("struct Box {{ void {long}(int orphan) {{ int nested = orphan; }} }};"),
+        ),
+        (
+            Dialect::Odin,
+            format!("package example\n{long} :: proc(orphan: int) {{ nested := orphan }}\n"),
+        ),
+    ] {
+        let file = analyze_file("long-name", &source, dialect);
+        assert_eq!(file.identity.coverage, Coverage::Incomplete);
+        assert!(file
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "unsupported_callable_declaration"));
+        assert!(!file
+            .declarations
+            .iter()
+            .any(|d| ["orphan", "nested"].contains(&d.name.as_str())));
+        assert_exact_ranges(&file, &source);
+    }
+}
+
+#[test]
+fn kotlin_property_lambda_locals_do_not_become_class_members() {
+    use DeclarationKind::*;
+    let source = "class Box {\nval callback = { value: Int ->\nval nested = value\nfun inner() = nested\ninner()\n}\n}\n";
+    let file = analyze_file("lambda.kt", source, Dialect::Kotlin);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{file:?}"
+    );
+    assert_inventory(
+        &file,
+        &[
+            ("Box", Class, None),
+            ("callback", Field, Some("Box")),
+            ("value", Parameter, Some("callback")),
+            ("nested", Binding, Some("callback")),
+            ("inner", Function, Some("callback")),
+        ],
+    );
+    assert_exact_ranges(&file, source);
+}
+
+#[test]
+fn cpp_callable_detection_does_not_rescan_initializer_bodies() {
+    // A nested function prototype is inside the lambda initializer, not the
+    // outer declaration's declarator. Following initializers would also rescan
+    // every nested body, causing quadratic work across the file traversal.
+    let source = "int first = [] { int nested(int value); };";
+    let mut parser = tree_sitter::Parser::new();
+    parser.set_language(&Dialect::Cpp.language()).unwrap();
+    let tree = parser.parse(source, None).unwrap();
+    let declaration = tree.root_node().named_child(0).unwrap();
+    assert!(!super::extract::callable_region(declaration, Dialect::Cpp));
+    let deep = format!(
+        "{}int leaf;{}",
+        "int value = [] {".repeat(3000),
+        "};".repeat(3000)
+    );
+    let file = analyze_file("nested.cpp", &deep, Dialect::Cpp);
+    assert_eq!(
+        file.identity.coverage,
+        Coverage::SupportedSubset,
+        "{:?}",
+        file.diagnostics
+    );
+    assert_eq!(file.declarations.len(), 3001);
+    assert_exact_ranges(&file, &deep);
+}
+
+#[test]
+fn remaining_audited_construct_limits_are_explicit() {
+    for (dialect, source, code) in [
+        (
+            Dialect::Kotlin,
+            "fun pair() { val (left, right) = split() }\n",
+            "unsupported_destructuring_property",
+        ),
+        (
+            Dialect::Odin,
+            "package sample\nShade :: enum { Pale, Dark }\n",
+            "unsupported_variant_inventory",
+        ),
+        (
+            Dialect::Odin,
+            "package sample\nPayload :: union { int, string }\n",
+            "unsupported_variant_inventory",
+        ),
+        (
+            Dialect::JavaScript,
+            "class Secret { #hidden = 1; }",
+            "unsupported_private_field",
+        ),
+        (
+            Dialect::JavaScript,
+            "function named(value = 1, ...rest) {}",
+            "unsupported_parameter_pattern",
+        ),
+        (
+            Dialect::CSharp,
+            "namespace Example; class Container {}",
+            "unsupported_file_scoped_namespace_scope",
+        ),
+        (
+            Dialect::C,
+            "#if FLAG\nint one(void);\n#else\nint two(void);\n#endif\n",
+            "preprocessor_alternatives_unresolved",
+        ),
+    ] {
+        let file = analyze_file("limited", source, dialect);
+        assert_eq!(
+            file.identity.coverage,
+            Coverage::Incomplete,
+            "{dialect:?}: {file:?}"
+        );
+        assert!(
+            file.diagnostics.iter().any(|d| d.code == code),
+            "{dialect:?}: {:?}",
+            file.diagnostics
+        );
+        assert_exact_ranges(&file, source);
+    }
+}
+
+#[test]
+fn corrected_callables_project_with_exact_containment_and_no_orphan_graph_nodes() {
+    let repo = Repo::new();
+    for (name, source) in [
+        ("members.cpp", fixture("correctness/special-members.cpp")),
+        (
+            "procedures.odin",
+            fixture("correctness/callable-groups.odin"),
+        ),
+        ("props.kt", fixture("correctness/properties.kt")),
+        ("assign.zig", fixture("correctness/assignments.zig")),
+        (
+            "unsupported.cpp",
+            "struct Hidden { int operator /* PRIVATE_NAME */ ()(int orphan); };".to_owned(),
+        ),
+    ] {
+        std::fs::write(repo.0.join(name), source).unwrap();
+    }
+    let analysis = analyze_repository(&repo.root(), &AnalysisOptions::default());
+    assert!(!analysis.snapshot.nodes.iter().any(|n| n.label == "orphan"));
+    for file in &analysis.syntax.as_ref().unwrap().files {
+        for declaration in &file.declarations {
+            assert!(analysis
+                .snapshot
+                .nodes
+                .iter()
+                .any(|n| n.id == declaration.id));
+            let parent = declaration
+                .parent_id
+                .clone()
+                .unwrap_or_else(|| format!("file:{}", file.identity.path));
+            assert!(analysis.snapshot.edges.iter().any(|e| e.source_id == parent
+                && e.target_id == declaration.id
+                && e.kind == crate::graph::GraphEdgeKind::Contains
+                && e.provenance == crate::graph::EdgeProvenanceDto::TreeSitter));
+        }
+    }
+    assert!(analysis
+        .snapshot
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "unsupported_callable_declaration"));
+}
+
+#[test]
+fn newly_supported_callable_body_damage_does_not_promote_a_damaged_header() {
+    for (dialect, source, name) in [
+        (
+            Dialect::Cpp,
+            "struct Gear { int operator()(int value) { return ; broken( } };",
+            "operator()",
+        ),
+        (
+            Dialect::Kotlin,
+            "class Ledger { constructor(size: Int) { val broken = } }",
+            "constructor",
+        ),
+        (
+            Dialect::Odin,
+            "package sample\n(Parcel) .grow :: proc(value: int) { return + }\n",
+            "(Parcel) .grow",
+        ),
+    ] {
+        let file = analyze_file("broken", source, dialect);
+        assert_eq!(
+            file.identity.coverage,
+            Coverage::Incomplete,
+            "{dialect:?}: {file:?}"
+        );
+        let callable = file.declarations.iter().find(|d| d.name == name).unwrap();
+        assert!(callable.header_complete, "{dialect:?}: {file:?}");
+        assert!(!callable.body_complete);
+        assert_exact_ranges(&file, source);
+    }
+}

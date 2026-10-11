@@ -404,14 +404,32 @@ fn parse_region(
         }
         if dialect == Dialect::Kotlin
             && node.kind() == "property_declaration"
-            && child_kind(node, &["context_parameters", "context_receivers"]).is_some()
             && child_kind(node, &["variable_declaration"]).is_none()
         {
-            diagnostic(file, "unsupported_context_property", Some(span(node, offset)), "Context-qualified destructuring properties have no single declaration owner; region is unqualified.");
+            let context = child_kind(node, &["context_parameters", "context_receivers"]).is_some();
+            diagnostic(file, if context { "unsupported_context_property" } else { "unsupported_destructuring_property" },
+                Some(span(node, offset)), "Destructuring property inventory is not qualified; no binding owner or descendant declarations were emitted.");
+            continue;
+        }
+        if let Some((code, message)) = known_inventory_limit(node, dialect) {
+            diagnostic(file, code, Some(span(node, offset)), message);
+        }
+        let names = declaration_names(node, dialect);
+        let callable = callable_region(node, dialect);
+        if callable
+            && (names.is_empty()
+                || names.len() > 1
+                || names.iter().any(|(_, name)| {
+                    name.byte_range().is_empty()
+                        || name.byte_range().len() > 256
+                        || !callable_name_qualified(*name, dialect)
+                }))
+        {
+            diagnostic(file, "unsupported_callable_declaration", Some(span(node, offset)),
+                "Callable name or multi-declarator ownership is outside the qualified subset; its descendants were not assigned to another owner.");
             continue;
         }
         let mut owner = inherited_owner;
-        let names = declaration_names(node, dialect);
         let single_name = names.len() == 1;
         for (kind, name_node) in names {
             if file.declarations.len() >= MAX_DECLARATIONS {
@@ -424,7 +442,10 @@ fn parse_region(
                 break;
             }
             let name = text(name_node, source);
-            if dialect == Dialect::Kotlin && node.kind() == "context_parameter" && name == "_" {
+            if (dialect == Dialect::Kotlin && node.kind() == "context_parameter"
+                || dialect == Dialect::Zig && kind == DeclarationKind::Variant)
+                && name == "_"
+            {
                 continue;
             }
             // Bound labels and accept identifier syntax only, never copied values/signatures.
@@ -461,18 +482,27 @@ fn parse_region(
                 &range,
                 &name_range,
             );
-            let body = declaration_node.child_by_field_name("body").or_else(|| {
-                child_kind(
-                    node,
-                    &[
-                        "block",
-                        "function_body",
-                        "class_body",
-                        "declaration_list",
-                        "extension_body",
-                    ],
-                )
-            });
+            let body = declaration_node
+                .child_by_field_name("body")
+                .or_else(|| {
+                    (dialect == Dialect::Odin && node.kind() == "procedure_declaration")
+                        .then(|| {
+                            child_kind(node, &["procedure"]).and_then(|p| child_kind(p, &["block"]))
+                        })
+                        .flatten()
+                })
+                .or_else(|| {
+                    child_kind(
+                        node,
+                        &[
+                            "block",
+                            "function_body",
+                            "class_body",
+                            "declaration_list",
+                            "extension_body",
+                        ],
+                    )
+                });
             let header_end = body
                 .map(|n| n.start_byte())
                 .unwrap_or(declaration_node.end_byte());
@@ -710,27 +740,211 @@ fn relation_kind(node: Node<'_>) -> Option<RelationKind> {
     })
 }
 
+fn token<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
+    let mut cursor = node.walk();
+    let found = node
+        .children(&mut cursor)
+        .find(|child| child.kind() == kind);
+    found
+}
+
+// This grammar aliases ordinary assignment statements to variable_declaration.
+// A declaration name follows its own var/const token, never an RHS identifier.
+fn zig_binding_names(node: Node<'_>) -> Vec<Node<'_>> {
+    let mut cursor = node.walk();
+    let mut expect_name = false;
+    let mut names = Vec::new();
+    for child in node.children(&mut cursor).filter(|child| !child.is_extra()) {
+        if matches!(child.kind(), "const" | "var") {
+            expect_name = true;
+        } else if expect_name {
+            if child.kind() == "identifier" {
+                names.push(child);
+            }
+            expect_name = false;
+        }
+    }
+    names
+}
+
+pub(super) fn callable_region(node: Node<'_>, dialect: Dialect) -> bool {
+    match dialect {
+        Dialect::Odin => matches!(
+            node.kind(),
+            "procedure_declaration" | "overloaded_procedure_declaration"
+        ),
+        Dialect::Kotlin => matches!(
+            node.kind(),
+            "function_declaration" | "secondary_constructor"
+        ),
+        Dialect::Cpp => {
+            if node.kind() == "function_definition" {
+                return true;
+            }
+            if !matches!(node.kind(), "declaration" | "field_declaration" | "ERROR") {
+                return false;
+            }
+            let mut pending: Vec<_> = children(node)
+                .into_iter()
+                .filter(|n| n.kind().contains("declarator") || n.kind() == "operator_cast")
+                .collect();
+            let mut visited = 0;
+            while let Some(child) = pending.pop() {
+                visited += 1;
+                if visited > MAX_NODES {
+                    return true;
+                }
+                if matches!(child.kind(), "function_declarator" | "operator_cast") {
+                    return true;
+                }
+                // Follow declarator wrappers only. Initializers, parameter lists
+                // and bodies may contain unrelated or deeply nested callables.
+                if let Some(declarator) = child.child_by_field_name("declarator") {
+                    pending.push(declarator);
+                } else if matches!(
+                    child.kind(),
+                    "parenthesized_declarator" | "reference_declarator"
+                ) {
+                    pending.extend(children(child).into_iter().filter(|n| {
+                        n.kind().contains("declarator") || n.kind() == "operator_cast"
+                    }));
+                }
+            }
+            false
+        }
+        _ => false,
+    }
+}
+
+fn callable_name_qualified(node: Node<'_>, dialect: Dialect) -> bool {
+    if !matches!(
+        node.kind(),
+        "member_expression" | "operator_name" | "destructor_name"
+    ) {
+        return true;
+    }
+    let mut pending = vec![node];
+    let mut visited = 0;
+    while let Some(child) = pending.pop() {
+        visited += 1;
+        if visited > MAX_NODES || child.is_extra() {
+            return false;
+        }
+        if dialect == Dialect::Odin
+            && !matches!(
+                child.kind(),
+                "identifier" | "member_expression" | "parenthesized_expression"
+            )
+        {
+            return false;
+        }
+        if matches!(
+            child.kind(),
+            "string_literal" | "char_literal" | "user_defined_literal"
+        ) {
+            return false;
+        }
+        pending.extend(children(child));
+    }
+    true
+}
+
+fn known_inventory_limit(node: Node<'_>, dialect: Dialect) -> Option<(&'static str, &'static str)> {
+    match (dialect, node.kind()) {
+        (Dialect::Odin, "enum_declaration" | "union_declaration") => Some(("unsupported_variant_inventory", "Odin enum/union member declarations are not inventoried; only the container and written type facts are qualified.")),
+        (Dialect::C | Dialect::Cpp, "preproc_if" | "preproc_ifdef") => Some(("preprocessor_alternatives_unresolved", "Preprocessor branches are observed as written; active declarations are not selected.")),
+        (Dialect::CSharp, "file_scoped_namespace_declaration") => Some(("unsupported_file_scoped_namespace_scope", "File-scoped namespace membership is not represented; file containment is syntax-only.")),
+        (Dialect::JavaScript | Dialect::Jsx, "field_definition") if node.child_by_field_name("property").is_some_and(|n| n.kind() == "private_property_identifier") => Some(("unsupported_private_field", "Private JavaScript field declarations are outside the qualified inventory.")),
+        (Dialect::JavaScript | Dialect::Jsx, "assignment_pattern" | "object_pattern" | "array_pattern" | "rest_pattern") if node.parent().is_some_and(|n| n.kind() == "formal_parameters") => Some(("unsupported_parameter_pattern", "This JavaScript parameter pattern is not inventoried as parameter declarations.")),
+        _ => None,
+    }
+}
+
 fn declaration_names(node: Node<'_>, dialect: Dialect) -> Vec<(DeclarationKind, Node<'_>)> {
     use DeclarationKind as K;
     let typ = node.kind();
     if dialect == Dialect::Kotlin {
         if typ == "variable_declaration"
-            && node.parent().is_some_and(|p| {
-                p.kind() == "property_declaration"
-                    && child_kind(p, &["context_parameters", "context_receivers"]).is_some()
-            })
+            && node
+                .parent()
+                .is_some_and(|p| p.kind() == "lambda_parameters")
+        {
+            return child_kind(node, &["identifier"])
+                .map(|name| vec![(K::Parameter, name)])
+                .unwrap_or_default();
+        }
+        if typ == "variable_declaration"
+            && node
+                .parent()
+                .is_some_and(|p| p.kind() == "property_declaration")
         {
             return Vec::new();
         }
-        if typ == "property_declaration"
-            && child_kind(node, &["context_parameters", "context_receivers"]).is_some()
-        {
-            if let Some(binding) = child_kind(node, &["variable_declaration"]) {
-                if let Some(name) = child_kind(binding, &["identifier"]) {
-                    return vec![(K::Field, name)];
-                }
-            }
+        if typ == "property_declaration" {
+            return child_kind(node, &["variable_declaration"])
+                .and_then(|binding| child_kind(binding, &["identifier"]))
+                .map(|name| {
+                    vec![(
+                        if is_member(node) {
+                            K::Field
+                        } else {
+                            K::Binding
+                        },
+                        name,
+                    )]
+                })
+                .unwrap_or_default();
         }
+        if typ == "secondary_constructor" {
+            return token(node, "constructor")
+                .map(|name| vec![(K::Method, name)])
+                .unwrap_or_default();
+        }
+    }
+    if dialect == Dialect::Zig {
+        if typ == "variable_declaration" {
+            let kind = if child_kind(
+                node,
+                &[
+                    "struct_declaration",
+                    "union_declaration",
+                    "opaque_declaration",
+                ],
+            )
+            .is_some()
+            {
+                K::Struct
+            } else if child_kind(node, &["enum_declaration"]).is_some() {
+                K::Enum
+            } else {
+                K::Binding
+            };
+            return zig_binding_names(node)
+                .into_iter()
+                .map(|name| (kind.clone(), name))
+                .collect();
+        }
+        if typ == "container_field"
+            && node
+                .parent()
+                .is_some_and(|p| p.kind() == "enum_declaration")
+        {
+            return node
+                .child_by_field_name("name")
+                .filter(|n| n.kind() == "identifier")
+                .map(|name| vec![(K::Variant, name)])
+                .unwrap_or_default();
+        }
+    }
+    if dialect == Dialect::Odin
+        && matches!(
+            typ,
+            "procedure_declaration" | "overloaded_procedure_declaration"
+        )
+    {
+        return child_kind(node, &["identifier", "member_expression"])
+            .map(|name| vec![(K::Function, name)])
+            .unwrap_or_default();
     }
     // Anonymous extension containers and operators use exact written tokens as
     // labels. They are syntax identities, never invented compiler symbol names.
@@ -865,22 +1079,6 @@ fn declaration_names(node: Node<'_>, dialect: Dialect) -> Vec<(DeclarationKind, 
         })
     {
         kind = K::Function;
-    }
-    if dialect == Dialect::Zig && typ == "variable_declaration" {
-        if child_kind(
-            node,
-            &[
-                "struct_declaration",
-                "union_declaration",
-                "opaque_declaration",
-            ],
-        )
-        .is_some()
-        {
-            kind = K::Struct;
-        } else if child_kind(node, &["enum_declaration"]).is_some() {
-            kind = K::Enum;
-        }
     }
     if dialect == Dialect::Odin
         && typ == "const_declaration"
@@ -1025,7 +1223,11 @@ fn declarator_names(mut node: Node<'_>) -> Vec<Node<'_>> {
     for _ in 0..MAX_NODES {
         if matches!(
             node.kind(),
-            "identifier" | "field_identifier" | "type_identifier"
+            "identifier"
+                | "field_identifier"
+                | "type_identifier"
+                | "destructor_name"
+                | "operator_name"
         ) {
             return vec![node];
         }
@@ -1102,7 +1304,7 @@ fn is_member(node: Node<'_>) -> bool {
             "class_body" | "class_definition" | "impl_item" | "trait_item"
             | "struct_declaration" | "struct_specifier" | "class_specifier" => return true,
             "block" | "statement_block" | "compound_statement" | "function_body"
-            | "source_file" | "program" | "translation_unit" => return false,
+            | "lambda_literal" | "source_file" | "program" | "translation_unit" => return false,
             _ => parent = node.parent(),
         }
     }
