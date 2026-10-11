@@ -429,6 +429,16 @@ fn parse_region(
                 "Callable name or multi-declarator ownership is outside the qualified subset; its descendants were not assigned to another owner.");
             continue;
         }
+        if names.iter().any(|(_, name)| {
+            matches!(
+                name.kind(),
+                "qualified_name" | "qualified_identifier" | "nested_namespace_specifier"
+            ) && !qualified_name_is_identifier_only(*name)
+        }) {
+            diagnostic(file, "unsupported_declaration_name", Some(span(node, offset)),
+                "Composite declaration name contains unsupported syntax; its descendants were not assigned to another owner.");
+            continue;
+        }
         let mut owner = inherited_owner;
         let single_name = names.len() == 1;
         for (kind, name_node) in names {
@@ -814,6 +824,38 @@ pub(super) fn callable_region(node: Node<'_>, dialect: Dialect) -> bool {
         }
         _ => false,
     }
+}
+
+fn qualified_name_is_identifier_only(node: Node<'_>) -> bool {
+    // Composite name ranges may contain comments between otherwise valid identifiers.
+    // Keep exact source spelling only when every token is name syntax; never copy
+    // extras, values or recovery text into graph labels and journal snapshots.
+    let mut pending = vec![node];
+    let mut visited = 0;
+    while let Some(child) = pending.pop() {
+        visited += 1;
+        if visited > MAX_NODES
+            || child.is_extra()
+            || child.is_error()
+            || child.is_missing()
+            || !matches!(
+                child.kind(),
+                "qualified_name"
+                    | "qualified_identifier"
+                    | "nested_namespace_specifier"
+                    | "identifier"
+                    | "namespace_identifier"
+                    | "."
+                    | "::"
+                    | "inline"
+            )
+        {
+            return false;
+        }
+        let mut cursor = child.walk();
+        pending.extend(child.children(&mut cursor));
+    }
+    true
 }
 
 fn callable_name_qualified(node: Node<'_>, dialect: Dialect) -> bool {

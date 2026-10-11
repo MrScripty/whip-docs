@@ -53,7 +53,7 @@ let browser;
  await page.waitForFunction(count=>JSON.parse(localStorage.getItem('whip-docs.intent-syntax-preview.v3')).length===count,entries.length+1);
  const rows=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),key);assert.deepEqual(rows.slice(0,entries.length),originals);
  assert.equal(rows[entries.length].record.parentId,rows[entries.length-1].record.id);assert.deepEqual(rows[entries.length].record.snapshot,rows[entries.length-1].record.snapshot);
- for(const row of rows){assert.equal(row.schemaVersion,3);assert.equal(row.record.snapshot.analysisIdentity.extractor,'whip-docs-syntax@5');}
+ for(const row of rows){assert.equal(row.schemaVersion,3);assert.equal(row.record.snapshot.analysisIdentity.extractor,fixture.overriddenAnalysis.identity.extractor);}
  for(const marker of ['Prefix: café','PUBLIC_MIXED_COMMENT','PUBLIC_NAME_COMMENT','class Ledger','struct Gear','return compute','package demo','spare :='])assert(!JSON.stringify(rows).includes(marker),marker);
  await page.reload();await page.locator('[data-node-id="file:api/default-type-parameters.py"]').waitFor();await page.getByRole('checkbox',{name:'Show all repository history'}).check();
  await page.waitForFunction(count=>document.querySelectorAll('.intent-record').length===count,entries.length+1);
@@ -90,9 +90,9 @@ let browser;
  await page.locator('#intent-kind').selectOption('proposal');await page.locator('#intent-text').fill('Must not rebind an older original.');
  assert.equal(await page.locator('#original-intent option').count(),1);assert(await page.getByRole('button',{name:'Append separate entry',exact:true}).isDisabled());
  assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),priorBytes);
- pass('Actual @4 journal survives byte-for-byte as stale under @5 and cannot receive a derivative from the UI');
+ pass('Actual @4 journal survives byte-for-byte as stale under the current extractor and cannot receive a derivative from the UI');
  const bad='[{"schemaVersion":99}]';await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key,value:bad});await page.reload();
  await page.getByText('Invalid syntax preview journal. It was left unchanged.',{exact:true}).waitFor();assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),bad);
  assert.deepEqual(errors,[]);pass('Invalid journal remains unchanged; no browser page errors');
- fs.writeFileSync(path.join(out,'parser-v5-browser-results.json'),JSON.stringify({backend:'Real WebGL UI; Rust-exported fixture; no native IPC',extractor:'whip-docs-syntax@5',checks,errors},null,2));
+ fs.writeFileSync(path.join(out,'parser-v5-browser-results.json'),JSON.stringify({backend:'Real WebGL UI; Rust-exported fixture; no native IPC',extractor:fixture.overriddenAnalysis.identity.extractor,checks,errors},null,2));
 })().catch(error=>{console.error(error);fs.writeFileSync(path.join(out,'parser-v5-browser-results.json'),JSON.stringify({checks,errors,failure:String(error)},null,2));process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();});

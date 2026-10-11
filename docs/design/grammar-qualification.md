@@ -14,7 +14,7 @@ revision and generated-source input hashes, verified by
 upstream input hashes and regenerated output hashes checked offline by
 `scripts/verify-owned-grammars.py`. Crate and npm versions need not represent
 the same source commit. Exact versions/revisions are pinned in src-tauri/Cargo.toml. Tree-sitter engine: 0.25.10. The qualified
-extractor identity is `whip-docs-syntax@5`; update it on extraction behavior changes.
+extractor identity is `whip-docs-syntax@6`; update it on extraction behavior changes.
 
 | Family / dialect | Pinned grammar | Concrete fixture coverage | Known qualification gap |
 | --- | --- | --- | --- |
@@ -59,3 +59,8 @@ Python/Kotlin/C patches and broader Svelte inventory.
 The [extractor correctness acceptance](extractor-correctness-followup.md) and
 [verification report](../../verification/extractor-correctness.md) record the
 later Kotlin/Zig ownership and C++/Odin callable fixes without grammar changes.
+
+The @6 privacy repair rejects comment-bearing or otherwise unsupported composite
+declaration names with `unsupported_declaration_name` and omits their descendants.
+Clean C#/C++ qualified namespaces, including C++ inline namespaces, retain exact
+name ranges. See [repair verification](../../verification/integration/namespace-label-repair.md).

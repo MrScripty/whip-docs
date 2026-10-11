@@ -6,7 +6,10 @@ Fresh, unedited Chromium captures of the compact inspector follow-up to
 [Capture provenance](compact-inspector-provenance.json) records the timestamp,
 viewports and exact SHA-256 hashes of the UI component, stylesheet and fixture.
 Native Tauri IPC is not running or validated. No private source or model inference
-is involved. These replace the previous @3 captures of the earlier inspector.
+is involved. These replace the previous @3 captures of the earlier inspector. They are retained
+from UI commit `a5caed08ad159de53896753b7cf9eecf98e83e7b`: the @6 parser privacy
+repair leaves this UI unchanged but updates the fixture to 41 files / 39 captured
+sources. Capture source hashes refer to the files at `a5caed08`, not the @6 fixture.
 
 ![Compact file overview](mixed-fixture-file-overview.png)
 

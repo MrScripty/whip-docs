@@ -1,4 +1,4 @@
-// Focused compact-inspector checks against the actual UI and public @5 fixture.
+// Focused compact-inspector checks against the actual UI and public @6 fixture.
 // Native Tauri IPC is not exercised. No browser sandbox override is requested.
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
@@ -36,8 +36,8 @@ let browser;
  await page.getByLabel('Record type',{exact:true}).selectOption('proposal');await page.getByLabel('Record type',{exact:true}).focus();await page.keyboard.press('Tab');assert(await page.getByLabel('Based on original intent',{exact:true}).evaluate(e=>e===document.activeElement));
  await page.keyboard.press('Tab');assert(await page.getByLabel('Proposal',{exact:true}).evaluate(e=>e===document.activeElement));await page.keyboard.insertText('Consider a later change while retaining the original intent.');
  await page.keyboard.press('Tab');assert(await page.getByRole('button',{name:'Append separate entry',exact:true}).evaluate(e=>e===document.activeElement));await page.keyboard.press('Enter');await page.locator('.intent-record[data-kind="proposal"]').waitFor();
- const rows=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),key);assert.equal(rows.length,2);assert.deepEqual(rows[0],savedOriginal);assert.equal(rows[1].record.parentId,rows[0].record.id);assert.equal(rows[1].record.snapshot.analysisIdentity.extractor,'whip-docs-syntax@5');
- assert.match(await inspector.innerText(),/Captured multilingual source set/);assert.match(await inspector.innerText(),/whip-docs-syntax@5/);assert.match(await inspector.innerText(),/current/);
+ const rows=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),key);assert.equal(rows.length,2);assert.deepEqual(rows[0],savedOriginal);assert.equal(rows[1].record.parentId,rows[0].record.id);assert.equal(rows[1].record.snapshot.analysisIdentity.extractor,'whip-docs-syntax@6');
+ assert.match(await inspector.innerText(),/Captured multilingual source set/);assert.match(await inspector.innerText(),/whip-docs-syntax@6/);assert.match(await inspector.innerText(),/current/);
  pass('Keyboard parent navigation and original/proposal tab order work; Enter appends verbatim originals and separate proposals with visible binding/provenance');
  for(const width of [1680,768,390,360]){
   await page.setViewportSize({width,height:width===1680?1050:1000});await inspector.evaluate(e=>{e.scrollTop=0;});
@@ -59,10 +59,10 @@ let browser;
  await page.locator('[data-node-id="file:broken/unsupported-callable.cpp"]').click();await page.locator('[data-diagnostic="unsupported_callable_declaration"]').waitFor();assert.match(await inspector.innerText(),/Incomplete/);
  pass('Qualified callable spelling wraps without overflow and meaningful unsupported-region diagnostics remain visible');
  await page.reload();await page.getByRole('checkbox',{name:'Show all repository history'}).check();await page.waitForFunction(()=>document.querySelectorAll('.intent-record').length===2);assert.equal(await page.locator('.intent-record[data-kind="original"] > p').textContent(),exact);
- const old=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../fixtures/mixed-workspace.previous-v4-journal.json'),'utf8')),oldBytes=JSON.stringify([{schemaVersion:3,record:old}]);
+ const old=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../fixtures/mixed-workspace.previous-v5-journal.json'),'utf8')),oldBytes=JSON.stringify([{schemaVersion:3,record:old}]);
  await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key,value:oldBytes});await page.reload();await page.getByRole('checkbox',{name:'Show all repository history'}).check();await page.getByText('stale',{exact:true}).waitFor();assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),oldBytes);
  await page.getByRole('button',{name:'Expand api/handler.py',exact:true}).click();await selectBox();await page.getByLabel('Record type',{exact:true}).selectOption('proposal');await page.getByLabel('Proposal',{exact:true}).fill('Cannot rebind a stale original.');assert(await page.getByRole('button',{name:'Append separate entry',exact:true}).isDisabled());
  const invalid='[{"schemaVersion":99}]';await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key,value:invalid});await page.reload();await page.getByText('Invalid syntax preview journal. It was left unchanged.',{exact:true}).waitFor();assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),invalid);
  assert.deepEqual(errors,[]);pass('Reload retains original bytes; stale originals stay unchanged and cannot receive proposals; corrupt journal errors remain visible without rewriting storage');
- fs.writeFileSync(path.join(out,'inspector-browser-results.json'),JSON.stringify({backend:'Actual Chromium/WebGL UI; recorded public @5 fixture; no native IPC',checks,metrics,errors},null,2)+'\n');
+ fs.writeFileSync(path.join(out,'inspector-browser-results.json'),JSON.stringify({backend:'Actual Chromium/WebGL UI; recorded public @6 fixture; no native IPC',checks,metrics,errors},null,2)+'\n');
 })().catch(error=>{console.error(error);fs.writeFileSync(path.join(out,'inspector-browser-results.json'),JSON.stringify({checks,metrics,errors,failure:String(error)},null,2));process.exitCode=1;}).finally(async()=>{if(browser)await browser.close();});

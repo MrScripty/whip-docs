@@ -137,8 +137,11 @@ when source is unavailable, digest coverage and changed covered files,
 original-only parent binding, stale tokens, renamed/missing files, traversal,
 symlink escape, malformed/corrupt journals, legacy v1 rejection, and locks.
 
-Run `cargo test`, `cargo fmt --check`, and
-`cargo clippy --workspace --all-targets` in a Rust/Tauri development environment.
-This environment has no Cargo, rustc, or rustfmt, so compilation and Rust tests
-remain unverified. SHA-256 uses `sha2` 0.10.9 already present in Cargo.lock; the
-prototype adds a direct dependency without hand-rolled cryptography.
+Rust tooling is available. Headless tests, strict Clippy and formatting have passed;
+see [integration verification](../../../verification/integration/README.md) for
+current counts and evidence. Run `cargo test --no-default-features --workspace
+--all-targets --locked`, `cargo clippy --no-default-features --workspace --all-targets
+--locked -- -D warnings`, and `cargo fmt --all --check` without desktop prerequisites.
+Full native Tauri linking, IPC and desktop restart acceptance remain unverified
+because GTK/GLib/WebKit development libraries are unavailable. SHA-256 uses `sha2`
+0.10.9 already present in Cargo.lock, without hand-rolled cryptography.

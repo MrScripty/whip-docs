@@ -43,7 +43,9 @@ the existing backend behavior; multilingual unresolved facts remain separate.
 Source coverage, dialect overrides and exact declaration ranges appear in the inspector.
 The 14 dialect routes span 12 language families; route coverage does not establish
 extraction parity. Extractor @5 corrects the bounded Kotlin/Zig declaration ownership
-and C++/Odin callable inventory cases. Unsupported regions retain explicit diagnostics;
+and C++/Odin callable inventory cases. Extractor @6 rejects comment-bearing composite
+namespace names and their descendants, keeping comment text out of new snapshots.
+Unsupported regions retain explicit diagnostics;
 complete lexical scope, semantic resolution and display/signature normalization remain
 outside this slice.
 This remains a prototype, not a qualified native release.
@@ -131,8 +133,8 @@ missing system libraries. Browser screenshots are explicitly fixture execution.
   files, assets and skipped files are excluded.
   The observed Git revision does not claim a clean worktree.
 - Schema-2 journal records remain unchanged; they become stale against the new
-  parser. Schema-3 records retain extractor identity; `@1`, `@2`, `@3` and `@4` records likewise
-  become stale against `@5`. Older binaries cannot read schema-3 lines; downgrade is unsupported.
+  parser. Schema-3 records retain extractor identity; `@1`, `@2`, `@3`, `@4` and `@5` records likewise
+  become stale against `@6`. Older binaries cannot read schema-3 lines; downgrade is unsupported.
 - Legacy V1 journals that retained source bodies block V2 reads/appends. They
   are never silently copied, deleted or migrated. Review them separately before
   using the new journal; this prototype offers no automatic migration.

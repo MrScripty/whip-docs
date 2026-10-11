@@ -1777,6 +1777,66 @@ fn odin_qualified_procedures_and_groups_have_source_backed_names_and_owners() {
 }
 
 #[test]
+fn qualified_namespace_names_reject_comments_without_orphaning_descendants() {
+    use DeclarationKind::*;
+    for (dialect, separator, class_end) in [(Dialect::CSharp, ".", ""), (Dialect::Cpp, "::", ";")] {
+        for comment in [
+            "/* PRIVATE_NAMESPACE_COMMENT café 🧭 */",
+            "// PRIVATE_NAMESPACE_COMMENT café 🧭\r\n",
+        ] {
+            for name in [
+                format!("Alpha {comment} {separator} Beta"),
+                format!("Alpha {separator} {comment} Beta {separator} Gamma"),
+            ] {
+                let source = format!(
+                    "// UTF-8 prefix: café 🧭\r\nnamespace Outer {{ namespace {name} {{ class Hidden {{}}{class_end} }} class Kept {{}}{class_end} }}"
+                );
+                let file = analyze_file("namespace", &source, dialect);
+                assert_eq!(file.identity.coverage, Coverage::Incomplete, "{source}");
+                assert!(
+                    file.diagnostics
+                        .iter()
+                        .any(|d| d.code == "unsupported_declaration_name"),
+                    "{file:?}"
+                );
+                assert_inventory(
+                    &file,
+                    &[("Outer", Module, None), ("Kept", Class, Some("Outer"))],
+                );
+                assert!(!serde_json::to_string(&file)
+                    .unwrap()
+                    .contains("PRIVATE_NAMESPACE_COMMENT"));
+                assert_exact_ranges(&file, &source);
+            }
+        }
+    }
+}
+
+#[test]
+fn qualified_namespace_names_keep_clean_spelling_ranges_and_ownership() {
+    use DeclarationKind::*;
+    for (dialect, name, class_end) in [
+        (Dialect::CSharp, "Alpha . Beta . Gamma", ""),
+        (Dialect::Cpp, "Alpha :: Beta :: Gamma", ";"),
+        (Dialect::Cpp, "Alpha::inline Beta", ";"),
+        (Dialect::Cpp, "Alpha::Beta::inline Gamma", ";"),
+    ] {
+        let source = format!(
+            "// UTF-8 prefix: café 🧭\r\nnamespace {name} {{ /* body comment */ class Kept {{}}{class_end} }}"
+        );
+        let file = analyze_file("namespace", &source, dialect);
+        assert_eq!(
+            file.identity.coverage,
+            Coverage::SupportedSubset,
+            "{file:?}"
+        );
+        assert!(file.diagnostics.is_empty());
+        assert_inventory(&file, &[(name, Module, None), ("Kept", Class, Some(name))]);
+        assert_exact_ranges(&file, &source);
+    }
+}
+
+#[test]
 fn unsupported_callable_regions_never_orphan_parameters_or_copy_name_comments() {
     for (dialect, source) in [
         (Dialect::Cpp, "struct Flag { operator bool() const { return true; } };"),

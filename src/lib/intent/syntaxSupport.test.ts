@@ -23,7 +23,7 @@ test('real no-Cargo mixed parser output validates; nullable file ranges still co
     }
   }
   assert.ok(analysis.files.some(file=>file.relations.some(fact=>fact.kind==='call_syntax')));
-  assert.equal(analysis.identity.extractor,'whip-docs-syntax@5');
+  assert.equal(analysis.identity.extractor,'whip-docs-syntax@6');
   const extensions=analysis.files.find(file=>file.identity.path==='native/extension-blocks.cs')!;
   assert.ok(extensions.declarations.some(node=>node.kind==='implementation'&&node.name==='extension'));
   assert.ok(fixture.overriddenSymbols.nodes.some(node=>node.kind==='impl'&&node.label==='extension'));
@@ -96,6 +96,20 @@ test('remaining unsupported regions retain precise diagnostics without leaking p
     assert.equal(file.identity.coverage,'incomplete');for(const code of codes)assert.ok(file.diagnostics.some(d=>d.code===code));
     for(const name of omitted)assert.ok(!file.declarations.some(node=>node.name===name));
     assert.ok(!JSON.stringify(file).includes('PUBLIC_NAME_COMMENT'));
+  }
+});
+test('comment-bearing C# and C++ namespaces are diagnosed and never projected as labels or orphan children',()=>{
+  const analysis=validateGraphAnalysis(fixture.overriddenSymbols,fixture.overriddenAnalysis)!;
+  const files=fileRelationSnapshotToRenderGraph(fixture.files);
+  for(const [path,kept] of [['broken/namespace-name.cs','KeptCs'],['broken/namespace-name.cpp','KeptCpp']]){
+    const file=analysis.files.find(file=>file.identity.path===path)!;
+    assert.equal(file.identity.coverage,'incomplete');assert.ok(file.diagnostics.some(d=>d.code==='unsupported_declaration_name'));
+    assert.deepEqual(file.declarations.map(node=>node.name),[kept]);
+    const nodes=fixture.overriddenSymbols.nodes.filter(node=>node.sourceRange?.path===path&&node.kind!=='file');
+    assert.deepEqual(nodes.map(node=>node.label),[kept]);
+    const overlay=projectSymbolOverlay(files,fixture.files.sourceRoot,fixture.overriddenSymbols,new Set(['file:'+path]));
+    assert.equal(overlay.nodes.length,1);assert.equal(overlay.nodes[0].id,nodes[0].id);
+    assert.ok(!JSON.stringify(file).includes('PUBLIC_NAMESPACE_COMMENT'));
   }
 });
 test('coverage and narrow dialect choices preserve unsupported and incomplete states',()=>{

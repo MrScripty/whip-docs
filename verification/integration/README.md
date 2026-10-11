@@ -1,12 +1,10 @@
 # Combined graph and multilingual parser
 
 The integration branch combines graph `2a6b73da3fce1ce099e91fa386986c4b2f63a44e`
-with parser `91b05b696ca4bd1121137fe2a78faac36e0f630d` and follow-up
-`1015275810f7574382fc641b15ed46e61f4106b6`, then
-`2afd3c0a03d48ac05e9717d5dd6f727a44691fc3`, and now
-`298e63fb11ac37c29f7a89d9a57f16a866f1d4b3`, and finally
-`88d62abb68d3ba57deefb59c9878fdd43aaaa599` (extractor `whip-docs-syntax@5`). Neither source branch nor
-main is changed by this work. Native Tauri IPC remains unverified.
+with parser `91b05b696ca4bd1121137fe2a78faac36e0f630d` and its follow-ups through
+`88d62abb68d3ba57deefb59c9878fdd43aaaa599` (extractor `whip-docs-syntax@5`), plus
+the bounded @6 namespace-label repair below. Neither source branch nor main is
+changed by this work. Native Tauri IPC remains unverified.
 
 The original file graph and routing remain authoritative. Neutral declarations
 expand in the same scene/camera, with exact syntax byte ranges and explicit
@@ -27,7 +25,17 @@ existing v2 behavior/storage. A Rust-exported vector verifies the browser's
 multilingual digest encoding. Unknown or semantically corrupt records fail
 without rewriting storage; originals remain immutable and proposals separate.
 
-## Current @5 checkpoint
+## Current @6 privacy repair
+
+The final independent review found comment-bearing C#/C++ namespace labels entering
+same-file journal snapshots. The bounded @6 repair rejects unsafe composite names
+with explicit diagnostics and omits their descendants; clean qualified and inline
+namespace names retain exact ranges. See [repair verification](namespace-label-repair.md)
+for current checks and independent confirmation. The compact UI and graph/journal
+implementations are unchanged. Older @1–@5 records remain readable and stale without
+rewriting stored bytes. The current fixture has 41 public files / 39 captured sources.
+
+## Prior @5 checkpoint
 
 - 135 Rust service tests passed, including the integration root/token association
   check; strict all-targets Clippy and formatting passed with desktop disabled.
@@ -50,13 +58,13 @@ without rewriting storage; originals remain immutable and proposals separate.
   reproducible generation are prior evidence at exact commit `298e63f`, documented
   in [owned grammar verification](../owned-grammars.md); they were not repeated.
 
-## Current UI qualification
+## Retained UI qualification at `a5caed08`
 
 The compact inspector follow-up removes the requested heading/help prose and
 replaces stacked selection labels with one compact name/kind/parent-file row.
 Inspector/form/journal spacing is tighter; precision, coverage, errors, binding
 status and provenance remain available. The original graph, scene, parser @5,
-intent backends and fixture are unchanged from `0efd5e8`.
+intent backends and fixture were unchanged from `0efd5e8` at that UI checkpoint.
 
 The frontend's 128 tests, lint, types and build were rerun successfully. Nine
 mixed-browser regression groups and five focused inspector groups passed, including
@@ -104,8 +112,9 @@ data, not native IPC. In an environment already configured for Tauri,
 `npm run dev:desktop` opens the native app; select a local directory, with or
 without Cargo.toml. No proposals are executed and no model inference is used.
 
-`verification/integration/parser-v5-browser-check.cjs` runs the current focused
-checks; `browser-check.cjs` retains the broader visual suite. Both use installed Playwright/Chromium;
+`verification/integration/namespace-browser-check.cjs` runs the repair checks;
+`parser-v5-browser-check.cjs` retains the broader parser-contract replay;
+`browser-check.cjs` retains the broader visual suite. All use installed Playwright/Chromium;
 set `PLAYWRIGHT_MODULE`, `CHROMIUM_PATH`, `GRAPH_TEST_ORIGIN` and `EVIDENCE_DIR`
 for local paths/port. The fixture exporter is `src-tauri/examples/integration_fixture.rs`;
 run with desktop features disabled and a fresh disposable app-data directory.
@@ -117,10 +126,10 @@ remain unqualified. No native dependency-denial retries or package-source
 bypasses were attempted. See the parser qualification matrix for language gaps;
 supported_subset never means full-language support.
 
-The recorded fixture is regenerated at extractor `@5`. Saved real `@1`, `@2`, `@3`
-and `@4` journal vectors remain readable/stale without changing stored bytes; proposals
-against them are rejected. The @4 vector equals the actual vector from published
-checkpoint `557ef33`; earlier saved vector files remain byte-for-byte unchanged.
+The recorded fixture is regenerated at extractor `@6`. Saved real `@1`, `@2`, `@3`,
+`@4` and `@5` journal vectors remain readable/stale without changing stored bytes;
+proposals against them are rejected. The @5 vector equals the actual vector from
+published checkpoint `a5caed08`; earlier saved vector files remain byte-for-byte unchanged.
 
 Fourteen dialect routes span twelve language families. This is language-family
 coverage, not complete language or Passeur extraction parity. The qualified
@@ -134,7 +143,8 @@ This completes the bounded extractor follow-up. Kotlin property/constructor owne
 Zig bindings/enum variants, C++ destructor/operator names and Odin qualified/overloaded
 callable inventories now project through the existing overlay, inspector and journal.
 No grammar, dependency, graph/analysis/journal schema or digest-domain change was
-introduced in @5. The parser implementation matches exact commit `88d62ab`.
+introduced in @5. Parser base `88d62ab` is followed by the bounded @6 namespace-label
+privacy repair; current parser source hashes are recorded in fixture provenance.
 
 Remaining explicit gaps include Kotlin destructuring, Odin enum/union member inventories,
 JavaScript private fields and parameter patterns, C# file-scoped namespace membership,

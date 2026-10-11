@@ -1044,6 +1044,102 @@
         "declarations": [
           {
             "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:f1a5e6af9113222e22bddf188548bb864c636657bde8d3c1a2f5937ce1ea192a",
+            "kind": "class",
+            "name": "KeptCpp",
+            "nameRange": {
+              "endByte": 92,
+              "startByte": 85
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 95,
+              "startByte": 79
+            },
+            "syntaxKind": "class_specifier"
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "unsupported_declaration_name",
+            "message": "Composite declaration name contains unsupported syntax; its descendants were not assigned to another owner.",
+            "path": "broken/namespace-name.cpp",
+            "range": {
+              "endByte": 78,
+              "startByte": 0
+            }
+          }
+        ],
+        "identity": {
+          "byteLength": 97,
+          "coverage": "incomplete",
+          "dialect": "cpp",
+          "grammars": [
+            {
+              "dialect": "cpp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
+            }
+          ],
+          "path": "broken/namespace-name.cpp",
+          "sourceDigest": "sha256:5c1db74021e7d51f10ea683067e411cf79e854d43cca01f863123ba7c0a6ab8a",
+          "structureDigest": "sha256:965711ea71ec2aa391ba0808395897dc431d798abc66b7b82765e8e5c21854eb"
+        },
+        "relations": []
+      },
+      {
+        "declarations": [
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:65206addfebc48e66b625ced01c58dd0e0645a65655ab41dda2a7c36c5e29708",
+            "kind": "class",
+            "name": "KeptCs",
+            "nameRange": {
+              "endByte": 88,
+              "startByte": 82
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 91,
+              "startByte": 76
+            },
+            "syntaxKind": "class_declaration"
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "unsupported_declaration_name",
+            "message": "Composite declaration name contains unsupported syntax; its descendants were not assigned to another owner.",
+            "path": "broken/namespace-name.cs",
+            "range": {
+              "endByte": 75,
+              "startByte": 0
+            }
+          }
+        ],
+        "identity": {
+          "byteLength": 92,
+          "coverage": "incomplete",
+          "dialect": "csharp",
+          "grammars": [
+            {
+              "dialect": "csharp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
+            }
+          ],
+          "path": "broken/namespace-name.cs",
+          "sourceDigest": "sha256:662439734355fdf06a8e4cabcd62a3d44ca6aad525e3f4bfeb15441f26f04023",
+          "structureDigest": "sha256:1d12e33a28fe722e5e00fee2f3ff03a67a3f9949baf904ca2591fe26ad39fd9f"
+        },
+        "relations": []
+      },
+      {
+        "declarations": [
+          {
+            "bodyComplete": true,
             "dialect": "csharp",
             "headerComplete": true,
             "id": "syntax:a6e456fe5e5e509deacfe52112645ce950987beb6ca1ab57414cb792c91ea989",
@@ -9080,7 +9176,7 @@
     ],
     "identity": {
       "discoveryComplete": false,
-      "extractor": "whip-docs-syntax@5",
+      "extractor": "whip-docs-syntax@6",
       "files": [
         {
           "byteLength": 353,
@@ -9165,6 +9261,34 @@
           "path": "broken/destructuring.kt",
           "sourceDigest": "sha256:9b4ad1497a90f6800facf1ff312cf809facdbfdc210ab724f17bb67ac1a2398f",
           "structureDigest": "sha256:9cc2f5b26e234e6e727e6bce610d633802fa47c9b17cd0690b2c39e866685e43"
+        },
+        {
+          "byteLength": 97,
+          "coverage": "incomplete",
+          "dialect": "cpp",
+          "grammars": [
+            {
+              "dialect": "cpp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
+            }
+          ],
+          "path": "broken/namespace-name.cpp",
+          "sourceDigest": "sha256:5c1db74021e7d51f10ea683067e411cf79e854d43cca01f863123ba7c0a6ab8a",
+          "structureDigest": "sha256:965711ea71ec2aa391ba0808395897dc431d798abc66b7b82765e8e5c21854eb"
+        },
+        {
+          "byteLength": 92,
+          "coverage": "incomplete",
+          "dialect": "csharp",
+          "grammars": [
+            {
+              "dialect": "csharp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
+            }
+          ],
+          "path": "broken/namespace-name.cs",
+          "sourceDigest": "sha256:662439734355fdf06a8e4cabcd62a3d44ca6aad525e3f4bfeb15441f26f04023",
+          "structureDigest": "sha256:1d12e33a28fe722e5e00fee2f3ff03a67a3f9949baf904ca2591fe26ad39fd9f"
         },
         {
           "byteLength": 38,
@@ -9697,6 +9821,30 @@
         "kind": "contains",
         "provenance": "normalized",
         "toNodeId": "file:broken/destructuring.kt",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:broken",
+        "id": "contains:dir:broken:file:broken/namespace-name.cpp",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:broken/namespace-name.cpp",
+        "weight": 1
+      },
+      {
+        "confidence": "exact",
+        "direction": "directed",
+        "evidenceCount": 0,
+        "evidenceSample": [],
+        "fromNodeId": "dir:broken",
+        "id": "contains:dir:broken:file:broken/namespace-name.cs",
+        "kind": "contains",
+        "provenance": "normalized",
+        "toNodeId": "file:broken/namespace-name.cs",
         "weight": 1
       },
       {
@@ -10323,6 +10471,24 @@
       },
       {
         "childIds": [],
+        "id": "file:broken/namespace-name.cpp",
+        "kind": "file",
+        "language": null,
+        "name": "namespace-name.cpp",
+        "parentId": "dir:broken",
+        "path": "broken/namespace-name.cpp"
+      },
+      {
+        "childIds": [],
+        "id": "file:broken/namespace-name.cs",
+        "kind": "file",
+        "language": "csharp",
+        "name": "namespace-name.cs",
+        "parentId": "dir:broken",
+        "path": "broken/namespace-name.cs"
+      },
+      {
+        "childIds": [],
         "id": "file:broken/namespace.cs",
         "kind": "file",
         "language": "csharp",
@@ -10372,6 +10538,8 @@
           "file:broken/bad.py",
           "file:broken/context-property.kt",
           "file:broken/destructuring.kt",
+          "file:broken/namespace-name.cpp",
+          "file:broken/namespace-name.cs",
           "file:broken/namespace.cs",
           "file:broken/patterns.js",
           "file:broken/snippet-header.svelte",
@@ -10760,7 +10928,7 @@
       "analysisAt": "fixture:mixed-overriddenSymbols",
       "analysisIdentity": {
         "discoveryComplete": true,
-        "extractor": "whip-docs-syntax@5",
+        "extractor": "whip-docs-syntax@6",
         "files": [
           {
             "byteLength": 353,
@@ -10845,6 +11013,34 @@
             "path": "broken/destructuring.kt",
             "sourceDigest": "sha256:9b4ad1497a90f6800facf1ff312cf809facdbfdc210ab724f17bb67ac1a2398f",
             "structureDigest": "sha256:9cc2f5b26e234e6e727e6bce610d633802fa47c9b17cd0690b2c39e866685e43"
+          },
+          {
+            "byteLength": 97,
+            "coverage": "incomplete",
+            "dialect": "cpp",
+            "grammars": [
+              {
+                "dialect": "cpp",
+                "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
+              }
+            ],
+            "path": "broken/namespace-name.cpp",
+            "sourceDigest": "sha256:5c1db74021e7d51f10ea683067e411cf79e854d43cca01f863123ba7c0a6ab8a",
+            "structureDigest": "sha256:965711ea71ec2aa391ba0808395897dc431d798abc66b7b82765e8e5c21854eb"
+          },
+          {
+            "byteLength": 92,
+            "coverage": "incomplete",
+            "dialect": "csharp",
+            "grammars": [
+              {
+                "dialect": "csharp",
+                "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
+              }
+            ],
+            "path": "broken/namespace-name.cs",
+            "sourceDigest": "sha256:662439734355fdf06a8e4cabcd62a3d44ca6aad525e3f4bfeb15441f26f04023",
+            "structureDigest": "sha256:1d12e33a28fe722e5e00fee2f3ff03a67a3f9949baf904ca2591fe26ad39fd9f"
           },
           {
             "byteLength": 38,
@@ -11497,7 +11693,7 @@
           }
         ]
       },
-      "worktreeDigest": "sha256:bbac5e3f5035da91c9ce9b546fa17e02da2e2989f77e17212769f12a68e9c0a7",
+      "worktreeDigest": "sha256:8b63c841125f06cc0e89d205dbfd1763b78c16bafe364ecbbe56799603f49306",
       "worktreeDigestScope": "captured_multilingual_sources_v1"
     },
     "symbol": {
@@ -12547,6 +12743,102 @@
           "path": "broken/destructuring.kt",
           "sourceDigest": "sha256:9b4ad1497a90f6800facf1ff312cf809facdbfdc210ab724f17bb67ac1a2398f",
           "structureDigest": "sha256:9cc2f5b26e234e6e727e6bce610d633802fa47c9b17cd0690b2c39e866685e43"
+        },
+        "relations": []
+      },
+      {
+        "declarations": [
+          {
+            "bodyComplete": true,
+            "dialect": "cpp",
+            "headerComplete": true,
+            "id": "syntax:f1a5e6af9113222e22bddf188548bb864c636657bde8d3c1a2f5937ce1ea192a",
+            "kind": "class",
+            "name": "KeptCpp",
+            "nameRange": {
+              "endByte": 92,
+              "startByte": 85
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 95,
+              "startByte": 79
+            },
+            "syntaxKind": "class_specifier"
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "unsupported_declaration_name",
+            "message": "Composite declaration name contains unsupported syntax; its descendants were not assigned to another owner.",
+            "path": "broken/namespace-name.cpp",
+            "range": {
+              "endByte": 78,
+              "startByte": 0
+            }
+          }
+        ],
+        "identity": {
+          "byteLength": 97,
+          "coverage": "incomplete",
+          "dialect": "cpp",
+          "grammars": [
+            {
+              "dialect": "cpp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
+            }
+          ],
+          "path": "broken/namespace-name.cpp",
+          "sourceDigest": "sha256:5c1db74021e7d51f10ea683067e411cf79e854d43cca01f863123ba7c0a6ab8a",
+          "structureDigest": "sha256:965711ea71ec2aa391ba0808395897dc431d798abc66b7b82765e8e5c21854eb"
+        },
+        "relations": []
+      },
+      {
+        "declarations": [
+          {
+            "bodyComplete": true,
+            "dialect": "csharp",
+            "headerComplete": true,
+            "id": "syntax:65206addfebc48e66b625ced01c58dd0e0645a65655ab41dda2a7c36c5e29708",
+            "kind": "class",
+            "name": "KeptCs",
+            "nameRange": {
+              "endByte": 88,
+              "startByte": 82
+            },
+            "parentId": null,
+            "range": {
+              "endByte": 91,
+              "startByte": 76
+            },
+            "syntaxKind": "class_declaration"
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "unsupported_declaration_name",
+            "message": "Composite declaration name contains unsupported syntax; its descendants were not assigned to another owner.",
+            "path": "broken/namespace-name.cs",
+            "range": {
+              "endByte": 75,
+              "startByte": 0
+            }
+          }
+        ],
+        "identity": {
+          "byteLength": 92,
+          "coverage": "incomplete",
+          "dialect": "csharp",
+          "grammars": [
+            {
+              "dialect": "csharp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
+            }
+          ],
+          "path": "broken/namespace-name.cs",
+          "sourceDigest": "sha256:662439734355fdf06a8e4cabcd62a3d44ca6aad525e3f4bfeb15441f26f04023",
+          "structureDigest": "sha256:1d12e33a28fe722e5e00fee2f3ff03a67a3f9949baf904ca2591fe26ad39fd9f"
         },
         "relations": []
       },
@@ -20712,7 +21004,7 @@
     ],
     "identity": {
       "discoveryComplete": true,
-      "extractor": "whip-docs-syntax@5",
+      "extractor": "whip-docs-syntax@6",
       "files": [
         {
           "byteLength": 353,
@@ -20797,6 +21089,34 @@
           "path": "broken/destructuring.kt",
           "sourceDigest": "sha256:9b4ad1497a90f6800facf1ff312cf809facdbfdc210ab724f17bb67ac1a2398f",
           "structureDigest": "sha256:9cc2f5b26e234e6e727e6bce610d633802fa47c9b17cd0690b2c39e866685e43"
+        },
+        {
+          "byteLength": 97,
+          "coverage": "incomplete",
+          "dialect": "cpp",
+          "grammars": [
+            {
+              "dialect": "cpp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-cpp@c009222808634c1014f82438d4883753516a2c24"
+            }
+          ],
+          "path": "broken/namespace-name.cpp",
+          "sourceDigest": "sha256:5c1db74021e7d51f10ea683067e411cf79e854d43cca01f863123ba7c0a6ab8a",
+          "structureDigest": "sha256:965711ea71ec2aa391ba0808395897dc431d798abc66b7b82765e8e5c21854eb"
+        },
+        {
+          "byteLength": 92,
+          "coverage": "incomplete",
+          "dialect": "csharp",
+          "grammars": [
+            {
+              "dialect": "csharp",
+              "grammar": "git+https://github.com/tree-sitter/tree-sitter-c-sharp@8c0abe0b84a3681d3e6852ce2e2a1eecb4f731c5"
+            }
+          ],
+          "path": "broken/namespace-name.cs",
+          "sourceDigest": "sha256:662439734355fdf06a8e4cabcd62a3d44ca6aad525e3f4bfeb15441f26f04023",
+          "structureDigest": "sha256:1d12e33a28fe722e5e00fee2f3ff03a67a3f9949baf904ca2591fe26ad39fd9f"
         },
         {
           "byteLength": 38,
@@ -21284,6 +21604,16 @@
         "sourcePath": "broken/destructuring.kt"
       },
       {
+        "code": "unsupported_declaration_name",
+        "message": "Composite declaration name contains unsupported syntax; its descendants were not assigned to another owner.",
+        "sourcePath": "broken/namespace-name.cpp"
+      },
+      {
+        "code": "unsupported_declaration_name",
+        "message": "Composite declaration name contains unsupported syntax; its descendants were not assigned to another owner.",
+        "sourcePath": "broken/namespace-name.cs"
+      },
+      {
         "code": "unsupported_file_scoped_namespace_scope",
         "message": "File-scoped namespace membership is not represented; file containment is syntax-only.",
         "sourcePath": "broken/namespace.cs"
@@ -21637,6 +21967,38 @@
         "provenance": "tree_sitter",
         "sourceId": "file:broken/destructuring.kt",
         "targetId": "syntax:0c1068458edb6674658e86a71c7a8af929f46bff7acdaa23a17b8a316ae8a598"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:syntax:file:broken/namespace-name.cpp",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "workspace:syntax",
+        "targetId": "file:broken/namespace-name.cpp"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:broken/namespace-name.cpp:syntax:f1a5e6af9113222e22bddf188548bb864c636657bde8d3c1a2f5937ce1ea192a",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:broken/namespace-name.cpp",
+        "targetId": "syntax:f1a5e6af9113222e22bddf188548bb864c636657bde8d3c1a2f5937ce1ea192a"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:syntax:file:broken/namespace-name.cs",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "workspace:syntax",
+        "targetId": "file:broken/namespace-name.cs"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:broken/namespace-name.cs:syntax:65206addfebc48e66b625ced01c58dd0e0645a65655ab41dda2a7c36c5e29708",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:broken/namespace-name.cs",
+        "targetId": "syntax:65206addfebc48e66b625ced01c58dd0e0645a65655ab41dda2a7c36c5e29708"
       },
       {
         "confidence": "exact",
@@ -24209,6 +24571,42 @@
           "path": "broken/destructuring.kt",
           "startColumn": 1,
           "startLine": 1
+        }
+      },
+      {
+        "id": "file:broken/namespace-name.cpp",
+        "kind": "file",
+        "label": "broken/namespace-name.cpp",
+        "sourceRange": null
+      },
+      {
+        "id": "syntax:f1a5e6af9113222e22bddf188548bb864c636657bde8d3c1a2f5937ce1ea192a",
+        "kind": "class",
+        "label": "KeptCpp",
+        "sourceRange": {
+          "endColumn": 17,
+          "endLine": 2,
+          "path": "broken/namespace-name.cpp",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "file:broken/namespace-name.cs",
+        "kind": "file",
+        "label": "broken/namespace-name.cs",
+        "sourceRange": null
+      },
+      {
+        "id": "syntax:65206addfebc48e66b625ced01c58dd0e0645a65655ab41dda2a7c36c5e29708",
+        "kind": "class",
+        "label": "KeptCs",
+        "sourceRange": {
+          "endColumn": 16,
+          "endLine": 2,
+          "path": "broken/namespace-name.cs",
+          "startColumn": 1,
+          "startLine": 2
         }
       },
       {
@@ -27319,6 +27717,16 @@
         "sourcePath": "broken/destructuring.kt"
       },
       {
+        "code": "unsupported_declaration_name",
+        "message": "Composite declaration name contains unsupported syntax; its descendants were not assigned to another owner.",
+        "sourcePath": "broken/namespace-name.cpp"
+      },
+      {
+        "code": "unsupported_declaration_name",
+        "message": "Composite declaration name contains unsupported syntax; its descendants were not assigned to another owner.",
+        "sourcePath": "broken/namespace-name.cs"
+      },
+      {
         "code": "unsupported_file_scoped_namespace_scope",
         "message": "File-scoped namespace membership is not represented; file containment is syntax-only.",
         "sourcePath": "broken/namespace.cs"
@@ -27677,6 +28085,38 @@
         "provenance": "tree_sitter",
         "sourceId": "file:broken/destructuring.kt",
         "targetId": "syntax:0c1068458edb6674658e86a71c7a8af929f46bff7acdaa23a17b8a316ae8a598"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:syntax:file:broken/namespace-name.cpp",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "workspace:syntax",
+        "targetId": "file:broken/namespace-name.cpp"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:broken/namespace-name.cpp:syntax:f1a5e6af9113222e22bddf188548bb864c636657bde8d3c1a2f5937ce1ea192a",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:broken/namespace-name.cpp",
+        "targetId": "syntax:f1a5e6af9113222e22bddf188548bb864c636657bde8d3c1a2f5937ce1ea192a"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:workspace:syntax:file:broken/namespace-name.cs",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "workspace:syntax",
+        "targetId": "file:broken/namespace-name.cs"
+      },
+      {
+        "confidence": "exact",
+        "id": "contains:file:broken/namespace-name.cs:syntax:65206addfebc48e66b625ced01c58dd0e0645a65655ab41dda2a7c36c5e29708",
+        "kind": "contains",
+        "provenance": "tree_sitter",
+        "sourceId": "file:broken/namespace-name.cs",
+        "targetId": "syntax:65206addfebc48e66b625ced01c58dd0e0645a65655ab41dda2a7c36c5e29708"
       },
       {
         "confidence": "exact",
@@ -30209,6 +30649,42 @@
           "path": "broken/destructuring.kt",
           "startColumn": 1,
           "startLine": 1
+        }
+      },
+      {
+        "id": "file:broken/namespace-name.cpp",
+        "kind": "file",
+        "label": "broken/namespace-name.cpp",
+        "sourceRange": null
+      },
+      {
+        "id": "syntax:f1a5e6af9113222e22bddf188548bb864c636657bde8d3c1a2f5937ce1ea192a",
+        "kind": "class",
+        "label": "KeptCpp",
+        "sourceRange": {
+          "endColumn": 17,
+          "endLine": 2,
+          "path": "broken/namespace-name.cpp",
+          "startColumn": 1,
+          "startLine": 2
+        }
+      },
+      {
+        "id": "file:broken/namespace-name.cs",
+        "kind": "file",
+        "label": "broken/namespace-name.cs",
+        "sourceRange": null
+      },
+      {
+        "id": "syntax:65206addfebc48e66b625ced01c58dd0e0645a65655ab41dda2a7c36c5e29708",
+        "kind": "class",
+        "label": "KeptCs",
+        "sourceRange": {
+          "endColumn": 16,
+          "endLine": 2,
+          "path": "broken/namespace-name.cs",
+          "startColumn": 1,
+          "startLine": 2
         }
       },
       {

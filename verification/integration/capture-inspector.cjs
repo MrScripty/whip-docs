@@ -1,4 +1,4 @@
-// Genuine browser captures of the public @5 fixture, with exact source hashes.
+// Genuine browser captures of the public fixture, with exact source hashes.
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const origin=process.env.GRAPH_TEST_ORIGIN||'http://127.0.0.1:1421';
@@ -29,6 +29,6 @@ let browser;
  if(errors.length)throw Error(errors.join('\n'));
  const files=['src/lib/intent/IntentWorkspace.svelte','src/styles.css','fixtures/mixed-workspace.snapshot.json'];
  const sourceSha256=Object.fromEntries(files.map(file=>[file,crypto.createHash('sha256').update(fs.readFileSync(path.resolve(__dirname,'../..',file))).digest('hex')]));
- fs.writeFileSync(path.join(out,'capture-provenance.json'),JSON.stringify({capturedAt:new Date().toISOString(),backend:'Actual Chromium/WebGL UI; public Rust-exported fixture; no native Tauri IPC',extractor:'whip-docs-syntax@5',sourceSha256,images:['compact-file-overview.png','compact-file-expanded.png','compact-inspector.png','compact-expanded-768.png','compact-expanded-390.png','compact-expanded-360.png'],viewports:[{width:1680,height:1050},{width:768,height:1000},{width:390,height:1000},{width:360,height:1000}],errors},null,2)+'\n');
+ fs.writeFileSync(path.join(out,'capture-provenance.json'),JSON.stringify({capturedAt:new Date().toISOString(),backend:'Actual Chromium/WebGL UI; public Rust-exported fixture; no native Tauri IPC',extractor:JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../fixtures/mixed-workspace.snapshot.json'),'utf8')).overriddenAnalysis.identity.extractor,sourceSha256,images:['compact-file-overview.png','compact-file-expanded.png','compact-inspector.png','compact-expanded-768.png','compact-expanded-390.png','compact-expanded-360.png'],viewports:[{width:1680,height:1050},{width:768,height:1000},{width:390,height:1000},{width:360,height:1000}],errors},null,2)+'\n');
  console.log('Captured six actual UI images with source hashes; no browser page errors');
 })().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{if(browser)await browser.close();});

@@ -64,7 +64,7 @@ test('new parameters and template bindings round-trip through the existing journ
   assert.equal(records.length,10);assert.ok(records.every(record=>record.bindingStatus==='current'));
   const raw=storage.getItem(SYNTAX_PREVIEW_STORAGE_KEY)!;
   for(const forbidden of ['Prefix: café','class Box[T','context(user: User','typedef unsigned','_BitInt(17)','label = \\"x\\"','fallback()','<script lang='])assert.ok(!raw.includes(forbidden),forbidden);
-  assert.ok(records.every(record=>record.snapshot.analysisIdentity?.extractor==='whip-docs-syntax@5'));
+  assert.ok(records.every(record=>record.snapshot.analysisIdentity?.extractor==='whip-docs-syntax@6'));
 });
 test('corrected callable spellings and neutral kinds persist without source text or proposal rewrites',async()=>{
   const storage=new MemoryStorage(),backend=new SyntaxPreviewIntentBackend(storage,graph,analysis,sources);
@@ -79,9 +79,23 @@ test('corrected callable spellings and neutral kinds persist without source text
   const raw=storage.getItem(SYNTAX_PREVIEW_STORAGE_KEY)!;
   for(const source of ['café 🧭','val current:','int operator()','int seed','proc(self:','self.total +=','PUBLIC_NAME_COMMENT'])assert.ok(!raw.includes(source),source);
 });
-for(const [file,extractor] of [['previous-journal','whip-docs-syntax@1'],['previous-v2-journal','whip-docs-syntax@2'],['previous-v3-journal','whip-docs-syntax@3'],['previous-v4-journal','whip-docs-syntax@4']])test(`actual ${extractor} journal vector remains unchanged and stale after the follow-up`,async()=>{
+test('C# and C++ namespace comments stay out of saved preview structural snapshots',async()=>{
+  const storage=new MemoryStorage(),backend=new SyntaxPreviewIntentBackend(storage,graph,analysis,sources);
+  for(const [path,label] of [['broken/namespace-name.cs','KeptCs'],['broken/namespace-name.cpp','KeptCpp']]){
+    const node=graph.nodes.find(node=>node.sourceRange?.path===path&&node.label===label)!;
+    const original=await backend.appendRecord({...input,nodeId:node.id}),before=storage.getItem(SYNTAX_PREVIEW_STORAGE_KEY)!;
+    assert.deepEqual(original.snapshot.structuralSnapshot.nodes.map(node=>node.label),[label]);
+    const proposal=await backend.appendRecord({...input,nodeId:node.id,kind:'proposal',parentId:original.id,text:'Separate proposed change.'});
+    assert.deepEqual(proposal.snapshot,original.snapshot);
+    assert.deepEqual(JSON.parse(storage.getItem(SYNTAX_PREVIEW_STORAGE_KEY)!).slice(0,-1),JSON.parse(before));
+  }
+  const raw=storage.getItem(SYNTAX_PREVIEW_STORAGE_KEY)!;
+  for(const forbidden of ['PUBLIC_NAMESPACE_COMMENT','HiddenCs','HiddenCpp','namespace Alpha','class Kept'])assert.ok(!raw.includes(forbidden),forbidden);
+  const restarted=await new SyntaxPreviewIntentBackend(storage,graph,analysis,sources).listRecords();assert.equal(restarted.length,4);assert.ok(restarted.every(record=>record.bindingStatus==='current'));
+});
+for(const [file,extractor] of [['previous-journal','whip-docs-syntax@1'],['previous-v2-journal','whip-docs-syntax@2'],['previous-v3-journal','whip-docs-syntax@3'],['previous-v4-journal','whip-docs-syntax@4'],['previous-v5-journal','whip-docs-syntax@5']])test(`actual ${extractor} journal vector remains unchanged and stale after the follow-up`,async()=>{
   const old=JSON.parse(readFileSync(new URL(`../../../fixtures/mixed-workspace.${file}.json`,import.meta.url),'utf8')) as IntentRecord;
-  assert.equal(old.snapshot.analysisIdentity?.extractor,extractor);assert.equal(analysis.identity.extractor,'whip-docs-syntax@5');
+  assert.equal(old.snapshot.analysisIdentity?.extractor,extractor);assert.equal(analysis.identity.extractor,'whip-docs-syntax@6');
   const storage=new MemoryStorage(),originalBytes=JSON.stringify([{schemaVersion:3,record:old}]);storage.setItem(SYNTAX_PREVIEW_STORAGE_KEY,originalBytes);
   const backend=new SyntaxPreviewIntentBackend(storage,graph,analysis,sources);
   assert.equal((await backend.listRecords())[0].bindingStatus,'stale');

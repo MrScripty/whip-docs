@@ -1178,6 +1178,107 @@ mod tests {
     }
 
     #[test]
+    fn namespace_comments_never_enter_persisted_structural_snapshots() {
+        for (path, separator, class_end) in
+            [("namespace.cs", ".", ""), ("namespace.cpp", "::", ";")]
+        {
+            for comment in [
+                "/* PRIVATE_NAMESPACE_JOURNAL café 🧭 */",
+                "// PRIVATE_NAMESPACE_JOURNAL café 🧭\r\n",
+            ] {
+                let mut fixture = Fixture::new();
+                let source = format!(
+                    "namespace Outer {{ namespace Alpha {comment} {separator} Beta {{ class Hidden {{}}{class_end} }} class Kept {{}}{class_end} }}"
+                );
+                fs::write(fixture.root.join(path), &source).unwrap();
+                syntax_fixture(&mut fixture);
+                let file = fixture
+                    .analysis
+                    .syntax
+                    .as_ref()
+                    .unwrap()
+                    .files
+                    .iter()
+                    .find(|f| f.identity.path == path)
+                    .unwrap();
+                assert!(file
+                    .diagnostics
+                    .iter()
+                    .any(|d| d.code == "unsupported_declaration_name"));
+                assert_eq!(file.identity.coverage, crate::syntax::Coverage::Incomplete);
+                assert!(!fixture
+                    .analysis
+                    .snapshot
+                    .nodes
+                    .iter()
+                    .any(|n| n.label == "Hidden"));
+                let selected = fixture
+                    .analysis
+                    .snapshot
+                    .nodes
+                    .iter()
+                    .find(|n| n.label == "Kept")
+                    .unwrap();
+                let node_id = selected.id.clone();
+                let mut request = syntax_request(&fixture, &node_id, None);
+                request.text =
+                    "  Preserve exact class intent — 蟹.\n\tKeep originals.  ".to_owned();
+                let expected_text = request.text.clone();
+                let original = fixture.store.append(&fixture.analysis, request).unwrap();
+                assert_eq!(original.text, expected_text);
+                assert_eq!(original.snapshot.structural_snapshot.nodes.len(), 2);
+                assert!(original
+                    .snapshot
+                    .structural_snapshot
+                    .nodes
+                    .iter()
+                    .all(|n| matches!(n.label.as_str(), "Outer" | "Kept")));
+                assert_eq!(original.snapshot.structural_snapshot.edges.len(), 1);
+                let prefix = fs::read(&fixture.store.journal_path).unwrap();
+                let proposal = fixture
+                    .store
+                    .append(
+                        &fixture.analysis,
+                        syntax_request(&fixture, &node_id, Some(original.id.clone())),
+                    )
+                    .unwrap();
+                assert_eq!(proposal.snapshot, original.snapshot);
+                let bytes = fs::read(&fixture.store.journal_path).unwrap();
+                assert!(bytes.starts_with(&prefix));
+                for value in [
+                    serde_json::to_string(&fixture.analysis.snapshot).unwrap(),
+                    serde_json::to_string(&original).unwrap(),
+                    String::from_utf8(bytes.clone()).unwrap(),
+                ] {
+                    for forbidden in [
+                        "PRIVATE_NAMESPACE_JOURNAL",
+                        "namespace Outer",
+                        "class Hidden",
+                        "class Kept",
+                    ] {
+                        assert!(!value.contains(forbidden), "{path}: {forbidden}");
+                    }
+                }
+                let reopened = IntentStore::new(fixture.base.join("app"));
+                let records = reopened
+                    .list(
+                        &fixture.analysis.snapshot.source_root,
+                        Some(&fixture.analysis),
+                    )
+                    .unwrap();
+                assert_eq!(records.len(), 2);
+                assert_eq!(records[0].text, expected_text);
+                assert_eq!(records[0].snapshot, original.snapshot);
+                assert_eq!(records[1].parent_id.as_deref(), Some(original.id.as_str()));
+                assert!(records
+                    .iter()
+                    .all(|r| r.binding_status == BindingStatus::Current));
+                assert_eq!(bytes, fs::read(&fixture.store.journal_path).unwrap());
+            }
+        }
+    }
+
+    #[test]
     fn parser_grammar_extractor_and_dialect_changes_stale_binding_without_relink() {
         let mut fixture = Fixture::new();
         let node_id = syntax_fixture(&mut fixture);
@@ -1218,6 +1319,7 @@ mod tests {
             "whip-docs-syntax@2",
             "whip-docs-syntax@3",
             "whip-docs-syntax@4",
+            "whip-docs-syntax@5",
         ] {
             let mut fixture = Fixture::new();
             let node_id = syntax_fixture(&mut fixture);
