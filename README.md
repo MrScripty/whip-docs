@@ -1,95 +1,51 @@
 # Whip Docs
 
-Whip Docs is a local desktop code-architecture explorer. This feature branch adds
-a Rust-owned multilingual Tree-sitter backend. The previous static Studio Whip documentation website is archived
-as historical context and is no longer the active product surface.
+Explore a codebase as a graph, and keep the reasoning attached to its symbols.
 
-## Intent prototype
+Whip Docs is a local code-architecture explorer built with Rust, Tauri and Svelte. Expand files into declarations, follow the relationships the analyzer can establish, and preserve original intent alongside separate interpretations and proposed changes.
 
-This branch adds a bounded intent-and-symbol workspace. See [PROTOTYPE.md](PROTOTYPE.md)
-for scope, run instructions, privacy and verification limits. Native execution
-has not yet been qualified.
+![Whip Docs showing expanded Python declarations and an intent journal](docs/images/mixed-fixture-file-expanded.png)
 
-## Current Product
+*Browser fixture preview using recorded Rust-service output. [Details](verification/integration/README.md).*
 
-The active application is a Tauri desktop app with:
+## Try the browser preview
 
-- a Rust backend that owns repository configuration and code analysis
-- a Svelte + TypeScript frontend that renders backend-owned graph snapshots
-- a local repository directory as the source of truth
-- no GitHub raw source URL dependency
-- no WASM parser/runtime strategy
-
-## Historical Website Boundary
-
-The old website files, generated Vulkan documentation, and GitHub-source viewer
-scripts were removed from the active tree during the Tauri refactor. Git
-history is the archive for that static-site implementation.
-
-## Development
-
-Install frontend dependencies before running npm scripts:
+Use Node.js 22 or later and npm 10 or later:
 
 ```bash
-npm install
+git clone https://github.com/MrScripty/whip-docs.git
+cd whip-docs
+npm ci
+npm run dev
 ```
 
-Optional Rust-specific enrichment can use rust-analyzer:
+Open `http://127.0.0.1:1420/?preview=mixed`. Expand a file, select a declaration and preserve an original intent entry. Later interpretations and proposals remain separate entries. Preview records stay in that browser's local storage.
 
-```bash
-rustup component add rust-analyzer
-```
+The preview displays recorded analysis; it does not analyze directories through native IPC. A plain browser without the preview flag shows a desktop-required message.
 
-Run the desktop app:
+## Explore your own repository
+
+In a configured Rust/Tauri environment with your platform's native prerequisites:
 
 ```bash
 npm run dev:desktop
 ```
 
-Run frontend checks:
+Open a local source directory by its absolute path. It does not need a `Cargo.toml`. The native design stores an append-only intent journal locally and binds entries to analyzed source digests; proposals do not change repository code.
+
+This is a prototype. Native linking, IPC and restart acceptance remain unqualified. Language support covers tested syntax subsets, with explicit gaps; see the [grammar qualification matrix](docs/design/grammar-qualification.md).
+
+## Develop
 
 ```bash
 npm run check
-```
-
-Run Rust checks:
-
-```bash
-cargo test
-cargo fmt --check
-cargo clippy --workspace --all-targets
-```
-
-The backend accepts a local source directory without Cargo.toml. It supports
-Rust, TypeScript/TSX, JavaScript/JSX, Python, Lua, Kotlin, Zig, C#, C, C++, Odin
-and Svelte 5 source routes. See the [qualification matrix](docs/design/grammar-qualification.md)
-for tested constructs and grammar gaps, and the [integration handoff](docs/design/multilingual-integration.md)
-for required frontend work. The separate graph correction branch has not been
-integrated or visually qualified with this backend. The normal inspector shows metadata and append-only intent, not raw source.
-Snapshot capture is backend-owned and selected by graph node ID.
-
-Headless backend checks (without GTK/WebKit):
-
-```bash
+npm run build
 cargo test --no-default-features --workspace --all-targets --locked
-cargo clippy --no-default-features --workspace --all-targets --locked -- -D warnings
-cargo fmt --all --check
 ```
 
-See [backend verification](verification/multilingual-backend.md) for evidence and
-native-integration limits.
+[PROTOTYPE.md](PROTOTYPE.md) covers native setup, graph controls, journal privacy, stale bindings and verification. The [integration record](verification/integration/README.md) separates browser, backend and native evidence.
 
-## Architecture
+The former Studio Whip documentation website is retained in Git history.
 
-The app follows the local Pantograph style at a smaller scale:
+[MIT License](LICENSE).
 
-- `src-tauri/src/main.rs` remains a thin launcher.
-- `src-tauri/src/app_setup.rs` owns Tauri composition and command registration.
-- `src-tauri/src/app_lifecycle.rs` owns shutdown cleanup.
-- Tauri command modules adapt IPC payloads into backend-owned services.
-- Frontend backend adapters isolate `invoke(...)` from Svelte components.
-
-## Refactor Plan
-
-The implementation plan is tracked in
-`docs/refactors/2026-04-26-whip-docs-tauri-rust-analyzer-refactor/final-plan.md`.
