@@ -10,7 +10,7 @@ Whip Docs is a local code-architecture explorer built with Rust, Tauri and Svelt
 
 ## Try the browser preview
 
-Use Node.js 22 or later and npm 10 or later:
+Use Node.js 24 and npm 10 or later:
 
 ```bash
 git clone https://github.com/MrScripty/whip-docs.git
