@@ -48,4 +48,3 @@ cargo test --no-default-features --workspace --all-targets --locked
 The former Studio Whip documentation website is retained in Git history.
 
 [MIT License](LICENSE).
-
